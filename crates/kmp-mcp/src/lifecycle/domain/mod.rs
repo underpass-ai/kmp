@@ -29,6 +29,7 @@ pub mod lifecycle_request;
 pub mod marketplace_source;
 pub mod memory_record;
 pub mod memory_selection_repair;
+pub mod pi_agent_home;
 pub mod piece;
 pub mod piece_hold;
 pub mod piece_kind;

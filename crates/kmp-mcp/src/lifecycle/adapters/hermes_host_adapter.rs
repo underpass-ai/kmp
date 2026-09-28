@@ -1,7 +1,7 @@
-use std::fs;
 use std::path::{Path, PathBuf};
 
 use crate::lifecycle::adapters::mappers::hermes_runtime_status_mapper::HermesRuntimeStatusMapper;
+use crate::lifecycle::adapters::native_skill_mirror::NativeSkillMirror;
 use crate::lifecycle::domain::engine_executable::EngineExecutable;
 use crate::lifecycle::domain::hermes_skill_dir::HermesSkillDir;
 use crate::lifecycle::domain::host::Host;
@@ -10,23 +10,6 @@ use crate::lifecycle::domain::lifecycle_error::LifecycleError;
 use crate::lifecycle::domain::plugin_root::PluginRoot;
 use crate::lifecycle::domain::release_version::ReleaseVersion;
 use crate::lifecycle::ports::process_executor::ProcessExecutor;
-
-/// The plugin's skill directories Hermes should be able to discover.
-pub const HERMES_SKILL_NAMES: [&str; 13] = [
-    "kmp-catchup",
-    "kmp-doctor",
-    "kmp-expert",
-    "kmp-guide",
-    "kmp-info",
-    "kmp-lifecycle",
-    "kmp-memory",
-    "kmp-moves",
-    "kmp-restore",
-    "kmp-revert",
-    "kmp-save",
-    "kmp-setup",
-    "kmp-uninstall",
-];
 
 /// Adapter for the Hermes Agent host.
 ///
@@ -95,8 +78,8 @@ impl<'a> HermesHostAdapter<'a> {
 
     /// Which plugin skills Hermes can already discover.
     pub fn installed_skills(&self) -> Vec<String> {
-        let names: Vec<String> = HERMES_SKILL_NAMES.iter().map(ToString::to_string).collect();
-        self.skills.installed_skills(&names)
+        self.skills
+            .installed_skills(&NativeSkillMirror::skill_names())
     }
 
     /// The installation Hermes declares: the MCP registration plus the
@@ -199,61 +182,7 @@ impl<'a> HermesHostAdapter<'a> {
     }
 
     fn mirror_skills(&self, plugin_root: &Path) -> Result<(), LifecycleError> {
-        fs::create_dir_all(self.skills.as_path()).map_err(|error| {
-            LifecycleError::HostNotInstalled(format!(
-                "Hermes skills directory could not be created: {error}"
-            ))
-        })?;
-        for name in HERMES_SKILL_NAMES {
-            let source = plugin_root.join("skills").join(name);
-            if !source.join("SKILL.md").is_file() {
-                continue;
-            }
-            let destination = self.skills.skill(name);
-            if destination.exists() {
-                fs::remove_dir_all(&destination).map_err(|error| {
-                    LifecycleError::HostNotInstalled(format!(
-                        "Hermes skill {name} could not be replaced: {error}"
-                    ))
-                })?;
-            }
-            Self::copy_tree(&source, &destination)?;
-        }
-        Ok(())
-    }
-
-    fn copy_tree(source: &Path, destination: &Path) -> Result<(), LifecycleError> {
-        fs::create_dir_all(destination).map_err(|error| {
-            LifecycleError::HostNotInstalled(format!(
-                "Hermes skill directory could not be created: {error}"
-            ))
-        })?;
-        for entry in fs::read_dir(source).map_err(|error| {
-            LifecycleError::HostNotInstalled(format!("Hermes skill source unreadable: {error}"))
-        })? {
-            let entry = entry.map_err(|error| {
-                LifecycleError::HostNotInstalled(format!("Hermes skill entry unreadable: {error}"))
-            })?;
-            let target = destination.join(entry.file_name());
-            let is_dir = entry
-                .file_type()
-                .map_err(|error| {
-                    LifecycleError::HostNotInstalled(format!(
-                        "Hermes skill entry type unreadable: {error}"
-                    ))
-                })?
-                .is_dir();
-            if is_dir {
-                Self::copy_tree(&entry.path(), &target)?;
-            } else {
-                fs::copy(entry.path(), &target).map_err(|error| {
-                    LifecycleError::HostNotInstalled(format!(
-                        "Hermes skill file could not be copied: {error}"
-                    ))
-                })?;
-            }
-        }
-        Ok(())
+        NativeSkillMirror::for_host(Host::Hermes).mirror(plugin_root, self.skills.as_path())
     }
 
     /// Hermes consumes the shared engine by its PATH name, exactly as Codex

@@ -26,6 +26,8 @@ pub mod native_lifecycle;
 pub mod native_plugin_engine_probe;
 pub mod native_plugin_engine_resolver;
 pub mod native_process_liveness;
+pub mod native_skill_mirror;
+pub mod pi_host_adapter;
 pub mod plugin_engine_cli_parser;
 pub(crate) mod search_summary_probe;
 pub(crate) mod startup_log_probe;

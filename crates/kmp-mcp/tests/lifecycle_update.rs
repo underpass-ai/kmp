@@ -254,12 +254,14 @@ fn update_rejects_non_identical_codex_and_claude_plugin_trees() {
 
 // #849: Hermes ships skills and an MCP registration, not the marketplace
 // plugin tree. Its installation root is the whole Hermes home, so digesting it
-// beside the Claude and Codex trees could never match.
-fn three_host_machine() -> FakeHostGateway {
+// beside the Claude and Codex trees could never match. Pi is the same shape:
+// skills in its agent home, the connection through the underpass-pi package.
+fn native_host_machine() -> FakeHostGateway {
     FakeHostGateway::with_installations(vec![
         installation(Host::Claude, "0.4.2", "/tmp/claude"),
         installation(Host::Codex, "0.4.2", "/tmp/codex"),
         installation(Host::Hermes, "0.4.2", "/tmp/hermes"),
+        installation(Host::Pi, "0.4.2", "/tmp/pi"),
     ])
 }
 
@@ -269,7 +271,7 @@ fn marketplace_digest() -> String {
 
 #[test]
 fn update_with_hermes_installed_proves_parity_only_between_marketplace_trees() {
-    let hosts = three_host_machine();
+    let hosts = native_host_machine();
     let target = version("0.5.2");
     let releases = FakeReleaseRepository::publishing(target.clone());
     let engines = FakeEngineStore::empty();
@@ -290,8 +292,8 @@ fn update_with_hermes_installed_proves_parity_only_between_marketplace_trees() {
 
     assert_eq!(
         hosts.refreshes(),
-        vec![Host::Claude, Host::Codex, Host::Hermes],
-        "Hermes still converges; it only stays out of the tree comparison"
+        vec![Host::Claude, Host::Codex, Host::Hermes, Host::Pi],
+        "Hermes and Pi still converge; they only stay out of the tree comparison"
     );
     assert_eq!(
         receipt.plugin_tree().map(ToString::to_string),
@@ -367,8 +369,43 @@ fn a_hermes_only_update_claims_no_marketplace_tree() {
 }
 
 #[test]
+fn a_pi_only_update_claims_no_marketplace_tree() {
+    let hosts =
+        FakeHostGateway::with_installations(vec![installation(Host::Pi, "0.4.2", "/tmp/pi")]);
+    let target = version("0.5.2");
+    let releases = FakeReleaseRepository::publishing(target.clone());
+    let engines = FakeEngineStore::empty();
+
+    let receipt = UpdateKmp::new(
+        &hosts,
+        &releases,
+        &engines,
+        &FakePluginCache::default(),
+        &FakeBridgeStore::default(),
+    )
+    .execute(request(
+        LifecycleAction::Update,
+        BTreeSet::new(),
+        Some(target),
+    ))
+    .expect("Pi-only update");
+
+    assert_eq!(hosts.refreshes(), vec![Host::Pi]);
+    assert_eq!(
+        receipt.plugin_tree(),
+        None,
+        "a Pi agent home is not a plugin tree and must not be reported as one"
+    );
+    assert_eq!(
+        engines.installations(),
+        vec![PathBuf::from("/tmp/shared")],
+        "Pi consumes the shared engine on PATH, so the update installs it there"
+    );
+}
+
+#[test]
 fn a_tree_mismatch_names_the_hosts_whose_trees_differ() {
-    let hosts = three_host_machine();
+    let hosts = native_host_machine();
     let target = version("0.5.2");
     let releases = FakeReleaseRepository::publishing(target.clone());
     let engines = FakeEngineStore::empty().with_divergent_trees();

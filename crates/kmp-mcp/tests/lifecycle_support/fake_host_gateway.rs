@@ -36,7 +36,7 @@ impl FakeHostGateway {
 
     /// Simulates a machine where only these host executables resolve. Tests
     /// that exercise the two-plugin-host era keep their shape by leaving
-    /// Hermes off PATH.
+    /// Hermes and Pi off PATH.
     pub fn on_path(mut self, hosts: Vec<Host>) -> Self {
         self.hosts_on_path = Some(hosts);
         self
@@ -89,6 +89,7 @@ impl FakeHostGateway {
             Host::Claude => "/tmp/claude",
             Host::Codex => "/tmp/codex",
             Host::Hermes => "/tmp/hermes",
+            Host::Pi => "/tmp/pi",
         };
         HostInstallation::discovered(
             host,
@@ -119,6 +120,7 @@ impl HostGateway for FakeHostGateway {
             Host::Claude => HostRuntimeStatus::Connected,
             Host::Codex => HostRuntimeStatus::Registered,
             Host::Hermes => HostRuntimeStatus::Registered,
+            Host::Pi => HostRuntimeStatus::Registered,
         })
     }
 

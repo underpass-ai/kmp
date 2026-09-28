@@ -154,13 +154,15 @@ fn the_tool_surface_is_reported_as_the_binarys_own_declaration() {
 
 /// #849: the doctor compares the same trees the convergence compares. A
 /// Hermes home is not a marketplace plugin tree, so identical Claude and Codex
-/// trees are reported identical while Hermes is installed beside them.
+/// trees are reported identical while Hermes is installed beside them. The
+/// same holds for a Pi agent home.
 #[test]
 fn hermes_beside_identical_plugin_trees_is_not_a_parity_failure() {
     let hosts = FakeHostGateway::with_installations(vec![
         installed(Host::Claude, "/tmp/claude"),
         installed(Host::Codex, "/tmp/codex"),
         installed(Host::Hermes, "/tmp/hermes"),
+        installed(Host::Pi, "/tmp/pi"),
     ]);
     let engines = FakeEngineStore::empty();
     let findings = DiagnoseLifecycle::new(&hosts, &engines)
@@ -192,6 +194,7 @@ fn a_parity_failure_names_the_hosts_whose_trees_differ() {
         installed(Host::Claude, "/tmp/claude"),
         installed(Host::Codex, "/tmp/codex"),
         installed(Host::Hermes, "/tmp/hermes"),
+        installed(Host::Pi, "/tmp/pi"),
     ]);
     let engines = FakeEngineStore::empty().with_divergent_trees();
     let findings = DiagnoseLifecycle::new(&hosts, &engines)
@@ -204,4 +207,36 @@ fn a_parity_failure_names_the_hosts_whose_trees_differ() {
     assert!(says(&parity, "claude"));
     assert!(says(&parity, "codex"));
     assert!(!says(&parity, "hermes"));
+}
+
+/// Pi is a peer in the doctor: its underpass-pi package is inventory, never a
+/// connection, and its engine is the shared one on PATH.
+#[test]
+fn pi_is_diagnosed_as_a_peer_whose_registration_is_unverified() {
+    let hosts = FakeHostGateway::with_installations(vec![installed(Host::Pi, "/tmp/pi")]);
+    let engines = FakeEngineStore::empty();
+    let findings = DiagnoseLifecycle::new(&hosts, &engines)
+        .execute()
+        .findings()
+        .to_vec();
+
+    let registration = one(
+        &findings,
+        "pi: MCP registration installed and enabled, live connection unverified",
+    );
+    assert_eq!(registration.severity(), DiagnosticSeverity::Warn);
+    let declared = one(
+        &findings,
+        &format!(
+            "pi: effective engine binary declares all {} tools",
+            kmp_mcp::tool_names().len()
+        ),
+    );
+    assert_eq!(declared.severity(), DiagnosticSeverity::Ok);
+    assert!(
+        !findings
+            .iter()
+            .any(|finding| finding.headline().contains("plugin trees differ")),
+        "a Pi agent home is not a plugin tree"
+    );
 }

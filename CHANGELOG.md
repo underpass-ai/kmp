@@ -24,6 +24,14 @@ Detailed notes from the early release cycle remain available in the
 
 ### Added
 
+- The Pi coding agent is a fourth native host: `setup|update --pi` mirrors the
+  `kmp-*` skills into `$PI_CODING_AGENT_DIR/skills` (default
+  `~/.pi/agent/skills`) and `doctor` inventories Pi as a peer. Pi has no
+  native MCP, so the registration evidence is the `underpass-pi` package in
+  Pi's `settings.json`; installing it belongs to `underpass setup`, and a
+  convergence without it fails and says so. The setup and update help now
+  name `--hermes` and `--pi`, and the Hermes docs use the real `--hermes`
+  flag instead of the non-existent `--host hermes`.
 - `info` and `doctor` show a Store config section with effective settings,
   rejected optional files, defaults used after a warning and absent files.
 

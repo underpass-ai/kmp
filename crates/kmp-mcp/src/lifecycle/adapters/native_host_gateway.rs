@@ -5,6 +5,7 @@ use crate::lifecycle::adapters::mappers::claude_runtime_status_mapper::ClaudeRun
 use crate::lifecycle::adapters::mappers::codex_installation_mapper::CodexInstallationMapper;
 use crate::lifecycle::adapters::mappers::codex_runtime_status_mapper::CodexRuntimeStatusMapper;
 use crate::lifecycle::adapters::mappers::hermes_runtime_status_mapper::HermesRuntimeStatusMapper;
+use crate::lifecycle::adapters::pi_host_adapter::PiHostAdapter;
 use crate::lifecycle::domain::engine_executable::EngineExecutable;
 use crate::lifecycle::domain::engine_install_dir::EngineInstallDir;
 use crate::lifecycle::domain::hermes_skill_dir::HermesSkillDir;
@@ -13,18 +14,20 @@ use crate::lifecycle::domain::host_installation::HostInstallation;
 use crate::lifecycle::domain::host_runtime_status::HostRuntimeStatus;
 use crate::lifecycle::domain::lifecycle_error::LifecycleError;
 use crate::lifecycle::domain::marketplace_source::MarketplaceSource;
+use crate::lifecycle::domain::pi_agent_home::PiAgentHome;
 use crate::lifecycle::domain::release_version::ReleaseVersion;
 use crate::lifecycle::ports::host_gateway::HostGateway;
 use crate::lifecycle::ports::process_executor::ProcessExecutor;
 use crate::lifecycle::ports::process_output::ProcessOutput;
 
-/// Native Claude/Codex/Hermes adapter. Their JSON and YAML contracts end at
-/// the mappers.
+/// Native Claude/Codex/Hermes/Pi adapter. Their JSON and YAML contracts end
+/// at the mappers.
 pub struct NativeHostGateway<'a> {
     processes: &'a dyn ProcessExecutor,
     codex_cache: CodexPluginCache,
     marketplace: MarketplaceSource,
     hermes: Option<HermesHostAdapter<'a>>,
+    pi: Option<PiHostAdapter<'a>>,
 }
 
 impl<'a> NativeHostGateway<'a> {
@@ -34,6 +37,7 @@ impl<'a> NativeHostGateway<'a> {
             codex_cache: CodexPluginCache::from_environment(),
             marketplace: MarketplaceSource,
             hermes: HermesHostAdapter::new(processes).ok(),
+            pi: PiHostAdapter::new(processes).ok(),
         }
     }
 
@@ -46,6 +50,7 @@ impl<'a> NativeHostGateway<'a> {
             codex_cache: CodexPluginCache::new(codex_home),
             marketplace: MarketplaceSource,
             hermes: HermesHostAdapter::new(processes).ok(),
+            pi: PiHostAdapter::new(processes).ok(),
         }
     }
 
@@ -62,6 +67,26 @@ impl<'a> NativeHostGateway<'a> {
             codex_cache: CodexPluginCache::new(codex_home),
             marketplace: MarketplaceSource,
             hermes: Some(HermesHostAdapter::with_skill_dir(processes, skills)),
+            pi: PiHostAdapter::new(processes).ok(),
+        })
+    }
+
+    /// Names the Pi agent home explicitly, so a test never mirrors skills
+    /// into, or reads the settings of, the operator's own Pi.
+    pub fn with_pi_home(
+        mut self,
+        pi_home: impl Into<std::path::PathBuf>,
+    ) -> Result<Self, LifecycleError> {
+        let home = PiAgentHome::new(pi_home)?;
+        self.pi = Some(PiHostAdapter::with_home(self.processes, home));
+        Ok(self)
+    }
+
+    fn pi(&self) -> Result<&PiHostAdapter<'a>, LifecycleError> {
+        self.pi.as_ref().ok_or_else(|| {
+            LifecycleError::HostNotInstalled(
+                "no HOME resolves, so the Pi host cannot be inspected".to_string(),
+            )
         })
     }
 
@@ -80,6 +105,11 @@ impl<'a> NativeHostGateway<'a> {
         match host {
             Host::Hermes => Ok(self
                 .hermes()?
+                .installation(&ReleaseVersion::current())?
+                .into_iter()
+                .collect()),
+            Host::Pi => Ok(self
+                .pi()?
                 .installation(&ReleaseVersion::current())?
                 .into_iter()
                 .collect()),
@@ -254,6 +284,7 @@ impl HostGateway for NativeHostGateway<'_> {
                 let output = self.required(host, &["config", "get", "mcp_servers"])?;
                 HermesRuntimeStatusMapper::map(output.stdout())
             }
+            Host::Pi => Ok(self.pi()?.runtime_status()),
         }
     }
 
@@ -276,6 +307,7 @@ impl HostGateway for NativeHostGateway<'_> {
                     )
                 }),
             Host::Hermes => self.hermes()?.runtime_engine(),
+            Host::Pi => self.pi()?.runtime_engine(),
         }
     }
 
@@ -295,6 +327,9 @@ impl HostGateway for NativeHostGateway<'_> {
             Host::Claude => self.provision_claude()?,
             Host::Codex => self.provision_codex()?,
             Host::Hermes => self.provision_hermes(target)?,
+            Host::Pi => self
+                .pi()?
+                .provision(target, Self::plugin_root().as_deref())?,
         };
         installation.require_release(target)?;
         Ok(installation)
@@ -316,6 +351,7 @@ impl HostGateway for NativeHostGateway<'_> {
             Host::Claude => self.refresh_claude()?,
             Host::Codex => self.refresh_codex()?,
             Host::Hermes => self.refresh_hermes(target)?,
+            Host::Pi => self.pi()?.refresh(target, Self::plugin_root().as_deref())?,
         };
         installation.require_release(target)?;
         Ok(installation)

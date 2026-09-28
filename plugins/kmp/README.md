@@ -107,7 +107,7 @@ engine through Hermes' own CLI and mirrors the `kmp-*` skills into
 `$HERMES_HOME/skills`:
 
 ```bash
-kmp-mcp setup --host hermes
+kmp-mcp setup --hermes
 ```
 
 That runs `hermes mcp add kmp --command kmp-mcp` (answering its one
@@ -116,6 +116,23 @@ Hermes scans for them. Finish with a Hermes restart so the MCP tools load —
 the same one-restart rule as Codex and Claude Code. `kmp-mcp doctor`
 inventories Hermes as a peer host: registration owner, skills present and
 the engine proof from `PATH`.
+
+**Pi coding agent** — Pi has no native MCP and no plugin marketplace. KMP
+reaches Pi through the `underpass-pi` Pi package, which `underpass setup`
+installs (`pi install …`); the KMP lifecycle never installs Pi packages. Once
+the package is present, converge the skills and the shared engine:
+
+```bash
+kmp-mcp setup --pi
+```
+
+That mirrors the `kmp-*` skills into `$PI_CODING_AGENT_DIR/skills` (default
+`~/.pi/agent/skills`). The registration evidence is the `underpass-pi` entry
+under `packages` in Pi's `settings.json`: without it, `setup --pi` fails and
+points to `underpass setup`; a package filter that excludes
+`src/adapters/inbound/pi/entry/kmp.ts` reports KMP as disabled. The package's
+extension runs `kmp-mcp` from `PATH`, so `kmp-mcp doctor` inventories Pi as a
+peer host with the same engine proof as Codex and Hermes.
 
 ### Initialize the selected store
 
