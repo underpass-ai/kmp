@@ -30,12 +30,21 @@ pub(crate) fn declared_tool_names() -> Vec<String> {
 /// at least one host (Claude Code) presents tools to the model with their
 /// input parameters only, so the schemas were pure startup transport there.
 pub(crate) fn advertised_tools_list(apps: bool, output_schemas: bool) -> Value {
-    let result = without_server_checked_constraints(tools_list_result_with_apps(apps));
+    let result = advertised_input_schemas(tools_list_result_with_apps(apps));
     if output_schemas {
         result
     } else {
         without_output_schemas(result)
     }
+}
+
+/// The input schemas as `tools/list` serves them: without the constraints the
+/// server enforces itself and without parameter prose, which `kmp_guide`
+/// serves from this same contract (#850).
+pub(crate) fn advertised_input_schemas(result: Value) -> Value {
+    crate::contract::parameter_guide::without_parameter_descriptions(
+        without_server_checked_constraints(result),
+    )
 }
 
 /// Drops `minLength` and `uniqueItems` from every input schema (#850). They

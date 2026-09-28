@@ -28,7 +28,9 @@ pub(crate) fn definition() -> Value {
             "expanded":{"type":"array","items":{"type":"string"},"description":"Topics opened in this context and revision, excluding folded ones."},
             "served":{"type":"array","items":{"type":"string"},"description":"Topic cards and exact guide/example refs delivered in this context and revision; not learned or retained."},
             "used":{"type":"array","description":"Observed work calls in this context and revision, never a learning score."},
-            "card":{"type":["object","null"],"description":"One requested canonical worked card; null for the map or a fold.","properties":{"ref":{"type":"string"},"text":{"type":"string"}}},
+            "card":{"type":["object","null"],"description":"One requested canonical worked card; null for the map or a fold.","properties":{"ref":{"type":"string"},"text":{"type":"string"},
+                "parameters":{"type":"object","additionalProperties":{"type":"array","items":{"type":"string"}},"description":"Argument guide for each tool this topic teaches, one `path: description` line per documented argument. tools/list advertises types and constraints only."},
+                "relation_vocabulary":{"type":"array","items":{"type":"string"},"description":"Topic write only: every writer relation as `name (quality; classes; when to use)`."}}},
             "next_actions":{"type":"array","description":"Complete optional calls for the extended verb."}
         }}),
     )

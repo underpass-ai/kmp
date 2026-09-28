@@ -9,6 +9,19 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking:** `tools/list` no longer carries parameter descriptions. The
+  advertised input schemas keep types, enums, bounds, defaults and required
+  fields; every tool keeps its one-line description, which now names the
+  `kmp_guide` topic that explains its arguments. That topic's card returns
+  them as `card.parameters` (`path: description`, one line per argument),
+  projected at serve time from the same contract the server validates
+  against, so the two cannot drift. A host or agent that relied on the
+  schema prose must open the topic. A session starts with 12,649 reference
+  tokens instead of 24,426 (o200k_base, −48 %; `tools/list` 23,961 → 12,178);
+  the eleven native journeys still pass the evidence oracle (#850).
+
 ### Added
 
 - `info` and `doctor` show a Store config section with effective settings,
