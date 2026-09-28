@@ -18,6 +18,7 @@ use super::loopback_semantic_retriever::LoopbackSemanticRetriever;
 use super::observed_judgement::ObservedJudgement;
 use super::process_frozen_recalls::ProcessFrozenRecalls;
 use super::store_config_report::StoreConfigReport;
+use super::store_file_verdict::StoreFileVerdict;
 use super::verdict_book_config::VERDICT_BOOK_CONFIG_FILE;
 use super::verdict_ledger::VerdictLedger;
 use super::wake_focus_judge::WakeFocusJudge;
@@ -160,7 +161,6 @@ impl EmbeddedKernelMcpBackend {
             .as_ref()
             .map(WriteRelationsConfig::lifecycle)
             .unwrap_or_default();
-        let write_relations = write_relations.is_some();
         let write_expansions = WriteExpansionsConfig::load(data_dir);
         let lexical_bridge = load_lexical_bridge(data_dir);
         let semantic = LoopbackSemanticRetriever::load(data_dir);
@@ -168,6 +168,10 @@ impl EmbeddedKernelMcpBackend {
         let curate = CurateConfig::load(data_dir);
         let index_limits = LexicalIndexConfig::load(data_dir);
         acknowledge_store_config(data_dir, &judgement, &rerank, &wake_focus, &semantic)
+            .beside_store(
+                WriteRelationsConfig::FILE,
+                write_relations_verdict(write_relations.as_ref(), &judgement),
+            )
             .beside_store(
                 VERDICT_BOOK_CONFIG_FILE,
                 ledger.as_ref().map(|_| ()).map_err(Clone::clone),
@@ -231,7 +235,7 @@ impl EmbeddedKernelMcpBackend {
             rerank,
             wake_focus,
             doubt_band,
-            write_relations,
+            write_relations: write_relations.is_some(),
             write_expansions,
             lifecycle,
             partner_cap: optional_env_string(EVAL_PARTNER_FACTS_ENV)
@@ -317,12 +321,25 @@ fn acknowledge_store_config<A, B, C>(
         )
         .beside_store("rerank.json", verdict(rerank))
         .beside_store("wake-focus.json", verdict(wake_focus))
-        .beside_store(
-            WriteRelationsConfig::FILE,
-            judged
-                .map_err(|error| format!("write relations need a working typesafe.json: {error}")),
-        )
         .beside_store("semantic-retrieval.json", verdict(semantic))
+}
+
+/// `write-relations.json` is the opt-in whatever it says, so a file that is
+/// not understood still applies, with a warning naming what was not (#886).
+pub(super) fn write_relations_verdict<A>(
+    config: Option<&WriteRelationsConfig>,
+    judgement: &Result<Option<A>, String>,
+) -> StoreFileVerdict {
+    match (judgement, config.and_then(WriteRelationsConfig::warning)) {
+        (Err(error), _) => StoreFileVerdict::Ignored(format!(
+            "write relations need a working typesafe.json: {error}"
+        )),
+        (Ok(None), _) => StoreFileVerdict::Ignored(
+            "write relations need a working typesafe.json: not loaded".into(),
+        ),
+        (Ok(Some(_)), Some(warning)) => StoreFileVerdict::AppliedWithWarning(warning.to_string()),
+        (Ok(Some(_)), None) => StoreFileVerdict::Applied,
+    }
 }
 
 impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {

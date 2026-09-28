@@ -40,6 +40,7 @@ mod sqlite_verdict_book;
 mod store_config_report;
 #[cfg(test)]
 mod store_config_report_tests;
+mod store_file_verdict;
 mod summary_meaning_judge;
 pub(crate) mod tool_request_mapping;
 mod typesafe_api_key;

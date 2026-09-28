@@ -1,8 +1,10 @@
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 
-use super::embedded_backend::EmbeddedKernelMcpBackend;
+use super::embedded_backend::{EmbeddedKernelMcpBackend, write_relations_verdict};
 use super::store_config_report::{IGNORED_HASH_LIMIT, StoreConfigReport};
+use super::store_file_verdict::StoreFileVerdict;
+use super::write_relations_config::WriteRelationsConfig;
 use crate::serving::telemetry::captured_log::CapturedLog;
 
 const DEBUG: &str = "kmp_mcp=info,kmp_mcp::store_config=debug";
@@ -160,4 +162,59 @@ fn a_large_ignored_file_is_hashed_only_at_debug() {
     for file in ["stray-bridge.kmpb", "rerank.json"] {
         assert_eq!(by_file(&lines, file)["fields"]["sha256"], expected.as_str());
     }
+}
+
+#[test]
+fn a_file_read_with_its_defaults_is_loaded_and_warned_about_at_an_ordinary_start() {
+    let dir = tempfile::tempdir().expect("dir");
+    std::fs::write(dir.path().join("write-relations.json"), "{").expect("write");
+    let (log, _guard) = CapturedLog::start("kmp_mcp=info");
+
+    StoreConfigReport::new(dir.path())
+        .beside_store(
+            "write-relations.json",
+            StoreFileVerdict::AppliedWithWarning("read with the defaults: EOF".into()),
+        )
+        .emit();
+
+    let lines = log.events("kmp_store_config");
+    assert_eq!(lines.len(), 1, "{lines:?}");
+    assert_eq!(lines[0]["level"], "WARN");
+    assert_eq!(lines[0]["fields"]["status"], "loaded");
+    assert_eq!(lines[0]["fields"]["reason"], "read with the defaults: EOF");
+    assert_eq!(
+        lines[0]["fields"]["sha256"],
+        format!("{:x}", Sha256::digest(b"{")).as_str(),
+        "an applied file is hashed so the bench can acknowledge it"
+    );
+}
+
+#[test]
+fn write_relations_that_are_not_understood_apply_with_a_warning_once_jev_can_run() {
+    let dir = tempfile::tempdir().expect("dir");
+    let write = |body: &str| {
+        std::fs::write(dir.path().join(WriteRelationsConfig::FILE), body).expect("write");
+        WriteRelationsConfig::load(dir.path())
+    };
+    let jev: Result<Option<()>, String> = Ok(Some(()));
+
+    assert_eq!(
+        write_relations_verdict(write("{}").as_ref(), &jev),
+        StoreFileVerdict::Applied
+    );
+    let misspelt = write_relations_verdict(write(r#"{"lifecyle":"jev"}"#).as_ref(), &jev);
+    assert!(
+        matches!(&misspelt, StoreFileVerdict::AppliedWithWarning(reason) if reason.contains("lifecyle")),
+        "{misspelt:?}"
+    );
+    let unknown = write_relations_verdict(write(r#"{"lifecycle":"jevv"}"#).as_ref(), &jev);
+    assert!(
+        matches!(&unknown, StoreFileVerdict::AppliedWithWarning(reason) if reason.contains("jevv")),
+        "{unknown:?}"
+    );
+    let without_jev: Result<Option<()>, String> = Ok(None);
+    assert!(matches!(
+        write_relations_verdict(write("{").as_ref(), &without_jev),
+        StoreFileVerdict::Ignored(_)
+    ));
 }
