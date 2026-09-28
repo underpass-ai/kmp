@@ -1,10 +1,12 @@
 # kmp-mcp
 
 <!-- kmp:public-overview:begin -->
-KMP gives Codex and Claude Code local-first memory that preserves what
-happened, when and why. It stores decisions and evidence, not transcripts,
-on embedded SQLite, and exposes them through fourteen memory tools, three
-semantic view tools over a shared ChronoLoom view and a progressive agent guide.
+KMP gives Codex, Claude Code and Hermes Agent local-first memory that preserves
+what happened, when and why. It stores decisions and evidence, not transcripts,
+on embedded SQLite. Memory tools retrieve and audit that evidence, semantic
+view tools guide a shared ChronoLoom view, and a progressive guide teaches
+the agent how to use them. The running server’s `tools/list` defines the
+current tool surface.
 
 Ask **“Show me the memory behind this decision.”** The agent retrieves the
 evidence, opens ChronoLoom at the relevant moment and lights up the proof path.
@@ -22,7 +24,7 @@ cargo install kmp-mcp --locked
 For native installation, diagnosis and the explicit first-store guide sync,
 see the
 [KMP plugin](https://github.com/underpass-ai/kmp/tree/main/plugins/kmp) for
-Codex and Claude Code.
+Codex, Claude Code and Hermes Agent.
 
 ## Local by default
 

@@ -1,10 +1,12 @@
 # KMP plugin — discovery for agents and humans
 
 <!-- kmp:public-overview:begin -->
-KMP gives Codex and Claude Code local-first memory that preserves what
-happened, when and why. It stores decisions and evidence, not transcripts,
-on embedded SQLite, and exposes them through fourteen memory tools, three
-semantic view tools over a shared ChronoLoom view and a progressive agent guide.
+KMP gives Codex, Claude Code and Hermes Agent local-first memory that preserves
+what happened, when and why. It stores decisions and evidence, not transcripts,
+on embedded SQLite. Memory tools retrieve and audit that evidence, semantic
+view tools guide a shared ChronoLoom view, and a progressive guide teaches
+the agent how to use them. The running server’s `tools/list` defines the
+current tool surface.
 
 Ask **“Show me the memory behind this decision.”** The agent retrieves the
 evidence, opens ChronoLoom at the relevant moment and lights up the proof path.
@@ -13,9 +15,10 @@ control without losing the frame or its undo. A shared time window crosses real
 3D about layers; a flat camera shows the same memory, with labels as filters.
 <!-- kmp:public-overview:end -->
 
-Without this plugin, using KMP means installing a binary, copying an MCP
-registration into your host's config, and pasting a context-recovery playbook
-into `CLAUDE.md` or `AGENTS.md` by hand. The plugin does all three.
+The native plugin supplies skills, host discovery and one MCP registration
+for Codex and Claude Code. Setup installs the matching engine. Hermes Agent
+uses the native lifecycle described below. Project instructions can opt into
+memory routing; setup does not edit `AGENTS.md` or `CLAUDE.md`.
 
 ## Install
 

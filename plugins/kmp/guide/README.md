@@ -103,7 +103,9 @@ browser and review the final frame before typing `quit`. This compares actual
 native behavior with visual operation, without invoking another LLM or treating
 a view gesture as approval. The view itself is process-scoped, not durable memory.
 
-`memory.jsonl` is a regular format-2 bundle for an empty first install.
+`memory.jsonl` uses bundle format 3; the generated guide contains memory-only
+events in event format 2. These are portable bundle versions, separate from
+the live SQLite store format. The bundle is for an empty first install.
 Existing stores use the exact same requests through the public MCP writer; the
 bundle loader remains restore-only.
 
