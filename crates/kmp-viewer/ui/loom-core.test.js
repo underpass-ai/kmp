@@ -229,6 +229,66 @@ test("axis ticks pick a calendar step that respects the tick budget", () => {
   assert.equal(loom.tickLabel(Date.parse("2026-08-31T10:05:00Z"), 86400e3), "08-31");
 });
 
+/* Issue #821: the scene axis once printed "11 Sept" four times for a
+   40-minute window. `elapsed` mirrors Planes: four evenly spaced instants. */
+const elapsedTicks = (from, to) => {
+  const t0 = Date.parse(from), t1 = Date.parse(to);
+  return [0, 1, 2, 3].map((i) => t0 + ((t1 - t0) * i) / 3);
+};
+
+test("a 40-minute window reads in hours and minutes with its date once", () => {
+  const labels = loom.axisLabels(elapsedTicks("2026-09-11T14:50:00Z", "2026-09-11T15:30:00Z"));
+  assert.deepEqual(labels, ["11 Sep 14:50 UTC", "15:03", "15:16", "15:30"]);
+  assert.equal(new Set(labels).size, labels.length);
+});
+
+test("a sub-minute window keeps seconds, and a sub-second one milliseconds", () => {
+  assert.deepEqual(loom.axisLabels(elapsedTicks("2026-09-11T06:55:00Z", "2026-09-11T06:55:30Z")), [
+    "11 Sep 06:55:00 UTC", "06:55:10", "06:55:20", "06:55:30",
+  ]);
+  assert.deepEqual(loom.axisLabels(elapsedTicks("2026-09-11T06:55:30Z", "2026-09-11T06:55:30.900Z")), [
+    "11 Sep 06:55:30.000 UTC", "06:55:30.300", "06:55:30.600", "06:55:30.900",
+  ]);
+});
+
+test("a midnight crossing restates the date where the day changes", () => {
+  assert.deepEqual(loom.axisLabels(elapsedTicks("2026-09-11T22:30:00Z", "2026-09-12T01:30:00Z")), [
+    "11 Sep 22:30 UTC", "23:30", "12 Sep 00:30", "01:30",
+  ]);
+});
+
+test("multiday windows read as dates, with the year when it changes", () => {
+  assert.deepEqual(loom.axisLabels(elapsedTicks("2026-09-01T00:00:00Z", "2026-09-10T00:00:00Z")), [
+    "01 Sep UTC", "04 Sep", "07 Sep", "10 Sep",
+  ]);
+  assert.deepEqual(loom.axisLabels(elapsedTicks("2026-12-25T00:00:00Z", "2027-01-03T00:00:00Z")), [
+    "25 Dec 2026 UTC", "28 Dec 2026", "31 Dec 2026", "03 Jan 2027",
+  ]);
+  // A day and a half is still an hours view, with both dates named.
+  assert.deepEqual(loom.axisLabels(elapsedTicks("2026-09-11T12:00:00Z", "2026-09-13T00:00:00Z")), [
+    "11 Sep 12:00 UTC", "12 Sep 00:00", "12:00", "13 Sep 00:00",
+  ]);
+});
+
+test("event density labels real instants exactly and skips absent ranks", () => {
+  const at = (iso) => Date.parse(iso);
+  assert.deepEqual(
+    loom.axisLabels([at("2026-09-14T06:50:00Z"), at("2026-09-14T06:55:30Z"), undefined, at("2026-09-14T07:10:00Z")], { exact: true }),
+    ["14 Sep 06:50:00 UTC", "06:55:30", "", "07:10:00"],
+  );
+  assert.deepEqual(
+    loom.axisLabels([at("2026-09-14T06:50:00Z"), at("2026-09-14T07:10:00Z")], { exact: true }),
+    ["14 Sep 06:50 UTC", "07:10"],
+  );
+  // One instant alone takes its precision from the window it sits in.
+  assert.deepEqual(loom.axisLabels([at("2026-09-14T06:55:30Z")], { exact: true, span: 40 * 60e3 }), [
+    "14 Sep 06:55:30 UTC",
+  ]);
+  // Two instants within the same minute never collapse into one label.
+  const close = loom.axisLabels([at("2026-09-14T06:55:10Z"), at("2026-09-14T06:55:40Z")]);
+  assert.deepEqual(close, ["14 Sep 06:55:10 UTC", "06:55:40"]);
+});
+
 test("screen ticks honour their placement promise through a nonlinear lens", () => {
   const lens = loom.temporalLens({
     mode: "event_density",

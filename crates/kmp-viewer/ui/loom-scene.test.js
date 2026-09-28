@@ -433,3 +433,40 @@ test("the embedded renderer matches its reviewed vendor pin", () => {
     "45d8f97107302c103faebbe44ac4f1f3b2124e8ac1163998603dc3d8f452cc73",
   );
 });
+
+test("plane axis labels follow the visible window under both scales (#821)", () => {
+  const element = () => {
+    const node = {
+      hidden: false,
+      textContent: "",
+      style: { setProperty() {} },
+      classList: { add() {} },
+      append() {},
+      remove() {},
+      setAttribute() {},
+    };
+    return node;
+  };
+  const document = { createElement: element, createElementNS: element };
+  const { KMP_APP: app, KMP_THREE: { THREE } } = modules(
+    ["vendor/three.min.js", "loom-core.js", "loom-planes.js"],
+    { document },
+  );
+  const planes = new app.planes.Planes(new THREE.Group(), element());
+  const from = Date.parse("2026-09-11T14:50:00Z"),
+    to = Date.parse("2026-09-11T15:30:00Z");
+  const times = ["14:52:00", "14:55:30", "15:05:00", "15:21:15"].map((clock) => Date.parse(`2026-09-11T${clock}Z`));
+  const layout = {
+    planes: [{ about: "about:a", index: 0, y: 0, z: 0 }],
+    nodes: [],
+    times,
+    timeX: (time) => -410 + (820 * (time - from)) / (to - from),
+  };
+  const read = (scale) =>
+    planes
+      .update(layout, { mode: "3d", opacity: 20, from, to, scale }, false)
+      .filter((label) => label.type === "axis")
+      .map((label) => label.element.textContent);
+  assert.deepEqual(plain(read("elapsed")), ["11 Sep 14:50 UTC", "15:03", "15:16", "15:30"]);
+  assert.deepEqual(plain(read("event_density")), ["11 Sep 14:52:00 UTC", "14:55:30", "15:05:00", "15:21:15"]);
+});

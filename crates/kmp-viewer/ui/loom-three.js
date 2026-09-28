@@ -406,6 +406,8 @@ KMP_APP.three = (() => {
           hops.push(label);
         }
       }
+      // Axis labels vary in length (a date and zone on the first, a time
+      // elsewhere), so spacing uses each label's measured width.
       const occupied = [];
       for (const label of projected.filter((l) => l.type === "axis")) {
         const outside =
@@ -414,8 +416,14 @@ KMP_APP.three = (() => {
           label.x > w ||
           label.y < 0 ||
           label.y > h;
+        if (!outside) {
+          label.element.hidden = false;
+          label.width = label.element.offsetWidth || 52;
+        }
         const overlap = occupied.some(
-          (o) => Math.abs(o.x - label.x) < 52 && Math.abs(o.y - label.y) < 15,
+          (o) =>
+            Math.abs(o.x - label.x) < (o.width + label.width) / 2 + 8 &&
+            Math.abs(o.y - label.y) < 15,
         );
         label.element.hidden = outside || overlap;
         if (!outside && !overlap) {

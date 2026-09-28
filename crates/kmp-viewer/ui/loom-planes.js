@@ -9,7 +9,6 @@ KMP_APP.planes = (() => {
       this.group = group;
       this.container = container;
       this.records = new Map();
-      this.date = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", timeZone: "UTC" });
       this.leaders = document.createElementNS("http://www.w3.org/2000/svg", "svg");
       this.leaders.classList.add("plane-leaders");
       container.append(this.leaders);
@@ -71,13 +70,20 @@ KMP_APP.planes = (() => {
         if (record.subtitle.textContent !== caption) record.subtitle.textContent = caption;
         record.label.point.set(-470, plane.y + 140, plane.z);
         labels.push(record.label);
-        record.ticks.forEach((tick, i) => {
+        const elapsed = state.scale === "elapsed";
+        const times = record.ticks.map((tick, i) => {
           const rank = layout.times.length ? Math.round((layout.times.length - 1) * i / 3) : 0;
-          const time = state.scale === "elapsed" ? state.from + (state.to - state.from) * i / 3 : layout.times[rank];
+          return elapsed ? state.from + (state.to - state.from) * i / 3 : layout.times[rank];
+        });
+        // Duplicate density ranks share one instant; label it once.
+        const shown = times.map((time, i) => (time !== undefined && times.indexOf(time) === i ? time : undefined));
+        const texts = KMP_LOOM.axisLabels(shown, { exact: !elapsed, span: state.to - state.from });
+        record.ticks.forEach((tick, i) => {
+          const time = shown[i];
           const visible = (plane.index === 0 || state.mode === "flat") && time !== undefined;
           tick.element.hidden = !visible;
           if (!visible) return;
-          const text = this.date.format(time);
+          const text = texts[i];
           if (tick.element.textContent !== text) tick.element.textContent = text;
           tick.point.set(state.scale === "elapsed" ? -410 + 820 * i / 3 : layout.timeX(time), plane.y - 118, plane.z);
           labels.push(tick);
