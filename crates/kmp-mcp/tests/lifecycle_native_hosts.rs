@@ -141,7 +141,13 @@ fn hermes_convergence_registers_through_its_own_cli() {
         ),
         registered,
     ]);
-    let gateway = NativeHostGateway::new(&processes);
+    let homes = tempfile::tempdir().expect("homes");
+    let gateway = NativeHostGateway::with_homes(
+        &processes,
+        homes.path().join("codex"),
+        homes.path().join("hermes"),
+    )
+    .expect("gateway");
 
     let installed = gateway
         .provision(Host::Hermes, &ReleaseVersion::current())
@@ -149,6 +155,41 @@ fn hermes_convergence_registers_through_its_own_cli() {
 
     assert_eq!(installed.host(), Host::Hermes);
     assert!(installed.is_enabled());
+    assert!(processes.is_exhausted());
+}
+
+/// An updater one release behind the target must still converge Hermes: its
+/// installation carries the target it is converged to, not the version of the
+/// binary running the update (#868).
+#[test]
+fn hermes_refresh_answers_the_target_release_not_the_running_updater() {
+    let processes = FakeProcessExecutor::expecting(vec![command(
+        "hermes",
+        &["config", "get", "mcp_servers"],
+        true,
+        "kmp:\n  command: kmp-mcp\n  enabled: true\n",
+    )]);
+    let homes = tempfile::tempdir().expect("homes");
+    let gateway = NativeHostGateway::with_homes(
+        &processes,
+        homes.path().join("codex"),
+        homes.path().join("hermes"),
+    )
+    .expect("gateway");
+    let current = ReleaseVersion::current().to_string();
+    let (major, rest) = current.split_once('.').expect("major");
+    let (minor, _) = rest.split_once('.').expect("minor");
+    let next = ReleaseVersion::parse(&format!(
+        "{major}.{}.0",
+        minor.parse::<u64>().expect("minor number") + 1
+    ))
+    .expect("next release");
+
+    let refreshed = gateway
+        .refresh(Host::Hermes, &next)
+        .expect("Hermes converges to a newer target");
+
+    assert_eq!(refreshed.version(), &next);
     assert!(processes.is_exhausted());
 }
 
