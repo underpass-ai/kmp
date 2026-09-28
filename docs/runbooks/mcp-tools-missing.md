@@ -32,6 +32,12 @@ The fallback cannot inspect plugin/global ownership inside every host.
 | gRPC without endpoint | Remote backend was requested with no kernel | Set a verified endpoint or return to embedded mode. |
 | Unsupported store format | The current binary opens format 4 and upgrades format 3; earlier layouts remain unsupported | Preserve the source and follow the external export/import contract in the embedded recovery runbook. |
 
+If tools work but retrieval behaves unexpectedly, check the selected store
+with `kmp-mcp config`, then inspect **Store config** in `info` or `doctor`
+(available on `main` after v0.24.0). A rejected optional file is a warning
+with a fallback, not proof that the MCP tools failed to load. An absent file
+leaves defaults in effect. See [configuration diagnostics](../embedded/configuration.md#read-the-diagnostics).
+
 ## 3. Verify the repair
 
 Rerun the host-aware doctor. A healthy result must identify one MCP owner, one

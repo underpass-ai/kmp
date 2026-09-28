@@ -15,7 +15,10 @@ should start with [Embedded KMP](../embedded/README.md).
 - [Agent-facing surface](agent-surface.md) — maintenance procedure for people and agents, including ownership, generation, validation and context cost.
 - [Conditional argument schemas](agent-schema-conditions.md) — preserve callable fields and validate equivalent call forms against captured catalogues.
 - [Guide examples](../../plugins/kmp/guide/README.md) — authored lessons and isolated MCP replays.
-- [Semantic retrieval](semantic-retrieval.md) — optional retrieval policies and their contracts.
+- [Retrieval configuration](../embedded/configuration.md) — current defaults and optional integrations.
+- [Lexical index](lexical-sidecar.md) — default local index, eligibility limits, lazy pages and measured costs.
+- [Evidence re-ranking](evidence-rerank.md) — opt-in TypeSafe judgments for Ask, Wake and relation proposals.
+- [Semantic retrieval](semantic-retrieval.md) — optional local encoder policies and their contracts.
 - [Automatic formation](automatic-formation.md) — source-grounded memory writing and verification.
 - [Automatic entities](automatic-entities.md) — cited identity proposals and bounded expansion.
 - [`api/proto`](../../api/proto/) — typed gRPC contract.

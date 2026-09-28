@@ -16,10 +16,12 @@
 </p>
 
 <!-- kmp:public-overview:begin -->
-KMP gives Codex and Claude Code local-first memory that preserves what
-happened, when and why. It stores decisions and evidence, not transcripts,
-on embedded SQLite, and exposes them through fourteen memory tools, three
-semantic view tools over a shared ChronoLoom view and a progressive agent guide.
+KMP gives Codex, Claude Code and Hermes Agent local-first memory that preserves
+what happened, when and why. It stores decisions and evidence, not transcripts,
+on embedded SQLite. Memory tools retrieve and audit that evidence, semantic
+view tools guide a shared ChronoLoom view, and a progressive guide teaches
+the agent how to use them. The running server’s `tools/list` defines the
+current tool surface.
 
 Ask **“Show me the memory behind this decision.”** The agent retrieves the
 evidence, opens ChronoLoom at the relevant moment and lights up the proof path.
@@ -56,6 +58,18 @@ codex plugin add kmp@underpass
 
 Then ask Codex to run `kmp-setup` and restart Codex once.
 
+### Hermes Agent
+
+With `kmp-mcp` installed, register it and install the skills through the
+native lifecycle:
+
+```bash
+kmp-mcp setup --host hermes
+```
+
+Restart Hermes once. See the [plugin installation guide](plugins/kmp/README.md)
+for engine packages and host ownership.
+
 ### Claude Code
 
 ```text
@@ -64,7 +78,7 @@ Then ask Codex to run `kmp-setup` and restart Codex once.
 /kmp:setup
 ```
 
-Restart Claude Code once. Verify either host with its `kmp-doctor` workflow,
+Restart Claude Code once. Verify the installation with the `kmp-doctor` workflow,
 or from a terminal:
 
 ```bash
@@ -193,7 +207,7 @@ the relation vocabulary.
 | Memory | Stored on your machine, normally in the repository's `.kernel/`. |
 | MCP transport | Local stdio between the agent host and `kmp-mcp`. |
 | Viewer | Read-only loopback HTTP, normally rooted at `http://127.0.0.1:7317/`, behind a random per-session capability. |
-| External services | None required. |
+| External services | None required; optional TypeSafe Jev integrations send selected text to the configured service. |
 | Underpass | Receives no memory and operates no service in this path. |
 | Updates | Setup and updates contact GitHub Releases for checksummed packages; the Claude session hook can check releases daily. |
 | Local metadata | Agent identities and guide delivery records live outside memory retrieval; quality diagnostics use a separate local journal. |
@@ -284,9 +298,12 @@ service.
 
 ### Is there an LLM inside KMP?
 
-No. KMP validates, stores, retrieves and proves. Your agent writes the final
-answer from the returned evidence, and writes the English search summary when
-it stores a memory; KMP lints that summary and never produces one.
+No generative model is required for the default embedded path. KMP validates,
+stores and retrieves evidence; your agent writes the final answer and the
+English search summary. Optional TypeSafe Jev features send selected text to
+an external model for judgments, and optional semantic retrieval uses a local
+encoder. These integrations require explicit configuration. See
+[retrieval defaults and opt-ins](docs/embedded/configuration.md).
 
 ### What if my question is Spanish but the evidence is English?
 
@@ -324,6 +341,7 @@ choose to run.
 
 - [Documentation home](docs/index.md)
 - [Embedded KMP](docs/embedded/README.md)
+- [Retrieval defaults and store configuration](docs/embedded/configuration.md)
 - [Enterprise KMP](docs/enterprise/README.md)
 - [Technical architecture](docs/architecture/README.md)
 - [Runbooks](docs/runbooks/README.md)

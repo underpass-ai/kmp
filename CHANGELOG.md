@@ -9,6 +9,22 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Added
+
+- `info` and `doctor` show a Store config section with effective settings,
+  rejected optional files, defaults used after a warning and absent files.
+
+### Fixed
+
+- Store inventory recognizes the engine’s current format-4 SQLite stores
+  instead of classifying them using the retired format-2 marker.
+
+### Documentation
+
+- Refresh the public overview, host setup, retrieval configuration and
+  diagnostic guidance; distinguish default local retrieval from opt-in
+  model integrations.
+
 ## [0.24.0] - 2026-09-27
 
 ### Added

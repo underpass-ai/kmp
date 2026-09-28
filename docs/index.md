@@ -12,6 +12,13 @@ privacy, installation and interaction with an agent.
 
 Embedded is the default. Enterprise is optional and self-operated.
 
+## Common tasks
+
+- [Configure local retrieval](embedded/configuration.md) — defaults, opt-ins and how to read Store config.
+- [Recover missing tools](runbooks/mcp-tools-missing.md) — engine, host ownership and stale sessions.
+- [Recover embedded memory](runbooks/embedded-recovery.md) — preserve a store and restore a portable bundle.
+- [Use the shipped guides](../plugins/kmp/guide/README.md) — progressive agent guidance and the human ChronoLoom path.
+
 ## Other work
 
 - [Architecture](architecture/README.md) — components, data flows and trust boundaries.

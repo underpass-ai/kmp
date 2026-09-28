@@ -5,6 +5,9 @@ Embedded KMP is the default product path. The coding-agent host starts
 inside that process. No separate KMP server, database server, account or API
 key is required.
 
+For a quick map of Ask defaults, optional integrations and diagnostic states,
+see [Store configuration](configuration.md).
+
 ## Install
 
 Use the native KMP plugin where available:
@@ -40,6 +43,11 @@ cargo install kmp-mcp --locked
 
 Keep the native plugin as the MCP owner and rerun its setup workflow. Detailed
 plugin ownership and packaging live in [`plugins/kmp`](../../plugins/kmp/README.md).
+
+For Hermes Agent, run `kmp-mcp setup --host hermes` with an installed engine,
+then restart Hermes. The native lifecycle registers MCP through Hermes’ CLI
+and installs the `kmp-*` skills. See the
+[plugin guide](../../plugins/kmp/README.md#install) for packaging details.
 
 ## Verify
 
@@ -91,11 +99,12 @@ kmp-mcp config                                         # saved, effective, and w
 kmp-mcp config memory-store --clear                    # back to automatic selection
 ```
 
-The selection is one line in the user config file, so it survives restarts of
-the desktop application without any environment. It starts no host and creates
-no store. A directory holding memory this engine cannot open is refused with
-the reason and the repair: KMP never migrates, moves, converts or overwrites an
-existing store, and the refused directory keeps every byte it had.
+The saved selection survives restarts of the desktop application without an
+environment variable. Saving it starts no host and creates no store. A
+directory holding memory this engine cannot open is refused with a reason
+and repair; the refused directory keeps every byte it had. Opening a supported
+format-3 store upgrades it to format 4, as described above; selecting its path
+alone does not perform that upgrade.
 
 SQLite permits multiple local agent hosts to share one store. To recover an
 unsupported store, stop its writers and preserve the directory. Use an explicitly
@@ -164,9 +173,11 @@ That store then answers byte for byte as v0.23.0 did, without
 keeps the gate and answers UNKNOWN wherever it would have answered PARTIAL.
 The engine reports the file in its `kmp_store_config` log line; one it cannot
 read or does not recognise is reported and the default applies. `kmp-mcp
-doctor` and `kmp-mcp info` show the same verdict for every optional file
-beside the selected store, in their **Store config** section: `on` with the
-settings that took effect, `rejected` with the reason, or `off (absent)`.
+doctor` and `kmp-mcp info` on current `main` (after v0.24.0) also expose these
+verdicts in **Store config**. See [diagnostic states](configuration.md#read-the-diagnostics)
+for `on`, `on, with its defaults`, `rejected` and `off (absent)`. An absent
+optional file leaves the feature’s default in effect; it does not necessarily
+disable the feature.
 
 `{"mode":"anchored","confidence_calibration":"shipped"}` states
 `proof.confidence` through a versioned calibration table
@@ -363,7 +374,7 @@ Run `kmp-mcp --help` for the live command contract.
 
 | Command | Purpose |
 |:--|:--|
-| `info`, `doctor`, `config` | Identify the installation, diagnose it and configure memory routing. |
+| `info`, `doctor`, `config` | Identify the installation, diagnose it and configure memory routing or store selection. |
 | `export [file] [--about <about>]...`, `import` | Checkpoint all events or exact opaque abouts, then restore a bundle. |
 | `snapshot create|list|verify|read|merge` | Create and inspect immutable recovery points. |
 | `document <about>` | Render one about as deterministic Markdown. |
