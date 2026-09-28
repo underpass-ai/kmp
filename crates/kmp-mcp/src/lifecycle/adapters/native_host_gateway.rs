@@ -7,6 +7,7 @@ use crate::lifecycle::adapters::mappers::codex_runtime_status_mapper::CodexRunti
 use crate::lifecycle::adapters::mappers::hermes_runtime_status_mapper::HermesRuntimeStatusMapper;
 use crate::lifecycle::domain::engine_executable::EngineExecutable;
 use crate::lifecycle::domain::engine_install_dir::EngineInstallDir;
+use crate::lifecycle::domain::hermes_skill_dir::HermesSkillDir;
 use crate::lifecycle::domain::host::Host;
 use crate::lifecycle::domain::host_installation::HostInstallation;
 use crate::lifecycle::domain::host_runtime_status::HostRuntimeStatus;
@@ -46,6 +47,22 @@ impl<'a> NativeHostGateway<'a> {
             marketplace: MarketplaceSource,
             hermes: HermesHostAdapter::new(processes).ok(),
         }
+    }
+
+    /// A gateway whose Codex and Hermes homes are both explicit, so a test
+    /// never mirrors skills into the operator's own Hermes home.
+    pub fn with_homes(
+        processes: &'a dyn ProcessExecutor,
+        codex_home: impl AsRef<std::path::Path>,
+        hermes_home: impl AsRef<std::path::Path>,
+    ) -> Result<Self, LifecycleError> {
+        let skills = HermesSkillDir::from_home_dir(hermes_home.as_ref())?;
+        Ok(Self {
+            processes,
+            codex_cache: CodexPluginCache::new(codex_home),
+            marketplace: MarketplaceSource,
+            hermes: Some(HermesHostAdapter::with_skill_dir(processes, skills)),
+        })
     }
 
     fn hermes(&self) -> Result<&HermesHostAdapter<'a>, LifecycleError> {
@@ -121,9 +138,13 @@ impl<'a> NativeHostGateway<'a> {
         CodexInstallationMapper::map_add_result(output.stdout())
     }
 
-    fn refresh_hermes(&self) -> Result<HostInstallation, LifecycleError> {
+    /// Hermes holds no versioned artifact of its own: it runs whatever
+    /// `kmp-mcp` PATH resolves, and the convergence installs and proves that
+    /// engine at the target as its final step. Its release is therefore the
+    /// target, never the version of the binary performing the update (#868).
+    fn refresh_hermes(&self, target: &ReleaseVersion) -> Result<HostInstallation, LifecycleError> {
         self.hermes()?
-            .refresh(&ReleaseVersion::current(), Self::plugin_root().as_deref())
+            .refresh(target, Self::plugin_root().as_deref())
     }
 
     fn provision_claude(&self) -> Result<HostInstallation, LifecycleError> {
@@ -179,9 +200,12 @@ impl<'a> NativeHostGateway<'a> {
         CodexInstallationMapper::map_add_result(output.stdout())
     }
 
-    fn provision_hermes(&self) -> Result<HostInstallation, LifecycleError> {
+    fn provision_hermes(
+        &self,
+        target: &ReleaseVersion,
+    ) -> Result<HostInstallation, LifecycleError> {
         self.hermes()?
-            .provision(&ReleaseVersion::current(), Self::plugin_root().as_deref())
+            .provision(target, Self::plugin_root().as_deref())
     }
 
     /// The plugin tree skills mirror from. A development checkout carries
@@ -270,7 +294,7 @@ impl HostGateway for NativeHostGateway<'_> {
         let installation = match host {
             Host::Claude => self.provision_claude()?,
             Host::Codex => self.provision_codex()?,
-            Host::Hermes => self.provision_hermes()?,
+            Host::Hermes => self.provision_hermes(target)?,
         };
         installation.require_release(target)?;
         Ok(installation)
@@ -291,7 +315,7 @@ impl HostGateway for NativeHostGateway<'_> {
         let installation = match host {
             Host::Claude => self.refresh_claude()?,
             Host::Codex => self.refresh_codex()?,
-            Host::Hermes => self.refresh_hermes()?,
+            Host::Hermes => self.refresh_hermes(target)?,
         };
         installation.require_release(target)?;
         Ok(installation)
