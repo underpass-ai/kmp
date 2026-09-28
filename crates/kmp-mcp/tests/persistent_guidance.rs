@@ -99,6 +99,17 @@ async fn native_identity_survives_restart_and_guidance_does_not_enter_memory() {
         )
         .await;
         assert!(time["card"].get("relation_vocabulary").is_none());
+        // Argument prose left tools/list for the topic cards (#850): each
+        // card explains the tools it teaches, and only those.
+        let writer = opened["card"]["parameters"]["kmp_write_memory"]
+            .as_array()
+            .expect("write card explains the writer's arguments");
+        assert!(writer.iter().any(|line| {
+            line.as_str()
+                .is_some_and(|l| l.starts_with("memories[].connect_to[].why: "))
+        }));
+        assert!(time["card"]["parameters"]["kmp_time"].is_array());
+        assert!(time["card"]["parameters"].get("kmp_write_memory").is_none());
         let action = &opened["next_actions"][0];
         let extended = call(
             &server,

@@ -3,6 +3,7 @@ use super::json_rpc::jsonrpc_result;
 use super::telemetry::{CallOrigin, ToolErrorKind, record_call_error, record_call_success};
 use super::tool_result::tool_error_result;
 use super::{KernelMcpServer, ToolError, tool_success_result};
+use crate::contract::parameter_guide::topic_parameters;
 use crate::contract::schema::relation_vocabulary::relation_vocabulary_lines;
 use crate::guidance::{AgentDirectory, GuidanceError, GuideRequest, SqliteAgentDirectory};
 use serde_json::{Value, json};
@@ -159,8 +160,9 @@ impl KernelMcpServer {
             "scheme":crate::guidance::scheme(),"expanded":context.expanded,"served":context.served,
             "used":context.used.iter().map(|item| json!({"tool":item.tool,"attempts":item.attempts,"rejected":item.rejected,"unknown":item.unknown})).collect::<Vec<_>>(),
             "card":card.map(|node| {
-                let mut card = json!({"ref":node["ref"],"text":node["text"]});
-                if request.topic.as_deref() == Some("write") {
+                let topic = request.topic.as_deref().unwrap_or_default();
+                let mut card = json!({"ref":node["ref"],"text":node["text"],"parameters":topic_parameters(topic)});
+                if topic == "write" {
                     card["relation_vocabulary"] = json!(relation_vocabulary_lines());
                 }
                 card

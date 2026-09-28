@@ -28,7 +28,7 @@ pub(crate) use agent_use::AgentUse;
 pub(crate) use guidance_error::GuidanceError;
 pub(crate) use guidance_purpose::GuidancePurpose;
 pub(crate) use guide_request::GuideRequest;
-pub(crate) use guide_scheme::scheme;
+pub(crate) use guide_scheme::{scheme, tool_topic, topic_tools};
 pub(crate) use ports::{AgentDirectory, AgentIdentitySource};
 pub(crate) use read_continuation::ReadContinuation;
 pub(crate) use read_continuation_id::ReadContinuationId;

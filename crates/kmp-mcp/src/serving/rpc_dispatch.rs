@@ -7,9 +7,9 @@ use serde_json::Value;
 
 use super::lexical_order::{LexicalOrder, is_tool_error};
 use crate::contract::{
-    canonical_tool_name, initialize_result_with_apps, reject_invalid_arguments,
-    reject_unknown_arguments, resource_read_result, resources_list_result,
-    tools_list_result_with_apps, without_server_checked_constraints,
+    advertised_input_schemas, canonical_tool_name, initialize_result_with_apps,
+    reject_invalid_arguments, reject_unknown_arguments, resource_read_result,
+    resources_list_result, tools_list_result_with_apps,
 };
 use crate::serving::json_rpc::{jsonrpc_error, jsonrpc_result};
 use crate::serving::kernel_mcp_server::KernelMcpServer;
@@ -62,11 +62,9 @@ impl KernelMcpServer {
             Some("tools/list") => id.map(|id| {
                 jsonrpc_result(
                     id,
-                    self.output_schema_tools(self.passage_tools(
-                        without_server_checked_constraints(tools_list_result_with_apps(
-                            session.apps(),
-                        )),
-                    )),
+                    self.output_schema_tools(self.passage_tools(advertised_input_schemas(
+                        tools_list_result_with_apps(session.apps()),
+                    ))),
                 )
             }),
             Some("resources/list") if session.apps() => {

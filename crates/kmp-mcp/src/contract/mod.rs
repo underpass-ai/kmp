@@ -4,6 +4,8 @@
 //! are pinned against the running binary by `tool_surface_parity`.
 
 pub(crate) mod handshake;
+pub(crate) mod parameter_guide;
+mod parameter_guide_audit;
 pub(crate) mod registry;
 pub(crate) mod schema;
 mod summaries_audit_surface;
@@ -21,8 +23,8 @@ pub(crate) use handshake::{
     resource_read_result, resources_list_result,
 };
 pub(crate) use registry::{
-    advertised_tools_list, declared_tool_names, tools_list_result, tools_list_result_with_apps,
-    without_output_schemas, without_server_checked_constraints,
+    advertised_input_schemas, advertised_tools_list, declared_tool_names, tools_list_result,
+    tools_list_result_with_apps, without_output_schemas,
 };
 pub(crate) use time_move::{TIME_TOOL, TimeMove};
 pub(crate) use validator::{
