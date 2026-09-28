@@ -99,6 +99,11 @@ impl JudgementReranker {
         self.pool_size
     }
 
+    /// The margin gate's threshold in tenths, or `None` when it is off.
+    pub(super) fn margin_tenths(&self) -> Option<i64> {
+        self.margin_tenths
+    }
+
     /// Whether the lexical ranking settles this Ask on its own: its lead is
     /// at least the threshold and its confidence high (DESIGN L4 4c).
     pub(super) fn is_settled(&self, margin: Option<LexicalMargin>) -> bool {

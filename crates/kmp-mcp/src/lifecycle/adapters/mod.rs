@@ -29,6 +29,7 @@ pub mod native_process_liveness;
 pub mod plugin_engine_cli_parser;
 pub(crate) mod search_summary_probe;
 pub(crate) mod startup_log_probe;
+pub(crate) mod store_config_probe;
 pub(crate) mod store_lease_files;
 pub(crate) mod store_lease_registry;
 pub mod store_removal_guard;

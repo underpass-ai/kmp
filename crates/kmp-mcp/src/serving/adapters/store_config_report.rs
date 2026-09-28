@@ -23,6 +23,8 @@ use std::path::{Path, PathBuf};
 use sha2::{Digest, Sha256};
 
 use super::store_file_verdict::StoreFileVerdict;
+use crate::serving::store_config_entry::StoreConfigEntry;
+use crate::serving::store_config_state::StoreConfigState;
 
 const TARGET: &str = "kmp_mcp::store_config";
 
@@ -34,6 +36,8 @@ pub(super) const IGNORED_HASH_LIMIT: u64 = 8 * 1024;
 pub(super) struct StoreConfigReport {
     data_dir: PathBuf,
     files: Vec<(&'static str, Option<PathBuf>, StoreFileVerdict)>,
+    /// Effective settings worth naming, per file.
+    effective: Vec<(&'static str, String)>,
 }
 
 impl StoreConfigReport {
@@ -41,6 +45,7 @@ impl StoreConfigReport {
         Self {
             data_dir: data_dir.to_path_buf(),
             files: Vec::new(),
+            effective: Vec::new(),
         }
     }
 
@@ -65,6 +70,61 @@ impl StoreConfigReport {
     ) -> Self {
         self.files.push((name, path, verdict.into()));
         self
+    }
+
+    /// A setting of `name` worth naming beside its verdict, such as
+    /// `pool 40`. Only reports read it; the log carries the file's hash.
+    pub(super) fn effective(mut self, name: &'static str, setting: String) -> Self {
+        self.effective.push((name, setting));
+        self
+    }
+
+    /// Every file consulted, present or not, then every configuration-shaped
+    /// file beside the store that nothing read: what `doctor` and `info`
+    /// show (#887).
+    pub(super) fn entries(&self) -> Vec<StoreConfigEntry> {
+        let mut entries = self
+            .files
+            .iter()
+            .map(|(name, path, verdict)| {
+                let present = path.as_deref().is_some_and(Path::is_file);
+                let state = match verdict {
+                    _ if !present => StoreConfigState::Absent,
+                    StoreFileVerdict::Applied => StoreConfigState::On,
+                    StoreFileVerdict::AppliedWithWarning(reason) => {
+                        StoreConfigState::OnWithWarning(reason.clone())
+                    }
+                    StoreFileVerdict::Ignored(reason) => StoreConfigState::Rejected(reason.clone()),
+                };
+                let effective = if present && verdict.applied() {
+                    self.effective
+                        .iter()
+                        .filter(|(file, _)| file == name)
+                        .map(|(_, setting)| setting.clone())
+                        .collect()
+                } else {
+                    Vec::new()
+                };
+                StoreConfigEntry {
+                    name: (*name).to_string(),
+                    path: path.clone(),
+                    state,
+                    effective,
+                }
+            })
+            .collect::<Vec<_>>();
+        entries.extend(self.unread().into_iter().map(|path| {
+            StoreConfigEntry {
+                name: path
+                    .file_name()
+                    .map(|name| name.to_string_lossy().into_owned())
+                    .unwrap_or_default(),
+                path: Some(path),
+                state: StoreConfigState::Rejected("not read by this kmp-mcp version".into()),
+                effective: Vec::new(),
+            }
+        }));
+        entries
     }
 
     /// One line per present file, then one summary line. Files that took

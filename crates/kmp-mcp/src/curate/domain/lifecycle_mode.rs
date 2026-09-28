@@ -24,6 +24,15 @@ impl LifecycleMode {
             _ => None,
         }
     }
+
+    /// The name a store writes for this mode.
+    pub(crate) fn name(self) -> &'static str {
+        match self {
+            Self::Off => "off",
+            Self::Rule => "rule",
+            Self::Jev => "jev",
+        }
+    }
 }
 
 #[cfg(test)]

@@ -81,6 +81,16 @@ impl DoubtBandJudge {
         self.config.margin_tenths()
     }
 
+    /// How likely to answer a memory must be judged not to be vetoed.
+    pub(super) fn veto_permille(&self) -> u16 {
+        self.config.veto_permille()
+    }
+
+    /// The bar a memory must clear to be promoted, when promotion is on.
+    pub(super) fn promote_permille(&self) -> Option<u16> {
+        self.config.promote_permille()
+    }
+
     /// Asks the judge about the band's passages, within the deadline.
     pub(super) async fn judge(&self, question: &str, band: &DoubtBand) -> DoubtOutcome {
         let started = Instant::now();

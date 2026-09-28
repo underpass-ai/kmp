@@ -1,7 +1,8 @@
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 
-use super::embedded_backend::{EmbeddedKernelMcpBackend, write_relations_verdict};
+use super::embedded_backend::EmbeddedKernelMcpBackend;
+use super::store_config_loads::write_relations_verdict;
 use super::store_config_report::{IGNORED_HASH_LIMIT, StoreConfigReport};
 use super::store_file_verdict::StoreFileVerdict;
 use super::write_relations_config::WriteRelationsConfig;
@@ -217,4 +218,50 @@ fn write_relations_that_are_not_understood_apply_with_a_warning_once_jev_can_run
         write_relations_verdict(write("{").as_ref(), &without_jev),
         StoreFileVerdict::Ignored(_)
     ));
+}
+
+#[test]
+fn the_inspection_lists_every_file_with_the_verdict_a_session_would_log() {
+    use crate::serving::store_config_state::StoreConfigState;
+
+    let dir = tempfile::tempdir().expect("dir");
+    std::fs::write(dir.path().join("rerank.json"), r#"{"pool_size":"#).expect("rerank");
+    std::fs::write(
+        dir.path().join("curate.json"),
+        r#"{"partner_facts":200,"partner_filter":"rare_term"}"#,
+    )
+    .expect("curate");
+    std::fs::write(dir.path().join("stray.json"), "{}").expect("stray");
+
+    let entries = super::inspect_store_config(dir.path());
+    let state = |name: &str| {
+        entries
+            .iter()
+            .find(|entry| entry.name == name)
+            .unwrap_or_else(|| panic!("no entry for {name}: {entries:?}"))
+    };
+
+    assert_eq!(
+        state("rerank.json").state,
+        StoreConfigState::Rejected("invalid rerank configuration".into())
+    );
+    let curate = state("curate.json");
+    assert_eq!(curate.state, StoreConfigState::On);
+    assert_eq!(
+        curate.effective,
+        [
+            "partner facts 200",
+            "partner filter rare_term",
+            "paths corridor on"
+        ]
+    );
+    assert_eq!(state("ask-judge.json").state, StoreConfigState::Absent);
+    assert_eq!(
+        state("stray.json").state,
+        StoreConfigState::Rejected("not read by this kmp-mcp version".into())
+    );
+    assert!(
+        !dir.path().join("judgements.sqlite3").exists(),
+        "an inspection never opens the verdict book"
+    );
 }

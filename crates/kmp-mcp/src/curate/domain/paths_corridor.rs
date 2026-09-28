@@ -19,6 +19,14 @@ impl PathsCorridor {
         }
     }
 
+    /// The name a store writes for this setting.
+    pub(crate) fn name(self) -> &'static str {
+        match self {
+            Self::On => "on",
+            Self::Off => "off",
+        }
+    }
+
     pub(crate) fn is_on(self) -> bool {
         self == Self::On
     }

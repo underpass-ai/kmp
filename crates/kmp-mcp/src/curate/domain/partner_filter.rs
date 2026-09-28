@@ -31,6 +31,15 @@ impl PartnerFilter {
         }
     }
 
+    /// The name a store writes for this filter.
+    pub(crate) fn name(self) -> &'static str {
+        match self {
+            Self::Off => "off",
+            Self::RareTerm => "rare_term",
+            Self::Confirm => "confirm",
+        }
+    }
+
     /// The most facts of an about of `facts` a term may appear in and still
     /// be rare: 2 %, and never fewer than two (the pair itself).
     pub(crate) fn rare_within(facts: usize) -> usize {

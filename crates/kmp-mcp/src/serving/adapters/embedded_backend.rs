@@ -1,5 +1,3 @@
-use super::ask_gate_config::{ASK_GATE_FILE, AskGateConfig};
-use super::curate_config::{CURATE_FILE, CurateConfig};
 use super::curate_doubt_cache::CurateDoubtCache;
 use super::curate_review_cache::CurateReviewCache;
 use super::doubt_band_judge::DoubtBandJudge;
@@ -10,29 +8,23 @@ use super::embedded::{
     EmbeddedVisualProjectionTool, EmbeddedWakeTool, FrozenRecallReads,
 };
 use super::judgement_reranker::JudgementReranker;
-use super::judgement_source::load_judgement;
-use super::lexical_bridge_file::{lexical_bridge_path, load_lexical_bridge};
 use super::lexical_index::lexical_sidecar::LexicalSidecar;
-use super::lexical_index_config::{LEXICAL_INDEX_CONFIG_FILE, LexicalIndexConfig};
-use super::loopback_semantic_retriever::LoopbackSemanticRetriever;
+#[cfg(test)]
+use super::lexical_index_config::LexicalIndexConfig;
 use super::observed_judgement::ObservedJudgement;
 use super::process_frozen_recalls::ProcessFrozenRecalls;
-use super::store_config_report::StoreConfigReport;
-use super::store_file_verdict::StoreFileVerdict;
-use super::verdict_book_config::VERDICT_BOOK_CONFIG_FILE;
+use super::store_config_loads::StoreConfigLoads;
+use super::verdict_book_access::VerdictBookAccess;
 use super::verdict_ledger::VerdictLedger;
 use super::wake_focus_judge::WakeFocusJudge;
-use super::write_expansions_config::{WRITE_EXPANSIONS_FILE, WriteExpansionsConfig};
+use super::write_expansions_config::WriteExpansionsConfig;
 use super::write_relations_config::WriteRelationsConfig;
 use crate::contract::{TIME_TOOL, TimeMove};
 use crate::curate::domain::lifecycle_mode::LifecycleMode;
 use crate::curate::domain::partner_cap::PartnerCap;
 use crate::curate::domain::partner_filter::PartnerFilter;
 use crate::curate::domain::paths_corridor::PathsCorridor;
-use crate::serving::environment::{
-    EVAL_PARTNER_FACTS_ENV, TYPESAFE_API_KEY_ENV, TYPESAFE_CASSETTE_ENV,
-    TYPESAFE_CASSETTE_MODE_ENV, optional_env_string,
-};
+use crate::serving::environment::{EVAL_PARTNER_FACTS_ENV, optional_env_string};
 use crate::serving::judgement_site::JudgementSite;
 use crate::serving::lexical_index_mode::LexicalIndexMode;
 use crate::serving::ports::judgement_model::JudgementModel;
@@ -132,89 +124,26 @@ impl EmbeddedKernelMcpBackend {
     ) -> Result<Self, String> {
         let kernel = EmbeddedKernel::open_with_engine(data_dir, engine)
             .map_err(|error| error.to_string())?;
-        let judgement = load_judgement(
-            data_dir,
-            optional_env_string(TYPESAFE_API_KEY_ENV),
-            optional_env_string(TYPESAFE_CASSETTE_ENV),
-            optional_env_string(TYPESAFE_CASSETTE_MODE_ENV),
-        );
-        let ledger = VerdictLedger::load(
-            data_dir,
-            &judgement,
-            optional_env_string(TYPESAFE_CASSETTE_ENV).is_some(),
-        );
-        let book = ledger.as_ref().ok().and_then(Option::as_ref);
-        let rerank = JudgementReranker::load(
-            data_dir,
-            &ObservedJudgement::for_site(&judgement, book, JudgementSite::Rerank),
-        );
-        let wake_focus = WakeFocusJudge::load(
-            data_dir,
-            &ObservedJudgement::for_site(&judgement, book, JudgementSite::WakeFocus),
-        );
-        let doubt_band = DoubtBandJudge::load(
-            data_dir,
-            &ObservedJudgement::for_site(&judgement, book, JudgementSite::DoubtBand),
-        );
-        let write_relations = WriteRelationsConfig::load(data_dir);
+        let loads = StoreConfigLoads::load(data_dir, VerdictBookAccess::Open);
+        loads.report(data_dir).emit();
+        let StoreConfigLoads {
+            judgement,
+            ledger,
+            rerank,
+            wake_focus,
+            doubt_band,
+            write_relations,
+            write_expansions,
+            lexical_bridge,
+            semantic,
+            ask_gate,
+            curate,
+            index_limits,
+        } = loads;
         let lifecycle = write_relations
             .as_ref()
             .map(WriteRelationsConfig::lifecycle)
             .unwrap_or_default();
-        let write_expansions = WriteExpansionsConfig::load(data_dir);
-        let lexical_bridge = load_lexical_bridge(data_dir);
-        let semantic = LoopbackSemanticRetriever::load(data_dir);
-        let ask_gate = AskGateConfig::load(data_dir);
-        let curate = CurateConfig::load(data_dir);
-        let index_limits = LexicalIndexConfig::load(data_dir);
-        acknowledge_store_config(data_dir, &judgement, &rerank, &wake_focus, &semantic)
-            .beside_store(
-                WriteRelationsConfig::FILE,
-                write_relations_verdict(write_relations.as_ref(), &judgement),
-            )
-            .beside_store(
-                VERDICT_BOOK_CONFIG_FILE,
-                ledger.as_ref().map(|_| ()).map_err(Clone::clone),
-            )
-            .beside_store(
-                ASK_GATE_FILE,
-                ask_gate.as_ref().map(|_| ()).map_err(Clone::clone),
-            )
-            .beside_store(
-                CURATE_FILE,
-                curate.as_ref().map(|_| ()).map_err(Clone::clone),
-            )
-            .beside_store(
-                LEXICAL_INDEX_CONFIG_FILE,
-                index_limits.as_ref().map(|_| ()).map_err(Clone::clone),
-            )
-            .beside_store(
-                WRITE_EXPANSIONS_FILE,
-                match (&write_expansions, &judgement) {
-                    (Ok(Some(_)), Ok(Some(_))) => Ok(()),
-                    (Ok(Some(_)), _) => Err("write expansions need a working typesafe.json".into()),
-                    (Ok(None), _) => Err("not loaded".into()),
-                    (Err(error), _) => Err(error.clone()),
-                },
-            )
-            .beside_store(
-                "ask-judge.json",
-                match &doubt_band {
-                    Ok(Some(_)) => Ok(()),
-                    Ok(None) => Err("not loaded".into()),
-                    Err(error) => Err(error.clone()),
-                },
-            )
-            .at(
-                "lexical-bridge.kmpb",
-                lexical_bridge_path(data_dir),
-                if lexical_bridge.is_silent() {
-                    Err("the table is unreadable or empty".into())
-                } else {
-                    Ok(())
-                },
-            )
-            .emit();
         let (partner_cap, partner_filter, paths_corridor) =
             curate.unwrap_or((PartnerCap::DEFAULT, PartnerFilter::Off, PathsCorridor::On));
         let lexical = LexicalSidecar::open(
@@ -292,53 +221,6 @@ impl EmbeddedKernelMcpBackend {
     /// in-process surfaces (the viewer) over this same session's store.
     pub fn kernel(&self) -> &EmbeddedKernel {
         &self.kernel
-    }
-}
-
-/// Which of the store's optional files took effect, and why the others did
-/// not; the lexical bridge is added by the caller that loaded it.
-fn acknowledge_store_config<A, B, C>(
-    data_dir: &Path,
-    judgement: &Result<Option<A>, String>,
-    rerank: &Result<Option<B>, String>,
-    wake_focus: &Result<Option<C>, String>,
-    semantic: &Result<Option<Arc<dyn SemanticCandidateProvider>>, String>,
-) -> StoreConfigReport {
-    fn verdict<T>(loaded: &Result<Option<T>, String>) -> Result<(), String> {
-        match loaded {
-            Ok(Some(_)) => Ok(()),
-            Ok(None) => Err("not loaded".into()),
-            Err(error) => Err(error.clone()),
-        }
-    }
-    let judged = verdict(judgement);
-    StoreConfigReport::new(data_dir)
-        .beside_store("typesafe.json", judged.clone())
-        .at(
-            "typesafe-cassette",
-            optional_env_string(TYPESAFE_CASSETTE_ENV).map(Into::into),
-            judged.clone(),
-        )
-        .beside_store("rerank.json", verdict(rerank))
-        .beside_store("wake-focus.json", verdict(wake_focus))
-        .beside_store("semantic-retrieval.json", verdict(semantic))
-}
-
-/// `write-relations.json` is the opt-in whatever it says, so a file that is
-/// not understood still applies, with a warning naming what was not (#886).
-pub(super) fn write_relations_verdict<A>(
-    config: Option<&WriteRelationsConfig>,
-    judgement: &Result<Option<A>, String>,
-) -> StoreFileVerdict {
-    match (judgement, config.and_then(WriteRelationsConfig::warning)) {
-        (Err(error), _) => StoreFileVerdict::Ignored(format!(
-            "write relations need a working typesafe.json: {error}"
-        )),
-        (Ok(None), _) => StoreFileVerdict::Ignored(
-            "write relations need a working typesafe.json: not loaded".into(),
-        ),
-        (Ok(Some(_)), Some(warning)) => StoreFileVerdict::AppliedWithWarning(warning.to_string()),
-        (Ok(Some(_)), None) => StoreFileVerdict::Applied,
     }
 }
 
