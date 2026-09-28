@@ -535,7 +535,65 @@ const KMP_LOOM = (() => {
     const iso = new Date(ms).toISOString();
     if (step >= 86400e3) return iso.slice(5, 10);
     if (step >= 60e3) return iso.slice(11, 16);
-    return iso.slice(11, 19);
+    if (step >= 1e3) return iso.slice(11, 19);
+    return iso.slice(11, 23);
+  }
+
+  /* Scene axis labels for a handful of instants. The precision follows the
+     spacing between ticks (dates, HH:mm, seconds, milliseconds) and steps down
+     until neighbouring ticks read differently. Dates stay on the first label
+     and wherever the UTC day changes, so an intraday window reads as times and
+     a midnight crossing still says which day it is. The first label names the
+     zone, matching the time-window controls, which are UTC too. With `exact`
+     the ticks are real event instants (Event density), so intraday labels also
+     keep the seconds those instants carry. `span` (the window length) sets
+     the precision when every tick is the same instant. */
+  const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const LABEL_STEPS = [86400e3, 60e3, 1e3, 1];
+
+  function axisLabels(times, options = {}) {
+    const finite = times.filter((time) => Number.isFinite(time));
+    if (!finite.length) return times.map(() => "");
+    const distinct = [...new Set(finite)].sort((a, b) => a - b);
+    let minGap = Infinity;
+    for (let index = 1; index < distinct.length; index++) {
+      minGap = Math.min(minGap, distinct[index] - distinct[index - 1]);
+    }
+    if (!Number.isFinite(minGap)) minGap = options.span > 0 ? options.span : 86400e3;
+    let level = LABEL_STEPS.findIndex((step) => minGap >= step);
+    if (level < 0) level = LABEL_STEPS.length - 1;
+    const floorTo = (time, step) => Math.floor(time / step) * step;
+    const collides = (step) =>
+      distinct.some((time, index) => index > 0 && floorTo(time, step) === floorTo(distinct[index - 1], step));
+    while (level < LABEL_STEPS.length - 1 && collides(LABEL_STEPS[level])) level++;
+    if (options.exact) {
+      while (level > 0 && level < 2 && distinct.some((time) => time % LABEL_STEPS[level] !== 0)) level++;
+    }
+    const step = LABEL_STEPS[level];
+    const years = new Set(finite.map((time) => new Date(time).getUTCFullYear()));
+    const day = (time) => {
+      const date = new Date(time);
+      const text = `${String(date.getUTCDate()).padStart(2, "0")} ${MONTHS[date.getUTCMonth()]}`;
+      return years.size > 1 ? `${text} ${date.getUTCFullYear()}` : text;
+    };
+    const dayKey = (time) => new Date(time).toISOString().slice(0, 10);
+    let previous = null;
+    let first = true;
+    return times.map((time) => {
+      if (!Number.isFinite(time)) return "";
+      let text;
+      if (step >= 86400e3) text = day(time);
+      else {
+        const clock = tickLabel(time, step);
+        text = previous === null || dayKey(time) !== dayKey(previous) ? `${day(time)} ${clock}` : clock;
+      }
+      previous = time;
+      if (first) {
+        first = false;
+        text += " UTC";
+      }
+      return text;
+    });
   }
 
   /* ---------------- relations ----------------
@@ -727,6 +785,7 @@ const KMP_LOOM = (() => {
     axisTicks,
     screenAxisTicks,
     tickLabel,
+    axisLabels,
     arcStyle,
     classifyEdges,
     prism,
