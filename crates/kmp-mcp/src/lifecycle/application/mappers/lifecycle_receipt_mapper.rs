@@ -117,6 +117,7 @@ mod tests {
     use super::*;
     use crate::lifecycle::domain::host::Host;
     use crate::lifecycle::domain::host_convergence::HostConvergence;
+    use crate::lifecycle::domain::host_skip_reason::HostSkipReason;
     use crate::lifecycle::domain::release_version::ReleaseVersion;
 
     #[test]
@@ -124,9 +125,11 @@ mod tests {
         let receipt = LifecycleReceipt::planned(
             LifecycleAction::Setup,
             ReleaseVersion::current(),
-            vec![HostConvergence::skipped_without_package(
-                Host::Pi,
-                "underpass-pi",
+            vec![HostConvergence::skipped(
+                &HostSkipReason::PackageMissing {
+                    host: Host::Pi,
+                    package: "underpass-pi",
+                },
                 None,
                 ReleaseVersion::current(),
             )],

@@ -404,14 +404,79 @@ fn a_pi_only_update_claims_no_marketplace_tree() {
     );
 }
 
+/// Every Pi status that is not a usable registration, with the warning an
+/// auto-detected setup gives for it.
+fn unusable_pi_statuses() -> Vec<(HostRuntimeStatus, &'static str)> {
+    vec![
+        (
+            HostRuntimeStatus::Missing,
+            "pi present but underpass-pi not registered; run `underpass setup`",
+        ),
+        (
+            HostRuntimeStatus::Disabled,
+            "underpass-pi registered but its KMP extension is excluded",
+        ),
+        (
+            HostRuntimeStatus::Failed("Pi settings.json is not valid JSON: {\"token\"".to_string()),
+            "pi settings.json unreadable",
+        ),
+    ]
+}
+
 /// Auto-detection must not break a machine that merely has Pi installed:
-/// without the underpass-pi package, Pi is skipped with a warning that says
-/// how to add it, and every other host converges.
+/// without a usable underpass-pi package, Pi is skipped with a warning that
+/// says what is wrong, and every other host converges.
 #[test]
-fn autodetected_setup_skips_pi_without_its_package_and_says_why() {
+fn autodetected_setup_skips_an_unusable_pi_and_says_why() {
+    for (status, expected) in unusable_pi_statuses() {
+        let target = ReleaseVersion::current();
+        let hosts =
+            FakeHostGateway::with_installations(Vec::new()).reporting_for(Host::Pi, status.clone());
+        let releases = FakeReleaseRepository::publishing(target.clone());
+        let engines = FakeEngineStore::running(EngineArtifact::verified(
+            target.clone(),
+            b"running-engine".to_vec(),
+        ));
+
+        let receipt = SetupKmp::new(
+            &hosts,
+            &releases,
+            &engines,
+            &FakePluginCache::default(),
+            &FakeBridgeStore::default(),
+        )
+        .execute(request(LifecycleAction::Setup, BTreeSet::new(), None))
+        .unwrap_or_else(|error| panic!("{status:?} Pi failed an auto-detected setup: {error}"));
+
+        assert_eq!(
+            hosts.provisions(),
+            vec![Host::Claude, Host::Codex, Host::Hermes],
+            "{status:?}"
+        );
+        let pi = receipt
+            .hosts()
+            .iter()
+            .find(|host| host.host() == Host::Pi)
+            .expect("the skipped Pi is still reported");
+        assert_eq!(pi.status(), ConvergenceStatus::Skipped, "{status:?}");
+        assert!(!pi.is_enabled(), "{status:?}");
+        assert_eq!(pi.warning(), Some(expected), "{status:?}");
+    }
+}
+
+/// A disabled Pi that already holds an installation is skipped too, instead
+/// of being refreshed into the same refusal.
+#[test]
+fn autodetected_setup_skips_an_installed_but_disabled_pi() {
     let target = ReleaseVersion::current();
-    let hosts = FakeHostGateway::with_installations(Vec::new())
-        .reporting_for(Host::Pi, HostRuntimeStatus::Missing);
+    let disabled = HostInstallation::discovered(
+        Host::Pi,
+        target.clone(),
+        PluginRoot::new("/tmp/pi").expect("pi home"),
+        false,
+    );
+    let hosts = FakeHostGateway::with_installations(vec![disabled])
+        .reporting_for(Host::Pi, HostRuntimeStatus::Disabled);
     let releases = FakeReleaseRepository::publishing(target.clone());
     let engines = FakeEngineStore::running(EngineArtifact::verified(
         target.clone(),
@@ -426,25 +491,19 @@ fn autodetected_setup_skips_pi_without_its_package_and_says_why() {
         &FakeBridgeStore::default(),
     )
     .execute(request(LifecycleAction::Setup, BTreeSet::new(), None))
-    .expect("Pi without its package must not fail an auto-detected setup");
+    .expect("a disabled Pi does not fail an auto-detected setup");
 
-    assert_eq!(
-        hosts.provisions(),
-        vec![Host::Claude, Host::Codex, Host::Hermes]
-    );
+    assert!(hosts.refreshes().is_empty());
     let pi = receipt
         .hosts()
         .iter()
         .find(|host| host.host() == Host::Pi)
-        .expect("the skipped Pi is still reported");
+        .expect("reported");
     assert_eq!(pi.status(), ConvergenceStatus::Skipped);
-    assert!(!pi.is_enabled());
-    let warning = pi.warning().expect("a skip says why");
-    assert!(
-        warning.contains("pi present but underpass-pi not registered"),
-        "{warning}"
+    assert_eq!(
+        pi.root().map(|root| root.as_path().to_path_buf()),
+        Some(PathBuf::from("/tmp/pi"))
     );
-    assert!(warning.contains("`underpass setup`"), "{warning}");
 }
 
 /// A dry run plans the same skip it would perform.
@@ -489,39 +548,43 @@ fn an_autodetected_dry_run_plans_the_pi_skip() {
     );
 }
 
-/// Only an explicit `--pi` insists on Pi, so only it fails without the
+/// Only an explicit `--pi` insists on Pi, so only it fails without a usable
 /// package, and it says which command installs it.
 #[test]
-fn an_explicit_pi_setup_without_its_package_still_fails() {
-    let target = ReleaseVersion::current();
-    let hosts = FakeHostGateway::with_installations(Vec::new())
-        .reporting_for(Host::Pi, HostRuntimeStatus::Missing);
-    let releases = FakeReleaseRepository::publishing(target.clone());
-    let engines = FakeEngineStore::running(EngineArtifact::verified(
-        target.clone(),
-        b"running-engine".to_vec(),
-    ));
+fn an_explicit_pi_setup_without_a_usable_package_still_fails() {
+    for (status, _) in unusable_pi_statuses() {
+        let target = ReleaseVersion::current();
+        let hosts =
+            FakeHostGateway::with_installations(Vec::new()).reporting_for(Host::Pi, status.clone());
+        let releases = FakeReleaseRepository::publishing(target.clone());
+        let engines = FakeEngineStore::running(EngineArtifact::verified(
+            target.clone(),
+            b"running-engine".to_vec(),
+        ));
 
-    let error = SetupKmp::new(
-        &hosts,
-        &releases,
-        &engines,
-        &FakePluginCache::default(),
-        &FakeBridgeStore::default(),
-    )
-    .execute(request(
-        LifecycleAction::Setup,
-        BTreeSet::from([Host::Pi]),
-        None,
-    ))
-    .expect_err("--pi without the underpass-pi package");
+        let error = SetupKmp::new(
+            &hosts,
+            &releases,
+            &engines,
+            &FakePluginCache::default(),
+            &FakeBridgeStore::default(),
+        )
+        .execute(request(
+            LifecycleAction::Setup,
+            BTreeSet::from([Host::Pi]),
+            None,
+        ))
+        .expect_err("--pi without a usable underpass-pi package");
 
-    assert!(error.to_string().contains("underpass setup"), "{error}");
-    assert_eq!(hosts.provisions(), vec![Host::Pi]);
+        assert!(
+            error.to_string().contains("underpass setup"),
+            "{status:?}: {error}"
+        );
+        assert_eq!(hosts.provisions(), vec![Host::Pi], "{status:?}");
+    }
 }
 
-/// A registered or disabled package is not a missing one: auto-detection
-/// only skips `Missing`.
+/// A registered package is converged by auto-detection like any other host.
 #[test]
 fn autodetection_keeps_a_registered_pi() {
     let target = ReleaseVersion::current();

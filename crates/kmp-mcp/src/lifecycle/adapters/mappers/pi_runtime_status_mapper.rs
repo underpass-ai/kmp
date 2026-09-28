@@ -56,8 +56,11 @@ impl PiRuntimeStatusMapper {
     }
 
     /// Whether a package source is `underpass-pi`: a local path, a git URL or
-    /// a registry spec, with or without a trailing `@version`.
+    /// a registry spec, with or without a trailing `@version`, and for git
+    /// the forms Pi's `parseGitUrl` accepts: a `#ref` suffix and a `.git`
+    /// repository name.
     fn names_the_package(source: &str) -> bool {
+        let source = source.split_once('#').map_or(source, |(base, _)| base);
         let source = source.trim_end_matches(['/', '\\']);
         let unversioned = match source.rsplit_once('@') {
             Some((base, version))
@@ -67,6 +70,7 @@ impl PiRuntimeStatusMapper {
             }
             _ => source,
         };
+        let unversioned = unversioned.strip_suffix(".git").unwrap_or(unversioned);
         unversioned
             .strip_suffix(PACKAGE_NAME)
             .is_some_and(|prefix| prefix.is_empty() || prefix.ends_with(['/', '\\', ':']))
@@ -155,6 +159,36 @@ mod tests {
                 HostRuntimeStatus::Registered,
                 "{source}"
             );
+        }
+    }
+
+    #[test]
+    fn git_sources_in_the_forms_pi_parses_are_recognized() {
+        for source in [
+            "git:github.com/underpass-ai/underpass-pi.git",
+            "https://github.com/underpass-ai/underpass-pi.git",
+            "git@github.com:underpass-ai/underpass-pi.git",
+            "git:github.com/underpass-ai/underpass-pi#v0.1.0",
+            "https://github.com/underpass-ai/underpass-pi.git#main",
+            "git:github.com/underpass-ai/underpass-pi.git@v0.1.0",
+        ] {
+            let settings = format!(r#"{{"packages":["{source}"]}}"#);
+            assert_eq!(
+                map(Some(&settings)),
+                HostRuntimeStatus::Registered,
+                "{source}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_ref_or_git_suffix_does_not_widen_the_name() {
+        for source in [
+            "https://github.com/other/not-underpass-pi.git#main",
+            "git:github.com/underpass-ai/underpass-pi-extras.git",
+        ] {
+            let settings = format!(r#"{{"packages":["{source}"]}}"#);
+            assert_eq!(map(Some(&settings)), HostRuntimeStatus::Missing, "{source}");
         }
     }
 

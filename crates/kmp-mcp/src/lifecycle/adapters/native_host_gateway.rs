@@ -55,7 +55,9 @@ impl<'a> NativeHostGateway<'a> {
     }
 
     /// A gateway whose Codex and Hermes homes are both explicit, so a test
-    /// never mirrors skills into the operator's own Hermes home.
+    /// never mirrors skills into the operator's own Hermes home. It names no
+    /// Pi home at all — Pi inventories as absent — so it never reads or
+    /// writes the operator's own Pi either; `with_pi_home` adds one.
     pub fn with_homes(
         processes: &'a dyn ProcessExecutor,
         codex_home: impl AsRef<std::path::Path>,
@@ -67,7 +69,7 @@ impl<'a> NativeHostGateway<'a> {
             codex_cache: CodexPluginCache::new(codex_home),
             marketplace: MarketplaceSource,
             hermes: Some(HermesHostAdapter::with_skill_dir(processes, skills)),
-            pi: PiHostAdapter::new(processes).ok(),
+            pi: None,
         })
     }
 
@@ -85,7 +87,9 @@ impl<'a> NativeHostGateway<'a> {
     fn pi(&self) -> Result<&PiHostAdapter<'a>, LifecycleError> {
         self.pi.as_ref().ok_or_else(|| {
             LifecycleError::HostNotInstalled(
-                "no HOME resolves, so the Pi host cannot be inspected".to_string(),
+                "no Pi agent directory resolves (PI_CODING_AGENT_DIR or HOME), so the Pi \
+                 host cannot be converged"
+                    .to_string(),
             )
         })
     }
@@ -108,11 +112,15 @@ impl<'a> NativeHostGateway<'a> {
                 .installation(&ReleaseVersion::current())?
                 .into_iter()
                 .collect()),
-            Host::Pi => Ok(self
-                .pi()?
-                .installation(&ReleaseVersion::current())?
-                .into_iter()
-                .collect()),
+            // A Pi whose home does not resolve holds no installation this
+            // process can see; it must never fail every other host's run.
+            Host::Pi => match &self.pi {
+                Some(pi) => Ok(pi
+                    .installation(&ReleaseVersion::current())?
+                    .into_iter()
+                    .collect()),
+                None => Ok(Vec::new()),
+            },
             Host::Claude => {
                 let output = self.required(host, &["plugin", "list", "--json"])?;
                 ClaudeInstallationMapper::map(output.stdout())
@@ -284,7 +292,15 @@ impl HostGateway for NativeHostGateway<'_> {
                 let output = self.required(host, &["config", "get", "mcp_servers"])?;
                 HermesRuntimeStatusMapper::map(output.stdout())
             }
-            Host::Pi => Ok(self.pi()?.runtime_status()),
+            Host::Pi => Ok(self.pi.as_ref().map_or_else(
+                || {
+                    HostRuntimeStatus::Failed(
+                        "no Pi agent directory resolves, so Pi settings.json cannot be read"
+                            .to_string(),
+                    )
+                },
+                PiHostAdapter::runtime_status,
+            )),
         }
     }
 
@@ -355,5 +371,45 @@ impl HostGateway for NativeHostGateway<'_> {
         };
         installation.require_release(target)?;
         Ok(installation)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::lifecycle::adapters::tests_support::FakeProcessExecutor;
+
+    fn without_pi_home(processes: &FakeProcessExecutor) -> NativeHostGateway<'_> {
+        let homes = std::env::temp_dir();
+        NativeHostGateway::with_homes(processes, homes.join("codex"), homes.join("hermes"))
+            .expect("gateway")
+    }
+
+    #[test]
+    fn an_unresolvable_pi_home_inventories_as_no_installation() {
+        let processes = FakeProcessExecutor::expecting(vec![]);
+        let gateway = without_pi_home(&processes);
+
+        assert!(
+            gateway
+                .inventory_host(Host::Pi)
+                .expect("inventory never fails for Pi")
+                .is_empty()
+        );
+        assert!(matches!(
+            gateway.runtime_status(Host::Pi).expect("status"),
+            HostRuntimeStatus::Failed(_)
+        ));
+    }
+
+    #[test]
+    fn an_explicit_pi_without_a_home_still_fails_to_converge() {
+        let processes = FakeProcessExecutor::expecting(vec![]);
+        let gateway = without_pi_home(&processes);
+
+        let error = gateway
+            .provision(Host::Pi, &ReleaseVersion::current())
+            .expect_err("no Pi home");
+        assert!(error.to_string().contains("PI_CODING_AGENT_DIR"), "{error}");
     }
 }

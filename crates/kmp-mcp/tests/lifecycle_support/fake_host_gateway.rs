@@ -51,12 +51,23 @@ impl FakeHostGateway {
         self
     }
 
-    /// Makes one host report its own runtime status. A Pi reporting
-    /// `Missing` has no underpass-pi package, and provisioning it fails the
-    /// way the native adapter does.
+    /// Makes one host report its own runtime status. A Pi reporting anything
+    /// but `Registered` has no usable underpass-pi package, and converging it
+    /// fails the way the native adapter does.
     pub fn reporting_for(mut self, host: Host, status: HostRuntimeStatus) -> Self {
         self.host_statuses.push((host, status));
         self
+    }
+
+    fn require_usable_pi(&self, host: Host) -> Result<(), LifecycleError> {
+        match self.status_of(host) {
+            Some(status) if host == Host::Pi && status != HostRuntimeStatus::Registered => {
+                Err(LifecycleError::HostNotInstalled(format!(
+                    "Pi has no usable underpass-pi package ({status:?}). Run `underpass setup`"
+                )))
+            }
+            _ => Ok(()),
+        }
     }
 
     fn status_of(&self, host: Host) -> Option<HostRuntimeStatus> {
@@ -162,11 +173,7 @@ impl HostGateway for FakeHostGateway {
         target: &ReleaseVersion,
     ) -> Result<HostInstallation, LifecycleError> {
         self.provisions.lock().expect("provision lock").push(host);
-        if host == Host::Pi && self.status_of(host) == Some(HostRuntimeStatus::Missing) {
-            return Err(LifecycleError::HostNotInstalled(
-                "Pi settings.json lists no underpass-pi package. Run `underpass setup`".to_string(),
-            ));
-        }
+        self.require_usable_pi(host)?;
         Ok(self.installation_for(host, target))
     }
 
@@ -176,6 +183,7 @@ impl HostGateway for FakeHostGateway {
         target: &ReleaseVersion,
     ) -> Result<HostInstallation, LifecycleError> {
         self.refreshes.lock().expect("refresh lock").push(host);
+        self.require_usable_pi(host)?;
         let existing = self
             .installed
             .iter()

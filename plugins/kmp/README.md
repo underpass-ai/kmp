@@ -126,15 +126,24 @@ the package is present, converge the skills and the shared engine:
 kmp-mcp setup --pi
 ```
 
-That mirrors the `kmp-*` skills into `$PI_CODING_AGENT_DIR/skills` (default
-`~/.pi/agent/skills`). The registration evidence is the `underpass-pi` entry
-under `packages` in Pi's `settings.json`: without it, `setup --pi` fails and
-points to `underpass setup`, while a plain `kmp-mcp setup` skips Pi and
-converges the other hosts, reporting Pi as `skipped` with that same advice in
-the receipt's `warning`; a package filter that excludes
-`src/adapters/inbound/pi/entry/kmp.ts` reports KMP as disabled. The package's
-extension runs `kmp-mcp` from `PATH`, so `kmp-mcp doctor` inventories Pi as a
-peer host with the same engine proof as Codex and Hermes.
+The Pi agent home is resolved the way Pi resolves it: `$PI_CODING_AGENT_DIR`
+(empty counts as unset, a leading `~` expands to `$HOME`), otherwise
+`~/.pi/agent`. The registration evidence is the `underpass-pi` entry under
+`packages` in its `settings.json`; a package filter that excludes
+`src/adapters/inbound/pi/entry/kmp.ts` reports KMP as disabled.
+
+- `setup --pi` fails unless that package is registered and enabled, and
+  points to `underpass setup`.
+- A plain `kmp-mcp setup` never fails because of Pi: when the package is
+  missing, its KMP extension is excluded, or `settings.json` is unreadable, it
+  converges the other hosts and reports Pi as `skipped` with a `warning` in the
+  receipt.
+- Skills are mirrored into `<Pi home>/skills` only when `kmp-mcp` runs from a
+  source checkout; released binaries only verify the registration and do not
+  copy skills. This is the same limitation as Hermes.
+
+The package's extension runs `kmp-mcp` from `PATH`, so `kmp-mcp doctor`
+inventories Pi as a peer host with the same engine proof as Codex and Hermes.
 
 ### Initialize the selected store
 

@@ -1,3 +1,4 @@
+use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
 use super::lifecycle_error::LifecycleError;
@@ -13,6 +14,36 @@ use super::lifecycle_error::LifecycleError;
 pub struct PiAgentHome(PathBuf);
 
 impl PiAgentHome {
+    /// The home exactly as Pi's `getAgentDir()` resolves it: an empty
+    /// `$PI_CODING_AGENT_DIR` counts as unset, a leading `~` expands to the
+    /// user's home, anything else is used as given (a relative directory
+    /// against the working directory). Without it, `~/.pi/agent`.
+    pub fn resolve(
+        agent_dir: Option<&OsStr>,
+        user_home: Option<&Path>,
+        working_dir: Option<&Path>,
+    ) -> Result<Self, LifecycleError> {
+        let unresolved = || {
+            LifecycleError::HostNotInstalled(
+                "neither PI_CODING_AGENT_DIR nor HOME resolves a Pi agent directory".to_string(),
+            )
+        };
+        let Some(dir) = agent_dir.filter(|dir| !dir.is_empty()) else {
+            return Self::under_home(user_home.ok_or_else(unresolved)?);
+        };
+        let path = match dir.to_str() {
+            Some("~") => user_home.ok_or_else(unresolved)?.to_path_buf(),
+            Some(text) if text.starts_with("~/") => {
+                user_home.ok_or_else(unresolved)?.join(&text[2..])
+            }
+            _ => PathBuf::from(dir),
+        };
+        if path.is_absolute() {
+            return Self::new(path);
+        }
+        Self::new(working_dir.ok_or_else(unresolved)?.join(path))
+    }
+
     /// From the user's home directory, the way Pi defaults it.
     pub fn under_home(home: impl AsRef<Path>) -> Result<Self, LifecycleError> {
         Self::new(home.as_ref().join(".pi").join("agent"))
@@ -89,6 +120,48 @@ mod tests {
             home.installed_skills(&names(&["kmp-doctor", "kmp-guide", "kmp-memory"])),
             names(&["kmp-doctor"])
         );
+    }
+
+    fn resolve(
+        agent_dir: Option<&str>,
+        user_home: Option<&str>,
+    ) -> Result<PiAgentHome, LifecycleError> {
+        PiAgentHome::resolve(
+            agent_dir.map(OsStr::new),
+            user_home.map(Path::new),
+            Some(Path::new("/work")),
+        )
+    }
+
+    #[test]
+    fn an_unset_or_empty_agent_dir_falls_back_to_the_default() {
+        for agent_dir in [None, Some("")] {
+            let home = resolve(agent_dir, Some("/home/reader")).expect("home");
+            assert_eq!(home.as_path(), Path::new("/home/reader/.pi/agent"));
+        }
+    }
+
+    #[test]
+    fn a_leading_tilde_expands_to_the_user_home() {
+        let home = resolve(Some("~/.pi/agent"), Some("/home/reader")).expect("home");
+        assert_eq!(home.as_path(), Path::new("/home/reader/.pi/agent"));
+        let bare = resolve(Some("~"), Some("/home/reader")).expect("home");
+        assert_eq!(bare.as_path(), Path::new("/home/reader"));
+    }
+
+    #[test]
+    fn any_other_agent_dir_is_used_as_given() {
+        let absolute = resolve(Some("/srv/pi"), None).expect("absolute");
+        assert_eq!(absolute.as_path(), Path::new("/srv/pi"));
+        let relative = resolve(Some("pi-home"), None).expect("relative");
+        assert_eq!(relative.as_path(), Path::new("/work/pi-home"));
+    }
+
+    #[test]
+    fn nothing_to_resolve_from_is_an_error_not_a_guess() {
+        assert!(resolve(None, None).is_err());
+        assert!(resolve(Some(""), None).is_err());
+        assert!(resolve(Some("~/.pi/agent"), None).is_err());
     }
 
     #[test]

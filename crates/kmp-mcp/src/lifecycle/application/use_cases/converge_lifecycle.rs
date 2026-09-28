@@ -7,7 +7,7 @@ use crate::lifecycle::domain::host::Host;
 use crate::lifecycle::domain::host_convergence::HostConvergence;
 use crate::lifecycle::domain::host_engine_proof::HostEngineProof;
 use crate::lifecycle::domain::host_installation::HostInstallation;
-use crate::lifecycle::domain::host_runtime_status::HostRuntimeStatus;
+use crate::lifecycle::domain::host_skip_reason::HostSkipReason;
 use crate::lifecycle::domain::lifecycle_action::LifecycleAction;
 use crate::lifecycle::domain::lifecycle_error::LifecycleError;
 use crate::lifecycle::domain::lifecycle_plan::LifecyclePlan;
@@ -51,23 +51,17 @@ impl<'a> ConvergeLifecycle<'a> {
     pub fn execute(&self, request: LifecycleRequest) -> Result<LifecycleReceipt, LifecycleError> {
         let installed = self.hosts.inventory()?;
         let target = self.target_for(&request)?;
-        let (available, unpackaged) = self.detect_hosts(&request)?;
+        let (available, unusable) = self.detect_hosts(&request)?;
         let plan = LifecyclePlan::decide(&request, &installed, &available, target)?;
-        let skipped: Vec<HostConvergence> = unpackaged
-            .into_iter()
-            .filter(|host| !plan.hosts().contains(host))
-            .filter_map(|host| host.external_package().map(|package| (host, package)))
-            .map(|(host, package)| {
+        let skipped: Vec<HostConvergence> = unusable
+            .iter()
+            .filter(|reason| !plan.hosts().contains(&reason.host()))
+            .map(|reason| {
                 let previous = installed
                     .iter()
-                    .find(|installation| installation.host() == host)
+                    .find(|installation| installation.host() == reason.host())
                     .cloned();
-                HostConvergence::skipped_without_package(
-                    host,
-                    package,
-                    previous,
-                    plan.target().clone(),
-                )
+                HostConvergence::skipped(reason, previous, plan.target().clone())
             })
             .collect();
         if plan.is_dry_run() {
@@ -177,26 +171,28 @@ impl<'a> ConvergeLifecycle<'a> {
 
     /// What auto-detection may converge, and what it leaves alone. A host
     /// whose connection comes from a package KMP cannot install (Pi's
-    /// `underpass-pi`) is skipped while that package is missing, so a machine
-    /// that merely has Pi does not fail a setup for every other host. Naming
-    /// the host explicitly still insists on it, and fails with the remedy.
+    /// `underpass-pi`) is skipped unless that package is a usable
+    /// registration, so a machine that merely has Pi never fails a setup for
+    /// every other host. Naming the host explicitly still insists on it, and
+    /// fails with the remedy.
     fn detect_hosts(
         &self,
         request: &LifecycleRequest,
-    ) -> Result<(Vec<Host>, Vec<Host>), LifecycleError> {
+    ) -> Result<(Vec<Host>, Vec<HostSkipReason>), LifecycleError> {
         let mut available = Vec::new();
-        let mut unpackaged = Vec::new();
+        let mut unusable = Vec::new();
         for host in self.hosts.available_hosts() {
-            let unregistered = request.autodetects_hosts()
-                && host.external_package().is_some()
-                && self.hosts.runtime_status(host)? == HostRuntimeStatus::Missing;
-            if unregistered {
-                unpackaged.push(host);
+            let skip = if request.autodetects_hosts() && host.external_package().is_some() {
+                HostSkipReason::for_status(host, &self.hosts.runtime_status(host)?)
             } else {
-                available.push(host);
+                None
+            };
+            match skip {
+                Some(reason) => unusable.push(reason),
+                None => available.push(host),
             }
         }
-        Ok((available, unpackaged))
+        Ok((available, unusable))
     }
 
     /// The machine's table, or a reported reason there is none.

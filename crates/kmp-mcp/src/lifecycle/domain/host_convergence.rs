@@ -1,6 +1,7 @@
 use super::convergence_status::ConvergenceStatus;
 use super::host::Host;
 use super::host_installation::HostInstallation;
+use super::host_skip_reason::HostSkipReason;
 use super::lifecycle_action::LifecycleAction;
 use super::plugin_root::PluginRoot;
 use super::release_version::ReleaseVersion;
@@ -44,23 +45,20 @@ impl HostConvergence {
     }
 
     /// A host auto-detection found but left alone because the package that
-    /// carries its connection is not installed, and nothing KMP runs can
-    /// install it. The same entry serves a plan and a completed run.
-    pub fn skipped_without_package(
-        host: Host,
-        package: &str,
+    /// carries its connection is not usable, and nothing KMP runs can fix
+    /// that. The same entry serves a plan and a completed run.
+    pub fn skipped(
+        reason: &HostSkipReason,
         previous: Option<HostInstallation>,
         target: ReleaseVersion,
     ) -> Self {
         Self {
-            host,
+            host: reason.host(),
             previous,
             current: None,
             target,
             status: ConvergenceStatus::Skipped,
-            warning: Some(format!(
-                "{host} present but {package} not registered; run `underpass setup`"
-            )),
+            warning: Some(reason.warning()),
         }
     }
 
@@ -134,12 +132,11 @@ mod tests {
 
     #[test]
     fn a_skipped_host_is_disabled_and_says_how_to_add_its_package() {
-        let skipped = HostConvergence::skipped_without_package(
-            Host::Pi,
-            "underpass-pi",
-            None,
-            ReleaseVersion::current(),
-        );
+        let reason = HostSkipReason::PackageMissing {
+            host: Host::Pi,
+            package: "underpass-pi",
+        };
+        let skipped = HostConvergence::skipped(&reason, None, ReleaseVersion::current());
 
         assert_eq!(skipped.status(), ConvergenceStatus::Skipped);
         assert!(!skipped.is_enabled());

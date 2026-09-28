@@ -28,19 +28,16 @@ pub struct PiHostAdapter<'a> {
 }
 
 impl<'a> PiHostAdapter<'a> {
-    /// The home Pi itself resolves: `$PI_CODING_AGENT_DIR`, else `~/.pi/agent`.
+    /// The home Pi itself resolves (see [`PiAgentHome::resolve`]).
     pub fn new(processes: &'a dyn ProcessExecutor) -> Result<Self, LifecycleError> {
-        let home = match std::env::var_os("PI_CODING_AGENT_DIR") {
-            Some(dir) => PiAgentHome::new(PathBuf::from(dir))?,
-            None => {
-                let user_home = std::env::var_os("HOME").ok_or_else(|| {
-                    LifecycleError::HostNotInstalled(
-                        "no HOME resolves, so no Pi agent directory can be named".to_string(),
-                    )
-                })?;
-                PiAgentHome::under_home(PathBuf::from(user_home))?
-            }
-        };
+        let agent_dir = std::env::var_os("PI_CODING_AGENT_DIR");
+        let user_home = std::env::var_os("HOME").map(PathBuf::from);
+        let working_dir = std::env::current_dir().ok();
+        let home = PiAgentHome::resolve(
+            agent_dir.as_deref(),
+            user_home.as_deref(),
+            working_dir.as_deref(),
+        )?;
         Ok(Self { processes, home })
     }
 
