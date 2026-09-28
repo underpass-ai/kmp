@@ -30,12 +30,37 @@ pub(crate) fn declared_tool_names() -> Vec<String> {
 /// at least one host (Claude Code) presents tools to the model with their
 /// input parameters only, so the schemas were pure startup transport there.
 pub(crate) fn advertised_tools_list(apps: bool, output_schemas: bool) -> Value {
-    let result = tools_list_result_with_apps(apps);
+    let result = without_server_checked_constraints(tools_list_result_with_apps(apps));
     if output_schemas {
         result
     } else {
         without_output_schemas(result)
     }
+}
+
+/// Drops `minLength` and `uniqueItems` from every input schema (#850). They
+/// were 5 % of the catalogue and the server enforces both from the full
+/// contract on every call (`contract::validator`), so advertising them only
+/// cost tokens. `tools_list_result` keeps them: it is what calls are checked
+/// against.
+pub(crate) fn without_server_checked_constraints(mut result: Value) -> Value {
+    fn strip(schema: &mut Value) {
+        match schema {
+            Value::Object(object) => {
+                object.remove("minLength");
+                object.remove("uniqueItems");
+                object.values_mut().for_each(strip);
+            }
+            Value::Array(items) => items.iter_mut().for_each(strip),
+            _ => {}
+        }
+    }
+    for tool in result["tools"].as_array_mut().into_iter().flatten() {
+        if let Some(schema) = tool.get_mut("inputSchema") {
+            strip(schema);
+        }
+    }
+    result
 }
 
 /// Drops every tool's `outputSchema`, leaving the rest byte-for-byte intact.

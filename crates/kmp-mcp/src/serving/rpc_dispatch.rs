@@ -5,9 +5,11 @@ use std::time::Instant;
 
 use serde_json::Value;
 
+use super::lexical_order::{LexicalOrder, is_tool_error};
 use crate::contract::{
-    canonical_tool_name, initialize_result_with_apps, reject_unknown_arguments,
-    resource_read_result, resources_list_result, tools_list_result_with_apps,
+    canonical_tool_name, initialize_result_with_apps, reject_invalid_arguments,
+    reject_unknown_arguments, resource_read_result, resources_list_result,
+    tools_list_result_with_apps, without_server_checked_constraints,
 };
 use crate::serving::json_rpc::{jsonrpc_error, jsonrpc_result};
 use crate::serving::kernel_mcp_server::KernelMcpServer;
@@ -60,9 +62,11 @@ impl KernelMcpServer {
             Some("tools/list") => id.map(|id| {
                 jsonrpc_result(
                     id,
-                    self.output_schema_tools(
-                        self.passage_tools(tools_list_result_with_apps(session.apps())),
-                    ),
+                    self.output_schema_tools(self.passage_tools(
+                        without_server_checked_constraints(tools_list_result_with_apps(
+                            session.apps(),
+                        )),
+                    )),
                 )
             }),
             Some("resources/list") if session.apps() => {
@@ -174,8 +178,18 @@ impl KernelMcpServer {
 
         // Before anything reads them: the schemas declare
         // `additionalProperties: false`, so an argument the tool does not have
-        // is refused here rather than dropped and answered anyway.
-        if let Err(error) = reject_unknown_arguments(name, arguments) {
+        // is refused here rather than dropped and answered anyway. Empty and
+        // repeated values are refused too (#850), but a tool that names the
+        // problem more precisely goes first: the writer's planner and the
+        // read projections run their own checks, and this one follows them as
+        // a backstop. Every other write is checked here, before it commits.
+        let lexical_first = LexicalOrder::of(name) == LexicalOrder::BeforeDispatch;
+        let checked = if lexical_first {
+            reject_invalid_arguments(name, arguments)
+        } else {
+            reject_unknown_arguments(name, arguments)
+        };
+        if let Err(error) = checked {
             record_call_error(
                 self.call_source(&origin, false),
                 self.backend_name(),
@@ -206,6 +220,7 @@ impl KernelMcpServer {
         let memory_arguments = guidance
             .as_ref()
             .map(|g| g.memory_arguments(name, arguments));
+        let reply_id = id.clone();
         let result = self
             .dispatch_memory_call(
                 id,
@@ -222,6 +237,23 @@ impl KernelMcpServer {
             }
             None => self.shorten_read_actions(None, result),
         };
+        if LexicalOrder::of(name) == LexicalOrder::AfterRead
+            && !is_tool_error(&result)
+            && let Err(error) = reject_invalid_arguments(name, arguments)
+        {
+            record_call_error(
+                self.call_source(&origin, false),
+                self.backend_name(),
+                self.grpc_tls_mode_name(),
+                name,
+                arguments,
+                ToolErrorKind::Validation,
+                &error.message,
+                &error.feedback,
+                start.elapsed(),
+            );
+            return jsonrpc_result(reply_id, tool_error_result(name, arguments, &error));
+        }
         self.project_read_passages(name, result)
     }
 
