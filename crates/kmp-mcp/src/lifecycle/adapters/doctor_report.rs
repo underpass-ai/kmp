@@ -16,6 +16,7 @@ use super::embedded_memory_probe::{compiled_formats, data_dir_finding};
 use super::engines_probe::engines_findings;
 use super::search_summary_probe::search_summary_finding;
 use super::startup_log_probe::startup_history;
+use super::store_config_probe::store_config_findings;
 use super::telemetry_probe::telemetry_finding;
 use super::viewer_probe::viewer_finding;
 
@@ -78,6 +79,14 @@ pub(crate) fn observe_doctor(lifecycle: Vec<LifecycleFinding>) -> DoctorObservat
     if let Some(durability) = durability {
         sections.push(ReportSection::single("Durability", durability));
     }
+    let store_config = resolved
+        .as_ref()
+        .map(store_config_findings)
+        .unwrap_or_default();
+    let store_config_level = worst_severity(store_config.iter().map(|finding| finding.severity()));
+    if !store_config.is_empty() {
+        sections.push(ReportSection::new("Store config", store_config));
+    }
 
     let tools = crate::tool_names();
     let surface = diagnose_tool_surface(&tools, &crate::contract::declared_tool_names());
@@ -133,6 +142,7 @@ pub(crate) fn observe_doctor(lifecycle: Vec<LifecycleFinding>) -> DoctorObservat
     let worst = worst_severity([
         data_dir_level,
         durability_level,
+        store_config_level,
         surface_level,
         lifecycle_level,
         engines_level,

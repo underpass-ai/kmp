@@ -7,7 +7,8 @@
 //! judgement cassette —
 //! is reported on target `kmp_mcp::store_config` with its sha256: at debug
 //! when it took effect, at warn when it is present but ignored, with the
-//! reason. Applied files are read and hashed only when debug is on for the
+//! reason, and at warn with status `loaded` and a reason when it took effect
+//! only with its defaults. Applied files are read and hashed only when debug is on for the
 //! target (`RUST_LOG=kmp_mcp=info,kmp_mcp::store_config=debug`), so an
 //! ordinary start does not hash a multi-megabyte lexical bridge. A `*.json` or `*.kmpb` file beside the store that this binary
 //! does not read is reported as ignored too, so a configuration written for
@@ -21,6 +22,10 @@ use std::path::{Path, PathBuf};
 
 use sha2::{Digest, Sha256};
 
+use super::store_file_verdict::StoreFileVerdict;
+use crate::serving::store_config_entry::StoreConfigEntry;
+use crate::serving::store_config_state::StoreConfigState;
+
 const TARGET: &str = "kmp_mcp::store_config";
 
 /// The largest ignored file hashed when debug is off: configuration files
@@ -30,7 +35,9 @@ pub(super) const IGNORED_HASH_LIMIT: u64 = 8 * 1024;
 /// The optional files one store consulted, and whether each took effect.
 pub(super) struct StoreConfigReport {
     data_dir: PathBuf,
-    files: Vec<(&'static str, Option<PathBuf>, Result<(), String>)>,
+    files: Vec<(&'static str, Option<PathBuf>, StoreFileVerdict)>,
+    /// Effective settings worth naming, per file.
+    effective: Vec<(&'static str, String)>,
 }
 
 impl StoreConfigReport {
@@ -38,12 +45,17 @@ impl StoreConfigReport {
         Self {
             data_dir: data_dir.to_path_buf(),
             files: Vec::new(),
+            effective: Vec::new(),
         }
     }
 
     /// A file named `name` beside the store; `verdict` is whether it applied
     /// when present, or why not.
-    pub(super) fn beside_store(self, name: &'static str, verdict: Result<(), String>) -> Self {
+    pub(super) fn beside_store(
+        self,
+        name: &'static str,
+        verdict: impl Into<StoreFileVerdict>,
+    ) -> Self {
         let path = self.data_dir.join(name);
         self.at(name, Some(path), verdict)
     }
@@ -54,10 +66,65 @@ impl StoreConfigReport {
         mut self,
         name: &'static str,
         path: Option<PathBuf>,
-        verdict: Result<(), String>,
+        verdict: impl Into<StoreFileVerdict>,
     ) -> Self {
-        self.files.push((name, path, verdict));
+        self.files.push((name, path, verdict.into()));
         self
+    }
+
+    /// A setting of `name` worth naming beside its verdict, such as
+    /// `pool 40`. Only reports read it; the log carries the file's hash.
+    pub(super) fn effective(mut self, name: &'static str, setting: String) -> Self {
+        self.effective.push((name, setting));
+        self
+    }
+
+    /// Every file consulted, present or not, then every configuration-shaped
+    /// file beside the store that nothing read: what `doctor` and `info`
+    /// show (#887).
+    pub(super) fn entries(&self) -> Vec<StoreConfigEntry> {
+        let mut entries = self
+            .files
+            .iter()
+            .map(|(name, path, verdict)| {
+                let present = path.as_deref().is_some_and(Path::is_file);
+                let state = match verdict {
+                    _ if !present => StoreConfigState::Absent,
+                    StoreFileVerdict::Applied => StoreConfigState::On,
+                    StoreFileVerdict::AppliedWithWarning(reason) => {
+                        StoreConfigState::OnWithWarning(reason.clone())
+                    }
+                    StoreFileVerdict::Ignored(reason) => StoreConfigState::Rejected(reason.clone()),
+                };
+                let effective = if present && verdict.applied() {
+                    self.effective
+                        .iter()
+                        .filter(|(file, _)| file == name)
+                        .map(|(_, setting)| setting.clone())
+                        .collect()
+                } else {
+                    Vec::new()
+                };
+                StoreConfigEntry {
+                    name: (*name).to_string(),
+                    path: path.clone(),
+                    state,
+                    effective,
+                }
+            })
+            .collect::<Vec<_>>();
+        entries.extend(self.unread().into_iter().map(|path| {
+            StoreConfigEntry {
+                name: path
+                    .file_name()
+                    .map(|name| name.to_string_lossy().into_owned())
+                    .unwrap_or_default(),
+                path: Some(path),
+                state: StoreConfigState::Rejected("not read by this kmp-mcp version".into()),
+                effective: Vec::new(),
+            }
+        }));
+        entries
     }
 
     /// One line per present file, then one summary line. Files that took
@@ -74,13 +141,13 @@ impl StoreConfigReport {
             let Some(path) = path.as_deref().filter(|path| path.is_file()) else {
                 continue;
             };
-            let applied = verdict.as_ref().map_err(String::as_str).copied();
-            if verbose || applied.is_err() {
-                Self::file_line(&data_dir, name, path, applied, verbose);
+            if verbose || verdict.reason().is_some() {
+                Self::file_line(&data_dir, name, path, verdict, verbose);
             }
-            match verdict {
-                Ok(()) => loaded.push((*name).to_string()),
-                Err(_) => ignored.push((*name).to_string()),
+            if verdict.applied() {
+                loaded.push((*name).to_string());
+            } else {
+                ignored.push((*name).to_string());
             }
         }
         for unread in self.unread() {
@@ -92,7 +159,7 @@ impl StoreConfigReport {
                 &data_dir,
                 &name,
                 &unread,
-                Err("not read by this kmp-mcp version"),
+                &StoreFileVerdict::Ignored("not read by this kmp-mcp version".into()),
                 verbose,
             );
             ignored.push(name);
@@ -111,14 +178,14 @@ impl StoreConfigReport {
         data_dir: &str,
         name: &str,
         path: &Path,
-        applied: Result<(), &str>,
+        verdict: &StoreFileVerdict,
         verbose: bool,
     ) {
-        let (sha256, bytes) = Self::fingerprint(path, verbose || applied.is_ok());
+        let (sha256, bytes) = Self::fingerprint(path, verbose || verdict.applied());
 
         let path = path.display().to_string();
-        match applied {
-            Ok(()) => tracing::debug!(
+        match verdict {
+            StoreFileVerdict::Applied => tracing::debug!(
                 target: TARGET,
                 event = "kmp_store_config",
                 data_dir,
@@ -129,7 +196,19 @@ impl StoreConfigReport {
                 status = "loaded",
                 "store configuration loaded"
             ),
-            Err(reason) => tracing::warn!(
+            StoreFileVerdict::AppliedWithWarning(reason) => tracing::warn!(
+                target: TARGET,
+                event = "kmp_store_config",
+                data_dir,
+                file = name,
+                path = path.as_str(),
+                sha256 = sha256.as_str(),
+                bytes,
+                status = "loaded",
+                reason = reason.as_str(),
+                "store configuration loaded with its defaults"
+            ),
+            StoreFileVerdict::Ignored(reason) => tracing::warn!(
                 target: TARGET,
                 event = "kmp_store_config",
                 data_dir,
@@ -138,7 +217,7 @@ impl StoreConfigReport {
                 sha256 = sha256.as_str(),
                 bytes,
                 status = "ignored",
-                reason,
+                reason = reason.as_str(),
                 "store configuration present but ignored"
             ),
         }

@@ -2,7 +2,10 @@ use serde_json::Value;
 use sha2::{Digest, Sha256};
 
 use super::embedded_backend::EmbeddedKernelMcpBackend;
+use super::store_config_loads::write_relations_verdict;
 use super::store_config_report::{IGNORED_HASH_LIMIT, StoreConfigReport};
+use super::store_file_verdict::StoreFileVerdict;
+use super::write_relations_config::WriteRelationsConfig;
 use crate::serving::telemetry::captured_log::CapturedLog;
 
 const DEBUG: &str = "kmp_mcp=info,kmp_mcp::store_config=debug";
@@ -160,4 +163,105 @@ fn a_large_ignored_file_is_hashed_only_at_debug() {
     for file in ["stray-bridge.kmpb", "rerank.json"] {
         assert_eq!(by_file(&lines, file)["fields"]["sha256"], expected.as_str());
     }
+}
+
+#[test]
+fn a_file_read_with_its_defaults_is_loaded_and_warned_about_at_an_ordinary_start() {
+    let dir = tempfile::tempdir().expect("dir");
+    std::fs::write(dir.path().join("write-relations.json"), "{").expect("write");
+    let (log, _guard) = CapturedLog::start("kmp_mcp=info");
+
+    StoreConfigReport::new(dir.path())
+        .beside_store(
+            "write-relations.json",
+            StoreFileVerdict::AppliedWithWarning("read with the defaults: EOF".into()),
+        )
+        .emit();
+
+    let lines = log.events("kmp_store_config");
+    assert_eq!(lines.len(), 1, "{lines:?}");
+    assert_eq!(lines[0]["level"], "WARN");
+    assert_eq!(lines[0]["fields"]["status"], "loaded");
+    assert_eq!(lines[0]["fields"]["reason"], "read with the defaults: EOF");
+    assert_eq!(
+        lines[0]["fields"]["sha256"],
+        format!("{:x}", Sha256::digest(b"{")).as_str(),
+        "an applied file is hashed so the bench can acknowledge it"
+    );
+}
+
+#[test]
+fn write_relations_that_are_not_understood_apply_with_a_warning_once_jev_can_run() {
+    let dir = tempfile::tempdir().expect("dir");
+    let write = |body: &str| {
+        std::fs::write(dir.path().join(WriteRelationsConfig::FILE), body).expect("write");
+        WriteRelationsConfig::load(dir.path())
+    };
+    let jev: Result<Option<()>, String> = Ok(Some(()));
+
+    assert_eq!(
+        write_relations_verdict(write("{}").as_ref(), &jev),
+        StoreFileVerdict::Applied
+    );
+    let misspelt = write_relations_verdict(write(r#"{"lifecyle":"jev"}"#).as_ref(), &jev);
+    assert!(
+        matches!(&misspelt, StoreFileVerdict::AppliedWithWarning(reason) if reason.contains("lifecyle")),
+        "{misspelt:?}"
+    );
+    let unknown = write_relations_verdict(write(r#"{"lifecycle":"jevv"}"#).as_ref(), &jev);
+    assert!(
+        matches!(&unknown, StoreFileVerdict::AppliedWithWarning(reason) if reason.contains("jevv")),
+        "{unknown:?}"
+    );
+    let without_jev: Result<Option<()>, String> = Ok(None);
+    assert!(matches!(
+        write_relations_verdict(write("{").as_ref(), &without_jev),
+        StoreFileVerdict::Ignored(_)
+    ));
+}
+
+#[test]
+fn the_inspection_lists_every_file_with_the_verdict_a_session_would_log() {
+    use crate::serving::store_config_state::StoreConfigState;
+
+    let dir = tempfile::tempdir().expect("dir");
+    std::fs::write(dir.path().join("rerank.json"), r#"{"pool_size":"#).expect("rerank");
+    std::fs::write(
+        dir.path().join("curate.json"),
+        r#"{"partner_facts":200,"partner_filter":"rare_term"}"#,
+    )
+    .expect("curate");
+    std::fs::write(dir.path().join("stray.json"), "{}").expect("stray");
+
+    let entries = super::inspect_store_config(dir.path());
+    let state = |name: &str| {
+        entries
+            .iter()
+            .find(|entry| entry.name == name)
+            .unwrap_or_else(|| panic!("no entry for {name}: {entries:?}"))
+    };
+
+    assert_eq!(
+        state("rerank.json").state,
+        StoreConfigState::Rejected("invalid rerank configuration".into())
+    );
+    let curate = state("curate.json");
+    assert_eq!(curate.state, StoreConfigState::On);
+    assert_eq!(
+        curate.effective,
+        [
+            "partner facts 200",
+            "partner filter rare_term",
+            "paths corridor on"
+        ]
+    );
+    assert_eq!(state("ask-judge.json").state, StoreConfigState::Absent);
+    assert_eq!(
+        state("stray.json").state,
+        StoreConfigState::Rejected("not read by this kmp-mcp version".into())
+    );
+    assert!(
+        !dir.path().join("judgements.sqlite3").exists(),
+        "an inspection never opens the verdict book"
+    );
 }

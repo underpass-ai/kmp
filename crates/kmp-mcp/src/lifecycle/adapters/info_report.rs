@@ -13,6 +13,7 @@ use super::durability_probe::committed_bundle_finding;
 use super::embedded_memory_probe::{compiled_formats, data_dir_finding};
 use super::machine_memories_probe::memories_finding;
 use super::startup_log_probe::startup_history;
+use super::store_config_probe::store_config_findings;
 use super::telemetry_probe::telemetry_finding;
 use super::viewer_probe::viewer_finding;
 
@@ -34,6 +35,12 @@ pub(crate) fn observe_info() -> Vec<ReportSection> {
     sections.push(ReportSection::single("Memory", data_dir));
     if let Some(durability) = resolved.as_ref().and_then(committed_bundle_finding) {
         sections.push(ReportSection::single("Durability", durability));
+    }
+    if let Some(resolved) = resolved.as_ref() {
+        sections.push(ReportSection::new(
+            "Store config",
+            store_config_findings(resolved),
+        ));
     }
 
     let names = crate::tool_names();

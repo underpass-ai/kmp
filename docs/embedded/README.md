@@ -163,7 +163,10 @@ That store then answers byte for byte as v0.23.0 did, without
 `answer_status` or `unknown_reason`. `{"mode":"anchored","partial":false}`
 keeps the gate and answers UNKNOWN wherever it would have answered PARTIAL.
 The engine reports the file in its `kmp_store_config` log line; one it cannot
-read or does not recognise is reported and the default applies.
+read or does not recognise is reported and the default applies. `kmp-mcp
+doctor` and `kmp-mcp info` show the same verdict for every optional file
+beside the selected store, in their **Store config** section: `on` with the
+settings that took effect, `rejected` with the reason, or `off (absent)`.
 
 `{"mode":"anchored","confidence_calibration":"shipped"}` states
 `proof.confidence` through a versioned calibration table
