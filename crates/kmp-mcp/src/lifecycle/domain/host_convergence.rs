@@ -134,7 +134,7 @@ mod tests {
     fn a_skipped_host_is_disabled_and_says_how_to_add_its_package() {
         let reason = HostSkipReason::PackageMissing {
             host: Host::Pi,
-            package: "underpass-pi",
+            package: "pi-runtime",
         };
         let skipped = HostConvergence::skipped(&reason, None, ReleaseVersion::current());
 
@@ -143,7 +143,7 @@ mod tests {
         assert_eq!(skipped.root(), None);
         assert_eq!(
             skipped.warning(),
-            Some("pi present but underpass-pi not registered; run `underpass setup`")
+            Some("pi present but pi-runtime not registered; run `underpass setup`")
         );
     }
 

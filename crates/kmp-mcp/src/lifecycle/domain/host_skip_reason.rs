@@ -4,7 +4,7 @@ use super::host_runtime_status::HostRuntimeStatus;
 /// Why auto-detection left a host alone.
 ///
 /// Only a host whose MCP connection comes from a package KMP cannot install
-/// (Pi's `underpass-pi`) is ever skipped, and only when that package is not a
+/// (Pi's `pi-runtime`) is ever skipped, and only when that package is not a
 /// usable registration. Each reason names what the operator can do, and never
 /// echoes the host's own configuration back.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -62,11 +62,11 @@ mod tests {
     fn each_unusable_status_has_its_own_warning() {
         assert_eq!(
             warning(HostRuntimeStatus::Missing).as_deref(),
-            Some("pi present but underpass-pi not registered; run `underpass setup`")
+            Some("pi present but pi-runtime not registered; run `underpass setup`")
         );
         assert_eq!(
             warning(HostRuntimeStatus::Disabled).as_deref(),
-            Some("underpass-pi registered but its KMP extension is excluded")
+            Some("pi-runtime registered but its KMP extension is excluded")
         );
         assert_eq!(
             warning(HostRuntimeStatus::Failed(

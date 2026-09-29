@@ -128,7 +128,7 @@ mod tests {
             vec![HostConvergence::skipped(
                 &HostSkipReason::PackageMissing {
                     host: Host::Pi,
-                    package: "underpass-pi",
+                    package: "pi-runtime",
                 },
                 None,
                 ReleaseVersion::current(),
@@ -142,12 +142,12 @@ mod tests {
         assert!(!pi.enabled);
         assert_eq!(
             pi.warning.as_deref(),
-            Some("pi present but underpass-pi not registered; run `underpass setup`")
+            Some("pi present but pi-runtime not registered; run `underpass setup`")
         );
         let json = serde_json::to_value(&dto).expect("json");
         assert_eq!(
             json["hosts"][0]["warning"],
-            "pi present but underpass-pi not registered; run `underpass setup`"
+            "pi present but pi-runtime not registered; run `underpass setup`"
         );
     }
 

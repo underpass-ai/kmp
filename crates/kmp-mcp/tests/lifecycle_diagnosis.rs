@@ -209,7 +209,7 @@ fn a_parity_failure_names_the_hosts_whose_trees_differ() {
     assert!(!says(&parity, "hermes"));
 }
 
-/// Pi is a peer in the doctor: its underpass-pi package is inventory, never a
+/// Pi is a peer in the doctor: its pi-runtime package is inventory, never a
 /// connection, and its engine is the shared one on PATH.
 #[test]
 fn pi_is_diagnosed_as_a_peer_whose_registration_is_unverified() {

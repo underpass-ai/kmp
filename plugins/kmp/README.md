@@ -118,7 +118,7 @@ inventories Hermes as a peer host: registration owner, skills present and
 the engine proof from `PATH`.
 
 **Pi coding agent** — Pi has no native MCP and no plugin marketplace. KMP
-reaches Pi through the `underpass-pi` Pi package, which `underpass setup`
+reaches Pi through the `pi-runtime` Pi package, which `underpass setup`
 installs (`pi install …`); the KMP lifecycle never installs Pi packages. Once
 the package is present, converge the skills and the shared engine:
 
@@ -128,7 +128,7 @@ kmp-mcp setup --pi
 
 The Pi agent home is resolved the way Pi resolves it: `$PI_CODING_AGENT_DIR`
 (empty counts as unset, a leading `~` expands to `$HOME`), otherwise
-`~/.pi/agent`. The registration evidence is the `underpass-pi` entry under
+`~/.pi/agent`. The registration evidence is the `pi-runtime` entry under
 `packages` in its `settings.json`; a package filter that excludes
 `src/adapters/inbound/pi/entry/kmp.ts` reports KMP as disabled.
 

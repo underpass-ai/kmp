@@ -1,6 +1,9 @@
+use std::collections::HashMap;
 use std::fs;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
+
+use serde_json::Value;
 
 use crate::lifecycle::adapters::mappers::pi_runtime_status_mapper::PiRuntimeStatusMapper;
 use crate::lifecycle::adapters::native_skill_mirror::NativeSkillMirror;
@@ -17,7 +20,7 @@ use crate::lifecycle::ports::process_executor::ProcessExecutor;
 /// Adapter for the Pi coding agent host.
 ///
 /// Pi has no native MCP and no plugin manager. KMP reaches it through the
-/// `underpass-pi` Pi package, whose presence in `settings.json` is the
+/// `pi-runtime` Pi package, whose presence in `settings.json` is the
 /// registration evidence; installing that package belongs to
 /// `underpass setup`, never to this process. What a convergence does here is
 /// mirror the plugin's skills where Pi scans, and refuse to call Pi converged
@@ -48,12 +51,58 @@ impl<'a> PiHostAdapter<'a> {
     /// What `settings.json` says about the package that carries KMP into Pi.
     pub fn runtime_status(&self) -> HostRuntimeStatus {
         match fs::read_to_string(self.home.settings_file()) {
-            Ok(settings) => PiRuntimeStatusMapper::map(Some(&settings)),
-            Err(error) if error.kind() == ErrorKind::NotFound => PiRuntimeStatusMapper::map(None),
+            Ok(settings) => {
+                let local_names = self.resolve_local_package_names(&settings);
+                PiRuntimeStatusMapper::map(Some(&settings), &local_names)
+            }
+            Err(error) if error.kind() == ErrorKind::NotFound => {
+                PiRuntimeStatusMapper::map(None, &HashMap::new())
+            }
             Err(error) => {
                 HostRuntimeStatus::Failed(format!("Pi settings.json could not be read: {error}"))
             }
         }
+    }
+
+    /// For each local path source in `settings`, the `name` its
+    /// `package.json` declares, when that file exists and is readable. This
+    /// is the mapper's only I/O dependency: it decides which sources are
+    /// local candidates, but reading and parsing `package.json` happens
+    /// here, in the adapter, so the mapper stays pure. A source whose
+    /// `package.json` is missing, unreadable or unparsable is simply absent
+    /// from the map; its status then falls back to the directory basename
+    /// rule, and no file content ever surfaces in an error.
+    fn resolve_local_package_names(&self, settings: &str) -> HashMap<String, String> {
+        PiRuntimeStatusMapper::local_sources(Some(settings))
+            .into_iter()
+            .filter_map(|source| {
+                let name = self.read_package_json_name(&source)?;
+                Some((source, name))
+            })
+            .collect()
+    }
+
+    /// The `name` field of `<resolved source>/package.json`, resolving a
+    /// relative source against the Pi agent home the way `pi install`
+    /// writes it, and a leading `~/` against `$HOME`.
+    fn read_package_json_name(&self, source: &str) -> Option<String> {
+        let path = self.resolve_local_source(source);
+        let contents = fs::read_to_string(path.join("package.json")).ok()?;
+        let body: Value = serde_json::from_str(&contents).ok()?;
+        body.get("name").and_then(Value::as_str).map(str::to_string)
+    }
+
+    fn resolve_local_source(&self, source: &str) -> PathBuf {
+        let path = Path::new(source);
+        if path.is_absolute() {
+            return path.to_path_buf();
+        }
+        if let Some(rest) = source.strip_prefix("~/")
+            && let Some(home) = std::env::var_os("HOME")
+        {
+            return PathBuf::from(home).join(rest);
+        }
+        self.home.as_path().join(path)
     }
 
     /// Which plugin skills Pi can already discover.
@@ -62,7 +111,7 @@ impl<'a> PiHostAdapter<'a> {
             .installed_skills(&NativeSkillMirror::skill_names())
     }
 
-    /// The installation Pi declares: the `underpass-pi` package plus the
+    /// The installation Pi declares: the `pi-runtime` package plus the
     /// discoverable skills, rooted at the Pi agent home that owns both. None
     /// when Pi holds no KMP surface at all. Only an enabled package makes it
     /// a consumer of the shared engine.
@@ -87,7 +136,7 @@ impl<'a> PiHostAdapter<'a> {
     }
 
     /// Mirror the plugin's skills when a plugin tree is available, then
-    /// require the `underpass-pi` package. Without it the skills are in place
+    /// require the `pi-runtime` package. Without it the skills are in place
     /// but Pi still has no KMP tools, and the failure says how to fix that.
     pub fn provision(
         &self,
@@ -123,7 +172,7 @@ impl<'a> PiHostAdapter<'a> {
         }
         self.installation(version)?.ok_or_else(|| {
             LifecycleError::InvalidHostResponse(
-                "Pi reported the underpass-pi package but no installation".to_string(),
+                "Pi reported the pi-runtime package but no installation".to_string(),
             )
         })
     }
@@ -131,14 +180,13 @@ impl<'a> PiHostAdapter<'a> {
     fn unregistered(status: &HostRuntimeStatus) -> String {
         let reason = match status {
             HostRuntimeStatus::Disabled => {
-                "the underpass-pi package excludes its KMP extension in Pi settings.json"
-                    .to_string()
+                "the pi-runtime package excludes its KMP extension in Pi settings.json".to_string()
             }
             HostRuntimeStatus::Failed(detail) => detail.clone(),
-            _ => "Pi settings.json lists no underpass-pi package".to_string(),
+            _ => "Pi settings.json lists no pi-runtime package".to_string(),
         };
         format!(
-            "{reason}. Pi has no native MCP: KMP reaches it only through the underpass-pi \
+            "{reason}. Pi has no native MCP: KMP reaches it only through the pi-runtime \
              package. Run `underpass setup` to install it, then rerun `kmp-mcp setup --pi`"
         )
     }
@@ -151,7 +199,7 @@ impl<'a> PiHostAdapter<'a> {
             .map(EngineExecutable::installed_at)
             .ok_or_else(|| {
                 LifecycleError::HostNotInstalled(
-                    "Pi's underpass-pi package runs `kmp-mcp`, but no executable resolves on PATH"
+                    "Pi's pi-runtime package runs `kmp-mcp`, but no executable resolves on PATH"
                         .to_string(),
                 )
             })
@@ -165,7 +213,7 @@ mod tests {
     use super::*;
     use crate::lifecycle::adapters::tests_support::FakeProcessExecutor;
 
-    const REGISTERED: &str = r#"{"packages":["../../Documents/ai/underpass-pi"]}"#;
+    const REGISTERED: &str = r#"{"packages":["../../Documents/ai/pi-runtime"]}"#;
 
     fn version() -> ReleaseVersion {
         ReleaseVersion::parse("0.18.9").expect("version")
@@ -237,7 +285,7 @@ mod tests {
         let processes = FakeProcessExecutor::expecting(vec![]);
         let (_root, home) = pi_home(
             Some(
-                r#"{"packages":[{"source":"../underpass-pi","extensions":["!src/adapters/inbound/pi/entry/kmp.ts"]}]}"#,
+                r#"{"packages":[{"source":"../pi-runtime","extensions":["!src/adapters/inbound/pi/entry/kmp.ts"]}]}"#,
             ),
             &[],
         );
@@ -281,11 +329,11 @@ mod tests {
 
         let error = adapter
             .provision(&version(), Some(plugin.path()))
-            .expect_err("no underpass-pi package");
+            .expect_err("no pi-runtime package");
 
         let message = error.to_string();
         assert!(message.contains("underpass setup"), "{message}");
-        assert!(message.contains("no underpass-pi package"), "{message}");
+        assert!(message.contains("no pi-runtime package"), "{message}");
         // The skills still land, so the rerun only has the package left to do.
         assert_eq!(adapter.installed_skills(), vec!["kmp-doctor".to_string()]);
     }
@@ -295,7 +343,7 @@ mod tests {
         let processes = FakeProcessExecutor::expecting(vec![]);
         let (_root, home) = pi_home(
             Some(
-                r#"{"packages":[{"source":"../underpass-pi","extensions":["!src/adapters/inbound/pi/entry/kmp.ts"]}]}"#,
+                r#"{"packages":[{"source":"../pi-runtime","extensions":["!src/adapters/inbound/pi/entry/kmp.ts"]}]}"#,
             ),
             &[],
         );
@@ -358,5 +406,49 @@ mod tests {
 
         let engine = adapter.runtime_engine().expect("engine");
         assert!(engine.as_path().ends_with("kmp-mcp"));
+    }
+
+    /// Writes `package.json` with the given `name` beside a local checkout
+    /// directory resolved the same way `resolve_local_source` resolves a
+    /// relative package source: against the Pi agent home.
+    fn local_checkout(home: &PiAgentHome, relative_source: &str, package_name: &str) {
+        let dir = home.as_path().join(relative_source);
+        fs::create_dir_all(&dir).expect("checkout dir");
+        fs::write(
+            dir.join("package.json"),
+            format!(r#"{{"name":"{package_name}"}}"#),
+        )
+        .expect("package.json");
+    }
+
+    #[test]
+    fn a_local_dir_under_any_name_is_registered_when_its_package_json_says_pi_runtime() {
+        let processes = FakeProcessExecutor::expecting(vec![]);
+        let (_root, home) = pi_home(Some(r#"{"packages":["../runtime-checkout"]}"#), &[]);
+        local_checkout(&home, "../runtime-checkout", "pi-runtime");
+        let adapter = PiHostAdapter::with_home(&processes, home);
+
+        assert_eq!(adapter.runtime_status(), HostRuntimeStatus::Registered);
+    }
+
+    #[test]
+    fn a_local_dir_named_pi_runtime_without_a_package_json_is_still_registered() {
+        let processes = FakeProcessExecutor::expecting(vec![]);
+        let (_root, home) = pi_home(Some(r#"{"packages":["../pi-runtime"]}"#), &[]);
+        // No package.json is written: the checkout dir exists but is bare.
+        fs::create_dir_all(home.as_path().join("../pi-runtime")).expect("checkout dir");
+        let adapter = PiHostAdapter::with_home(&processes, home);
+
+        assert_eq!(adapter.runtime_status(), HostRuntimeStatus::Registered);
+    }
+
+    #[test]
+    fn a_local_dir_with_a_different_package_json_name_is_missing() {
+        let processes = FakeProcessExecutor::expecting(vec![]);
+        let (_root, home) = pi_home(Some(r#"{"packages":["../some-other-checkout"]}"#), &[]);
+        local_checkout(&home, "../some-other-checkout", "not-pi-runtime");
+        let adapter = PiHostAdapter::with_home(&processes, home);
+
+        assert_eq!(adapter.runtime_status(), HostRuntimeStatus::Missing);
     }
 }

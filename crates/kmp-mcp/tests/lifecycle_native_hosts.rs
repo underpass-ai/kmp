@@ -225,13 +225,13 @@ fn pi_home(settings: Option<&str>) -> (tempfile::TempDir, std::path::PathBuf) {
     (root, home)
 }
 
-/// Pi has no native MCP: the underpass-pi package is the registration, and
+/// Pi has no native MCP: the pi-runtime package is the registration, and
 /// the convergence mirrors the plugin's skills where Pi scans without running
 /// any host command.
 #[test]
 fn pi_convergence_mirrors_skills_and_reports_registration() {
     let processes = FakeProcessExecutor::expecting(vec![]);
-    let (_root, home) = pi_home(Some(r#"{"packages":["../../Documents/ai/underpass-pi"]}"#));
+    let (_root, home) = pi_home(Some(r#"{"packages":["../../Documents/ai/pi-runtime"]}"#));
     let homes = tempfile::tempdir().expect("homes");
     let gateway = NativeHostGateway::with_homes(
         &processes,
@@ -281,7 +281,7 @@ fn pi_convergence_mirrors_skills_and_reports_registration() {
     assert!(processes.is_exhausted());
 }
 
-/// `kmp-mcp setup --pi` does not install Pi packages; without underpass-pi
+/// `kmp-mcp setup --pi` does not install Pi packages; without pi-runtime
 /// it refuses and says which command does.
 #[test]
 fn setup_without_underpass_package_warns_to_run_underpass_setup() {
@@ -303,9 +303,9 @@ fn setup_without_underpass_package_warns_to_run_underpass_setup() {
     );
     let error = gateway
         .provision(Host::Pi, &ReleaseVersion::current())
-        .expect_err("Pi without the underpass-pi package is not converged");
+        .expect_err("Pi without the pi-runtime package is not converged");
     let message = error.to_string();
     assert!(message.contains("underpass setup"), "{message}");
-    assert!(message.contains("underpass-pi"), "{message}");
+    assert!(message.contains("pi-runtime"), "{message}");
     assert!(processes.is_exhausted());
 }

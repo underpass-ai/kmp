@@ -256,7 +256,7 @@ fn update_rejects_non_identical_codex_and_claude_plugin_trees() {
 // #849: Hermes ships skills and an MCP registration, not the marketplace
 // plugin tree. Its installation root is the whole Hermes home, so digesting it
 // beside the Claude and Codex trees could never match. Pi is the same shape:
-// skills in its agent home, the connection through the underpass-pi package.
+// skills in its agent home, the connection through the pi-runtime package.
 fn native_host_machine() -> FakeHostGateway {
     FakeHostGateway::with_installations(vec![
         installation(Host::Claude, "0.4.2", "/tmp/claude"),
@@ -410,11 +410,11 @@ fn unusable_pi_statuses() -> Vec<(HostRuntimeStatus, &'static str)> {
     vec![
         (
             HostRuntimeStatus::Missing,
-            "pi present but underpass-pi not registered; run `underpass setup`",
+            "pi present but pi-runtime not registered; run `underpass setup`",
         ),
         (
             HostRuntimeStatus::Disabled,
-            "underpass-pi registered but its KMP extension is excluded",
+            "pi-runtime registered but its KMP extension is excluded",
         ),
         (
             HostRuntimeStatus::Failed("Pi settings.json is not valid JSON: {\"token\"".to_string()),
@@ -424,7 +424,7 @@ fn unusable_pi_statuses() -> Vec<(HostRuntimeStatus, &'static str)> {
 }
 
 /// Auto-detection must not break a machine that merely has Pi installed:
-/// without a usable underpass-pi package, Pi is skipped with a warning that
+/// without a usable pi-runtime package, Pi is skipped with a warning that
 /// says what is wrong, and every other host converges.
 #[test]
 fn autodetected_setup_skips_an_unusable_pi_and_says_why() {
@@ -518,7 +518,7 @@ fn machine_whose_pi_stopped_registering(status: HostRuntimeStatus) -> FakeHostGa
 }
 
 /// A plain update must not abort Claude and Codex because an installed Pi's
-/// underpass-pi package was removed, disabled or made unreadable since.
+/// pi-runtime package was removed, disabled or made unreadable since.
 #[test]
 fn a_plain_update_skips_an_installed_pi_that_stopped_registering() {
     for (status, expected) in unusable_pi_statuses() {
@@ -582,7 +582,7 @@ fn an_explicit_pi_update_of_a_pi_that_stopped_registering_fails() {
             BTreeSet::from([Host::Pi]),
             Some(target),
         ))
-        .expect_err("update --pi without a usable underpass-pi package");
+        .expect_err("update --pi without a usable pi-runtime package");
 
         assert!(
             error.to_string().contains("underpass setup"),
@@ -659,7 +659,7 @@ fn an_explicit_pi_setup_without_a_usable_package_still_fails() {
             BTreeSet::from([Host::Pi]),
             None,
         ))
-        .expect_err("--pi without a usable underpass-pi package");
+        .expect_err("--pi without a usable pi-runtime package");
 
         assert!(
             error.to_string().contains("underpass setup"),

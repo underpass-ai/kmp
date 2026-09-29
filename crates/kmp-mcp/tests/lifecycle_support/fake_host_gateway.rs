@@ -52,7 +52,7 @@ impl FakeHostGateway {
     }
 
     /// Makes one host report its own runtime status. A Pi reporting anything
-    /// but `Registered` has no usable underpass-pi package, and converging it
+    /// but `Registered` has no usable pi-runtime package, and converging it
     /// fails the way the native adapter does.
     pub fn reporting_for(mut self, host: Host, status: HostRuntimeStatus) -> Self {
         self.host_statuses.push((host, status));
@@ -63,7 +63,7 @@ impl FakeHostGateway {
         match self.status_of(host) {
             Some(status) if host == Host::Pi && status != HostRuntimeStatus::Registered => {
                 Err(LifecycleError::HostNotInstalled(format!(
-                    "Pi has no usable underpass-pi package ({status:?}). Run `underpass setup`"
+                    "Pi has no usable pi-runtime package ({status:?}). Run `underpass setup`"
                 )))
             }
             _ => Ok(()),

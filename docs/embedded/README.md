@@ -47,7 +47,7 @@ plugin ownership and packaging live in [`plugins/kmp`](../../plugins/kmp/README.
 For Hermes Agent, run `kmp-mcp setup --hermes` with an installed engine,
 then restart Hermes. The native lifecycle registers MCP through Hermes’ CLI
 and installs the `kmp-*` skills. For the Pi coding agent, `underpass setup`
-installs the `underpass-pi` package that carries KMP into Pi, and
+installs the `pi-runtime` package that carries KMP into Pi, and
 `kmp-mcp setup --pi` mirrors the `kmp-*` skills. See the
 [plugin guide](../../plugins/kmp/README.md#install) for packaging details.
 

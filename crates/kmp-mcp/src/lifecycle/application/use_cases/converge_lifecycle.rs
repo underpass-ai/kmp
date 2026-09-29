@@ -179,7 +179,7 @@ impl<'a> ConvergeLifecycle<'a> {
 
     /// The hosts a run that names no host leaves alone. A host whose
     /// connection comes from a package KMP cannot install (Pi's
-    /// `underpass-pi`) is skipped unless that package is a usable
+    /// `pi-runtime`) is skipped unless that package is a usable
     /// registration — whether setup found it on PATH or an earlier run
     /// installed it and the package has since gone — so Pi never fails a
     /// setup or update for every other host. Naming the host explicitly still

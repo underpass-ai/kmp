@@ -300,7 +300,7 @@ impl RealHostLifecycleHarness {
         assert_eq!(receipt["action"], action);
         assert_eq!(receipt["status"], "completed");
         assert_eq!(receipt["version"], version);
-        // A Pi on this machine's PATH has no underpass-pi package in the
+        // A Pi on this machine's PATH has no pi-runtime package in the
         // harness's own Pi home, so auto-detection reports it as skipped; it
         // is not one of the hosts this test converges.
         let hosts = receipt["hosts"]

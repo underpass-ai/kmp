@@ -11,6 +11,12 @@ Detailed notes from the early release cycle remain available in the
 
 ### Changed
 
+- Pi host detection recognizes the `pi-runtime` package
+  (github.com/underpass-ai/pi-runtime), which carries KMP's MCP connection
+  into Pi. Local path sources in Pi's `settings.json` are
+  now matched robustly: when `<path>/package.json` exists and its `name` is
+  `pi-runtime`, that is a match regardless of the directory's own name;
+  otherwise detection falls back to the directory basename rule as before.
 - **Breaking:** `tools/list` no longer carries parameter descriptions. The
   advertised input schemas keep types, enums, bounds, defaults and required
   fields; every tool keeps its one-line description, which now names the
@@ -26,7 +32,7 @@ Detailed notes from the early release cycle remain available in the
 
 - The Pi coding agent is a fourth native host: `setup|update --pi` converges
   it and `doctor` inventories it as a peer. Pi has no native MCP, so the
-  registration evidence is the `underpass-pi` package in Pi's `settings.json`
+  registration evidence is the `pi-runtime` package in Pi's `settings.json`
   (home resolved like Pi: `$PI_CODING_AGENT_DIR`, else `~/.pi/agent`);
   installing it belongs to `underpass setup`. `setup --pi` fails without a
   registered, enabled package and says so; a `setup` or `update` that names

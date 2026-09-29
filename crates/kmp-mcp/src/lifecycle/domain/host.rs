@@ -32,17 +32,17 @@ impl Host {
     /// be identical across hosts. Hermes ships skills and an MCP registration
     /// into its own home instead, so it takes no part in tree parity (#849);
     /// neither does Pi, whose skills live in its agent home and whose MCP
-    /// connection comes from the `underpass-pi` package.
+    /// connection comes from the `pi-runtime` package.
     pub fn installs_plugin_tree(self) -> bool {
         matches!(self, Self::Claude | Self::Codex)
     }
 
     /// The package, installed by something other than KMP, that carries this
     /// host's MCP connection. Pi has no native MCP: `underpass setup` installs
-    /// `underpass-pi`, and KMP can only observe it, never provide it.
+    /// `pi-runtime`, and KMP can only observe it, never provide it.
     pub fn external_package(self) -> Option<&'static str> {
         match self {
-            Self::Pi => Some("underpass-pi"),
+            Self::Pi => Some("pi-runtime"),
             Self::Claude | Self::Codex | Self::Hermes => None,
         }
     }
@@ -106,7 +106,7 @@ mod tests {
 
     #[test]
     fn only_pi_depends_on_a_package_kmp_does_not_install() {
-        assert_eq!(Host::Pi.external_package(), Some("underpass-pi"));
+        assert_eq!(Host::Pi.external_package(), Some("pi-runtime"));
         for host in [Host::Claude, Host::Codex, Host::Hermes] {
             assert_eq!(host.external_package(), None, "{host}");
         }

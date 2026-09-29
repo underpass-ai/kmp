@@ -7,7 +7,7 @@ use super::lifecycle_error::LifecycleError;
 /// the `skills/` it scans at startup.
 ///
 /// Pi resolves it from `$PI_CODING_AGENT_DIR`, defaulting to `~/.pi/agent`.
-/// Pi has no native MCP: the KMP connection is the `underpass-pi` package
+/// Pi has no native MCP: the KMP connection is the `pi-runtime` package
 /// listed in `settings.json`, so both the registration evidence and the skill
 /// surface are named from this one place.
 #[derive(Clone, Debug, Eq, PartialEq)]
