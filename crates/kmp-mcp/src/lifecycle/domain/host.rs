@@ -9,16 +9,18 @@ pub enum Host {
     Claude,
     Codex,
     Hermes,
+    Pi,
 }
 
 impl Host {
-    pub const CONVERGENCE_ORDER: [Self; 3] = [Self::Claude, Self::Codex, Self::Hermes];
+    pub const CONVERGENCE_ORDER: [Self; 4] = [Self::Claude, Self::Codex, Self::Hermes, Self::Pi];
 
     pub fn executable(self) -> &'static str {
         match self {
             Self::Claude => "claude",
             Self::Codex => "codex",
             Self::Hermes => "hermes",
+            Self::Pi => "pi",
         }
     }
 
@@ -28,9 +30,21 @@ impl Host {
 
     /// Whether this host installs the marketplace plugin tree whose bytes must
     /// be identical across hosts. Hermes ships skills and an MCP registration
-    /// into its own home instead, so it takes no part in tree parity (#849).
+    /// into its own home instead, so it takes no part in tree parity (#849);
+    /// neither does Pi, whose skills live in its agent home and whose MCP
+    /// connection comes from the `pi-runtime` package.
     pub fn installs_plugin_tree(self) -> bool {
         matches!(self, Self::Claude | Self::Codex)
+    }
+
+    /// The package, installed by something other than KMP, that carries this
+    /// host's MCP connection. Pi has no native MCP: `underpass setup` installs
+    /// `pi-runtime`, and KMP can only observe it, never provide it.
+    pub fn external_package(self) -> Option<&'static str> {
+        match self {
+            Self::Pi => Some("pi-runtime"),
+            Self::Claude | Self::Codex | Self::Hermes => None,
+        }
     }
 }
 
@@ -40,6 +54,7 @@ impl fmt::Display for Host {
             Self::Claude => "claude",
             Self::Codex => "codex",
             Self::Hermes => "hermes",
+            Self::Pi => "pi",
         })
     }
 }
@@ -51,7 +66,7 @@ mod tests {
     #[test]
     fn hermes_is_a_peer_in_convergence_order_after_the_plugin_hosts() {
         assert_eq!(
-            Host::CONVERGENCE_ORDER,
+            Host::CONVERGENCE_ORDER[..3],
             [Host::Claude, Host::Codex, Host::Hermes]
         );
     }
@@ -67,6 +82,34 @@ mod tests {
         assert!(Host::Claude.owns_plugin_engine());
         assert!(!Host::Codex.owns_plugin_engine());
         assert!(!Host::Hermes.owns_plugin_engine());
+    }
+
+    #[test]
+    fn pi_is_the_last_peer_in_convergence_order() {
+        assert_eq!(
+            Host::CONVERGENCE_ORDER,
+            [Host::Claude, Host::Codex, Host::Hermes, Host::Pi]
+        );
+    }
+
+    #[test]
+    fn pi_declares_its_own_executable_name() {
+        assert_eq!(Host::Pi.executable(), "pi");
+        assert_eq!(Host::Pi.to_string(), "pi");
+    }
+
+    #[test]
+    fn pi_neither_owns_a_plugin_engine_nor_installs_a_plugin_tree() {
+        assert!(!Host::Pi.owns_plugin_engine());
+        assert!(!Host::Pi.installs_plugin_tree());
+    }
+
+    #[test]
+    fn only_pi_depends_on_a_package_kmp_does_not_install() {
+        assert_eq!(Host::Pi.external_package(), Some("pi-runtime"));
+        for host in [Host::Claude, Host::Codex, Host::Hermes] {
+            assert_eq!(host.external_package(), None, "{host}");
+        }
     }
 
     #[test]

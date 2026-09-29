@@ -300,7 +300,15 @@ impl RealHostLifecycleHarness {
         assert_eq!(receipt["action"], action);
         assert_eq!(receipt["status"], "completed");
         assert_eq!(receipt["version"], version);
-        let hosts = receipt["hosts"].as_array().expect("hosts");
+        // A Pi on this machine's PATH has no pi-runtime package in the
+        // harness's own Pi home, so auto-detection reports it as skipped; it
+        // is not one of the hosts this test converges.
+        let hosts = receipt["hosts"]
+            .as_array()
+            .expect("hosts")
+            .iter()
+            .filter(|host| host["status"] != "skipped")
+            .collect::<Vec<_>>();
         assert_eq!(hosts.len(), 2);
         assert_eq!(
             hosts
@@ -424,6 +432,9 @@ impl RealHostLifecycleHarness {
             .env("HOME", self.root.path().join("home"))
             .env("CLAUDE_CONFIG_DIR", self.root.path().join("claude"))
             .env("CODEX_HOME", self.root.path().join("codex"))
+            // A machine with Pi installed must not have its own Pi home read
+            // or written by this harness.
+            .env("PI_CODING_AGENT_DIR", self.root.path().join("pi-agent"))
             .env("XDG_DATA_HOME", self.root.path().join("xdg-data"))
             .env("XDG_CONFIG_HOME", self.root.path().join("xdg-config"))
             .env("XDG_CACHE_HOME", self.root.path().join("xdg-cache"))

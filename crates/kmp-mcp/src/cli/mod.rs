@@ -83,7 +83,7 @@ pub(crate) async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
                  `config [memory-routing <mode> | memory-store <absolute-path>]` / \
                  `guide sync --plugin-root DIR [--dry-run]` / \
                  `plugin resolve-engine|notice --plugin-root DIR ...` / \
-                 `setup|update [--claude] [--codex] [--version X.Y.Z] [--engine-dir DIR] \
+                 `setup|update [--claude] [--codex] [--hermes] [--pi] [--version X.Y.Z] [--engine-dir DIR] \
                  [--lexical-bridge FILE | --no-lexical-bridge]` / \
                  `uninstall [--store <absolute-path> | --engine <absolute-path>] [--apply] \
                  [--purge] [--keep-memory]` / \
@@ -153,11 +153,11 @@ fn subcommand_usage(command: &str) -> &'static str {
         "guide" => "kmp-mcp guide sync --plugin-root DIR [--dry-run]",
         "plugin" => "kmp-mcp plugin resolve-engine|notice --plugin-root DIR",
         "setup" => {
-            "kmp-mcp setup [--claude] [--codex] [--version X.Y.Z] [--engine-dir DIR] \
+            "kmp-mcp setup [--claude] [--codex] [--hermes] [--pi] [--version X.Y.Z] [--engine-dir DIR] \
              [--lexical-bridge FILE | --no-lexical-bridge] [--dry-run]"
         }
         "update" => {
-            "kmp-mcp update [--claude] [--codex] [--version X.Y.Z] [--engine-dir DIR] \
+            "kmp-mcp update [--claude] [--codex] [--hermes] [--pi] [--version X.Y.Z] [--engine-dir DIR] \
              [--lexical-bridge FILE | --no-lexical-bridge] [--dry-run]"
         }
         "snapshot" => "kmp-mcp snapshot create|list|verify|read|merge ...",

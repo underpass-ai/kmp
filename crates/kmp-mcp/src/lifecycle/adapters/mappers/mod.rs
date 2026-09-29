@@ -3,3 +3,4 @@ pub mod claude_runtime_status_mapper;
 pub mod codex_installation_mapper;
 pub mod codex_runtime_status_mapper;
 pub mod hermes_runtime_status_mapper;
+pub mod pi_runtime_status_mapper;

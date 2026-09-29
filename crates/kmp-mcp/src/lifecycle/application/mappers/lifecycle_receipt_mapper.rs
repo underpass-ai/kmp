@@ -37,12 +37,14 @@ impl LifecycleReceiptMapper {
                         ConvergenceStatus::PlannedChange => "planned_change",
                         ConvergenceStatus::Changed => "changed",
                         ConvergenceStatus::Unchanged => "unchanged",
+                        ConvergenceStatus::Skipped => "skipped",
                     }
                     .to_string(),
                     previous_version: host.previous_version().map(ToString::to_string),
                     version: host.version().to_string(),
                     root: host.root().map(|root| root.as_path().display().to_string()),
                     enabled: host.is_enabled(),
+                    warning: host.warning().map(str::to_string),
                 })
                 .collect(),
             engines: receipt
@@ -107,5 +109,62 @@ impl LifecycleReceiptMapper {
             replaced_sha256,
             crosses_languages: installation.table_is_present(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::lifecycle::domain::host::Host;
+    use crate::lifecycle::domain::host_convergence::HostConvergence;
+    use crate::lifecycle::domain::host_skip_reason::HostSkipReason;
+    use crate::lifecycle::domain::release_version::ReleaseVersion;
+
+    #[test]
+    fn a_skipped_host_reaches_the_receipt_with_its_warning() {
+        let receipt = LifecycleReceipt::planned(
+            LifecycleAction::Setup,
+            ReleaseVersion::current(),
+            vec![HostConvergence::skipped(
+                &HostSkipReason::PackageMissing {
+                    host: Host::Pi,
+                    package: "pi-runtime",
+                },
+                None,
+                ReleaseVersion::current(),
+            )],
+        );
+
+        let dto = LifecycleReceiptMapper::to_dto(&receipt);
+        let pi = &dto.hosts[0];
+        assert_eq!(pi.host, "pi");
+        assert_eq!(pi.status, "skipped");
+        assert!(!pi.enabled);
+        assert_eq!(
+            pi.warning.as_deref(),
+            Some("pi present but pi-runtime not registered; run `underpass setup`")
+        );
+        let json = serde_json::to_value(&dto).expect("json");
+        assert_eq!(
+            json["hosts"][0]["warning"],
+            "pi present but pi-runtime not registered; run `underpass setup`"
+        );
+    }
+
+    #[test]
+    fn a_host_without_a_warning_serializes_none() {
+        let receipt = LifecycleReceipt::planned(
+            LifecycleAction::Update,
+            ReleaseVersion::current(),
+            vec![HostConvergence::planned(
+                LifecycleAction::Update,
+                Host::Codex,
+                None,
+                ReleaseVersion::current(),
+            )],
+        );
+
+        let json = serde_json::to_value(LifecycleReceiptMapper::to_dto(&receipt)).expect("json");
+        assert!(json["hosts"][0].get("warning").is_none());
     }
 }

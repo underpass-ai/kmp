@@ -44,9 +44,11 @@ cargo install kmp-mcp --locked
 Keep the native plugin as the MCP owner and rerun its setup workflow. Detailed
 plugin ownership and packaging live in [`plugins/kmp`](../../plugins/kmp/README.md).
 
-For Hermes Agent, run `kmp-mcp setup --host hermes` with an installed engine,
+For Hermes Agent, run `kmp-mcp setup --hermes` with an installed engine,
 then restart Hermes. The native lifecycle registers MCP through Hermes’ CLI
-and installs the `kmp-*` skills. See the
+and installs the `kmp-*` skills. For the Pi coding agent, `underpass setup`
+installs the `pi-runtime` package that carries KMP into Pi, and
+`kmp-mcp setup --pi` mirrors the `kmp-*` skills. See the
 [plugin guide](../../plugins/kmp/README.md#install) for packaging details.
 
 ## Verify

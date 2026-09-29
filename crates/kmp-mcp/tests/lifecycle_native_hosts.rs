@@ -3,7 +3,10 @@ mod fake_process_executor;
 
 use fake_process_executor::FakeProcessExecutor;
 use kmp_mcp::lifecycle::NativeHostGateway;
+use kmp_mcp::lifecycle::adapters::pi_host_adapter::PiHostAdapter;
 use kmp_mcp::lifecycle::domain::host::Host;
+use kmp_mcp::lifecycle::domain::host_runtime_status::HostRuntimeStatus;
+use kmp_mcp::lifecycle::domain::pi_agent_home::PiAgentHome;
 use kmp_mcp::lifecycle::domain::release_version::ReleaseVersion;
 use kmp_mcp::lifecycle::ports::host_gateway::HostGateway;
 use kmp_mcp::lifecycle::ports::process_output::ProcessOutput;
@@ -207,9 +210,102 @@ fn hermes_runtime_status_reads_the_config_surface() {
         .runtime_status(Host::Hermes)
         .expect("runtime status");
 
+    assert_eq!(status, HostRuntimeStatus::Registered);
+    assert!(processes.is_exhausted());
+}
+
+/// A Pi agent home under a temporary root, carrying `settings` when given.
+fn pi_home(settings: Option<&str>) -> (tempfile::TempDir, std::path::PathBuf) {
+    let root = tempfile::tempdir().expect("pi root");
+    let home = root.path().join(".pi/agent");
+    std::fs::create_dir_all(&home).expect("pi home");
+    if let Some(settings) = settings {
+        std::fs::write(home.join("settings.json"), settings).expect("settings");
+    }
+    (root, home)
+}
+
+/// Pi has no native MCP: the pi-runtime package is the registration, and
+/// the convergence mirrors the plugin's skills where Pi scans without running
+/// any host command.
+#[test]
+fn pi_convergence_mirrors_skills_and_reports_registration() {
+    let processes = FakeProcessExecutor::expecting(vec![]);
+    let (_root, home) = pi_home(Some(r#"{"packages":["../../Documents/ai/pi-runtime"]}"#));
+    let homes = tempfile::tempdir().expect("homes");
+    let gateway = NativeHostGateway::with_homes(
+        &processes,
+        homes.path().join("codex"),
+        homes.path().join("hermes"),
+    )
+    .expect("gateway")
+    .with_pi_home(&home)
+    .expect("pi home");
+
+    let installed = gateway
+        .provision(Host::Pi, &ReleaseVersion::current())
+        .expect("Pi installation");
+    assert_eq!(installed.host(), Host::Pi);
+    assert!(installed.is_enabled());
+    assert_eq!(installed.root().as_path(), home.as_path());
     assert_eq!(
-        status,
-        kmp_mcp::lifecycle::domain::host_runtime_status::HostRuntimeStatus::Registered
+        gateway.runtime_status(Host::Pi).expect("runtime status"),
+        HostRuntimeStatus::Registered
     );
+    assert_eq!(
+        gateway
+            .refresh(Host::Pi, &ReleaseVersion::current())
+            .expect("Pi refresh"),
+        installed
+    );
+    assert!(
+        gateway
+            .runtime_engine(&installed)
+            .expect("engine")
+            .as_path()
+            .ends_with("kmp-mcp")
+    );
+
+    let plugin = tempfile::tempdir().expect("plugin root");
+    for name in ["kmp-doctor", "kmp-memory"] {
+        let skill = plugin.path().join("skills").join(name);
+        std::fs::create_dir_all(&skill).expect("plugin skill");
+        std::fs::write(skill.join("SKILL.md"), "---\nname: x\n---").expect("skill md");
+    }
+    let adapter = PiHostAdapter::with_home(&processes, PiAgentHome::new(&home).expect("home"));
+    adapter
+        .provision(&ReleaseVersion::current(), Some(plugin.path()))
+        .expect("mirror and converge");
+    assert!(home.join("skills/kmp-doctor/SKILL.md").is_file());
+    assert!(home.join("skills/kmp-memory/SKILL.md").is_file());
+    assert!(processes.is_exhausted());
+}
+
+/// `kmp-mcp setup --pi` does not install Pi packages; without pi-runtime
+/// it refuses and says which command does.
+#[test]
+fn setup_without_underpass_package_warns_to_run_underpass_setup() {
+    let processes = FakeProcessExecutor::expecting(vec![]);
+    let (_root, home) = pi_home(None);
+    let homes = tempfile::tempdir().expect("homes");
+    let gateway = NativeHostGateway::with_homes(
+        &processes,
+        homes.path().join("codex"),
+        homes.path().join("hermes"),
+    )
+    .expect("gateway")
+    .with_pi_home(&home)
+    .expect("pi home");
+
+    assert_eq!(
+        gateway.runtime_status(Host::Pi).expect("runtime status"),
+        HostRuntimeStatus::Missing
+    );
+    let error = gateway
+        .provision(Host::Pi, &ReleaseVersion::current())
+        .expect_err("Pi without the pi-runtime package is not converged");
+    let message = error.to_string();
+    assert!(message.contains("underpass setup"), "{message}");
+    assert!(message.contains("pi-runtime"), "{message}");
     assert!(processes.is_exhausted());
 }

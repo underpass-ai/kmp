@@ -22,6 +22,7 @@ impl LifecycleCliParser {
                 "--claude" => hosts.push("claude".to_string()),
                 "--codex" => hosts.push("codex".to_string()),
                 "--hermes" => hosts.push("hermes".to_string()),
+                "--pi" => hosts.push("pi".to_string()),
                 "--dry-run" => dry_run = true,
                 "--no-lexical-bridge" => decline_bridge = true,
                 "--lexical-bridge" => {
@@ -157,6 +158,14 @@ mod tests {
             ])
             .is_err()
         );
+    }
+
+    #[test]
+    fn every_native_host_has_its_own_flag() {
+        let dto = LifecycleCliParser::parse(&["--claude", "--codex", "--hermes", "--pi"])
+            .expect("command");
+
+        assert_eq!(dto.hosts, vec!["claude", "codex", "hermes", "pi"]);
     }
 
     #[test]

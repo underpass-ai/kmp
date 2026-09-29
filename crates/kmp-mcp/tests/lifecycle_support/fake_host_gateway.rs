@@ -19,6 +19,7 @@ pub struct FakeHostGateway {
     refreshes: Mutex<Vec<Host>>,
     refreshed_version: Option<ReleaseVersion>,
     runtime_status: Option<HostRuntimeStatus>,
+    host_statuses: Vec<(Host, HostRuntimeStatus)>,
     hosts_on_path: Option<Vec<Host>>,
 }
 
@@ -30,13 +31,14 @@ impl FakeHostGateway {
             refreshes: Mutex::new(Vec::new()),
             refreshed_version: None,
             runtime_status: None,
+            host_statuses: Vec::new(),
             hosts_on_path: None,
         }
     }
 
     /// Simulates a machine where only these host executables resolve. Tests
     /// that exercise the two-plugin-host era keep their shape by leaving
-    /// Hermes off PATH.
+    /// Hermes and Pi off PATH.
     pub fn on_path(mut self, hosts: Vec<Host>) -> Self {
         self.hosts_on_path = Some(hosts);
         self
@@ -47,6 +49,32 @@ impl FakeHostGateway {
     pub fn reporting(mut self, status: HostRuntimeStatus) -> Self {
         self.runtime_status = Some(status);
         self
+    }
+
+    /// Makes one host report its own runtime status. A Pi reporting anything
+    /// but `Registered` has no usable pi-runtime package, and converging it
+    /// fails the way the native adapter does.
+    pub fn reporting_for(mut self, host: Host, status: HostRuntimeStatus) -> Self {
+        self.host_statuses.push((host, status));
+        self
+    }
+
+    fn require_usable_pi(&self, host: Host) -> Result<(), LifecycleError> {
+        match self.status_of(host) {
+            Some(status) if host == Host::Pi && status != HostRuntimeStatus::Registered => {
+                Err(LifecycleError::HostNotInstalled(format!(
+                    "Pi has no usable pi-runtime package ({status:?}). Run `underpass setup`"
+                )))
+            }
+            _ => Ok(()),
+        }
+    }
+
+    fn status_of(&self, host: Host) -> Option<HostRuntimeStatus> {
+        self.host_statuses
+            .iter()
+            .find(|(candidate, _)| *candidate == host)
+            .map(|(_, status)| status.clone())
     }
 
     pub fn returning_version(mut self, version: ReleaseVersion) -> Self {
@@ -89,6 +117,7 @@ impl FakeHostGateway {
             Host::Claude => "/tmp/claude",
             Host::Codex => "/tmp/codex",
             Host::Hermes => "/tmp/hermes",
+            Host::Pi => "/tmp/pi",
         };
         HostInstallation::discovered(
             host,
@@ -112,6 +141,9 @@ impl HostGateway for FakeHostGateway {
     }
 
     fn runtime_status(&self, host: Host) -> Result<HostRuntimeStatus, LifecycleError> {
+        if let Some(status) = self.status_of(host) {
+            return Ok(status);
+        }
         if let Some(status) = self.runtime_status.clone() {
             return Ok(status);
         }
@@ -119,6 +151,7 @@ impl HostGateway for FakeHostGateway {
             Host::Claude => HostRuntimeStatus::Connected,
             Host::Codex => HostRuntimeStatus::Registered,
             Host::Hermes => HostRuntimeStatus::Registered,
+            Host::Pi => HostRuntimeStatus::Registered,
         })
     }
 
@@ -140,6 +173,7 @@ impl HostGateway for FakeHostGateway {
         target: &ReleaseVersion,
     ) -> Result<HostInstallation, LifecycleError> {
         self.provisions.lock().expect("provision lock").push(host);
+        self.require_usable_pi(host)?;
         Ok(self.installation_for(host, target))
     }
 
@@ -149,6 +183,7 @@ impl HostGateway for FakeHostGateway {
         target: &ReleaseVersion,
     ) -> Result<HostInstallation, LifecycleError> {
         self.refreshes.lock().expect("refresh lock").push(host);
+        self.require_usable_pi(host)?;
         let existing = self
             .installed
             .iter()

@@ -31,7 +31,7 @@ impl LifecyclePlan {
                 .filter(|installation| installation.participates_in_convergence())
                 .map(HostInstallation::host),
         );
-        if request.action() == LifecycleAction::Setup && request.requested_hosts().is_empty() {
+        if request.autodetects_hosts() {
             hosts.extend(available.iter().copied());
         }
         if hosts.is_empty() {

@@ -1,6 +1,7 @@
 use super::convergence_status::ConvergenceStatus;
 use super::host::Host;
 use super::host_installation::HostInstallation;
+use super::host_skip_reason::HostSkipReason;
 use super::lifecycle_action::LifecycleAction;
 use super::plugin_root::PluginRoot;
 use super::release_version::ReleaseVersion;
@@ -14,6 +15,7 @@ pub struct HostConvergence {
     current: Option<HostInstallation>,
     target: ReleaseVersion,
     status: ConvergenceStatus,
+    warning: Option<String>,
 }
 
 impl HostConvergence {
@@ -38,6 +40,25 @@ impl HostConvergence {
             current: None,
             target,
             status,
+            warning: None,
+        }
+    }
+
+    /// A host auto-detection found but left alone because the package that
+    /// carries its connection is not usable, and nothing KMP runs can fix
+    /// that. The same entry serves a plan and a completed run.
+    pub fn skipped(
+        reason: &HostSkipReason,
+        previous: Option<HostInstallation>,
+        target: ReleaseVersion,
+    ) -> Self {
+        Self {
+            host: reason.host(),
+            previous,
+            current: None,
+            target,
+            status: ConvergenceStatus::Skipped,
+            warning: Some(reason.warning()),
         }
     }
 
@@ -59,6 +80,7 @@ impl HostConvergence {
             target: current.version().clone(),
             current: Some(current),
             status,
+            warning: None,
         }
     }
 
@@ -85,6 +107,9 @@ impl HostConvergence {
     }
 
     pub fn is_enabled(&self) -> bool {
+        if self.status == ConvergenceStatus::Skipped {
+            return false;
+        }
         self.current
             .as_ref()
             .or(self.previous.as_ref())
@@ -93,5 +118,43 @@ impl HostConvergence {
 
     pub fn status(&self) -> ConvergenceStatus {
         self.status
+    }
+
+    /// Why this host needs attention even though the run succeeded.
+    pub fn warning(&self) -> Option<&str> {
+        self.warning.as_deref()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_skipped_host_is_disabled_and_says_how_to_add_its_package() {
+        let reason = HostSkipReason::PackageMissing {
+            host: Host::Pi,
+            package: "pi-runtime",
+        };
+        let skipped = HostConvergence::skipped(&reason, None, ReleaseVersion::current());
+
+        assert_eq!(skipped.status(), ConvergenceStatus::Skipped);
+        assert!(!skipped.is_enabled());
+        assert_eq!(skipped.root(), None);
+        assert_eq!(
+            skipped.warning(),
+            Some("pi present but pi-runtime not registered; run `underpass setup`")
+        );
+    }
+
+    #[test]
+    fn a_converged_host_carries_no_warning() {
+        let planned = HostConvergence::planned(
+            LifecycleAction::Setup,
+            Host::Codex,
+            None,
+            ReleaseVersion::current(),
+        );
+        assert_eq!(planned.warning(), None);
     }
 }

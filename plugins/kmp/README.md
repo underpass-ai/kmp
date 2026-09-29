@@ -107,7 +107,7 @@ engine through Hermes' own CLI and mirrors the `kmp-*` skills into
 `$HERMES_HOME/skills`:
 
 ```bash
-kmp-mcp setup --host hermes
+kmp-mcp setup --hermes
 ```
 
 That runs `hermes mcp add kmp --command kmp-mcp` (answering its one
@@ -116,6 +116,35 @@ Hermes scans for them. Finish with a Hermes restart so the MCP tools load —
 the same one-restart rule as Codex and Claude Code. `kmp-mcp doctor`
 inventories Hermes as a peer host: registration owner, skills present and
 the engine proof from `PATH`.
+
+**Pi coding agent** — Pi has no native MCP and no plugin marketplace. KMP
+reaches Pi through the `pi-runtime` Pi package, which `underpass setup`
+installs (`pi install …`); the KMP lifecycle never installs Pi packages. Once
+the package is present, converge the skills and the shared engine:
+
+```bash
+kmp-mcp setup --pi
+```
+
+The Pi agent home is resolved the way Pi resolves it: `$PI_CODING_AGENT_DIR`
+(empty counts as unset, a leading `~` expands to `$HOME`), otherwise
+`~/.pi/agent`. The registration evidence is the `pi-runtime` entry under
+`packages` in its `settings.json`; a package filter that excludes
+`src/adapters/inbound/pi/entry/kmp.ts` reports KMP as disabled.
+
+- `setup --pi` fails unless that package is registered and enabled, and
+  points to `underpass setup`.
+- A plain `kmp-mcp setup` or `kmp-mcp update` (no host flag) never fails
+  because of Pi: when the package is missing, its KMP extension is excluded,
+  or `settings.json` is unreadable — including after an earlier run converged
+  Pi — it converges the other hosts and reports Pi as `skipped` with a `warning` in the
+  receipt.
+- Skills are mirrored into `<Pi home>/skills` only when `kmp-mcp` runs from a
+  source checkout; released binaries only verify the registration and do not
+  copy skills. This is the same limitation as Hermes.
+
+The package's extension runs `kmp-mcp` from `PATH`, so `kmp-mcp doctor`
+inventories Pi as a peer host with the same engine proof as Codex and Hermes.
 
 ### Initialize the selected store
 

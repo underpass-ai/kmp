@@ -30,6 +30,7 @@ use kmp_mcp::lifecycle::domain::engine_artifact::EngineArtifact;
 use kmp_mcp::lifecycle::domain::engine_install_dir::EngineInstallDir;
 use kmp_mcp::lifecycle::domain::host::Host;
 use kmp_mcp::lifecycle::domain::host_installation::HostInstallation;
+use kmp_mcp::lifecycle::domain::host_runtime_status::HostRuntimeStatus;
 use kmp_mcp::lifecycle::domain::lifecycle_action::LifecycleAction;
 use kmp_mcp::lifecycle::domain::lifecycle_error::LifecycleError;
 use kmp_mcp::lifecycle::domain::lifecycle_request::LifecycleRequest;
@@ -254,12 +255,14 @@ fn update_rejects_non_identical_codex_and_claude_plugin_trees() {
 
 // #849: Hermes ships skills and an MCP registration, not the marketplace
 // plugin tree. Its installation root is the whole Hermes home, so digesting it
-// beside the Claude and Codex trees could never match.
-fn three_host_machine() -> FakeHostGateway {
+// beside the Claude and Codex trees could never match. Pi is the same shape:
+// skills in its agent home, the connection through the pi-runtime package.
+fn native_host_machine() -> FakeHostGateway {
     FakeHostGateway::with_installations(vec![
         installation(Host::Claude, "0.4.2", "/tmp/claude"),
         installation(Host::Codex, "0.4.2", "/tmp/codex"),
         installation(Host::Hermes, "0.4.2", "/tmp/hermes"),
+        installation(Host::Pi, "0.4.2", "/tmp/pi"),
     ])
 }
 
@@ -269,7 +272,7 @@ fn marketplace_digest() -> String {
 
 #[test]
 fn update_with_hermes_installed_proves_parity_only_between_marketplace_trees() {
-    let hosts = three_host_machine();
+    let hosts = native_host_machine();
     let target = version("0.5.2");
     let releases = FakeReleaseRepository::publishing(target.clone());
     let engines = FakeEngineStore::empty();
@@ -290,8 +293,8 @@ fn update_with_hermes_installed_proves_parity_only_between_marketplace_trees() {
 
     assert_eq!(
         hosts.refreshes(),
-        vec![Host::Claude, Host::Codex, Host::Hermes],
-        "Hermes still converges; it only stays out of the tree comparison"
+        vec![Host::Claude, Host::Codex, Host::Hermes, Host::Pi],
+        "Hermes and Pi still converge; they only stay out of the tree comparison"
     );
     assert_eq!(
         receipt.plugin_tree().map(ToString::to_string),
@@ -367,8 +370,337 @@ fn a_hermes_only_update_claims_no_marketplace_tree() {
 }
 
 #[test]
+fn a_pi_only_update_claims_no_marketplace_tree() {
+    let hosts =
+        FakeHostGateway::with_installations(vec![installation(Host::Pi, "0.4.2", "/tmp/pi")]);
+    let target = version("0.5.2");
+    let releases = FakeReleaseRepository::publishing(target.clone());
+    let engines = FakeEngineStore::empty();
+
+    let receipt = UpdateKmp::new(
+        &hosts,
+        &releases,
+        &engines,
+        &FakePluginCache::default(),
+        &FakeBridgeStore::default(),
+    )
+    .execute(request(
+        LifecycleAction::Update,
+        BTreeSet::new(),
+        Some(target),
+    ))
+    .expect("Pi-only update");
+
+    assert_eq!(hosts.refreshes(), vec![Host::Pi]);
+    assert_eq!(
+        receipt.plugin_tree(),
+        None,
+        "a Pi agent home is not a plugin tree and must not be reported as one"
+    );
+    assert_eq!(
+        engines.installations(),
+        vec![PathBuf::from("/tmp/shared")],
+        "Pi consumes the shared engine on PATH, so the update installs it there"
+    );
+}
+
+/// Every Pi status that is not a usable registration, with the warning an
+/// auto-detected setup gives for it.
+fn unusable_pi_statuses() -> Vec<(HostRuntimeStatus, &'static str)> {
+    vec![
+        (
+            HostRuntimeStatus::Missing,
+            "pi present but pi-runtime not registered; run `underpass setup`",
+        ),
+        (
+            HostRuntimeStatus::Disabled,
+            "pi-runtime registered but its KMP extension is excluded",
+        ),
+        (
+            HostRuntimeStatus::Failed("Pi settings.json is not valid JSON: {\"token\"".to_string()),
+            "pi settings.json unreadable",
+        ),
+    ]
+}
+
+/// Auto-detection must not break a machine that merely has Pi installed:
+/// without a usable pi-runtime package, Pi is skipped with a warning that
+/// says what is wrong, and every other host converges.
+#[test]
+fn autodetected_setup_skips_an_unusable_pi_and_says_why() {
+    for (status, expected) in unusable_pi_statuses() {
+        let target = ReleaseVersion::current();
+        let hosts =
+            FakeHostGateway::with_installations(Vec::new()).reporting_for(Host::Pi, status.clone());
+        let releases = FakeReleaseRepository::publishing(target.clone());
+        let engines = FakeEngineStore::running(EngineArtifact::verified(
+            target.clone(),
+            b"running-engine".to_vec(),
+        ));
+
+        let receipt = SetupKmp::new(
+            &hosts,
+            &releases,
+            &engines,
+            &FakePluginCache::default(),
+            &FakeBridgeStore::default(),
+        )
+        .execute(request(LifecycleAction::Setup, BTreeSet::new(), None))
+        .unwrap_or_else(|error| panic!("{status:?} Pi failed an auto-detected setup: {error}"));
+
+        assert_eq!(
+            hosts.provisions(),
+            vec![Host::Claude, Host::Codex, Host::Hermes],
+            "{status:?}"
+        );
+        let pi = receipt
+            .hosts()
+            .iter()
+            .find(|host| host.host() == Host::Pi)
+            .expect("the skipped Pi is still reported");
+        assert_eq!(pi.status(), ConvergenceStatus::Skipped, "{status:?}");
+        assert!(!pi.is_enabled(), "{status:?}");
+        assert_eq!(pi.warning(), Some(expected), "{status:?}");
+    }
+}
+
+/// A disabled Pi that already holds an installation is skipped too, instead
+/// of being refreshed into the same refusal.
+#[test]
+fn autodetected_setup_skips_an_installed_but_disabled_pi() {
+    let target = ReleaseVersion::current();
+    let disabled = HostInstallation::discovered(
+        Host::Pi,
+        target.clone(),
+        PluginRoot::new("/tmp/pi").expect("pi home"),
+        false,
+    );
+    let hosts = FakeHostGateway::with_installations(vec![disabled])
+        .reporting_for(Host::Pi, HostRuntimeStatus::Disabled);
+    let releases = FakeReleaseRepository::publishing(target.clone());
+    let engines = FakeEngineStore::running(EngineArtifact::verified(
+        target.clone(),
+        b"running-engine".to_vec(),
+    ));
+
+    let receipt = SetupKmp::new(
+        &hosts,
+        &releases,
+        &engines,
+        &FakePluginCache::default(),
+        &FakeBridgeStore::default(),
+    )
+    .execute(request(LifecycleAction::Setup, BTreeSet::new(), None))
+    .expect("a disabled Pi does not fail an auto-detected setup");
+
+    assert!(hosts.refreshes().is_empty());
+    let pi = receipt
+        .hosts()
+        .iter()
+        .find(|host| host.host() == Host::Pi)
+        .expect("reported");
+    assert_eq!(pi.status(), ConvergenceStatus::Skipped);
+    assert_eq!(
+        pi.root().map(|root| root.as_path().to_path_buf()),
+        Some(PathBuf::from("/tmp/pi"))
+    );
+}
+
+/// Claude, Codex and a Pi an earlier run converged; the Pi package has since
+/// stopped being usable, as `status` says.
+fn machine_whose_pi_stopped_registering(status: HostRuntimeStatus) -> FakeHostGateway {
+    FakeHostGateway::with_installations(vec![
+        installation(Host::Claude, "0.4.2", "/tmp/claude"),
+        installation(Host::Codex, "0.4.2", "/tmp/codex"),
+        installation(Host::Pi, "0.4.2", "/tmp/pi"),
+    ])
+    .reporting_for(Host::Pi, status)
+}
+
+/// A plain update must not abort Claude and Codex because an installed Pi's
+/// pi-runtime package was removed, disabled or made unreadable since.
+#[test]
+fn a_plain_update_skips_an_installed_pi_that_stopped_registering() {
+    for (status, expected) in unusable_pi_statuses() {
+        let hosts = machine_whose_pi_stopped_registering(status.clone());
+        let target = version("0.5.2");
+        let releases = FakeReleaseRepository::publishing(target.clone());
+        let engines = FakeEngineStore::empty();
+
+        let receipt = UpdateKmp::new(
+            &hosts,
+            &releases,
+            &engines,
+            &FakePluginCache::default(),
+            &FakeBridgeStore::default(),
+        )
+        .execute(request(
+            LifecycleAction::Update,
+            BTreeSet::new(),
+            Some(target),
+        ))
+        .unwrap_or_else(|error| panic!("{status:?} Pi aborted a plain update: {error}"));
+
+        assert_eq!(
+            hosts.refreshes(),
+            vec![Host::Claude, Host::Codex],
+            "{status:?}"
+        );
+        let pi = receipt
+            .hosts()
+            .iter()
+            .find(|host| host.host() == Host::Pi)
+            .expect("the skipped Pi is still reported");
+        assert_eq!(pi.status(), ConvergenceStatus::Skipped, "{status:?}");
+        assert_eq!(pi.warning(), Some(expected), "{status:?}");
+        assert_eq!(
+            pi.previous_version().map(ReleaseVersion::as_str),
+            Some("0.4.2"),
+            "{status:?}"
+        );
+    }
+}
+
+/// `update --pi` insists on Pi, so the same state still fails closed.
+#[test]
+fn an_explicit_pi_update_of_a_pi_that_stopped_registering_fails() {
+    for (status, _) in unusable_pi_statuses() {
+        let hosts = machine_whose_pi_stopped_registering(status.clone());
+        let target = version("0.5.2");
+        let releases = FakeReleaseRepository::publishing(target.clone());
+        let engines = FakeEngineStore::empty();
+
+        let error = UpdateKmp::new(
+            &hosts,
+            &releases,
+            &engines,
+            &FakePluginCache::default(),
+            &FakeBridgeStore::default(),
+        )
+        .execute(request(
+            LifecycleAction::Update,
+            BTreeSet::from([Host::Pi]),
+            Some(target),
+        ))
+        .expect_err("update --pi without a usable pi-runtime package");
+
+        assert!(
+            error.to_string().contains("underpass setup"),
+            "{status:?}: {error}"
+        );
+    }
+}
+
+/// A dry run plans the same skip it would perform.
+#[test]
+fn an_autodetected_dry_run_plans_the_pi_skip() {
+    let hosts = FakeHostGateway::with_installations(Vec::new())
+        .reporting_for(Host::Pi, HostRuntimeStatus::Missing);
+    let target = ReleaseVersion::current();
+    let releases = FakeReleaseRepository::publishing(target.clone());
+    let engines = FakeEngineStore::empty();
+    let dry_run = LifecycleRequest::new(
+        LifecycleAction::Setup,
+        BTreeSet::new(),
+        None,
+        EngineInstallDir::new("/tmp/shared").expect("shared engine dir"),
+        true,
+    );
+
+    let receipt = SetupKmp::new(
+        &hosts,
+        &releases,
+        &engines,
+        &FakePluginCache::default(),
+        &FakeBridgeStore::default(),
+    )
+    .execute(dry_run)
+    .expect("planned setup");
+
+    let statuses = receipt
+        .hosts()
+        .iter()
+        .map(|host| (host.host(), host.status()))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        statuses,
+        vec![
+            (Host::Claude, ConvergenceStatus::PlannedChange),
+            (Host::Codex, ConvergenceStatus::PlannedChange),
+            (Host::Hermes, ConvergenceStatus::PlannedChange),
+            (Host::Pi, ConvergenceStatus::Skipped),
+        ]
+    );
+}
+
+/// Only an explicit `--pi` insists on Pi, so only it fails without a usable
+/// package, and it says which command installs it.
+#[test]
+fn an_explicit_pi_setup_without_a_usable_package_still_fails() {
+    for (status, _) in unusable_pi_statuses() {
+        let target = ReleaseVersion::current();
+        let hosts =
+            FakeHostGateway::with_installations(Vec::new()).reporting_for(Host::Pi, status.clone());
+        let releases = FakeReleaseRepository::publishing(target.clone());
+        let engines = FakeEngineStore::running(EngineArtifact::verified(
+            target.clone(),
+            b"running-engine".to_vec(),
+        ));
+
+        let error = SetupKmp::new(
+            &hosts,
+            &releases,
+            &engines,
+            &FakePluginCache::default(),
+            &FakeBridgeStore::default(),
+        )
+        .execute(request(
+            LifecycleAction::Setup,
+            BTreeSet::from([Host::Pi]),
+            None,
+        ))
+        .expect_err("--pi without a usable pi-runtime package");
+
+        assert!(
+            error.to_string().contains("underpass setup"),
+            "{status:?}: {error}"
+        );
+        assert_eq!(hosts.provisions(), vec![Host::Pi], "{status:?}");
+    }
+}
+
+/// A registered package is converged by auto-detection like any other host.
+#[test]
+fn autodetection_keeps_a_registered_pi() {
+    let target = ReleaseVersion::current();
+    let hosts = FakeHostGateway::with_installations(Vec::new())
+        .reporting_for(Host::Pi, HostRuntimeStatus::Registered);
+    let releases = FakeReleaseRepository::publishing(target.clone());
+    let engines = FakeEngineStore::running(EngineArtifact::verified(
+        target.clone(),
+        b"running-engine".to_vec(),
+    ));
+
+    let receipt = SetupKmp::new(
+        &hosts,
+        &releases,
+        &engines,
+        &FakePluginCache::default(),
+        &FakeBridgeStore::default(),
+    )
+    .execute(request(LifecycleAction::Setup, BTreeSet::new(), None))
+    .expect("registered Pi converges");
+
+    assert_eq!(
+        hosts.provisions(),
+        vec![Host::Claude, Host::Codex, Host::Hermes, Host::Pi]
+    );
+    assert!(receipt.hosts().iter().all(|host| host.warning().is_none()));
+}
+
+#[test]
 fn a_tree_mismatch_names_the_hosts_whose_trees_differ() {
-    let hosts = three_host_machine();
+    let hosts = native_host_machine();
     let target = version("0.5.2");
     let releases = FakeReleaseRepository::publishing(target.clone());
     let engines = FakeEngineStore::empty().with_divergent_trees();

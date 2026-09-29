@@ -26,6 +26,7 @@ impl LifecycleCommandMapper {
                 "claude" => Ok(Host::Claude),
                 "codex" => Ok(Host::Codex),
                 "hermes" => Ok(Host::Hermes),
+                "pi" => Ok(Host::Pi),
                 _ => Err(LifecycleError::InvalidHostResponse(format!(
                     "unsupported lifecycle host `{host}`"
                 ))),
@@ -50,5 +51,47 @@ impl LifecycleCommandMapper {
             dto.dry_run,
         )
         .with_bridge(bridge, bridge_dir))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use super::*;
+
+    fn command(hosts: &[&str]) -> LifecycleCommandDto {
+        LifecycleCommandDto {
+            hosts: hosts.iter().map(ToString::to_string).collect(),
+            version: None,
+            install_dir: PathBuf::from("/tmp/kmp-bin"),
+            dry_run: true,
+            lexical_bridge: None,
+            decline_bridge: true,
+            bridge_dir: None,
+        }
+    }
+
+    #[test]
+    fn pi_is_a_host_the_domain_recognizes() {
+        let request = LifecycleCommandMapper::to_domain(command(&["pi"]), LifecycleAction::Setup)
+            .expect("request");
+
+        assert_eq!(
+            request
+                .requested_hosts()
+                .iter()
+                .copied()
+                .collect::<Vec<_>>(),
+            vec![Host::Pi]
+        );
+    }
+
+    #[test]
+    fn an_unknown_host_is_refused_at_the_boundary() {
+        assert!(
+            LifecycleCommandMapper::to_domain(command(&["cursor"]), LifecycleAction::Setup)
+                .is_err()
+        );
     }
 }

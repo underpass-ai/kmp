@@ -11,6 +11,12 @@ Detailed notes from the early release cycle remain available in the
 
 ### Changed
 
+- Pi host detection recognizes the `pi-runtime` package
+  (github.com/underpass-ai/pi-runtime), which carries KMP's MCP connection
+  into Pi. Local path sources in Pi's `settings.json` are
+  now matched robustly: when `<path>/package.json` exists and its `name` is
+  `pi-runtime`, that is a match regardless of the directory's own name;
+  otherwise detection falls back to the directory basename rule as before.
 - **Breaking:** `tools/list` no longer carries parameter descriptions. The
   advertised input schemas keep types, enums, bounds, defaults and required
   fields; every tool keeps its one-line description, which now names the
@@ -24,6 +30,18 @@ Detailed notes from the early release cycle remain available in the
 
 ### Added
 
+- The Pi coding agent is a fourth native host: `setup|update --pi` converges
+  it and `doctor` inventories it as a peer. Pi has no native MCP, so the
+  registration evidence is the `pi-runtime` package in Pi's `settings.json`
+  (home resolved like Pi: `$PI_CODING_AGENT_DIR`, else `~/.pi/agent`);
+  installing it belongs to `underpass setup`. `setup --pi` fails without a
+  registered, enabled package and says so; a `setup` or `update` that names
+  no host never fails because of Pi and reports it as `skipped` with a `warning` instead.
+  Skills are mirrored only when `kmp-mcp` runs from a source checkout;
+  released binaries only verify the registration, the same limitation as
+  Hermes. The setup and update help now name `--hermes` and `--pi`, and the
+  Hermes docs use the real `--hermes` flag instead of the non-existent
+  `--host hermes`.
 - `info` and `doctor` show a Store config section with effective settings,
   rejected optional files, defaults used after a warning and absent files.
 

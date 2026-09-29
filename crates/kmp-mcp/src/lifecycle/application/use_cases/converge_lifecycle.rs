@@ -7,6 +7,7 @@ use crate::lifecycle::domain::host::Host;
 use crate::lifecycle::domain::host_convergence::HostConvergence;
 use crate::lifecycle::domain::host_engine_proof::HostEngineProof;
 use crate::lifecycle::domain::host_installation::HostInstallation;
+use crate::lifecycle::domain::host_skip_reason::HostSkipReason;
 use crate::lifecycle::domain::lifecycle_action::LifecycleAction;
 use crate::lifecycle::domain::lifecycle_error::LifecycleError;
 use crate::lifecycle::domain::lifecycle_plan::LifecyclePlan;
@@ -50,8 +51,27 @@ impl<'a> ConvergeLifecycle<'a> {
     pub fn execute(&self, request: LifecycleRequest) -> Result<LifecycleReceipt, LifecycleError> {
         let installed = self.hosts.inventory()?;
         let target = self.target_for(&request)?;
-        let available = self.hosts.available_hosts();
-        let plan = LifecyclePlan::decide(&request, &installed, &available, target)?;
+        let found = self.hosts.available_hosts();
+        let unusable = self.unusable_hosts(&request, &installed, &found)?;
+        let usable = |host: &Host| !unusable.iter().any(|reason| reason.host() == *host);
+        let available: Vec<Host> = found.into_iter().filter(|host| usable(host)).collect();
+        let converging: Vec<HostInstallation> = installed
+            .iter()
+            .filter(|installation| usable(&installation.host()))
+            .cloned()
+            .collect();
+        let plan = LifecyclePlan::decide(&request, &converging, &available, target)?;
+        let skipped: Vec<HostConvergence> = unusable
+            .iter()
+            .filter(|reason| !plan.hosts().contains(&reason.host()))
+            .map(|reason| {
+                let previous = installed
+                    .iter()
+                    .find(|installation| installation.host() == reason.host())
+                    .cloned();
+                HostConvergence::skipped(reason, previous, plan.target().clone())
+            })
+            .collect();
         if plan.is_dry_run() {
             let selected = plan
                 .hosts()
@@ -63,6 +83,7 @@ impl<'a> ConvergeLifecycle<'a> {
                         .cloned();
                     HostConvergence::planned(plan.action(), *host, previous, plan.target().clone())
                 })
+                .chain(skipped)
                 .collect();
             return Ok(LifecycleReceipt::planned(
                 plan.action(),
@@ -143,6 +164,7 @@ impl<'a> ConvergeLifecycle<'a> {
         // answered and every host points at it; a retrieval aid that could
         // not be fetched does not undo any of that (#517).
         let lexical_bridge = self.install_lexical_bridge(&request, plan.target());
+        host_results.extend(skipped);
 
         Ok(LifecycleReceipt::completed(
             plan.action(),
@@ -153,6 +175,41 @@ impl<'a> ConvergeLifecycle<'a> {
             deferred,
             lexical_bridge,
         ))
+    }
+
+    /// The hosts a run that names no host leaves alone. A host whose
+    /// connection comes from a package KMP cannot install (Pi's
+    /// `pi-runtime`) is skipped unless that package is a usable
+    /// registration — whether setup found it on PATH or an earlier run
+    /// installed it and the package has since gone — so Pi never fails a
+    /// setup or update for every other host. Naming the host explicitly still
+    /// insists on it, and fails with the remedy.
+    fn unusable_hosts(
+        &self,
+        request: &LifecycleRequest,
+        installed: &[HostInstallation],
+        found: &[Host],
+    ) -> Result<Vec<HostSkipReason>, LifecycleError> {
+        if !request.names_no_hosts() {
+            return Ok(Vec::new());
+        }
+        let would_converge = |host: Host| {
+            installed.iter().any(|installation| {
+                installation.host() == host && installation.participates_in_convergence()
+            }) || (request.autodetects_hosts() && found.contains(&host))
+        };
+        let mut unusable = Vec::new();
+        for host in Host::CONVERGENCE_ORDER {
+            if host.external_package().is_none() || !would_converge(host) {
+                continue;
+            }
+            if let Some(reason) =
+                HostSkipReason::for_status(host, &self.hosts.runtime_status(host)?)
+            {
+                unusable.push(reason);
+            }
+        }
+        Ok(unusable)
     }
 
     /// The machine's table, or a reported reason there is none.

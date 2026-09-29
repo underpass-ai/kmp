@@ -60,6 +60,17 @@ impl LifecycleRequest {
         &self.requested_hosts
     }
 
+    /// A run that names no host converges what the machine already has, and
+    /// insists on none of it.
+    pub fn names_no_hosts(&self) -> bool {
+        self.requested_hosts.is_empty()
+    }
+
+    /// A setup that names no host converges whatever it finds on PATH.
+    pub fn autodetects_hosts(&self) -> bool {
+        self.action == LifecycleAction::Setup && self.names_no_hosts()
+    }
+
     pub fn target(&self) -> Option<&ReleaseVersion> {
         self.target.as_ref()
     }
@@ -80,5 +91,33 @@ impl LifecycleRequest {
     /// home to put it in.
     pub fn bridge_dir(&self) -> Option<&BridgeInstallDir> {
         self.bridge_dir.as_ref()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn request(action: LifecycleAction, hosts: BTreeSet<Host>) -> LifecycleRequest {
+        LifecycleRequest::new(
+            action,
+            hosts,
+            None,
+            EngineInstallDir::new("/tmp/kmp-bin").expect("install dir"),
+            false,
+        )
+    }
+
+    #[test]
+    fn only_a_setup_that_names_no_host_autodetects() {
+        assert!(request(LifecycleAction::Setup, BTreeSet::new()).autodetects_hosts());
+        assert!(!request(LifecycleAction::Setup, BTreeSet::from([Host::Pi])).autodetects_hosts());
+        assert!(!request(LifecycleAction::Update, BTreeSet::new()).autodetects_hosts());
+    }
+
+    #[test]
+    fn a_plain_update_names_no_hosts_but_a_flag_does() {
+        assert!(request(LifecycleAction::Update, BTreeSet::new()).names_no_hosts());
+        assert!(!request(LifecycleAction::Update, BTreeSet::from([Host::Pi])).names_no_hosts());
     }
 }
