@@ -5,8 +5,9 @@
 //! `▌KMP▐ Backend ────` — says which tool is talking at the head of a section,
 //! in one line, so the brand never pushes the answer off the screen.
 //!
-//! On a terminal the letterforms wear a violet-to-green gradient anchored to
-//! the viewer's palette, so the CLI and the browser read as one product. On a
+//! On a terminal the letterforms wear the Spectrum sweep — red, yellow, green,
+//! cyan — that the other Underpass marks wear, and the viewer's header draws
+//! the same mark, so the CLI and the browser read as one product. On a
 //! pipe — which is what a plugin host is — everything degrades to `LARGE`
 //! byte for byte: the color is an envelope, never a different string.
 //!
@@ -30,21 +31,22 @@ pub const LARGE: &str = " ██╗  ██╗███╗   ███╗██�
  ██║  ██╗██║ ╚═╝ ██║██║        embedded database + event store
  ╚═╝  ╚═╝╚═╝     ╚═╝╚═╝        no external services";
 
-/// One color per row of the mark, violet sweeping to green through the
-/// viewer's accent blue — the same three anchors the graph's nodes wear, so
-/// the terminal and the browser are recognizably the same product.
+/// One color per row of the mark, sweeping the four Spectrum inks MADE and
+/// the other Underpass marks share. Red, yellow, green and cyan sit on rows
+/// one, three, four and six; the two rows between are their midpoints.
 const GRADIENT: [(u8, u8, u8); 6] = [
-    (129, 91, 240),
-    (100, 106, 233),
-    (72, 120, 224),
-    (52, 141, 192),
-    (38, 159, 155),
-    (27, 175, 122),
+    (240, 68, 69),
+    (248, 143, 62),
+    (255, 218, 54),
+    (50, 205, 118),
+    (58, 209, 178),
+    (66, 212, 237),
 ];
 
-/// The ink the lockup and the pulse share: the middle of the gradient,
-/// which is the accent the viewer already wears.
-pub const ACCENT: (u8, u8, u8) = GRADIENT[2];
+/// The ink the lockup and the pulse share: the accent blue the viewer wears.
+/// It is not a row of the mark — yellow or cyan would wash out on a light
+/// terminal, and a section head has to read on both.
+pub const ACCENT: (u8, u8, u8) = (72, 120, 224);
 
 /// The block-drawing glyphs are the letterforms; everything else on a row is
 /// words. Only the letterforms take the gradient — a colored tagline would
