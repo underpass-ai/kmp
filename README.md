@@ -1,7 +1,7 @@
 <h1 align="center">KMP — Agent memory that remembers why</h1>
 
 <p align="center">
-  <img src="docs/assets/kmp-wordmark.svg" width="680" alt="KMP">
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/kmp-emblem-dark.svg"><img src="docs/assets/kmp-emblem-light.svg" width="660" alt="KMP"></picture>
 </p>
 
 <p align="center">
