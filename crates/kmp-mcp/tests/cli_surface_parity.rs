@@ -19,7 +19,7 @@ const BLESS: &str = "KMP_BLESS_CLI_SURFACE";
 
 /// Every verb the executable accepts. A verb that stops being advertised, or
 /// starts being advertised without a usage line, fails here.
-const SUBCOMMANDS: [&str; 13] = [
+const SUBCOMMANDS: [&str; 14] = [
     "config",
     "doctor",
     "document",
@@ -27,6 +27,7 @@ const SUBCOMMANDS: [&str; 13] = [
     "guide",
     "import",
     "info",
+    "memories",
     "plugin",
     "setup",
     "snapshot",

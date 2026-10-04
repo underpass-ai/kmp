@@ -283,8 +283,8 @@ impl KernelMcpServer {
             }
             "fixture" | "fixtures" => Ok(Self::fixture()),
             "embedded" => {
-                let resolved =
-                    kmp_embedded::resolve_data_dir_from_env().map_err(|error| error.to_string())?;
+                let resolved = crate::lifecycle::resolve_memory_for_use()
+                    .map_err(|error| error.to_string())?;
                 let engine = kmp_embedded::resolve_engine_for_data_dir_from_env(resolved.path())
                     .map_err(|error| error.to_string())?;
                 let lease = kmp_embedded::user_data_home()
@@ -298,15 +298,6 @@ impl KernelMcpServer {
                     requested_engine = engine.map(|engine| engine.name()),
                     "embedded backend data dir resolved"
                 );
-                // Remembered so `info` can list it from any other directory
-                // later: a project `.kernel` can be anywhere on disk, and
-                // nothing that shipped could find one you were not standing
-                // next to.
-                if let Some(data_home) = kmp_embedded::user_data_home() {
-                    let catalog = crate::lifecycle::FilesystemStoreCatalog::new(&data_home);
-                    let index = crate::lifecycle::JsonlStoreIndex::new(&data_home);
-                    crate::lifecycle::RememberStore::new(&catalog, &index).execute(resolved.path());
-                }
                 let commit_native = kmp_embedded::CommitNativeBundle::for_resolved_excluding_abouts(
                     &resolved,
                     crate::guide::abouts_owned(),

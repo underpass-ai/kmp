@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crate::lifecycle::domain::memory_record::MemoryRecord;
-use crate::lifecycle::domain::store_reach::StoreReach;
+use crate::lifecycle::domain::reach_rules::ReachRules;
 use crate::lifecycle::ports::store_catalog::StoreCatalog;
 use crate::lifecycle::ports::store_index::StoreIndex;
 
@@ -14,51 +14,55 @@ use crate::lifecycle::ports::store_index::StoreIndex;
 /// state, orphans included; project stores can be anywhere, so they come
 /// from the remembered index. A path that has since disappeared is dropped
 /// rather than listed as live.
+///
+/// How each one is reached is the reach rules' decision, never a guess from
+/// which half found it (#903): a remembered store can be the saved selection,
+/// and a store under the data home can be the one `KMP_MCP_DATA_DIR` opens.
 pub struct SurveyMemories<'a> {
     catalog: &'a dyn StoreCatalog,
     index: &'a dyn StoreIndex,
+    rules: Option<ReachRules>,
 }
 
 impl<'a> SurveyMemories<'a> {
     pub fn new(catalog: &'a dyn StoreCatalog, index: &'a dyn StoreIndex) -> Self {
-        Self { catalog, index }
+        Self {
+            catalog,
+            index,
+            rules: None,
+        }
+    }
+
+    /// Label each store with these rules. Without them only the per-user
+    /// default and project `.kernel` directories are known to be reachable.
+    pub fn with_reach(mut self, rules: ReachRules) -> Self {
+        self.rules = Some(rules);
+        self
     }
 
     pub fn execute(&self) -> Vec<MemoryRecord> {
-        let mut paths: Vec<(PathBuf, StoreReach)> = Vec::new();
+        let rules = self
+            .rules
+            .clone()
+            .unwrap_or_else(|| ReachRules::new(self.catalog.user_default_store()));
 
-        let user_default = self.catalog.user_default_store();
-        for path in self.catalog.user_scope_stores() {
-            let reach = if path == user_default {
-                StoreReach::User
-            } else {
-                // Under the data home but not the name any rule resolves to:
-                // a backup, or a store some command left behind. Nothing will
-                // mention it again unless something like this does.
-                StoreReach::Unreachable
-            };
-            paths.push((path, reach));
-        }
-
+        let mut paths: Vec<PathBuf> = self.catalog.user_scope_stores();
         for path in self.index.remembered().unwrap_or_default() {
             if !self.catalog.is_store(&path) {
                 continue; // pruned: the directory is gone
             }
-            if paths.iter().any(|(known, _)| known == &path) {
-                continue;
-            }
-            paths.push((path, StoreReach::Project));
+            paths.push(path);
         }
 
-        paths.sort_by(|left, right| left.0.cmp(&right.0));
-        paths.dedup_by(|left, right| left.0 == right.0);
+        paths.sort();
+        paths.dedup();
         paths
             .into_iter()
-            .map(|(path, reach)| {
+            .map(|path| {
                 let facts = self.catalog.store_facts(&path);
                 MemoryRecord {
+                    reach: rules.reach_of(&path),
                     path,
-                    reach,
                     storage: facts.storage,
                     size: facts.size,
                     last_opened: facts.last_opened,
@@ -78,6 +82,7 @@ mod tests {
     use crate::lifecycle::adapters::filesystem_store_catalog::FilesystemStoreCatalog;
     use crate::lifecycle::adapters::jsonl_store_index::JsonlStoreIndex;
     use crate::lifecycle::application::use_cases::remember_store::RememberStore;
+    use crate::lifecycle::domain::store_reach::StoreReach;
     use crate::lifecycle::domain::store_storage::StoreStorage;
 
     fn store_at(path: &Path, format: &str, engine: &str) {
@@ -149,6 +154,44 @@ mod tests {
         assert_eq!(
             memories[0].storage,
             Some(StoreStorage::UnsupportedFormat(Some("1".to_string())))
+        );
+    }
+
+    #[test]
+    fn a_remembered_store_is_labelled_by_the_rule_that_reaches_it_not_by_the_index() {
+        let base = tempfile::tempdir().expect("temp");
+        let base = base.path();
+        let data_home = base.join("data");
+        let supported = SUPPORTED_FORMAT_VERSION.to_string();
+        let saved = base.join("game/.kernel");
+        let scratch = base.join("scratch/store");
+        let shared = data_home.join("kmp/shared");
+        store_at(&saved, &supported, "sqlite3");
+        store_at(&scratch, &supported, "sqlite3");
+        store_at(&shared, &supported, "sqlite3");
+        let catalog = FilesystemStoreCatalog::new(&data_home);
+        let index = JsonlStoreIndex::new(&data_home);
+        RememberStore::new(&catalog, &index).execute(&saved);
+        RememberStore::new(&catalog, &index).execute(&scratch);
+
+        let rules = ReachRules::new(data_home.join("kmp/default"))
+            .opening(shared.clone(), StoreReach::Env)
+            .saved(saved.clone());
+        let memories = SurveyMemories::new(&catalog, &index)
+            .with_reach(rules)
+            .execute();
+        let reach = |path: &Path| {
+            memories
+                .iter()
+                .find(|memory| memory.path == path)
+                .map(|memory| memory.reach)
+        };
+        assert_eq!(reach(&saved), Some(StoreReach::Saved));
+        assert_eq!(reach(&shared), Some(StoreReach::Env));
+        assert_eq!(
+            reach(&scratch),
+            Some(StoreReach::Unreachable),
+            "a remembered store no rule resolves to is not a project"
         );
     }
 

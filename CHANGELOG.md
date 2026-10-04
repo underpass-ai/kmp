@@ -45,6 +45,20 @@ Detailed notes from the early release cycle remain available in the
 
 ### Added
 
+- `kmp-mcp memories` lists every store the machine knows in one place
+  (#903): path, how it is reached (`env`, `project`, `worktree`, `saved`,
+  `user`, `user fallback` or `unreachable`, decided by the real resolver
+  rather than guessed from where the path lives), format, size, last
+  opening, last write, and every about inside with its event count.
+  `--json` prints the same inventory for machines. Stores are read through a
+  read-only SQLite connection — immutable when the store is at rest — so the
+  inventory takes no lease, migrates nothing and leaves no `-wal`/`-shm`
+  behind; a format this engine cannot read is listed with its format and
+  never opened. `kmp-mcp memories register <absolute-path>` adds an existing
+  store directory to the index by hand and refuses relative paths, `~` and
+  directories without `FORMAT_VERSION`. The Memories section of `info` and
+  `doctor` shows the same reach labels and each store's top eight abouts
+  (guide abouts folded into a count).
 - The Pi coding agent is a fourth native host: `setup|update --pi` converges
   it and `doctor` inventories it as a peer. Pi has no native MCP, so the
   registration evidence is the `pi-runtime` package in Pi's `settings.json`
@@ -62,6 +76,13 @@ Detailed notes from the early release cycle remain available in the
 
 ### Fixed
 
+- Every command that opens a store — `export`, `import`, `document`,
+  `snapshot create`, `consolidation`, `summaries`, `viewer` and `serve` —
+  now remembers it in `known-stores.jsonl`, through one shared resolution
+  path, so a project store that was only exported or browsed is no longer
+  invisible from other directories (#903). The index is now rewritten by
+  rename instead of truncated in place, so concurrent commands can no longer
+  read a half-written note and drop every other remembered store.
 - Store inventory recognizes the engine’s current format-4 SQLite stores
   instead of classifying them using the retired format-2 marker.
 

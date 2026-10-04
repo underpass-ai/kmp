@@ -67,7 +67,7 @@ pub(super) async fn run(command: &str, first_argument: Option<&str>, args: &[&st
         return 2;
     }
 
-    let resolved = match kmp_embedded::resolve_data_dir_from_env() {
+    let resolved = match kmp_mcp::lifecycle::resolve_memory_for_use() {
         Ok(resolved) => resolved,
         Err(error) => {
             eprintln!("kmp-mcp: {error}");
