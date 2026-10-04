@@ -1,3 +1,5 @@
+#[path = "support/isolated_home.rs"]
+mod isolated_home;
 use std::sync::{Arc, Mutex};
 
 use kmp_mcp::{KernelMcpGrpcTlsConfig, KernelMcpServer, KernelMcpToolBackend, KernelMcpToolFuture};
@@ -21,7 +23,8 @@ fn backend_selection_reports_grpc_tls_mode() {
     let server = KernelMcpServer::grpc_with_tls(
         "https://kmp.underpassai.com",
         KernelMcpGrpcTlsConfig::server("/tmp/ca.crt", None),
-    );
+    )
+    .with_remote_state_home(&isolated_home::data_home());
 
     assert_eq!(server.backend_name(), "grpc");
     assert_eq!(server.grpc_tls_mode_name(), "server");
@@ -1018,7 +1021,8 @@ async fn tools_call_without_id_has_no_response() {
 
 #[tokio::test]
 async fn grpc_backend_returns_tool_error_when_live_kernel_is_unavailable() {
-    let server = KernelMcpServer::grpc("http://127.0.0.1:1");
+    let server = KernelMcpServer::grpc("http://127.0.0.1:1")
+        .with_remote_state_home(&isolated_home::data_home());
     let response = handle_with(
         &server,
         json!({

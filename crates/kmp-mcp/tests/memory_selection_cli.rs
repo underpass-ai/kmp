@@ -7,6 +7,9 @@
 //! precedence, both refusals, and the promise that an old store is never
 //! touched.
 
+#[path = "support/isolated_home.rs"]
+mod isolated_home;
+
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -53,7 +56,7 @@ impl Machine {
     }
 
     fn command(&self, working_dir: &str, data_dir: Option<&Path>) -> Command {
-        let mut command = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"));
+        let mut command = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"));
         command
             .current_dir(self.at(working_dir))
             .env("HOME", self.at("home"))

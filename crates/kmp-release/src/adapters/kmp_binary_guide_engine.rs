@@ -55,7 +55,8 @@ impl KmpBinaryGuideEngine {
         if let Some(data_dir) = data_dir {
             command
                 .env("KMP_MCP_DATA_DIR", data_dir)
-                .env("XDG_CONFIG_HOME", data_dir.join("config"));
+                .env("XDG_CONFIG_HOME", data_dir.join("config"))
+                .env("XDG_DATA_HOME", data_dir.join("xdg-data"));
         }
         let mut child = command.spawn().map_err(|error| {
             ReleaseError::invalid(format!(
@@ -112,6 +113,7 @@ impl KmpBinaryGuideEngine {
             .env("KMP_VIEWER_ADDR", "off")
             .env("KMP_MCP_DATA_DIR", data_dir)
             .env("XDG_CONFIG_HOME", data_dir.join("config"))
+            .env("XDG_DATA_HOME", data_dir.join("xdg-data"))
             .output()
             .map_err(|error| {
                 ReleaseError::invalid(format!("could not run guide engine: {error}"))
@@ -249,5 +251,39 @@ impl GuideEngine for KmpBinaryGuideEngine {
         }
         let responses = self.exchange(&messages, Some(data_dir))?;
         Self::structured_results(&responses, calls.len())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::os::unix::fs::PermissionsExt;
+
+    use super::*;
+
+    // #910: a guide engine pointed at a scratch store must not remember that
+    // store in the developer's real `$XDG_DATA_HOME/kmp/known-stores.jsonl`.
+    #[test]
+    fn scratch_store_runs_keep_the_data_home_beside_the_store() {
+        let root = tempfile::tempdir().expect("root");
+        let engine = root.path().join("fake-kmp-mcp");
+        std::fs::write(
+            &engine,
+            "#!/bin/sh\nprintf '%s\\n' \"$XDG_DATA_HOME\" >> \"$KMP_MCP_DATA_DIR/data-homes\"\n",
+        )
+        .expect("fake engine");
+        std::fs::set_permissions(&engine, std::fs::Permissions::from_mode(0o755))
+            .expect("executable");
+        let store = root.path().join("store");
+        std::fs::create_dir_all(&store).expect("store");
+        let engine = KmpBinaryGuideEngine::new(&engine).expect("engine");
+
+        engine
+            .import(&store, &root.path().join("bundle.jsonl"))
+            .expect("cli run");
+        engine.ingest(&[], Some(&store)).expect("MCP run");
+
+        let expected = store.join("xdg-data").display().to_string();
+        let seen = std::fs::read_to_string(store.join("data-homes")).expect("recorded");
+        assert_eq!(seen.lines().collect::<Vec<_>>(), [&expected, &expected]);
     }
 }

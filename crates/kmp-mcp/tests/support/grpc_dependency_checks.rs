@@ -5,7 +5,8 @@ use super::*;
 async fn all_four_time_moves_transport_dependency_records_and_groups() {
     let recorded = RecordedMemoryRequests::default();
     let endpoint = spawn_fake_memory_server(recorded.clone()).await;
-    let server = KernelMcpServer::grpc(endpoint);
+    let server =
+        KernelMcpServer::grpc(endpoint).with_remote_state_home(&crate::isolated_home::data_home());
     for (time_move, cursor) in [
         ("goto", "at"),
         ("near", "around"),

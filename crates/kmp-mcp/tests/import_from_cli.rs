@@ -2,9 +2,12 @@
 //! binary, on a hermetic machine (#903): HOME, XDG and the store are all
 //! temporary, and the working directory is outside any repository.
 
+#[path = "support/isolated_home.rs"]
+mod isolated_home;
+
 use std::collections::BTreeMap;
 use std::path::Path;
-use std::process::{Command, Output};
+use std::process::Output;
 
 use kmp_application::{
     MemoryCoordinateData, MemoryData, MemoryDimensionData, MemoryEntryData, MemoryEvidenceData,
@@ -91,7 +94,7 @@ impl Machine {
     }
 
     fn run(&self, store: &Path, args: &[&str]) -> Output {
-        Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+        isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"))
             .args(args)
             .current_dir(self.cwd.path())
             .env("HOME", self.home.path())
