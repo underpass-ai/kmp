@@ -4106,7 +4106,7 @@
   },
   {
     "about": "guide:kmp",
-    "idempotency_key": "ingest:guide-sync:1:person:37d396040f9648015a38",
+    "idempotency_key": "ingest:guide-sync:1:person:0da3f349df1b47d7dab1",
     "memory": {
       "dimensions": [
         {
@@ -4156,7 +4156,7 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "0da3f349df1b47d7dab191300c6977eaf5db8c9db98218f3d43d5971601728fb",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4187,7 +4187,7 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "0da3f349df1b47d7dab191300c6977eaf5db8c9db98218f3d43d5971601728fb",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4218,7 +4218,7 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "0da3f349df1b47d7dab191300c6977eaf5db8c9db98218f3d43d5971601728fb",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4249,7 +4249,7 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "0da3f349df1b47d7dab191300c6977eaf5db8c9db98218f3d43d5971601728fb",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4280,7 +4280,7 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "0da3f349df1b47d7dab191300c6977eaf5db8c9db98218f3d43d5971601728fb",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4311,7 +4311,7 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "0da3f349df1b47d7dab191300c6977eaf5db8c9db98218f3d43d5971601728fb",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4342,7 +4342,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "0da3f349df1b47d7dab191300c6977eaf5db8c9db98218f3d43d5971601728fb",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4373,7 +4373,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "0da3f349df1b47d7dab191300c6977eaf5db8c9db98218f3d43d5971601728fb",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4404,7 +4404,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "0da3f349df1b47d7dab191300c6977eaf5db8c9db98218f3d43d5971601728fb",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4435,7 +4435,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "0da3f349df1b47d7dab191300c6977eaf5db8c9db98218f3d43d5971601728fb",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4461,16 +4461,16 @@
               "sequence": 11
             }
           ],
-          "id": "guide:kmp:advanced:shared-store",
-          "kind": "concept",
+          "id": "guide:kmp:advanced:import-abouts",
+          "kind": "instruction",
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "0da3f349df1b47d7dab191300c6977eaf5db8c9db98218f3d43d5971601728fb",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Two hosts can share one embedded store. SQLite WAL allows independent Codex, Claude and Hermes processes to read and write while optimistic revisions and idempotency protect semantic updates. Each memory read sees one consistent graph, body and evidence state even while another host writes. A later call can see the later state; a continuation does not hold a transaction open."
+          "text": "To use memory from another workspace without replacing this one, run kmp-mcp import --from <store-or-bundle> --about <about>, repeating --about for each about you want. The source store is only read; a bundle is verified first. Into the store KMP opens here, an about that is missing is imported, one already present with the same events is left unchanged, and one that holds an exact earlier part of the source's history is extended with the rest. A different history, an about the source lacks, or a link to memory neither store holds refuses the whole import and writes nothing, so running it again is safe. Plain kmp-mcp import <file> still restores a bundle into an empty store."
         },
         {
           "coordinates": [
@@ -4492,16 +4492,16 @@
               "sequence": 12
             }
           ],
-          "id": "guide:kmp:advanced:publish",
-          "kind": "constraint",
+          "id": "guide:kmp:advanced:shared-store",
+          "kind": "concept",
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "0da3f349df1b47d7dab191300c6977eaf5db8c9db98218f3d43d5971601728fb",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Pushing or sharing a committed bundle publishes the selected abouts to everyone who can read that repository. A local commit alone does not transmit memory. Export exact abouts deliberately; a full export from a shared user store can contain unrelated or private memory."
+          "text": "Two hosts can share one embedded store. SQLite WAL allows independent Codex, Claude and Hermes processes to read and write while optimistic revisions and idempotency protect semantic updates. Each memory read sees one consistent graph, body and evidence state even while another host writes. A later call can see the later state; a continuation does not hold a transaction open."
         },
         {
           "coordinates": [
@@ -4523,16 +4523,16 @@
               "sequence": 13
             }
           ],
-          "id": "guide:kmp:advanced:viewer",
+          "id": "guide:kmp:advanced:publish",
           "kind": "constraint",
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "0da3f349df1b47d7dab191300c6977eaf5db8c9db98218f3d43d5971601728fb",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "ChronoLoom is local and capability-protected. The process binds to loopback, exchanges a random one-session URL capability for an HttpOnly cookie, and removes the token from the address. Moving the view never writes memory."
+          "text": "Pushing or sharing a committed bundle publishes the selected abouts to everyone who can read that repository. A local commit alone does not transmit memory. Export exact abouts deliberately; a full export from a shared user store can contain unrelated or private memory."
         },
         {
           "coordinates": [
@@ -4554,16 +4554,16 @@
               "sequence": 14
             }
           ],
-          "id": "guide:kmp:advanced:plain-file",
+          "id": "guide:kmp:advanced:viewer",
           "kind": "constraint",
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "0da3f349df1b47d7dab191300c6977eaf5db8c9db98218f3d43d5971601728fb",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Use a plain file when the information is canonical prose, a large artifact or something people should edit directly. Use KMP when time, evidence, typed relations, supersession or cross-session recovery are part of the meaning."
+          "text": "ChronoLoom is local and capability-protected. The process binds to loopback, exchanges a random one-session URL capability for an HttpOnly cookie, and removes the token from the address. Moving the view never writes memory."
         },
         {
           "coordinates": [
@@ -4585,16 +4585,16 @@
               "sequence": 15
             }
           ],
-          "id": "guide:kmp:advanced:decision-history",
-          "kind": "instruction",
+          "id": "guide:kmp:advanced:plain-file",
+          "kind": "constraint",
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "0da3f349df1b47d7dab191300c6977eaf5db8c9db98218f3d43d5971601728fb",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "A decision can change without losing its history. In the worked Atlas example, offline work is required on September 1; SQLite is chosen for that reason on September 2. A central shared journal is required on September 5, and a later explicit decision replaces SQLite with PostgreSQL. The agent guide entry guide:kmp-agent:example:decision-history contains the sources and complete calls. Ask your agent to run this fictional example in an isolated store and open its about example:guide:decision-history in ChronoLoom. Select the new decision at Memories detail: one evidential link explains what it replaces, and one motivational link explains why it was chosen. Follow each to its original evidence. Compare September 3 with September 6 using an explicit clock; the new choice must not be projected into the past. Two memory kinds and two relation classes are justified by these sources. This lesson does not cover every kind or relationship, nor establish that a new writer LLM has learned to use KMP."
+          "text": "Use a plain file when the information is canonical prose, a large artifact or something people should edit directly. Use KMP when time, evidence, typed relations, supersession or cross-session recovery are part of the meaning."
         },
         {
           "coordinates": [
@@ -4616,16 +4616,16 @@
               "sequence": 16
             }
           ],
-          "id": "guide:kmp:advanced:alias-ownership",
+          "id": "guide:kmp:advanced:decision-history",
           "kind": "instruction",
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "0da3f349df1b47d7dab191300c6977eaf5db8c9db98218f3d43d5971601728fb",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "An alias is not an account owner. In the second worked example, a signed source identifies Elena Vega as Nora, while an unqualified visitor-log mention of Nora remains unresolved. Separately, the account @oak is assigned to Jon and later to Rui. The assignment is replaced; Jon and Rui remain distinct people. Ask your agent to open the isolated example:guide:alias-ownership story in ChronoLoom after reading guide:kmp-agent:example:alias-ownership. Follow the same_entity_as link for the proven alias and the supersedes link for the account change; inspect their sources. Filtering the label Nora also includes the unidentified visitor, so a label is not identity proof. The example uses three observations and two assignment decisions because the sources justify them. It does not measure whether a new LLM will avoid an unsupported merge."
+          "text": "A decision can change without losing its history. In the worked Atlas example, offline work is required on September 1; SQLite is chosen for that reason on September 2. A central shared journal is required on September 5, and a later explicit decision replaces SQLite with PostgreSQL. The agent guide entry guide:kmp-agent:example:decision-history contains the sources and complete calls. Ask your agent to run this fictional example in an isolated store and open its about example:guide:decision-history in ChronoLoom. Select the new decision at Memories detail: one evidential link explains what it replaces, and one motivational link explains why it was chosen. Follow each to its original evidence. Compare September 3 with September 6 using an explicit clock; the new choice must not be projected into the past. Two memory kinds and two relation classes are justified by these sources. This lesson does not cover every kind or relationship, nor establish that a new writer LLM has learned to use KMP."
         },
         {
           "coordinates": [
@@ -4647,16 +4647,16 @@
               "sequence": 17
             }
           ],
-          "id": "guide:kmp:advanced:distributed-incident",
+          "id": "guide:kmp:advanced:alias-ownership",
           "kind": "instruction",
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "0da3f349df1b47d7dab191300c6977eaf5db8c9db98218f3d43d5971601728fb",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "INC-17 contains an outage EVT-17-F and its later recovery EVT-17-R. Support reports the outage first; project later audits that same outage. Ask the agent to read guide:kmp-agent:example:distributed-incident and run it in an isolated store. Open example:guide:incident-support in ChronoLoom and add example:guide:incident-project to the projection. Compare the initial observed view on September 1 with the late audit and reconciliation on September 2. Two observations, an error path and a success path have distinct roles. Shared labels find candidate pairs; the source-backed same_event_as link identifies only the two outage reports. Select its new support declaration, follow the edge and inspect its literal evidence. The recovery remains a separate event. Switch from observed to occurred to see why evidence learned on September 2 can describe an event on September 1; do not infer earlier knowledge from the event clock. The two abouts keep their original texts and ownership. This authored native example does not measure a new LLM writer."
+          "text": "An alias is not an account owner. In the second worked example, a signed source identifies Elena Vega as Nora, while an unqualified visitor-log mention of Nora remains unresolved. Separately, the account @oak is assigned to Jon and later to Rui. The assignment is replaced; Jon and Rui remain distinct people. Ask your agent to open the isolated example:guide:alias-ownership story in ChronoLoom after reading guide:kmp-agent:example:alias-ownership. Follow the same_entity_as link for the proven alias and the supersedes link for the account change; inspect their sources. Filtering the label Nora also includes the unidentified visitor, so a label is not identity proof. The example uses three observations and two assignment decisions because the sources justify them. It does not measure whether a new LLM will avoid an unsupported merge."
         },
         {
           "coordinates": [
@@ -4678,16 +4678,16 @@
               "sequence": 18
             }
           ],
-          "id": "guide:kmp:advanced:four-clocks",
+          "id": "guide:kmp:advanced:distributed-incident",
           "kind": "instruction",
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "0da3f349df1b47d7dab191300c6977eaf5db8c9db98218f3d43d5971601728fb",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "The TEMP-4 permit is signed on day one, first observed by a reviewer on day three and recorded by KMP on the real execution day four. It applies from day two until day five, exclusive. Ask the agent to read guide:kmp-agent:example:four-clocks and resolve its calendar before running the isolated example:guide:four-clocks. Start in ChronoLoom at Atlas, choose the clock chip for Occurred and narrow the window with the grouped move/size controls, then choose Memories to inspect the permit and the signature check that supports it. Change the same window to Observed: it is empty until you move it to day three. Ingested shows the actual run day; Validity on day two shows the applicable permit, not earlier knowledge of it. An entry without a position on the selected clock stays out of the scene and the clock chips show the missing count; the empty inspector tells you where to select a memory. Follow the support edge and read the separate source and rationale. Moving the viewer does not change a native memory query or rewrite its clocks. The exercise uses a decision, an observation and feedback because the three sources have those roles; it does not measure a new writer LLM."
+          "text": "INC-17 contains an outage EVT-17-F and its later recovery EVT-17-R. Support reports the outage first; project later audits that same outage. Ask the agent to read guide:kmp-agent:example:distributed-incident and run it in an isolated store. Open example:guide:incident-support in ChronoLoom and add example:guide:incident-project to the projection. Compare the initial observed view on September 1 with the late audit and reconciliation on September 2. Two observations, an error path and a success path have distinct roles. Shared labels find candidate pairs; the source-backed same_event_as link identifies only the two outage reports. Select its new support declaration, follow the edge and inspect its literal evidence. The recovery remains a separate event. Switch from observed to occurred to see why evidence learned on September 2 can describe an event on September 1; do not infer earlier knowledge from the event clock. The two abouts keep their original texts and ownership. This authored native example does not measure a new LLM writer."
         },
         {
           "coordinates": [
@@ -4709,16 +4709,16 @@
               "sequence": 19
             }
           ],
-          "id": "guide:kmp:advanced:quantities",
+          "id": "guide:kmp:advanced:four-clocks",
           "kind": "instruction",
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "0da3f349df1b47d7dab191300c6977eaf5db8c9db98218f3d43d5971601728fb",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "TRIP-7 has a transport charge, a corrected hotel invoice, a duplicate copy, a voided meal and a separate USD charge. Ask the agent to read guide:kmp-agent:example:quantities and run the isolated lesson. In ChronoLoom start on September 1 observed time, before correction and cancellation. Then show the EUR source slice: six documents are not six expenses. Follow corrects from H-1 to H-0, same_event_as from H-1-C to H-1, and updates_state from the void to the meal. Finally select CALC-7: total_of points to 20.00 EUR and 35.00 EUR, while the incoming exclusion audit explains what was omitted and why. Follow that audit to its source documents. The subtotal is 55.00 EUR; 7.00 USD stays separate without a conversion rate. The agent calculates from inspected sources; KMP stores the value and proof, and writer acceptance does not check arithmetic. Moving the view does not rewrite earlier receipts or make the later total known sooner. This authored replay is not an LLM learning benchmark."
+          "text": "The TEMP-4 permit is signed on day one, first observed by a reviewer on day three and recorded by KMP on the real execution day four. It applies from day two until day five, exclusive. Ask the agent to read guide:kmp-agent:example:four-clocks and resolve its calendar before running the isolated example:guide:four-clocks. Start in ChronoLoom at Atlas, choose the clock chip for Occurred and narrow the window with the grouped move/size controls, then choose Memories to inspect the permit and the signature check that supports it. Change the same window to Observed: it is empty until you move it to day three. Ingested shows the actual run day; Validity on day two shows the applicable permit, not earlier knowledge of it. An entry without a position on the selected clock stays out of the scene and the clock chips show the missing count; the empty inspector tells you where to select a memory. Follow the support edge and read the separate source and rationale. Moving the viewer does not change a native memory query or rewrite its clocks. The exercise uses a decision, an observation and feedback because the three sources have those roles; it does not measure a new writer LLM."
         },
         {
           "coordinates": [
@@ -4740,16 +4740,16 @@
               "sequence": 20
             }
           ],
-          "id": "guide:kmp:advanced:late-conflict",
+          "id": "guide:kmp:advanced:quantities",
           "kind": "instruction",
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "0da3f349df1b47d7dab191300c6977eaf5db8c9db98218f3d43d5971601728fb",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "SHIFT-6 has two reports assigning sole responsibility to Maya and Zoe for the same interval. Ask the agent to read guide:kmp-agent:example:late-conflict and run the isolated lesson. In ChronoLoom start with R1, then show R2 and the unresolved review P1 on observed time before September 4. Select R2 to inspect contradicts and P1 to follow its two motivational links. The supported conclusion then is that the operator cannot be determined. A signed record L1 arrives September 5 for the September 1 shift; event time can show it beside the older reports, but it was not known sooner. The later review D1 confirms Maya, verified_by L1, and supersedes only R2 and P1. Follow both replacement targets and retain their original evidence. Compare historical observed recall before and after resolution; the panel labelled Current record includes later status and links, while the scene retains its selected clock and UTC window. Receipt order alone never chooses a winner. This authored example checks native behavior, not writer LLM learning."
+          "text": "TRIP-7 has a transport charge, a corrected hotel invoice, a duplicate copy, a voided meal and a separate USD charge. Ask the agent to read guide:kmp-agent:example:quantities and run the isolated lesson. In ChronoLoom start on September 1 observed time, before correction and cancellation. Then show the EUR source slice: six documents are not six expenses. Follow corrects from H-1 to H-0, same_event_as from H-1-C to H-1, and updates_state from the void to the meal. Finally select CALC-7: total_of points to 20.00 EUR and 35.00 EUR, while the incoming exclusion audit explains what was omitted and why. Follow that audit to its source documents. The subtotal is 55.00 EUR; 7.00 USD stays separate without a conversion rate. The agent calculates from inspected sources; KMP stores the value and proof, and writer acceptance does not check arithmetic. Moving the view does not rewrite earlier receipts or make the later total known sooner. This authored replay is not an LLM learning benchmark."
         },
         {
           "coordinates": [
@@ -4771,16 +4771,16 @@
               "sequence": 21
             }
           ],
-          "id": "guide:kmp:advanced:labels-negation",
+          "id": "guide:kmp:advanced:late-conflict",
           "kind": "instruction",
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "0da3f349df1b47d7dab191300c6977eaf5db8c9db98218f3d43d5971601728fb",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "LEX-7 gives bitácora and journal one component meaning through an explicit glossary. Ask the agent to read guide:kmp-agent:example:labels-negation and run the isolated lesson. Review S1 before and after relabelling: its Spanish text and original clocks stay intact, and English search returns the Spanish source. In the production RUN-7 view, S2 restates S1 while S3 says not enabled under the same instant and owner. Follow both relations; later receipt does not resolve their conflict. Inspect S4 in staging separately, then show all six component memories, including glossary constraint G1 and later RUN-8 decision D1. Opposite words from different environments or times do not create a universal contradiction. Labels group candidates; source-backed relations express what the writer knows. The Current record panel can show later links while the scene uses its selected observed window. This authored review does not measure LLM learning."
+          "text": "SHIFT-6 has two reports assigning sole responsibility to Maya and Zoe for the same interval. Ask the agent to read guide:kmp-agent:example:late-conflict and run the isolated lesson. In ChronoLoom start with R1, then show R2 and the unresolved review P1 on observed time before September 4. Select R2 to inspect contradicts and P1 to follow its two motivational links. The supported conclusion then is that the operator cannot be determined. A signed record L1 arrives September 5 for the September 1 shift; event time can show it beside the older reports, but it was not known sooner. The later review D1 confirms Maya, verified_by L1, and supersedes only R2 and P1. Follow both replacement targets and retain their original evidence. Compare historical observed recall before and after resolution; the panel labelled Current record includes later status and links, while the scene retains its selected clock and UTC window. Receipt order alone never chooses a winner. This authored example checks native behavior, not writer LLM learning."
         },
         {
           "coordinates": [
@@ -4802,16 +4802,16 @@
               "sequence": 22
             }
           ],
-          "id": "guide:kmp:advanced:budget-proof",
+          "id": "guide:kmp:advanced:labels-negation",
           "kind": "instruction",
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "0da3f349df1b47d7dab191300c6977eaf5db8c9db98218f3d43d5971601728fb",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "PACK-8 contains an export requirement, decision, test and result, plus unrelated warehouse lighting. Ask the agent to read guide:kmp-agent:example:budget-proof. Review five typed memories in ChronoLoom and follow R1 verified_by T1, T1 uses_background D1 and D1 chosen_because C1. The temporal reader captures the inclusive start and continues two pages before excluding the exact end. A partial inspection preserves its object but may still omit proof: the agent must report the exact pending continuation and needed size. The viewer has its own reads and does not complete that MCP page. Packet membership creates no path to X1. Neither the sources nor two semantic UNKNOWN selections identify who authorized PURGE-9; stop rather than invent an approver. This authored native review does not measure independent LLM learning."
+          "text": "LEX-7 gives bitácora and journal one component meaning through an explicit glossary. Ask the agent to read guide:kmp-agent:example:labels-negation and run the isolated lesson. Review S1 before and after relabelling: its Spanish text and original clocks stay intact, and English search returns the Spanish source. In the production RUN-7 view, S2 restates S1 while S3 says not enabled under the same instant and owner. Follow both relations; later receipt does not resolve their conflict. Inspect S4 in staging separately, then show all six component memories, including glossary constraint G1 and later RUN-8 decision D1. Opposite words from different environments or times do not create a universal contradiction. Labels group candidates; source-backed relations express what the writer knows. The Current record panel can show later links while the scene uses its selected observed window. This authored review does not measure LLM learning."
         },
         {
           "coordinates": [
@@ -4833,16 +4833,16 @@
               "sequence": 23
             }
           ],
-          "id": "guide:kmp:advanced:shared-resumption",
+          "id": "guide:kmp:advanced:budget-proof",
           "kind": "instruction",
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "0da3f349df1b47d7dab191300c6977eaf5db8c9db98218f3d43d5971601728fb",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "HND-9 lets a fresh agent recover a saved constraint, decision and review request. Ask for guide:kmp-agent:example:shared-resumption. In ChronoLoom choose Observed and select C1. The agent reads your current revision, audits D1 to C1 and changes its focus without blindly restoring its old window. Repeating a completed intent returns the current view; a stale new intent conflicts. The view belongs to its serving process, while the source memories survive a fresh client. A click is not approval: separate source F1 confirms only the selection and leaves the offline test pending. Four source types and their evidence remain inspectable. The authored replay uses two native clients; independent LLM learning needs a separate evaluation."
+          "text": "PACK-8 contains an export requirement, decision, test and result, plus unrelated warehouse lighting. Ask the agent to read guide:kmp-agent:example:budget-proof. Review five typed memories in ChronoLoom and follow R1 verified_by T1, T1 uses_background D1 and D1 chosen_because C1. The temporal reader captures the inclusive start and continues two pages before excluding the exact end. A partial inspection preserves its object but may still omit proof: the agent must report the exact pending continuation and needed size. The viewer has its own reads and does not complete that MCP page. Packet membership creates no path to X1. Neither the sources nor two semantic UNKNOWN selections identify who authorized PURGE-9; stop rather than invent an approver. This authored native review does not measure independent LLM learning."
         },
         {
           "coordinates": [
@@ -4860,20 +4860,20 @@
             },
             {
               "dimension": "depth",
-              "scope_id": "depth-basic",
+              "scope_id": "depth-advanced",
               "sequence": 24
             }
           ],
-          "id": "guide:kmp:basic:small-examples",
+          "id": "guide:kmp:advanced:shared-resumption",
           "kind": "instruction",
           "metadata": {
             "audience": "person",
-            "depth": "basic",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "depth": "advanced",
+            "guide_revision": "0da3f349df1b47d7dab191300c6977eaf5db8c9db98218f3d43d5971601728fb",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Start with two source lines: a journal must accept writes offline, and SQLite is chosen for that reason. Ask your agent to read guide:kmp-agent:example:first-decision, record those two typed memories and show their chosen_because relation in ChronoLoom. The example proves a recorded choice, not a completed offline test. For a particular tool, memory kind or relation, use guide:kmp-agent:examples:by-capability. The other basic cases distinguish preference from requirement, approval from execution, and membership from evidence of a result."
+          "text": "HND-9 lets a fresh agent recover a saved constraint, decision and review request. Ask for guide:kmp-agent:example:shared-resumption. In ChronoLoom choose Observed and select C1. The agent reads your current revision, audits D1 to C1 and changes its focus without blindly restoring its old window. Repeating a completed intent returns the current view; a stale new intent conflicts. The view belongs to its serving process, while the source memories survive a fresh client. A click is not approval: separate source F1 confirms only the selection and leaves the offline test pending. Four source types and their evidence remain inspectable. The authored replay uses two native clients; independent LLM learning needs a separate evaluation."
         },
         {
           "coordinates": [
@@ -4891,20 +4891,20 @@
             },
             {
               "dimension": "depth",
-              "scope_id": "depth-advanced",
+              "scope_id": "depth-basic",
               "sequence": 25
             }
           ],
-          "id": "guide:kmp:advanced:reader-cards",
-          "kind": "concept",
+          "id": "guide:kmp:basic:small-examples",
+          "kind": "instruction",
           "metadata": {
             "audience": "person",
-            "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "depth": "basic",
+            "guide_revision": "0da3f349df1b47d7dab191300c6977eaf5db8c9db98218f3d43d5971601728fb",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "A reader can keep a short phrase for a body it has read, then explore the same paths using that phrase. KMP binds the card to the exact stored body version. It keeps evidence available for deliberate expansion; stale, absent or historically unavailable cards show no substitute prose. Cards help orientation, never prove a claim. Ask your agent for guide:kmp-agent:example:reader-cards. Reuse can save context on large repeated sources; writing a card for a small body can cost more overall. Compact proof reads include proof.condense_candidates: a bounded list of large absent/stale bodies ranked by selected route/group sharing and size, with exact source and card expectations to copy after reading the body. Valid, post-cut and small bodies are excluded; the size floor is a heuristic, not a savings guarantee. Seek sharing counts only groups with known clocks and all binding witnesses; groups retained for review do not count. The list is identical on every page and never establishes proof completeness."
+          "text": "Start with two source lines: a journal must accept writes offline, and SQLite is chosen for that reason. Ask your agent to read guide:kmp-agent:example:first-decision, record those two typed memories and show their chosen_because relation in ChronoLoom. The example proves a recorded choice, not a completed offline test. For a particular tool, memory kind or relation, use guide:kmp-agent:examples:by-capability. The other basic cases distinguish preference from requirement, approval from execution, and membership from evidence of a result."
         },
         {
           "coordinates": [
@@ -4926,12 +4926,43 @@
               "sequence": 26
             }
           ],
+          "id": "guide:kmp:advanced:reader-cards",
+          "kind": "concept",
+          "metadata": {
+            "audience": "person",
+            "depth": "advanced",
+            "guide_revision": "0da3f349df1b47d7dab191300c6977eaf5db8c9db98218f3d43d5971601728fb",
+            "guide_version": "1",
+            "source": "editorial"
+          },
+          "text": "A reader can keep a short phrase for a body it has read, then explore the same paths using that phrase. KMP binds the card to the exact stored body version. It keeps evidence available for deliberate expansion; stale, absent or historically unavailable cards show no substitute prose. Cards help orientation, never prove a claim. Ask your agent for guide:kmp-agent:example:reader-cards. Reuse can save context on large repeated sources; writing a card for a small body can cost more overall. Compact proof reads include proof.condense_candidates: a bounded list of large absent/stale bodies ranked by selected route/group sharing and size, with exact source and card expectations to copy after reading the body. Valid, post-cut and small bodies are excluded; the size floor is a heuristic, not a savings guarantee. Seek sharing counts only groups with known clocks and all binding witnesses; groups retained for review do not count. The list is identical on every page and never establishes proof completeness."
+        },
+        {
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "observed_at": "2026-08-28T00:26:00Z",
+              "occurred_at": "2026-08-28T00:26:00Z",
+              "scope_id": "timeline",
+              "sequence": 27
+            },
+            {
+              "dimension": "audience",
+              "scope_id": "audience-person",
+              "sequence": 27
+            },
+            {
+              "dimension": "depth",
+              "scope_id": "depth-advanced",
+              "sequence": 27
+            }
+          ],
           "id": "guide:kmp:advanced:consolidation",
           "kind": "instruction",
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "0da3f349df1b47d7dab191300c6977eaf5db8c9db98218f3d43d5971601728fb",
             "guide_title": "Consolidated views and their sources",
             "guide_version": "1",
             "source": "editorial"
@@ -5068,6 +5099,19 @@
             "guide:kmp:advanced:snapshots"
           ],
           "text": "The format-3 bundle contract binds content digest, about coverage and event range before import or merge.",
+          "time": "2026-08-28T00:00:00Z"
+        },
+        {
+          "id": "evidence:guide:kmp:advanced:import-abouts",
+          "metadata": {
+            "audience": "person",
+            "guide_version": "1"
+          },
+          "source": "KMP editorial guide source v1",
+          "supports": [
+            "guide:kmp:advanced:import-abouts"
+          ],
+          "text": "import_abouts compares each (about, role) event stream by revision and content hash, refuses the first divergence and destination-ahead streams, and appends the missing events with their projections in one SQLite write transaction; the source store is opened with read-only SQLite connections and exported through the filtered export path.",
           "time": "2026-08-28T00:00:00Z"
         },
         {
@@ -5363,10 +5407,20 @@
         {
           "class": "evidential",
           "confidence": "high",
+          "evidence": "Identical streams are a no-op, an exact prefix is extended, and divergent histories are refused.",
+          "from": "guide:kmp:advanced:import-abouts",
+          "rel": "uses_background",
+          "sequence": 9,
+          "to": "guide:kmp:advanced:snapshots",
+          "why": "Importing exact abouts into a live store applies the same exact-prefix rule as bundle merge, per about."
+        },
+        {
+          "class": "evidential",
+          "confidence": "high",
           "evidence": "The same WAL store is safe for independent local agent processes.",
           "from": "guide:kmp:advanced:shared-store",
           "rel": "uses_background",
-          "sequence": 9,
+          "sequence": 10,
           "to": "guide:kmp:basic:local",
           "why": "Multi-host concurrency is the advanced form of the basic local SQLite claim."
         },
@@ -5376,7 +5430,7 @@
           "evidence": "Exact-about export exists so a shared store is not published wholesale.",
           "from": "guide:kmp:advanced:publish",
           "rel": "qualifies_as",
-          "sequence": 10,
+          "sequence": 11,
           "to": "guide:kmp:basic:inherit",
           "why": "Publication scope constrains what a committed repository bundle may reveal."
         },
@@ -5386,7 +5440,7 @@
           "evidence": "ChronoLoom uses a loopback one-session capability and read-only semantic state.",
           "from": "guide:kmp:advanced:viewer",
           "rel": "qualifies_as",
-          "sequence": 11,
+          "sequence": 12,
           "to": "guide:kmp:basic:open",
           "why": "The capability model explains the security boundary behind the simple open gesture."
         },
@@ -5396,7 +5450,7 @@
           "evidence": "Canonical prose and large directly edited artifacts do not need graph-temporal semantics.",
           "from": "guide:kmp:advanced:plain-file",
           "rel": "qualifies_as",
-          "sequence": 12,
+          "sequence": 13,
           "to": "guide:kmp:basic:memory",
           "why": "A good memory system must say what should remain ordinary documentation."
         },
@@ -5406,7 +5460,7 @@
           "evidence": "The human lesson points to the exact agent example and frames its two kinds and relation classes for inspection in ChronoLoom.",
           "from": "guide:kmp:advanced:decision-history",
           "rel": "uses_background",
-          "sequence": 13,
+          "sequence": 14,
           "to": "guide:kmp:welcome",
           "why": "This worked history gives the person a concrete path from the human introduction to the source, decision and later change."
         },
@@ -5416,7 +5470,7 @@
           "evidence": "The first lesson explains supersession; this one contrasts it with an explicitly evidenced person alias.",
           "from": "guide:kmp:advanced:alias-ownership",
           "rel": "uses_background",
-          "sequence": 14,
+          "sequence": 15,
           "to": "guide:kmp:advanced:decision-history",
           "why": "This lesson builds on historical replacement to show why account reassignment differs from identity."
         },
@@ -5426,7 +5480,7 @@
           "evidence": "The distributed lesson distinguishes same_event_as from a shared incident label and from its separate recovery event.",
           "from": "guide:kmp:advanced:distributed-incident",
           "rel": "uses_background",
-          "sequence": 15,
+          "sequence": 16,
           "to": "guide:kmp:advanced:alias-ownership",
           "why": "After distinguishing person identity from account assignment, the human can inspect event identity between reports owned by two abouts."
         },
@@ -5436,7 +5490,7 @@
           "evidence": "The same day-two cursor includes the permit on occurred and validity while excluding it on observed and ingested.",
           "from": "guide:kmp:advanced:four-clocks",
           "rel": "uses_background",
-          "sequence": 16,
+          "sequence": 17,
           "to": "guide:kmp:advanced:clocks",
           "why": "The worked permit makes the four-clock distinction visible through a concrete source and zoom sequence."
         },
@@ -5446,7 +5500,7 @@
           "evidence": "The earlier observed view excludes the correction, duplicate and void; the final view adds the subtotal without altering that historical selection.",
           "from": "guide:kmp:advanced:quantities",
           "rel": "uses_background",
-          "sequence": 17,
+          "sequence": 18,
           "to": "guide:kmp:advanced:four-clocks",
           "why": "The settlement example uses the observed clock to separate earlier candidate documents from later correction, cancellation and calculation."
         },
@@ -5456,7 +5510,7 @@
           "evidence": "L1 occurred on September 1 and was observed on September 5; D1 is a September 5 decision and must not be moved back to the shift.",
           "from": "guide:kmp:advanced:late-conflict",
           "rel": "uses_background",
-          "sequence": 18,
+          "sequence": 19,
           "to": "guide:kmp:advanced:four-clocks",
           "why": "The late duty record concerns an earlier shift, so the human review must distinguish event time from knowledge at receipt time."
         },
@@ -5466,7 +5520,7 @@
           "evidence": "No LEX-7 source resolves S1 versus S3; staging and the later maintenance decision remain separate contexts.",
           "from": "guide:kmp:advanced:labels-negation",
           "rel": "uses_background",
-          "sequence": 19,
+          "sequence": 20,
           "to": "guide:kmp:advanced:late-conflict",
           "why": "After reviewing late conflict resolution, the reader distinguishes a contradiction that remains unresolved from unrelated opposite states selected by labels."
         },
@@ -5476,7 +5530,7 @@
           "evidence": "A shared PACK-8 label groups export and warehouse records without supplying a semantic relation or authorization.",
           "from": "guide:kmp:advanced:budget-proof",
           "rel": "uses_background",
-          "sequence": 20,
+          "sequence": 21,
           "to": "guide:kmp:advanced:labels-negation",
           "why": "The earlier label lesson distinguishes selection from proof; the budget lesson adds the difference between a page, a selection cap and missing evidence."
         },
@@ -5486,7 +5540,7 @@
           "evidence": "H1 and F1 leave the offline test pending; completing a view move never creates a test report.",
           "from": "guide:kmp:advanced:shared-resumption",
           "rel": "uses_background",
-          "sequence": 21,
+          "sequence": 22,
           "to": "guide:kmp:advanced:budget-proof",
           "why": "A correct handoff preserves pending work and proof limits as well as the current shared frame."
         }

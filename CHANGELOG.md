@@ -39,6 +39,24 @@ Detailed notes from the early release cycle remain available in the
 
 ### Added
 
+- `kmp-mcp import --from <store-dir|bundle-file> --about <about>...` brings
+  exact abouts of another workspace's memory into the store `kmp-mcp`
+  resolves here, without replacing what it already holds (#903). `--about`
+  is required, repeatable and matched exactly; an about the source lacks is
+  refused before anything is written. A source store is opened with
+  read-only SQLite connections (never stamped, migrated or adopted, no
+  writer lock), a bundle file is verified like any import. Per `(about,
+  role)` event stream: absent here → imported; same revisions and content
+  hashes → unchanged; an exact prefix here → extended with only the missing
+  tail, on the revisions the source recorded, as a live write would append
+  it. A diverging revision or hash, a destination ahead of the source, an
+  idempotency key that already answers for another write here, or a
+  relation to a node neither the imported abouts nor this store hold is
+  refused for the whole request, naming the about and the first diverging
+  revision. Validation, append and projections run in one SQLite write
+  transaction, so a refusal writes nothing and a second run reports every
+  about `unchanged`. Plain `kmp-mcp import [file]` still replays a bundle
+  into an empty store.
 - The Pi coding agent is a fourth native host: `setup|update --pi` converges
   it and `doctor` inventories it as a peer. Pi has no native MCP, so the
   registration evidence is the `pi-runtime` package in Pi's `settings.json`
