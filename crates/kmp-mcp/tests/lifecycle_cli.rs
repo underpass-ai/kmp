@@ -1,9 +1,10 @@
-use std::process::Command;
+#[path = "support/isolated_home.rs"]
+mod isolated_home;
 
 #[test]
 fn lifecycle_http_adapter_never_drops_a_nested_runtime_on_the_async_cli() {
     let scratch = tempfile::tempdir().expect("scratch home");
-    let output = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+    let output = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"))
         .args(["setup", "--dry-run", "--version", "0.5.1"])
         .env("HOME", scratch.path())
         .env("PATH", "")

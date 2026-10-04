@@ -1,5 +1,7 @@
+#[path = "support/isolated_home.rs"]
+mod isolated_home;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output};
+use std::process::Output;
 
 use serde_json::Value;
 
@@ -8,7 +10,7 @@ fn plugin_root() -> PathBuf {
 }
 
 fn run_guide(store: &Path, extra: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+    isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"))
         .args(["guide", "sync", "--plugin-root"])
         .arg(plugin_root())
         .args(extra)
@@ -36,7 +38,7 @@ fn guide_sync_is_an_explicit_idempotent_two_about_write() {
     }
 
     let bundle = scratch.path().join("memory.jsonl");
-    let output = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+    let output = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"))
         .arg("export")
         .arg(&bundle)
         .env("KMP_MCP_DATA_DIR", &store)
