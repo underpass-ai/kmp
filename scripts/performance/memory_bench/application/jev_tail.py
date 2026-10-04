@@ -51,7 +51,7 @@ from ..runtime.jev_fault_proxy import (PROVIDER_HOST, SITE_HEADER, FaultPlan, Fa
 from ..runtime.layout import public_layout
 
 SCHEMA = 'kmp.bench.jev_tail.v1'
-API_KEY_ENV = 'TYPESAFE_API_KEY'
+KEY_VARIABLE_NAME = 'TYPESAFE_API_KEY'  # the variable's name, shown in reports; never its value
 PROVIDER_URL = f'https://{PROVIDER_HOST}/v1/systemone'
 MODEL = 'jev-1.13.0'
 # Mirrors crates/kmp-mcp/src/serving/adapters/typesafe_{judgement,transport}.rs (checked by test_jev_tail).
@@ -65,7 +65,7 @@ DEFAULT_PLAN = 'pass,429:1,pass,delay:1500,pass,timeout:25,pass,429,pass,pass'
 SELF_CHECK_PLAN = 'pass,429:1,pass,delay:300,pass,timeout:1.5,pass,429,pass,pass'
 SELF_CHECK_TIMEOUT_MS = 1000
 P99_MIN_N = 100
-NO_KEY = (f'{API_KEY_ENV} is not set: the Jev tail test runs only in real mode (BENCH_SPEC 9); '
+NO_KEY = (f'{KEY_VARIABLE_NAME} is not set: the Jev tail test runs only in real mode (BENCH_SPEC 9); '
           'run it with the key exported, or `--self-check` against the loopback stand-in')
 LIMITATION = ('kmp-mcp pins https://api.typesafe.ai and builds its client with no_proxy(), so the proxy '
               'cannot sit in front of the binary: the client mirrors its retry policy (2 retries of a 429, '
@@ -254,7 +254,7 @@ def run_tail(settings, upstream=PROVIDER_URL, env=None, key=None, proxy_factory=
     real = is_provider(upstream)
     if real:
         env = os.environ if env is None else env
-        key = (env.get(API_KEY_ENV) or '').strip()
+        key = (env.get(KEY_VARIABLE_NAME) or '').strip()
         if not key:
             return skipped(NO_KEY, settings)
     elif not key:
@@ -263,7 +263,7 @@ def run_tail(settings, upstream=PROVIDER_URL, env=None, key=None, proxy_factory=
     levels = measure(upstream, key, settings, proxy_factory)
     return {'schema': SCHEMA, 'bench_version': BENCH_VERSION, 'status': 'ran',
             'mode': 'real' if real else 'self_check', 'upstream': PROVIDER_URL if real else 'loopback stand-in',
-            'key': {'source': f'env {API_KEY_ENV}' if real else 'stand-in', 'recorded': False},
+            'key': {'source': f'env {KEY_VARIABLE_NAME}' if real else 'stand-in', 'recorded': False},
             'settings': settings.as_dict(), 'levels': levels, 'elapsed_s': round(time.perf_counter() - started, 3),
             'limitations': [LIMITATION] + ([] if real else [
                 'self-check: the upstream is a loopback stand-in, not Jev; its latency is not the provider\'s'])}
