@@ -10,9 +10,9 @@ import json
 
 
 class TraceRecorder:
-    def __init__(self, path, redactions=()):
+    def __init__(self, path, redact=None):
         self.path = path
-        self.redactions = tuple(redactions)
+        self.redact = redact or (lambda text: text)
         self.handle = path.open('x', encoding='utf-8')  # never overwrite evidence
         self.lines = 0
 
@@ -30,10 +30,7 @@ class TraceRecorder:
         self._write('{"session":' + self._session(session) + ',"request":' + raw_request + '}')
 
     def marker(self, event):
-        text = json.dumps(event, ensure_ascii=False)
-        for secret, public in self.redactions:
-            text = text.replace(secret, public)
-        self._write(text)
+        self._write(self.redact(json.dumps(event, ensure_ascii=False)))
 
     def _write(self, line):
         if '\n' in line:

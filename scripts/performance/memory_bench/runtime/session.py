@@ -118,7 +118,7 @@ class BenchProcess:
             for hook in config.store_hooks:
                 hook.prepare_store(self.store.data_dir)
             self.cursor = server_log.LogCursor(self.store.data_dir)
-            self.recorder = TraceRecorder(self.out_dir / f'{self.name}.jsonl', self.store.redactions())
+            self.recorder = TraceRecorder(self.out_dir / f'{self.name}.jsonl', self.store.redact)
             self.recorder.marker({'session_start': self.name})
             with config.pinning.for_children():
                 self.session = StdioSession(Path(config.binary).resolve(), self.store, self.recorder,
@@ -149,7 +149,7 @@ class BenchProcess:
             finally:
                 self.attempts.extend(tap.attempts)
             return
-        recorder = TraceRecorder(self.out_dir / f'{name}.jsonl', self.store.redactions())
+        recorder = TraceRecorder(self.out_dir / f'{name}.jsonl', self.store.redact)
         recorder.marker({'session_start': name, 'process': self.name})
         previous = self.session.record_into(recorder)
         try:
@@ -167,8 +167,7 @@ class BenchProcess:
             self.recorder.marker({'session_end': self.name, 'exit_code': code})
             self.recorder.close()
             text = self.session.stderr_path.read_text(errors='replace')
-            for secret, public in self.store.redactions():
-                text = text.replace(secret, public)
+            text = self.store.redact(text)
             (self.out_dir / f'{self.name}.stderr').write_text(text)
             lines = self.cursor.read_new()
             telemetry = server_log.parse(lines)
@@ -186,8 +185,7 @@ class BenchProcess:
                 self.session.broken = True
                 self.session.close()
                 text = self.session.stderr_path.read_text(errors='replace')
-                for secret, public in self.store.redactions():
-                    text = text.replace(secret, public)
+                text = self.store.redact(text)
                 (self.out_dir / f'{self.name}.stderr').write_text(text)
             except (OSError, HarnessError, ValueError):
                 pass

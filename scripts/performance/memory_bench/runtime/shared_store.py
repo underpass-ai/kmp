@@ -118,7 +118,7 @@ class StdioServer:
 
     def __init__(self, store, binary, name, timeout_seconds=TIMEOUT_SECONDS):
         self.store, self.binary, self.name = store, binary, name
-        self.recorder = TraceRecorder(store.out_dir / f'{name}.jsonl', store.isolated.redactions())
+        self.recorder = TraceRecorder(store.out_dir / f'{name}.jsonl', store.isolated.redact)
         self.session = None
         try:
             self.session = StdioSession(Path(binary.path), store.isolated, self.recorder, name,
@@ -162,8 +162,7 @@ class StdioServer:
     def close(self):
         code = self._shutdown()
         text = self.session.stderr_path.read_text(errors='replace')
-        for secret, public in self.store.isolated.redactions():
-            text = text.replace(secret, public)
+        text = self.store.isolated.redact(text)
         (self.store.out_dir / f'{self.name}.stderr').write_text(text)
         return ServerExit(code, log_events(text))
 

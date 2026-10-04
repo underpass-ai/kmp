@@ -74,8 +74,7 @@ def run_cli(binary, store, verb, arguments=(), timeout_s=CLI_TIMEOUT_SECONDS):
         raise BinaryFailed(f'kmp-mcp {verb} did not finish within {timeout_s:g}s') from failure
     wall_ms = (time.perf_counter_ns() - started) / 1e6
     stderr = done.stderr
-    for secret, public in store.redactions():
-        stderr = stderr.replace(secret, public)
+    stderr = store.redact(stderr)
     run = CliRun(verb, done.returncode, done.stdout, stderr, wall_ms)
     if done.returncode != 0:
         raise BinaryFailed(f'kmp-mcp {verb} exited {done.returncode}: {stderr[-STDERR_TAIL:]}')

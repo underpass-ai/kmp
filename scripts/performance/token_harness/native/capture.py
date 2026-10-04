@@ -65,7 +65,7 @@ class _Run:
         self.ids = itertools.count(1)  # JSON-RPC ids never collide across sessions of a run
 
     def session(self, store, trace, name, stderr_name):
-        recorder = TraceRecorder(self.out / trace, store.redactions())
+        recorder = TraceRecorder(self.out / trace, store.redact)
         session = StdioSession(self.binary, store, recorder, name, self.ids,
                                timeout_seconds=self.options.timeout_seconds,
                                probe_resources=self.options.probe_resources)
@@ -77,8 +77,7 @@ class _Run:
         recorder.marker({'session_end': session.name, 'exit_code': code})
         recorder.close()
         text = session.stderr_path.read_text(errors='replace')
-        for secret, public in store.redactions():
-            text = text.replace(secret, public)
+        text = store.redact(text)
         (self.out / stderr_name).write_text(text)
         return code
 

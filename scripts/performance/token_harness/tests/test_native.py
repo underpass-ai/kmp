@@ -101,7 +101,8 @@ class VariantEnvTest(unittest.TestCase):
         self.assertNotIn('TYPESAFE_API_KEY', store.allowlisted_env())
         self.assertNotIn('sk-test-123', json.dumps(store.allowlisted_env()))
         self.assertNotIn('sk-test-123', repr(store))
-        self.assertIn(('sk-test-123', '<TYPESAFE_API_KEY>'), store.redactions())
+        self.assertEqual(store.redact(f'key=sk-test-123 at {store.root}/store'),
+                         'key=<redacted> at <store-root>/store')
         with self.assertRaises(IsolationError):
             create_store(self.work, 'x', self.parent, secrets={'KMP_MCP_ENGINE': 'x'})
 
@@ -185,7 +186,7 @@ class TransportTest(unittest.TestCase):
         self.trace = root / 'journey.jsonl'
 
     def open(self, **options):
-        recorder = TraceRecorder(self.trace, self.store.redactions())
+        recorder = TraceRecorder(self.trace, self.store.redact)
         session = StdioSession(self.binary, self.store, recorder, 'j', itertools.count(1), **options)
         self.addCleanup(recorder.close)
         self.addCleanup(session.close)
