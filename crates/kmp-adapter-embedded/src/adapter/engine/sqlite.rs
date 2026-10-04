@@ -25,7 +25,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use kmp_domain::PortError;
-use rusqlite::{Connection, OptionalExtension, config::DbConfig, params};
+use rusqlite::{Connection, OpenFlags, OptionalExtension, config::DbConfig, params};
 
 use super::{
     Engine, Key, KeyShape, ReadTx, Str2Row, Str3Row, StrRow, Table, U64Row, WriteTx,
@@ -67,6 +67,9 @@ pub(crate) struct SqliteEngine {
     path: PathBuf,
     pool: Arc<Mutex<Vec<Connection>>>,
     revision_observer: Mutex<Option<super::snapshot_revision_observer::SnapshotRevisionObserver>>,
+    /// Opened as somebody else's memory: every connection is read-only at
+    /// the SQLite level, so no code path can write to it.
+    read_only: bool,
 }
 
 impl SqliteEngine {
@@ -80,7 +83,37 @@ impl SqliteEngine {
             path: store_file.to_path_buf(),
             pool: Arc::new(Mutex::new(vec![connection])),
             revision_observer: Mutex::new(None),
+            read_only: false,
         })
+    }
+
+    /// Opens an existing `store_file` without the right to change it: no
+    /// table creation, no journal-mode switch, and every connection is
+    /// `SQLITE_OPEN_READ_ONLY` with `query_only` set. The schema and the
+    /// file's integrity are still checked, because the bytes are read.
+    ///
+    /// WAL keeps working: a live writer elsewhere is seen at its last
+    /// commit. SQLite may create the empty `-wal`/`-shm` coordination files
+    /// beside the database when they are absent; the database itself is
+    /// never written.
+    pub(crate) fn open_read_only_file(store_file: &Path) -> Result<Self, PortError> {
+        let connection = open_read_only_connection(store_file)?;
+        check_integrity(&connection, store_file)?;
+        validate_tables(&connection, store_file)?;
+        Ok(Self {
+            path: store_file.to_path_buf(),
+            pool: Arc::new(Mutex::new(vec![connection])),
+            revision_observer: Mutex::new(None),
+            read_only: true,
+        })
+    }
+
+    fn connect(&self) -> Result<Connection, PortError> {
+        if self.read_only {
+            open_read_only_connection(&self.path)
+        } else {
+            open_connection(&self.path)
+        }
     }
 
     /// Rebuilds the file compactly. `VACUUM` needs the whole database to
@@ -102,7 +135,7 @@ impl SqliteEngine {
         let reused = self.pool.lock().map_err(|_| poisoned())?.pop();
         let connection = match reused {
             Some(connection) => connection,
-            None => open_connection(&self.path)?,
+            None => self.connect()?,
         };
         Ok(Pooled {
             connection: Some(connection),
@@ -116,9 +149,7 @@ impl Engine for SqliteEngine {
         let mut observer = self.revision_observer.lock().map_err(|_| poisoned())?;
         if observer.is_none() {
             *observer = Some(
-                super::snapshot_revision_observer::SnapshotRevisionObserver::new(open_connection(
-                    &self.path,
-                )?)?,
+                super::snapshot_revision_observer::SnapshotRevisionObserver::new(self.connect()?)?,
             );
         }
         let observer = observer.as_ref().expect("initialized observer");
@@ -161,6 +192,11 @@ impl Engine for SqliteEngine {
 
 fn open_validated_connection(store_file: &Path) -> Result<Connection, PortError> {
     let connection = open_connection(store_file)?;
+    check_integrity(&connection, store_file)?;
+    Ok(connection)
+}
+
+fn check_integrity(connection: &Connection, store_file: &Path) -> Result<(), PortError> {
     let integrity: String = connection
         .query_row("PRAGMA quick_check(1)", [], |row| row.get(0))
         .map_err(|error| security_error(store_file, "quick_check", &error))?;
@@ -170,6 +206,27 @@ fn open_validated_connection(store_file: &Path) -> Result<Connection, PortError>
             store_file.display()
         )));
     }
+    Ok(())
+}
+
+fn open_read_only_connection(store_file: &Path) -> Result<Connection, PortError> {
+    let connection = Connection::open_with_flags(
+        store_file,
+        OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX,
+    )
+    .map_err(|error| {
+        PortError::Unavailable(format!(
+            "embedded store could not open `{}` read-only: {error}",
+            store_file.display()
+        ))
+    })?;
+    harden_connection(&connection, store_file)?;
+    connection
+        .busy_timeout(BUSY_TIMEOUT)
+        .map_err(|error| pragma_error(store_file, "busy_timeout", &error))?;
+    connection
+        .execute_batch("PRAGMA query_only=ON")
+        .map_err(|error| pragma_error(store_file, "query_only", &error))?;
     Ok(connection)
 }
 

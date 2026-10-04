@@ -1,3 +1,8 @@
+mod about_import;
+mod about_import_outcome;
+mod about_import_plan;
+mod about_import_report;
+mod about_import_source;
 mod bounded_adjacency;
 mod consolidation;
 mod consolidation_source;
@@ -19,6 +24,7 @@ mod node_detail;
 mod outward_neighborhood;
 mod portability;
 mod projection_write;
+mod read_only_store;
 mod read_snapshot;
 mod replay;
 mod runtime_state;
@@ -28,6 +34,8 @@ mod store;
 mod telemetry;
 mod trace_snapshot;
 
+pub use about_import_outcome::AboutImportOutcome;
+pub use about_import_report::AboutImportReport;
 pub use format_version::{
     EVENT_FORMAT_VERSION, SUPPORTED_FORMAT_VERSION, StorageEngine, format_version_path,
     read_stamped_version, store_file_path_for, validate_store_layout,

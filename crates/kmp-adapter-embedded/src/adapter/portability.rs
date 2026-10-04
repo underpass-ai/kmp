@@ -224,12 +224,12 @@ pub fn merge_bundles(left: &str, right: &str, snapshot_id: &str) -> Result<Strin
     encode_bundle(&events, Some(snapshot_id))
 }
 
-struct VerifiedBundle {
-    header: BundleHeader,
-    events: Vec<ContextUpdatedEvent>,
+pub(super) struct VerifiedBundle {
+    pub(super) header: BundleHeader,
+    pub(super) events: Vec<ContextUpdatedEvent>,
 }
 
-fn parse_bundle(bundle: &str) -> Result<VerifiedBundle, PortError> {
+pub(super) fn parse_bundle(bundle: &str) -> Result<VerifiedBundle, PortError> {
     let mut lines = bundle.lines().filter(|line| !line.trim().is_empty());
     let header: BundleHeader = decode_line(
         "bundle header",
@@ -404,7 +404,7 @@ fn filter_events_for_abouts(
         .collect())
 }
 
-fn validate_revisions(events: &[ContextUpdatedEvent]) -> Result<(), PortError> {
+pub(super) fn validate_revisions(events: &[ContextUpdatedEvent]) -> Result<(), PortError> {
     let mut revisions: BTreeMap<(&str, &str), u64> = BTreeMap::new();
     for (position, event) in events.iter().enumerate() {
         let previous = revisions
