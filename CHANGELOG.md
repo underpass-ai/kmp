@@ -9,6 +9,17 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Changed
+
+- The agent guide now separates the last recorded decision from a verified
+  current state (#900, #901). An entry with no `superseded`, `conflicts` or
+  `expired` marker is the last *recorded* state: the wake and ask cards tell
+  the agent to give its observation date and say nothing later verifies or
+  replaces it, without marking it false for its age. The lifecycle topic
+  explains why, and the new `decision-currency` lesson replays an open-ended,
+  a superseded and an expired decision. No kernel behavior changed. The audit
+  and agent evaluation are in `docs/development/decision-currency-audit.md`.
+
 ## [0.25.0] - 2026-10-04
 
 ### Changed

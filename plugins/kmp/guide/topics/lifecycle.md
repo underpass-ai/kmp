@@ -49,3 +49,19 @@ historical moves can deliberately return an entry whose interval ended; those
 entries appear in `proof.expired` with their exclusive `valid_until`. Expiry
 is kept apart from `proof.superseded` because a lease or constraint can simply
 end without another entry replacing it.
+
+## No marker is not verification
+
+An entry with no `proof.superseded`, `proof.conflicts` or `proof.expired`
+marker, and no later entry on the subject, has no *recorded* replacement,
+contradiction or end. That describes the store, not the world: KMP holds
+no observation of the subject after the entry's own `observed_at` unless one
+is returned.
+
+When the user asks whether such a decision still holds, answer with what was
+recorded and when: "the last recorded decision is D1, observed 2026-08-23;
+nothing recorded since verifies, replaces or ends it". Do not turn that into
+"D1 holds today", and do not mark it false or doubtful because time has
+passed: elapsed time is not evidence in either direction. Only a new
+observation can say whether it still holds outside the store; write it when
+one arrives. Example: `guide:kmp-agent:example:decision-currency`.

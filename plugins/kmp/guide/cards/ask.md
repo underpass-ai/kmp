@@ -28,6 +28,10 @@ settled; act on it once instead of asking again in other words:
 An honest UNKNOWN can end the task; do not sweep the graph to force an answer.
 For a semantic question with a time, supply `as_of` or `interval` and the right
 axis. For “what changed”, “latest”, or a history, use temporal navigation.
+Citations prove what was recorded and when it was observed. For “is it still
+true today”, report the last recorded decision with its observation date and
+whether anything later verifies, replaces or ends it; no later record is not
+confirmation, and age alone is not refutation.
 
 More: `guide:kmp-agent:example:decision-history` and
 `guide:kmp-agent:example:four-clocks`.

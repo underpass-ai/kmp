@@ -13,6 +13,7 @@ should start with [Embedded KMP](../embedded/README.md).
 - [Releasing](releasing.md) — version, artifact and tag flow.
 - [Agent token optimization](agent-token-optimization.md) — #544 integration track: token meter, Wake evidence identity and paired measurement.
 - [Agent-facing surface](agent-surface.md) — maintenance procedure for people and agents, including ownership, generation, validation and context cost.
+- [Decision currency audit](decision-currency-audit.md) — #900/#901 skill and guide audit, last recorded versus verified-today evaluation and its correction.
 - [Conditional argument schemas](agent-schema-conditions.md) — preserve callable fields and validate equivalent call forms against captured catalogues.
 - [Guide examples](../../plugins/kmp/guide/README.md) — authored lessons and isolated MCP replays.
 - [Retrieval configuration](../embedded/configuration.md) — current defaults and optional integrations.

@@ -10,6 +10,9 @@ unbounded next-action summary as proof of the selected historical state.
 Execute `projection.next_action` until the relevant packet is complete. Then
 navigate history when the task asks what happened, or inspect a relied-on ref.
 Missing memory means there is nothing known in that selection; do not invent it.
+An entry without a superseded, conflict or expired marker is the last *recorded*
+state, not a verified present: give its observation date, say nothing later
+verifies or replaces it, and do not mark it false for its age.
 
 More: `guide:kmp-agent:example:shared-resumption` and
 `guide:kmp-agent:example:budget-proof`.

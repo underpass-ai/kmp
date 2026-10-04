@@ -155,7 +155,7 @@
           "id": "advanced:lifecycle",
           "kind": "instruction",
           "depth": "advanced",
-          "evidence": "KMP proof separates superseded, conflicts and expired so an agent cannot flatten distinct lifecycles. Native historical wake/ask preserves an earlier conflict and hides its live marker only after explicit supersession; the old edge remains auditable.",
+          "evidence": "KMP proof separates superseded, conflicts and expired so an agent cannot flatten distinct lifecycles. Native historical wake/ask preserves an earlier conflict and hides its live marker only after explicit supersession; the old edge remains auditable. An entry with none of those markers has no recorded replacement, contradiction or end; the #900 evaluation showed agents answering 'yes, still the decision' from that silence, so the topic separates last recorded from verified today without any age-based rule.",
           "text_file": "topics/lifecycle.md",
           "guide_title": "Replace, contradict or expire"
         },
@@ -203,7 +203,7 @@
           "id": "examples:index",
           "kind": "instruction",
           "depth": "basic",
-          "text": "For a first use, read guide:kmp-agent:example:first-decision: two sources, one decision and its reason. Find a specific tool, kind or relation in guide:kmp-agent:examples:by-capability. Basic cases are grouped in preference-delta, workflow-proof, structure-parts and canonical-ingest; use the exact references in that map. Worked examples are optional source-grounded lessons. Decision changes and past validity: guide:kmp-agent:example:decision-history. Person alias, unresolved same-name mention and account reassignment: guide:kmp-agent:example:alias-ownership. Distributed incident, proposed identity and late reports: guide:kmp-agent:example:distributed-incident. Four clocks, half-open intervals and zoom to proof: guide:kmp-agent:example:four-clocks. Quantities, corrections, duplicates and exclusions: guide:kmp-agent:example:quantities. Conflicting assignments and evidence received late: guide:kmp-agent:example:late-conflict. Multiple aliases and distinct facets: guide:kmp-agent:example:dimensional-memberships. Labels, scoped synonyms and negation: guide:kmp-agent:example:labels-negation. Read the brief installed guide/AGENT.md once, consult the extended verb you need, and inspect a selected lesson. Writer prerequisites are selected by the lesson: relations and scope for distributed incidents; lifecycle for the four-clock permit, quantity settlement and late-conflict review; also lifecycle and summary for decision and alias histories. The labels lesson also reads language, summary and lifecycle. Their exact refs are guide:kmp-agent:advanced:relations, guide:kmp-agent:advanced:scope, guide:kmp-agent:advanced:lifecycle guide:kmp-agent:advanced:language and guide:kmp-agent:advanced:summary; reuse already-read bodies. These are exact refs in guide:kmp-agent. Complete selected pages. A compact wake is a catalogue, not the complete lesson. Authored replays check native contracts, not LLM learning; unseen writer and blind reader evaluation remains separate. More basic and advanced cases remain to be added. Budgeted pages and insufficient proof: guide:kmp-agent:example:budget-proof. Its additional prerequisites are guide:kmp-agent:advanced:budgets and guide:kmp-agent:advanced:language. Fresh reader and shared-view review: guide:kmp-agent:example:shared-resumption, also consulting guide:kmp-agent:gate:invocation. It distinguishes durable memory from a process-scoped view and reuses guidance within each fresh session. Execution and its later verification in one source: guide:kmp-agent:example:event-separation. Reader cards, named body expansion and compact reuse: guide:kmp-agent:example:reader-cards.",
+          "text": "For a first use, read guide:kmp-agent:example:first-decision: two sources, one decision and its reason. Find a specific tool, kind or relation in guide:kmp-agent:examples:by-capability. Basic cases are grouped in preference-delta, workflow-proof, structure-parts and canonical-ingest; use the exact references in that map. Worked examples are optional source-grounded lessons. Decision changes and past validity: guide:kmp-agent:example:decision-history. Person alias, unresolved same-name mention and account reassignment: guide:kmp-agent:example:alias-ownership. Distributed incident, proposed identity and late reports: guide:kmp-agent:example:distributed-incident. Four clocks, half-open intervals and zoom to proof: guide:kmp-agent:example:four-clocks. Quantities, corrections, duplicates and exclusions: guide:kmp-agent:example:quantities. Conflicting assignments and evidence received late: guide:kmp-agent:example:late-conflict. Whether a decision still holds — last recorded, replaced or expired: guide:kmp-agent:example:decision-currency. Multiple aliases and distinct facets: guide:kmp-agent:example:dimensional-memberships. Labels, scoped synonyms and negation: guide:kmp-agent:example:labels-negation. Read the brief installed guide/AGENT.md once, consult the extended verb you need, and inspect a selected lesson. Writer prerequisites are selected by the lesson: relations and scope for distributed incidents; lifecycle for the four-clock permit, quantity settlement and late-conflict review; also lifecycle and summary for decision and alias histories. The labels lesson also reads language, summary and lifecycle. Their exact refs are guide:kmp-agent:advanced:relations, guide:kmp-agent:advanced:scope, guide:kmp-agent:advanced:lifecycle guide:kmp-agent:advanced:language and guide:kmp-agent:advanced:summary; reuse already-read bodies. These are exact refs in guide:kmp-agent. Complete selected pages. A compact wake is a catalogue, not the complete lesson. Authored replays check native contracts, not LLM learning; unseen writer and blind reader evaluation remains separate. More basic and advanced cases remain to be added. Budgeted pages and insufficient proof: guide:kmp-agent:example:budget-proof. Its additional prerequisites are guide:kmp-agent:advanced:budgets and guide:kmp-agent:advanced:language. Fresh reader and shared-view review: guide:kmp-agent:example:shared-resumption, also consulting guide:kmp-agent:gate:invocation. It distinguishes durable memory from a process-scoped view and reuses guidance within each fresh session. Execution and its later verification in one source: guide:kmp-agent:example:event-separation. Reader cards, named body expansion and compact reuse: guide:kmp-agent:example:reader-cards.",
           "evidence": "The generated agent Markdown preserves the operating bodies and supplies exact kmp_inspect arguments for the indexed examples stored in the guide. Native replays check the paths separately from LLM learning."
         },
         {
@@ -363,7 +363,7 @@
           "kind": "instruction",
           "depth": "basic",
           "text_file": "cards/wake.md",
-          "evidence": "A short worked starting card for wake; extended guidance remains available through its canonical verb reference."
+          "evidence": "A short worked starting card for wake; extended guidance remains available through its canonical verb reference. It states that an unmarked entry is the last recorded state with its observation date, not a verified present, because wake is the card every #900 session read."
         },
         {
           "id": "card:write",
@@ -377,7 +377,7 @@
           "kind": "instruction",
           "depth": "basic",
           "text_file": "cards/ask.md",
-          "evidence": "A short worked starting card for ask; extended guidance remains available through its canonical verb reference."
+          "evidence": "A short worked starting card for ask; extended guidance remains available through its canonical verb reference. It separates what a citation proves (recorded, observed then) from a claim about today, because #900 sessions answered 'still true today' from Ask citations."
         },
         {
           "id": "card:time",
@@ -475,6 +475,14 @@
           "text_file": "topics/consolidation.md",
           "evidence": "Native consolidation sources/write/read/project preserve versioned dependencies, literal quotes, canonical sources and explicit source-version clock filters. SQLite transaction checks and native CLI controls exercise stale reads, retries and immutable audits.",
           "guide_title": "Use optional consolidated memory views"
+        },
+        {
+          "id": "example:decision-currency",
+          "kind": "instruction",
+          "depth": "advanced",
+          "text_file": "examples/decision-currency.md",
+          "example_title": "Last recorded, replaced or expired: answer whether a decision still holds",
+          "evidence": "One fictional review log records three decisions; one is superseded with its reason, one reaches its stated valid_until and one receives nothing later. The native replay checks proof.superseded, proof.expired, the open decision's own observation time and a historical read before the replacement."
         }
       ],
       "relations": [
@@ -861,6 +869,14 @@
           "class": "procedural",
           "why": "Trace body delivery and Condense reuse share one worked lesson.",
           "evidence": "The source guide names this exact reference; kmp_inspect reads the linked lesson."
+        },
+        {
+          "from": "example:decision-currency",
+          "to": "advanced:lifecycle",
+          "rel": "uses_background",
+          "class": "evidential",
+          "why": "The lesson applies the three lifecycles and the absence of a marker to one question asked weeks later.",
+          "evidence": "R1 is superseded by R2, L1 ends at its valid_until, and D1 carries no marker; the answer section words each state differently."
         }
       ]
     },
