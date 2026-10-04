@@ -1,10 +1,13 @@
 //! Captured-context transforms must work without touching a memory backend.
+
+#[path = "support/isolated_home.rs"]
+mod isolated_home;
 use serde_json::{Value, json};
 use std::io::Write;
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 
 fn run(directory: &std::path::Path, args: &[&str], input: &Value) -> std::process::Output {
-    let mut child = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+    let mut child = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"))
         .args(args)
         .current_dir(directory)
         .env("KMP_MCP_BACKEND", "must-not-open")

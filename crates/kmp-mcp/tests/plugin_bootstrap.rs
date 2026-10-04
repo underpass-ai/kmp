@@ -1,5 +1,8 @@
 #![cfg(unix)]
 
+#[path = "support/isolated_home.rs"]
+mod isolated_home;
+
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
@@ -297,7 +300,7 @@ exit 1
                     vec!["update", "--version", "9.9.9"],
                 ),
             ] {
-                let output = Command::new(
+                let output = isolated_home::command(
                     self.root
                         .path()
                         .join("plugin/scripts/kmp-install-binary.sh"),

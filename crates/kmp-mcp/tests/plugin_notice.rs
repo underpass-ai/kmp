@@ -1,6 +1,8 @@
+#[path = "support/isolated_home.rs"]
+mod isolated_home;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output};
+use std::process::Output;
 
 use serde_json::json;
 
@@ -48,7 +50,7 @@ impl PluginNoticeHarness {
     }
 
     fn notice(&self, plugin: &Path, latest: &str) -> Output {
-        Command::new(&self.binary)
+        isolated_home::command(&self.binary)
             .args([
                 "plugin",
                 "notice",
