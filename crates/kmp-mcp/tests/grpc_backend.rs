@@ -1,3 +1,5 @@
+#[path = "support/isolated_home.rs"]
+mod isolated_home;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -30,7 +32,8 @@ mod dependency_checks;
 async fn grpc_backend_maps_kernel_memory_service_responses_to_kmp_tools() {
     let recorded = RecordedMemoryRequests::default();
     let endpoint = spawn_fake_memory_server(recorded.clone()).await;
-    let server = KernelMcpServer::grpc(endpoint);
+    let server =
+        KernelMcpServer::grpc(endpoint).with_remote_state_home(&isolated_home::data_home());
 
     let wake = call_tool(
         &server,
@@ -204,7 +207,8 @@ async fn grpc_backend_maps_kernel_memory_service_responses_to_kmp_tools() {
 async fn grpc_backend_maps_temporal_tools_to_kernel_memory_service() {
     let recorded = RecordedMemoryRequests::default();
     let endpoint = spawn_fake_memory_server(recorded.clone()).await;
-    let server = KernelMcpServer::grpc(endpoint);
+    let server =
+        KernelMcpServer::grpc(endpoint).with_remote_state_home(&isolated_home::data_home());
 
     let forward = call_tool(
         &server,
@@ -309,7 +313,8 @@ async fn grpc_backend_maps_temporal_tools_to_kernel_memory_service() {
 async fn grpc_backend_maps_temporal_raw_refs_to_kernel_memory_service() {
     let recorded = RecordedMemoryRequests::default();
     let endpoint = spawn_fake_memory_server(recorded.clone()).await;
-    let server = KernelMcpServer::grpc(endpoint);
+    let server =
+        KernelMcpServer::grpc(endpoint).with_remote_state_home(&isolated_home::data_home());
 
     let forward = call_tool(
         &server,
@@ -347,7 +352,8 @@ async fn grpc_backend_maps_temporal_raw_refs_to_kernel_memory_service() {
 async fn grpc_backend_maps_kmp_ingest_to_kernel_memory_service() {
     let recorded = RecordedMemoryRequests::default();
     let endpoint = spawn_fake_memory_server(recorded.clone()).await;
-    let server = KernelMcpServer::grpc(endpoint);
+    let server =
+        KernelMcpServer::grpc(endpoint).with_remote_state_home(&isolated_home::data_home());
 
     let ingest = call_tool(
         &server,
@@ -479,7 +485,8 @@ async fn grpc_backend_maps_kmp_ingest_to_kernel_memory_service() {
 async fn grpc_backend_forwards_incremental_ingest_with_empty_dimensions() {
     let recorded = RecordedMemoryRequests::default();
     let endpoint = spawn_fake_memory_server(recorded.clone()).await;
-    let server = KernelMcpServer::grpc(endpoint);
+    let server =
+        KernelMcpServer::grpc(endpoint).with_remote_state_home(&isolated_home::data_home());
 
     let ingest = call_tool(
         &server,
@@ -524,7 +531,8 @@ async fn grpc_backend_forwards_incremental_ingest_with_empty_dimensions() {
 async fn grpc_backend_dry_run_ingest_reaches_the_kernel_with_writes_disabled() {
     let recorded = RecordedMemoryRequests::default();
     let endpoint = spawn_fake_memory_server(recorded.clone()).await;
-    let server = KernelMcpServer::grpc(endpoint);
+    let server =
+        KernelMcpServer::grpc(endpoint).with_remote_state_home(&isolated_home::data_home());
 
     let ingest = call_tool(
         &server,
@@ -575,7 +583,8 @@ async fn grpc_backend_connects_to_mutual_tls_kernel_memory_service() {
     let certs = TestTlsFiles::write();
     let endpoint =
         spawn_fake_memory_server_with_mutual_tls(RecordedMemoryRequests::default()).await;
-    let server = KernelMcpServer::grpc_with_tls(endpoint, certs.client_config());
+    let server = KernelMcpServer::grpc_with_tls(endpoint, certs.client_config())
+        .with_remote_state_home(&isolated_home::data_home());
 
     let inspect = call_tool(
         &server,

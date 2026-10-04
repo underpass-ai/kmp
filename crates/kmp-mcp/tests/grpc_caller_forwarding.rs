@@ -1,6 +1,8 @@
 //! An MCP server on a gRPC backend names its session's host to the kernel:
 //! the kernel's Ask and Wake lines log that host, not this server's
 //! `user-agent`. Its own binary, with a global subscriber for both sides.
+#[path = "support/isolated_home.rs"]
+mod isolated_home;
 
 use std::collections::BTreeMap;
 use std::io::Write;
@@ -112,7 +114,8 @@ async fn the_kernel_logs_the_mcp_host_the_call_was_made_for() {
             .serve_with_incoming(TcpListenerStream::new(listener)),
     );
 
-    let server = KernelMcpServer::grpc(endpoint);
+    let server =
+        KernelMcpServer::grpc(endpoint).with_remote_state_home(&isolated_home::data_home());
     let session = McpSession::new();
     let initialize = json!({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {
         "protocolVersion": "2025-06-18", "capabilities": {},
