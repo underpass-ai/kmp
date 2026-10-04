@@ -38,7 +38,11 @@ pub(super) fn describe() -> Result<String, String> {
             selection.path().display()
         )),
         Ok(None) => rendered.push_str("saved selection: none (automatic selection)\n"),
-        Err(error) if matches!(&resolved, Ok(kmp_embedded::ResolvedDataDir::Explicit(_))) => {
+        Err(error)
+            if resolved
+                .as_ref()
+                .is_ok_and(|resolved| !resolved.consulted_saved_selection()) =>
+        {
             rendered.push_str(&format!(
                 "saved selection: invalid, not used by this process\nwarning: {error}\n{REPAIR}\n"
             ));

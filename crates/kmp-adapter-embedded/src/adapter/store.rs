@@ -69,6 +69,11 @@ impl EmbeddedKernelStore {
         Ok(store)
     }
 
+    /// A store over an engine some other opener already prepared.
+    pub(super) fn from_engine(engine: Arc<dyn Engine>) -> Self {
+        Self { engine }
+    }
+
     /// Freeze all cloned read ports at one SQLite snapshot for this operation.
     /// Dropping the last clone releases it; it cannot be used for writes.
     pub async fn read_snapshot(&self) -> Result<Self, PortError> {

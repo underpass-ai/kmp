@@ -55,6 +55,7 @@ impl KernelMcpServer {
                         self.grpc_tls_mode_name(),
                         apps,
                         self.bridges_languages(),
+                        self.store_disclosure(),
                     )),
                 )
             }),
@@ -333,7 +334,7 @@ impl KernelMcpServer {
                     &result,
                     start.elapsed(),
                 );
-                jsonrpc_result(id, result)
+                jsonrpc_result(id, self.disclose_store(name, result))
             }
             Err(error) => {
                 record_call_error(
@@ -347,7 +348,10 @@ impl KernelMcpServer {
                     &error.feedback,
                     start.elapsed(),
                 );
-                jsonrpc_result(id, tool_error_result(name, arguments, &error))
+                jsonrpc_result(
+                    id,
+                    self.disclose_store(name, tool_error_result(name, arguments, &error)),
+                )
             }
         }
     }

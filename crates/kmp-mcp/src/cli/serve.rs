@@ -206,7 +206,7 @@ async fn server_from_env() -> Result<KernelMcpServer, StartupFailure> {
         };
     }
 
-    let resolved = kmp_embedded::resolve_data_dir_from_env()
+    let resolved = kmp_mcp::lifecycle::resolve_memory_for_use()
         .map_err(|error| StartupFailure::after_the_backend_was_chosen(error.to_string()))?;
     let engine = kmp_embedded::resolve_engine_for_data_dir_from_env(resolved.path())
         .map_err(|error| StartupFailure::after_the_backend_was_chosen(error.to_string()))?;
@@ -226,7 +226,6 @@ async fn server_from_env() -> Result<KernelMcpServer, StartupFailure> {
         commit_native,
     )
     .map_err(StartupFailure::after_the_backend_was_chosen)?;
-    remember_this_memory(resolved.path());
     let url = match spawn_viewer(backend.kernel(), addr).await {
         Ok(url) => Some(url),
         // An explicit address is a contract. The default is only a preference:
@@ -257,8 +256,7 @@ async fn server_from_env() -> Result<KernelMcpServer, StartupFailure> {
             }
         }
     };
-    let server = KernelMcpServer::with_embedded_backend(backend)
-        .with_orphaned_bundle(resolved.orphaned_bundle().cloned());
+    let server = KernelMcpServer::with_embedded_backend(backend).with_resolved_store(&resolved);
     let server = match lease {
         Some(lease) => server.with_store_session_lease(lease),
         None => server,
@@ -403,16 +401,4 @@ fn user_state_home() -> std::path::PathBuf {
                 .join(".local")
                 .join("state")
         })
-}
-
-/// Non-MCP maintenance surface (everything is a process — no library):
-/// `export <file>` and `import <file>` move the append-only event log between
-/// embedded stores, and `viewer [addr]` serves the local web viewer over the
-/// store; stdout carries the command result only.
-pub(super) fn remember_this_memory(path: &std::path::Path) {
-    if let Some(data_home) = kmp_embedded::user_data_home() {
-        let catalog = kmp_mcp::lifecycle::FilesystemStoreCatalog::new(&data_home);
-        let index = kmp_mcp::lifecycle::JsonlStoreIndex::new(&data_home);
-        kmp_mcp::lifecycle::RememberStore::new(&catalog, &index).execute(path);
-    }
 }

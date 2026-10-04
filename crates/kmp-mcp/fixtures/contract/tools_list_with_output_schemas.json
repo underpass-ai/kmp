@@ -2575,6 +2575,20 @@
             },
             "type": "object"
           },
+          "store": {
+            "additionalProperties": false,
+            "properties": {
+              "path": {
+                "description": "The store this session opened. A wake that finds nothing speaks for this store only.",
+                "type": "string"
+              },
+              "rule": {
+                "description": "The selection rule that chose it: env, project, worktree, saved, user or user fallback.",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
           "summary": {
             "description": "Four-line L0 resume summary: objective, status, blocker, and next action.",
             "type": "string"

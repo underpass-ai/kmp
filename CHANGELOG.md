@@ -11,6 +11,21 @@ Detailed notes from the early release cycle remain available in the
 
 ### Changed
 
+- Every embedded MCP session names its store (#903): the `initialize`
+  instructions end with `Memory store: <path> (chosen by <rule>)`, and every
+  `kmp_wake` result carries `store: {path, rule}`. A `not found` wake starts
+  its text with the store too, because "nothing here" means nothing without
+  "here". The optional wake `outputSchema` declares the field; the default
+  `tools/list` is unchanged.
+- **Breaking:** store selection now runs `KMP_MCP_DATA_DIR`, then the nearest
+  project, then the saved selection, then the per-user default (#903). A saved
+  `memory_store` is one value for the whole machine and used to beat project
+  discovery, which sent every repository on the machine to the one store it
+  named. It now applies only where no project is found. A directory that
+  already holds a `.kernel/` store counts as a project root even without git,
+  and a git worktree opens its main checkout's store while keeping its own
+  `.kmp/memory.jsonl` bundle (`chosen by: worktree`). Inside a project, a
+  broken saved selection is reported as unused instead of blocking startup.
 - Pi host detection recognizes the `pi-runtime` package
   (github.com/underpass-ai/pi-runtime), which carries KMP's MCP connection
   into Pi. Local path sources in Pi's `settings.json` are
@@ -30,6 +45,38 @@ Detailed notes from the early release cycle remain available in the
 
 ### Added
 
+- `kmp-mcp memories` lists every store the machine knows in one place
+  (#903): path, how it is reached (`env`, `project`, `worktree`, `saved`,
+  `user`, `user fallback` or `unreachable`, decided by the real resolver
+  rather than guessed from where the path lives), format, size, last
+  opening, last write, and every about inside with its event count.
+  `--json` prints the same inventory for machines. Stores are read through a
+  read-only SQLite connection — immutable when the store is at rest — so the
+  inventory takes no lease, migrates nothing and leaves no `-wal`/`-shm`
+  behind; a format this engine cannot read is listed with its format and
+  never opened. `kmp-mcp memories register <absolute-path>` adds an existing
+  store directory to the index by hand and refuses relative paths, `~` and
+  directories without `FORMAT_VERSION`. The Memories section of `info` and
+  `doctor` shows the same reach labels and each store's top eight abouts
+  (guide abouts folded into a count).
+- `kmp-mcp import --from <store-dir|bundle-file> --about <about>...` brings
+  exact abouts of another workspace's memory into the store `kmp-mcp`
+  resolves here, without replacing what it already holds (#903). `--about`
+  is required, repeatable and matched exactly; an about the source lacks is
+  refused before anything is written. A source store is opened with
+  read-only SQLite connections (never stamped, migrated or adopted, no
+  writer lock), a bundle file is verified like any import. Per `(about,
+  role)` event stream: absent here → imported; same revisions and content
+  hashes → unchanged; an exact prefix here → extended with only the missing
+  tail, on the revisions the source recorded, as a live write would append
+  it. A diverging revision or hash, a destination ahead of the source, an
+  idempotency key that already answers for another write here, or a
+  relation to a node neither the imported abouts nor this store hold is
+  refused for the whole request, naming the about and the first diverging
+  revision. Validation, append and projections run in one SQLite write
+  transaction, so a refusal writes nothing and a second run reports every
+  about `unchanged`. Plain `kmp-mcp import [file]` still replays a bundle
+  into an empty store.
 - The Pi coding agent is a fourth native host: `setup|update --pi` converges
   it and `doctor` inventories it as a peer. Pi has no native MCP, so the
   registration evidence is the `pi-runtime` package in Pi's `settings.json`
@@ -47,6 +94,13 @@ Detailed notes from the early release cycle remain available in the
 
 ### Fixed
 
+- Every command that opens a store — `export`, `import`, `document`,
+  `snapshot create`, `consolidation`, `summaries`, `viewer` and `serve` —
+  now remembers it in `known-stores.jsonl`, through one shared resolution
+  path, so a project store that was only exported or browsed is no longer
+  invisible from other directories (#903). The index is now rewritten by
+  rename instead of truncated in place, so concurrent commands can no longer
+  read a half-written note and drop every other remembered store.
 - Store inventory recognizes the engine’s current format-4 SQLite stores
   instead of classifying them using the retired format-2 marker.
 

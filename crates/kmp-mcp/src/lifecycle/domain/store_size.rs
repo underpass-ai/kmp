@@ -7,6 +7,10 @@ impl StoreSize {
         Self(bytes)
     }
 
+    pub fn bytes(self) -> u64 {
+        self.0
+    }
+
     /// A size a person reads at a glance.
     pub fn human(self) -> String {
         if self.0 >= 1_048_576 {

@@ -15,6 +15,9 @@ Usage:
   kmp-mcp config memory-routing <on-request|always>
   kmp-mcp config memory-store <absolute-path>|--clear
   Select the user memory persistently, or stop selecting one
+  kmp-mcp memories [--json]       Every store on this machine, its reach and its abouts
+  kmp-mcp memories register <absolute-path>
+  Remember an existing store no command has opened here
   kmp-mcp guide sync --plugin-root DIR
   Converge the two immutable shipped guides
   kmp-mcp plugin resolve-engine  Select the engine matching both host manifests
@@ -28,7 +31,9 @@ Usage:
   Remove one store or one engine, or preview it all
   kmp-mcp export [file] [--about <about>]...  Export exact abouts or the full log
   kmp-mcp export --repair-pending Acknowledge recovery after stopping writers
-  kmp-mcp import [file]           Import an event-log bundle
+  kmp-mcp import [file]           Import an event-log bundle into an empty store
+  kmp-mcp import --from <store|bundle> --about <about>...
+  Bring exact abouts of another memory into this one
   kmp-mcp viewer [addr]           Serve the local memory viewer
   kmp-mcp --version               Print binary and store formats
   kmp-mcp --help                  Print this help

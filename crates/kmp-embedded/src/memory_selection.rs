@@ -22,8 +22,9 @@ pub const KEY: &str = "memory_store";
 
 /// The resolution order, said once for every surface that explains it.
 pub const PRECEDENCE: &str = "precedence: the KMP_MCP_DATA_DIR environment variable, then the \
-                              saved selection, then the nearest project root, then the per-user \
-                              default";
+                              nearest project root (a git checkout, whose worktrees share its \
+                              store, or a directory that already holds one), then the saved \
+                              selection, then the per-user default";
 
 /// An absolute directory a person chose to be this machine's user memory.
 #[derive(Debug, Clone, PartialEq, Eq)]

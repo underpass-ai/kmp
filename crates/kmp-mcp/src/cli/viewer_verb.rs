@@ -16,7 +16,7 @@ pub(super) async fn run_viewer_command(args: &[&str]) -> i32 {
         .map(ToString::to_string)
         .or_else(|| std::env::var(kmp_viewer::VIEWER_ADDR_ENV).ok())
         .unwrap_or_else(|| kmp_viewer::DEFAULT_VIEWER_ADDR.to_string());
-    let resolved = match kmp_embedded::resolve_data_dir_from_env() {
+    let resolved = match kmp_mcp::lifecycle::resolve_memory_for_use() {
         Ok(resolved) => resolved,
         Err(error) => {
             eprintln!("kmp-mcp: {error}");

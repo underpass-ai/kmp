@@ -35,6 +35,8 @@ pub struct KernelMcpServer {
     /// Selection found a repository bundle beside an unopenable project
     /// store, while this session writes to the shared user store instead.
     pub(super) orphaned_bundle: Option<kmp_embedded::OrphanedProjectBundle>,
+    /// Which store an embedded session opened and why, for the agent.
+    pub(super) store_disclosure: Option<crate::serving::store_disclosure::StoreDisclosure>,
     /// The durability loss is actionable once and noisy thereafter.
     pub(super) orphaned_bundle_offered: AtomicBool,
     /// This process's own session (stdio). The HTTP gateway passes its own
@@ -118,6 +120,7 @@ impl KernelMcpServer {
             viewer_url: None,
             viewer_offered: AtomicBool::new(false),
             orphaned_bundle: None,
+            store_disclosure: None,
             orphaned_bundle_offered: AtomicBool::new(false),
             session: crate::serving::mcp_session::McpSession::new(),
             telemetry_salt_path: None,
@@ -186,6 +189,52 @@ impl KernelMcpServer {
         self
     }
 
+    /// Everything the session tells its agent about the store selection:
+    /// which store opened, by which rule, and a bundle it no longer maintains.
+    pub fn with_resolved_store(self, resolved: &kmp_embedded::ResolvedDataDir) -> Self {
+        let mut server = self.with_orphaned_bundle(resolved.orphaned_bundle().cloned());
+        server.store_disclosure = Some(crate::serving::store_disclosure::StoreDisclosure::of(
+            resolved,
+        ));
+        server
+    }
+
+    pub(crate) fn store_disclosure(
+        &self,
+    ) -> Option<&crate::serving::store_disclosure::StoreDisclosure> {
+        self.store_disclosure.as_ref()
+    }
+
+    /// A wake carries the store it read, beside its result or its refusal:
+    /// "not found" is exactly the answer that means nothing without it.
+    pub(super) fn disclose_store(
+        &self,
+        tool: &str,
+        mut result: serde_json::Value,
+    ) -> serde_json::Value {
+        if tool != "kmp_wake" {
+            return result;
+        }
+        let Some(store) = &self.store_disclosure else {
+            return result;
+        };
+        if let Some(content) = result
+            .get_mut("structuredContent")
+            .and_then(serde_json::Value::as_object_mut)
+        {
+            content.insert("store".to_string(), store.field());
+        }
+        if result.get("isError") == Some(&serde_json::Value::Bool(true))
+            && let Some(text) = result
+                .pointer_mut("/content/0/text")
+                .and_then(|text| text.as_str().map(str::to_string))
+        {
+            result["content"][0]["text"] =
+                serde_json::json!(format!("{}{text}", store.error_prefix()));
+        }
+        result
+    }
+
     pub(super) fn orphaned_bundle_notice(&self) -> Option<&kmp_embedded::OrphanedProjectBundle> {
         let orphaned = self.orphaned_bundle.as_ref()?;
         self.orphaned_bundle_offered
@@ -234,8 +283,8 @@ impl KernelMcpServer {
             }
             "fixture" | "fixtures" => Ok(Self::fixture()),
             "embedded" => {
-                let resolved =
-                    kmp_embedded::resolve_data_dir_from_env().map_err(|error| error.to_string())?;
+                let resolved = crate::lifecycle::resolve_memory_for_use()
+                    .map_err(|error| error.to_string())?;
                 let engine = kmp_embedded::resolve_engine_for_data_dir_from_env(resolved.path())
                     .map_err(|error| error.to_string())?;
                 let lease = kmp_embedded::user_data_home()
@@ -249,15 +298,6 @@ impl KernelMcpServer {
                     requested_engine = engine.map(|engine| engine.name()),
                     "embedded backend data dir resolved"
                 );
-                // Remembered so `info` can list it from any other directory
-                // later: a project `.kernel` can be anywhere on disk, and
-                // nothing that shipped could find one you were not standing
-                // next to.
-                if let Some(data_home) = kmp_embedded::user_data_home() {
-                    let catalog = crate::lifecycle::FilesystemStoreCatalog::new(&data_home);
-                    let index = crate::lifecycle::JsonlStoreIndex::new(&data_home);
-                    crate::lifecycle::RememberStore::new(&catalog, &index).execute(resolved.path());
-                }
                 let commit_native = kmp_embedded::CommitNativeBundle::for_resolved_excluding_abouts(
                     &resolved,
                     crate::guide::abouts_owned(),
@@ -269,7 +309,7 @@ impl KernelMcpServer {
                         commit_native,
                     ),
                 )
-                .with_orphaned_bundle(resolved.orphaned_bundle().cloned());
+                .with_resolved_store(&resolved);
                 // Open lazily after a guide read opened the kernel. A metadata
                 // file must not make a not-yet-created kernel look non-empty.
                 server.agent_directory_path = Some(resolved.path().join("agent-users.sqlite3"));
