@@ -9,4 +9,5 @@ pub mod process_liveness;
 pub mod process_output;
 pub mod release_repository;
 pub mod store_catalog;
+pub mod store_contents_reader;
 pub mod store_index;

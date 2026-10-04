@@ -7,7 +7,7 @@ pub(super) async fn run_snapshot_command(args: &[&str]) -> i32 {
         return 2;
     };
     let resolved = match if *verb == "create" {
-        kmp_embedded::resolve_data_dir_from_env()
+        kmp_mcp::lifecycle::resolve_memory_for_use()
     } else {
         kmp_embedded::locate_data_dir_from_env()
     } {

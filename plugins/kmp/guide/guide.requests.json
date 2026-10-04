@@ -4106,7 +4106,7 @@
   },
   {
     "about": "guide:kmp",
-    "idempotency_key": "ingest:guide-sync:1:person:37d396040f9648015a38",
+    "idempotency_key": "ingest:guide-sync:1:person:9e41b1870e2e22f2b17d",
     "memory": {
       "dimensions": [
         {
@@ -4156,7 +4156,7 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "9e41b1870e2e22f2b17d5fe83d4ed84e0435d0da3f00b4112b20a487802bf5c7",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4187,7 +4187,7 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "9e41b1870e2e22f2b17d5fe83d4ed84e0435d0da3f00b4112b20a487802bf5c7",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4218,11 +4218,11 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "9e41b1870e2e22f2b17d5fe83d4ed84e0435d0da3f00b4112b20a487802bf5c7",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Embedded KMP runs on your machine. Codex, Claude Code and Hermes Agent can use the same local SQLite store; no KMP account or hosted memory service is required. Which store that is follows one order: the KMP_MCP_DATA_DIR environment variable, then the nearest project root (a git checkout, whose worktrees share its store, or a directory that already holds a .kernel store), then the selection you save with kmp-mcp config memory-store, then the per-user default. A saved selection lives in your config file, so it survives restarts with no environment variable and no launcher script, and kmp-mcp config shows the saved selection, the effective one and which rule won. A valid explicit environment override works even if the saved selection is invalid; config and doctor report that unused setting for repair. Without an override, an invalid saved selection stops startup. KMP never migrates, converts or overwrites a store it cannot open: it refuses the selection, says why, and leaves every file where it was. New stores use format 4; opening a supported format-3 store upgrades it. Optional TypeSafe Jev judgments send selected text to its configured service, while the default embedded path needs no external model. Current main after v0.24.0 adds Store config to info and doctor: off (absent) describes a missing optional file, so the feature keeps its default; it does not necessarily turn that feature off."
+          "text": "Embedded KMP runs on your machine. Codex, Claude Code and Hermes Agent can use the same local SQLite store; no KMP account or hosted memory service is required. Which store that is follows one order: the KMP_MCP_DATA_DIR environment variable, then the nearest project root (a git checkout, whose worktrees share its store, or a directory that already holds a .kernel store), then the selection you save with kmp-mcp config memory-store, then the per-user default. A saved selection lives in your config file, so it survives restarts with no environment variable and no launcher script, and kmp-mcp config shows the saved selection, the effective one and which rule won. kmp-mcp memories lists every store the machine knows, how each is reached (env, project, worktree, saved, user or unreachable), its format and every about inside with its event count, reading each without opening it for use; every command that opens a store adds it to that list, and kmp-mcp memories register <absolute path> adds an existing one by hand. A valid explicit environment override works even if the saved selection is invalid; config and doctor report that unused setting for repair. Without an override, an invalid saved selection stops startup. KMP never migrates, converts or overwrites a store it cannot open: it refuses the selection, says why, and leaves every file where it was. New stores use format 4; opening a supported format-3 store upgrades it. Optional TypeSafe Jev judgments send selected text to its configured service, while the default embedded path needs no external model. Current main after v0.24.0 adds Store config to info and doctor: off (absent) describes a missing optional file, so the feature keeps its default; it does not necessarily turn that feature off."
         },
         {
           "coordinates": [
@@ -4249,7 +4249,7 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "9e41b1870e2e22f2b17d5fe83d4ed84e0435d0da3f00b4112b20a487802bf5c7",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4280,7 +4280,7 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "9e41b1870e2e22f2b17d5fe83d4ed84e0435d0da3f00b4112b20a487802bf5c7",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4311,7 +4311,7 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "9e41b1870e2e22f2b17d5fe83d4ed84e0435d0da3f00b4112b20a487802bf5c7",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4342,7 +4342,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "9e41b1870e2e22f2b17d5fe83d4ed84e0435d0da3f00b4112b20a487802bf5c7",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4373,7 +4373,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "9e41b1870e2e22f2b17d5fe83d4ed84e0435d0da3f00b4112b20a487802bf5c7",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4404,7 +4404,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "9e41b1870e2e22f2b17d5fe83d4ed84e0435d0da3f00b4112b20a487802bf5c7",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4435,7 +4435,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "9e41b1870e2e22f2b17d5fe83d4ed84e0435d0da3f00b4112b20a487802bf5c7",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4466,7 +4466,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "9e41b1870e2e22f2b17d5fe83d4ed84e0435d0da3f00b4112b20a487802bf5c7",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4497,7 +4497,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "9e41b1870e2e22f2b17d5fe83d4ed84e0435d0da3f00b4112b20a487802bf5c7",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4528,7 +4528,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "9e41b1870e2e22f2b17d5fe83d4ed84e0435d0da3f00b4112b20a487802bf5c7",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4559,7 +4559,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "9e41b1870e2e22f2b17d5fe83d4ed84e0435d0da3f00b4112b20a487802bf5c7",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4590,7 +4590,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "9e41b1870e2e22f2b17d5fe83d4ed84e0435d0da3f00b4112b20a487802bf5c7",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4621,7 +4621,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "9e41b1870e2e22f2b17d5fe83d4ed84e0435d0da3f00b4112b20a487802bf5c7",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4652,7 +4652,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "9e41b1870e2e22f2b17d5fe83d4ed84e0435d0da3f00b4112b20a487802bf5c7",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4683,7 +4683,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "9e41b1870e2e22f2b17d5fe83d4ed84e0435d0da3f00b4112b20a487802bf5c7",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4714,7 +4714,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "9e41b1870e2e22f2b17d5fe83d4ed84e0435d0da3f00b4112b20a487802bf5c7",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4745,7 +4745,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "9e41b1870e2e22f2b17d5fe83d4ed84e0435d0da3f00b4112b20a487802bf5c7",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4776,7 +4776,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "9e41b1870e2e22f2b17d5fe83d4ed84e0435d0da3f00b4112b20a487802bf5c7",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4807,7 +4807,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "9e41b1870e2e22f2b17d5fe83d4ed84e0435d0da3f00b4112b20a487802bf5c7",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4838,7 +4838,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "9e41b1870e2e22f2b17d5fe83d4ed84e0435d0da3f00b4112b20a487802bf5c7",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4869,7 +4869,7 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "9e41b1870e2e22f2b17d5fe83d4ed84e0435d0da3f00b4112b20a487802bf5c7",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4900,7 +4900,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "9e41b1870e2e22f2b17d5fe83d4ed84e0435d0da3f00b4112b20a487802bf5c7",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4931,7 +4931,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "37d396040f9648015a38423c5d50d6d0db0e298acb9a1a6bab317dc4a11d472f",
+            "guide_revision": "9e41b1870e2e22f2b17d5fe83d4ed84e0435d0da3f00b4112b20a487802bf5c7",
             "guide_title": "Consolidated views and their sources",
             "guide_version": "1",
             "source": "editorial"

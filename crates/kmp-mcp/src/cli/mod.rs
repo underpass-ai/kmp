@@ -8,6 +8,7 @@ mod context_verb;
 mod document;
 mod guide_verb;
 mod lifecycle_verbs;
+mod memories_verb;
 mod memory_store_config;
 mod pending_summary;
 mod plugin_verb;
@@ -41,6 +42,7 @@ pub(crate) async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
         "summaries" => return run_summaries_command(args).await,
         "config" => run_config_command(args),
         "context" => context_verb::run(args),
+        "memories" => memories_verb::run(args),
         "guide" => return run_guide_command(args).await,
         "plugin" => return run_plugin_command(args).await,
         "setup" => return run_lifecycle_command(LifecycleAction::Setup, args).await,
@@ -81,6 +83,7 @@ pub(crate) async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
                  `snapshot create|list|verify|read|merge ...` / \
                  `summaries pending [<about>…] [--json]` / \
                  `config [memory-routing <mode> | memory-store <absolute-path>]` / \
+                 `memories [--json] | memories register <absolute-path>` / \
                  `guide sync --plugin-root DIR [--dry-run]` / \
                  `plugin resolve-engine|notice --plugin-root DIR ...` / \
                  `setup|update [--claude] [--codex] [--hermes] [--pi] [--version X.Y.Z] [--engine-dir DIR] \
@@ -114,6 +117,7 @@ fn is_cli_subcommand(command: &str) -> bool {
             | "viewer"
             | "summaries"
             | "consolidation"
+            | "memories"
     )
 }
 
@@ -148,6 +152,7 @@ fn subcommand_usage(command: &str) -> &'static str {
              | memory-store --clear]"
         }
         "document" => "kmp-mcp document <about> [--out FILE]",
+        "memories" => "kmp-mcp memories [--json] | kmp-mcp memories register <absolute-path>",
         "context" => "kmp-mcp context project|expand [FILE|-]",
         "consolidation" => "kmp-mcp consolidation sources|write|read|project [FILE|-]",
         "guide" => "kmp-mcp guide sync --plugin-root DIR [--dry-run]",
@@ -188,6 +193,18 @@ fn print_subcommand_help(command: &str) {
             "\nProject {{groups:[{{id,packets,reads,spans?}}],max_bytes?}} to lossless context JSON.\nExpand reconstructs admitted groups. FILE defaults to stdin; stdout is JSON.\nPackets may carry native response-local tables. Spans name an explicit returned\nsource ref, its SHA-256 text fingerprint and a complete quote range in UTF-8 bytes.\nNo store, model, source fetch or read action is executed."
         );
     }
+    if command == "memories" {
+        println!(
+            "\nLists every store this machine knows: the per-user stores under the data home and \
+             every store a command has opened or `register` named. Each shows how it is reached \
+             (env, project, worktree, saved, user, user fallback or unreachable), its format, \
+             size and last opening, and every about inside with its event count. Stores are read \
+             without being opened for use: no lease, no migration, no write. A format this \
+             engine cannot read is listed with its format and left untouched.\n\n`register` \
+             adds an existing store directory (one holding FORMAT_VERSION) to the index; it \
+             refuses relative and `~` paths and never creates anything. Nothing crawls the disk."
+        );
+    }
     if command == "export" {
         println!(
             "\n--about matches an opaque about exactly and may be repeated. Filtered bundles \
@@ -208,6 +225,9 @@ kmp-mcp config                  Show the agent policy and the user memory select
 kmp-mcp config memory-routing <on-request|always>\n  \
 kmp-mcp config memory-store <absolute-path>|--clear\n  \
                                 Select the user memory persistently, or stop selecting one\n  \
+kmp-mcp memories [--json]       Every store on this machine, its reach and its abouts\n  \
+kmp-mcp memories register <absolute-path>\n  \
+                                Remember an existing store no command has opened here\n  \
 kmp-mcp guide sync --plugin-root DIR\n  \
                                 Converge the two immutable shipped guides\n  \
 kmp-mcp plugin resolve-engine  Select the engine matching both host manifests\n  \

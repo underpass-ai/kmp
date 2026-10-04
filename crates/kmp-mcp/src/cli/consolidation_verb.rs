@@ -50,7 +50,7 @@ async fn execute(args: &[&str]) -> Result<Value, String> {
     }
     // Validate the entire request before opening or creating a store.
     let request = Request::parse(operation, &bytes)?;
-    let resolved = kmp_embedded::resolve_data_dir_from_env().map_err(|e| e.to_string())?;
+    let resolved = kmp_mcp::lifecycle::resolve_memory_for_use().map_err(|e| e.to_string())?;
     let store =
         kmp_embedded::EmbeddedKernelStore::open(resolved.path()).map_err(|e| e.to_string())?;
     let service = ConsolidationApplicationService::new(Arc::new(store));

@@ -39,7 +39,7 @@ pub(super) async fn run_summaries_command(args: &[&str]) -> i32 {
         _ => AuditScope::Abouts(abouts.clone()),
     };
 
-    let resolved = match kmp_embedded::resolve_data_dir_from_env() {
+    let resolved = match kmp_mcp::lifecycle::resolve_memory_for_use() {
         Ok(resolved) => resolved,
         Err(error) => {
             eprintln!("kmp-mcp: {error}");
