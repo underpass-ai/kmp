@@ -124,10 +124,10 @@ fn assert_says(report: &str, clauses: &[&str]) {
 }
 
 /// The whole precedence, one rule at a time, through the real binary: the
-/// environment override, then the saved selection, then project discovery,
+/// environment override, then project discovery, then the saved selection,
 /// then the per-user default.
 #[test]
-fn the_saved_selection_sits_between_the_environment_and_project_discovery() {
+fn the_saved_selection_sits_between_project_discovery_and_the_user_default() {
     let machine = Machine::new();
     let chosen = machine.at("chosen-memory");
     let explicit = machine.at("explicit-memory");
@@ -173,13 +173,18 @@ fn the_saved_selection_sits_between_the_environment_and_project_discovery() {
         format!("memory_store = \"{}\"", chosen.display())
     );
 
-    // A separate process, standing inside a project, still reaches it.
+    // A separate process, standing inside a project, opens the project's
+    // own store: one machine-wide selection must not capture every
+    // repository on the machine (#903).
     let in_a_project = machine.run("repository/src", &["config"]);
     assert_says(
         &stdout(&in_a_project),
         &[
-            &format!("effective memory: {}", chosen.display()),
-            "chosen by: saved",
+            &format!(
+                "effective memory: {}",
+                machine.at("repository").join(".kernel").display()
+            ),
+            "chosen by: project",
         ],
     );
 
@@ -239,8 +244,9 @@ fn the_precedence_is_stated_wherever_the_selection_is() {
     assert_says(
         &stdout(&machine.run("workspace", &["config"])),
         &[
-            "precedence: the KMP_MCP_DATA_DIR environment variable, then the saved selection, \
-             then the nearest project root, then the per-user default",
+            "precedence: the KMP_MCP_DATA_DIR environment variable, then the nearest project \
+             root (a git checkout, whose worktrees share its store, or a directory that already \
+             holds one), then the saved selection, then the per-user default",
         ],
     );
 }
@@ -362,6 +368,76 @@ fn a_broken_saved_selection_is_reported_rather_than_ignored() {
     assert_says(
         &stdout(&doctor),
         &["the saved user memory selection is unusable"],
+    );
+}
+
+/// Inside a project the saved selection is never consulted, so a broken one
+/// is an unused setting to repair, not a reason to keep the project's own
+/// memory from opening (#903).
+#[test]
+fn a_broken_saved_selection_does_not_block_a_project_that_never_reads_it() {
+    let machine = Machine::new();
+    fs::create_dir_all(machine.config_file().parent().expect("parent")).expect("config dir");
+    fs::write(
+        machine.config_file(),
+        "memory_store = \"relative/memory\"\n",
+    )
+    .expect("config");
+
+    let in_a_project = machine.run("repository/src", &["config"]);
+    assert_eq!(
+        in_a_project.status.code(),
+        Some(0),
+        "{}",
+        stderr(&in_a_project)
+    );
+    assert_says(
+        &stdout(&in_a_project),
+        &[
+            "saved selection: invalid, not used by this process",
+            "line 1 has invalid memory_store",
+            &format!(
+                "effective memory: {}",
+                machine.at("repository").join(".kernel").display()
+            ),
+            "chosen by: project",
+        ],
+    );
+}
+
+/// A session started in a worktree reaches the main checkout's memory, not
+/// a fresh store that would vanish with the worktree (#903).
+#[test]
+fn a_worktree_session_opens_the_main_checkout_memory() {
+    let machine = Machine::new();
+    let main = machine.at("checkout");
+    fs::create_dir_all(&main).expect("checkout dir");
+    let git = |args: &[&str]| {
+        let status = Command::new("git")
+            .args(["-c", "user.email=t@t", "-c", "user.name=t"])
+            .args(args)
+            .current_dir(&main)
+            .status()
+            .expect("git runs");
+        assert!(status.success(), "git {args:?}");
+    };
+    git(&["init", "-q"]);
+    git(&["commit", "-q", "--allow-empty", "-m", "init"]);
+    git(&["worktree", "add", "-q", "../checkout-feature"]);
+
+    let report = machine.run("checkout-feature", &["config"]);
+    assert_eq!(report.status.code(), Some(0), "{}", stderr(&report));
+    let main = fs::canonicalize(&main).expect("canonical checkout");
+    assert_says(
+        &stdout(&report),
+        &[
+            &format!("effective memory: {}", main.join(".kernel").display()),
+            "chosen by: worktree",
+        ],
+    );
+    assert!(
+        !machine.at("checkout-feature/.kernel").exists(),
+        "locating memory must not create a store in the worktree"
     );
 }
 

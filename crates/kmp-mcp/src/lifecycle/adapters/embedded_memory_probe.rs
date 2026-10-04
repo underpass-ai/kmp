@@ -43,7 +43,7 @@ pub(crate) fn describe_data_dir(resolved: &ResolvedDataDir) -> LifecycleFinding 
     let ignored_selection_error = saved
         .as_ref()
         .err()
-        .filter(|_| matches!(resolved, ResolvedDataDir::Explicit(_)));
+        .filter(|_| !resolved.consulted_saved_selection());
     let mut finding = match &layout {
         Ok(_) => LifecycleFinding::new(
             if ignored_selection_error.is_some() {

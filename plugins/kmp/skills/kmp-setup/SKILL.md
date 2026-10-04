@@ -40,8 +40,9 @@ Show the active configuration with `kmp-mcp config`. It reports the agent
 policy and the user memory selection, and starts no host.
 
 `memory store` is which memory KMP opens. Selection runs in one order:
-`KMP_MCP_DATA_DIR`, then the saved selection, then the nearest project root,
-then the per-user default. `kmp-mcp config` prints the saved selection, the
+`KMP_MCP_DATA_DIR`, then the nearest project root (a git checkout, whose
+worktrees share its store, or a directory that already holds a `.kernel/`
+store), then the saved selection, then the per-user default. `kmp-mcp config` prints the saved selection, the
 effective one, and which of those rules won, so a workspace that is not a
 repository never reaches a store nobody chose without saying so.
 A valid explicit override wins even if the saved selection is invalid;

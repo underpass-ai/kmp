@@ -11,6 +11,15 @@ Detailed notes from the early release cycle remain available in the
 
 ### Changed
 
+- **Breaking:** store selection now runs `KMP_MCP_DATA_DIR`, then the nearest
+  project, then the saved selection, then the per-user default (#903). A saved
+  `memory_store` is one value for the whole machine and used to beat project
+  discovery, which sent every repository on the machine to the one store it
+  named. It now applies only where no project is found. A directory that
+  already holds a `.kernel/` store counts as a project root even without git,
+  and a git worktree opens its main checkout's store while keeping its own
+  `.kmp/memory.jsonl` bundle (`chosen by: worktree`). Inside a project, a
+  broken saved selection is reported as unused instead of blocking startup.
 - Pi host detection recognizes the `pi-runtime` package
   (github.com/underpass-ai/pi-runtime), which carries KMP's MCP connection
   into Pi. Local path sources in Pi's `settings.json` are
