@@ -29,6 +29,7 @@ VARIANT_ENV_ALLOWLIST = ('KMP_LEXICAL_BRIDGE', 'KMP_TYPESAFE_CASSETTE',
                          'KMP_JUDGEMENT_DEADLINES', 'KMP_LEXICAL_INDEX')
 PATH_VALUED_ENV = ('KMP_LEXICAL_BRIDGE', 'KMP_TYPESAFE_CASSETTE')
 SECRET_ENV_ALLOWLIST = ('TYPESAFE_API_KEY',)
+REDACTED = '<redacted>'  # what a secret value becomes in anything the harness writes
 # The binary's default filter; the store confirmation and `kmp_mcp_tool` events need it.
 # A variant's RUST_LOG is appended, so a later directive for the same target wins.
 BASE_LOG_FILTER = 'kmp_mcp=info'
@@ -52,10 +53,17 @@ class IsolatedStore:
                 for key, value in sorted(self.env.items())
                 if key != 'PATH' and key not in self.secret_names}
 
-    def redactions(self):
-        """(secret, public) pairs for anything written from this store's processes."""
-        secrets = [(self.env[name], f'<{name}>') for name in self.secret_names if self.env.get(name)]
-        return secrets + [(str(self.root), '<store-root>')]
+    def redact(self, text):
+        """`text` with every secret value and the store root replaced by a fixed placeholder.
+
+        The placeholder is a constant, so nothing written through this method is
+        derived from a secret: not its value and not the variable that names it.
+        """
+        for name in self.secret_names:
+            value = self.env.get(name)
+            if value:
+                text = text.replace(value, REDACTED)
+        return text.replace(str(self.root), '<store-root>')
 
 
 def protected_locations(parent_env):

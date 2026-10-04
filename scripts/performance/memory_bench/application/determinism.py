@@ -146,7 +146,7 @@ class _Runner:
 
     def _open(self, store):
         name = f'process-{next(self.processes)}'
-        recorder = TraceRecorder(self.out / f'{name}.jsonl', store.redactions())
+        recorder = TraceRecorder(self.out / f'{name}.jsonl', store.redact)
         session = StdioSession(self.binary, store, recorder, name, self.ids,
                                timeout_seconds=self.timeout_seconds, probe_resources=False)
         session.handshake('memory-bench-determinism')
@@ -157,7 +157,7 @@ class _Runner:
         session.recorder.close()
 
     def _journey(self, session, item):
-        recorder = TraceRecorder(self.out / f'{item.id}.jsonl', session.store.redactions())
+        recorder = TraceRecorder(self.out / f'{item.id}.jsonl', session.store.redact)
         previous = session.record_into(recorder)
         try:
             outcome = run_journey(session, Journey(item.tool, item.arguments), None, self.max_calls)
@@ -171,7 +171,7 @@ class _Runner:
         try:
             session = self._open(store)
             try:
-                recorder = TraceRecorder(self.out / f'{item.id}.setup.jsonl', store.redactions())
+                recorder = TraceRecorder(self.out / f'{item.id}.setup.jsonl', store.redact)
                 previous = session.record_into(recorder)
                 try:
                     for tool, arguments in item.setup:
