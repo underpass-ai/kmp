@@ -57,6 +57,7 @@ The worked lessons, [decision history](examples/decision-history.md),
 [four clocks and zoom](examples/four-clocks.md),
 [quantities and exclusions](examples/quantities.md),
 [conflict with late evidence](examples/late-conflict.md),
+[last recorded, replaced or expired](examples/decision-currency.md),
 [labels, synonyms and negation](examples/labels-negation.md),
 [budgets and insufficient evidence](examples/budget-proof.md), and
 [shared resumption](examples/shared-resumption.md), contain explicit
@@ -75,7 +76,7 @@ python3 scripts/guide_examples/replay.py --binary target/debug/kmp-mcp \
 
 Choose `--lesson alias-ownership`, `--lesson distributed-incident`,
 `--lesson four-clocks`, `--lesson quantities`, `--lesson late-conflict`,
-`--lesson labels-negation` or `--lesson budget-proof` for those lessons. The default
+`--lesson labels-negation`, `--lesson budget-proof` or `--lesson decision-currency` for those lessons. The default
 `--guide-mode markdown` reads `AGENT.md`, the selected lesson and its
 explicit topic prerequisites; it consults each extended verb at first use and
 reuses it on repeated calls. Work-memory calls are never cached by this helper. `--guide-mode directed` retains compact wake and

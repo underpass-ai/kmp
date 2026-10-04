@@ -118,6 +118,7 @@ lesson, reuse it within the session, and read its prerequisites as needed.
 | [alias-ownership](./alias-ownership.md) | `guide:kmp-agent:example:alias-ownership` |
 | [distributed-incident](./distributed-incident.md) | `guide:kmp-agent:example:distributed-incident` |
 | [four-clocks](./four-clocks.md) | `guide:kmp-agent:example:four-clocks` |
+| [decision-currency](./decision-currency.md) | `guide:kmp-agent:example:decision-currency` |
 | [late-conflict](./late-conflict.md) | `guide:kmp-agent:example:late-conflict` |
 
 ## What this review proves
