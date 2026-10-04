@@ -7,6 +7,7 @@ mod consolidation_verb;
 mod context_verb;
 mod document;
 mod guide_verb;
+mod import_from;
 mod lifecycle_verbs;
 mod memories_verb;
 mod memory_store_config;
@@ -35,6 +36,7 @@ pub(crate) async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
     }
     let first_argument = args.first().copied();
     match command {
+        "import" if import_from::requested(args) => return import_from::run(args).await,
         "export" | "import" => return transfer::run(command, first_argument, args).await,
         "document" => return run_document_command(args).await,
         "consolidation" => return consolidation_verb::run(args).await,
@@ -172,7 +174,9 @@ fn subcommand_usage(command: &str) -> &'static str {
              [--purge] [--keep-memory]"
         }
         "export" => "kmp-mcp export [file] [--about <about>]... [--repair-pending]",
-        "import" => "kmp-mcp import [file]",
+        "import" => {
+            "kmp-mcp import [file] | import --from <store-dir|bundle-file> --about <about>..."
+        }
         "viewer" => "kmp-mcp viewer [addr]",
         _ => "kmp-mcp --help",
     }
@@ -204,6 +208,18 @@ fn print_subcommand_help(command: &str) {
              format and left untouched.\n\n`register` \
              adds an existing store directory (one holding FORMAT_VERSION) to the index; it \
              refuses relative and `~` paths and never creates anything. Nothing crawls the disk."
+        );
+    }
+    if command == "import" {
+        println!(
+            "\nWith a file only, the bundle is replayed into an empty store.\n\n\
+             --from takes a store directory (or a workspace with a `.kernel/` store), opened \
+             read-only, or a bundle file, verified like any import. --about is required, \
+             repeatable and matched exactly. Into the store kmp-mcp resolves here, each about \
+             is imported when absent, left unchanged when its events are already here, or \
+             extended when this store holds an exact prefix of them. A different history, a \
+             missing about, a reused idempotency key or a relation to a node neither side holds \
+             refuses the whole import and writes nothing. Running it again is a no-op."
         );
     }
     if command == "export" {
@@ -242,7 +258,9 @@ kmp-mcp uninstall [--store|--engine <absolute-path>] [--apply]\n  \
                                 Remove one store or one engine, or preview it all\n  \
 kmp-mcp export [file] [--about <about>]...  Export exact abouts or the full log\n  \
 kmp-mcp export --repair-pending Acknowledge recovery after stopping writers\n  \
-kmp-mcp import [file]           Import an event-log bundle\n  \
+kmp-mcp import [file]           Import an event-log bundle into an empty store\n  \
+kmp-mcp import --from <store|bundle> --about <about>...\n  \
+                                Bring exact abouts of another memory into this one\n  \
 kmp-mcp viewer [addr]           Serve the local memory viewer\n  \
 kmp-mcp --version               Print binary and store formats\n  \
 kmp-mcp --help                  Print this help",

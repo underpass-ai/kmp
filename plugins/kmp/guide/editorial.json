@@ -940,6 +940,13 @@
           "evidence": "The format-3 bundle contract binds content digest, about coverage and event range before import or merge."
         },
         {
+          "id": "advanced:import-abouts",
+          "kind": "instruction",
+          "depth": "advanced",
+          "text": "To use memory from another workspace without replacing this one, run kmp-mcp import --from <store-or-bundle> --about <about>, repeating --about for each about you want. The source store is only read; a bundle is verified first. Into the store KMP opens here, an about that is missing is imported, one already present with the same events is left unchanged, and one that holds an exact earlier part of the source's history is extended with the rest. A different history, an about the source lacks, or a link to memory neither store holds refuses the whole import and writes nothing, so running it again is safe. Plain kmp-mcp import <file> still restores a bundle into an empty store.",
+          "evidence": "import_abouts compares each (about, role) event stream by revision and content hash, refuses the first divergence and destination-ahead streams, and appends the missing events with their projections in one SQLite write transaction; the source store is opened with read-only SQLite connections and exported through the filtered export path."
+        },
+        {
           "id": "advanced:shared-store",
           "kind": "concept",
           "depth": "advanced",
@@ -1117,6 +1124,14 @@
           "class": "evidential",
           "why": "Snapshot and merge rules deepen the basic repository inheritance story.",
           "evidence": "Bundles are verified portable event histories rather than database copies."
+        },
+        {
+          "from": "advanced:import-abouts",
+          "to": "advanced:snapshots",
+          "rel": "uses_background",
+          "class": "evidential",
+          "why": "Importing exact abouts into a live store applies the same exact-prefix rule as bundle merge, per about.",
+          "evidence": "Identical streams are a no-op, an exact prefix is extended, and divergent histories are refused."
         },
         {
           "from": "advanced:shared-store",

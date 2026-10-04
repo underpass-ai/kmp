@@ -1,1 +1,5 @@
-Usage: kmp-mcp import [file]
+Usage: kmp-mcp import [file] | import --from <store-dir|bundle-file> --about <about>...
+
+With a file only, the bundle is replayed into an empty store.
+
+--from takes a store directory (or a workspace with a `.kernel/` store), opened read-only, or a bundle file, verified like any import. --about is required, repeatable and matched exactly. Into the store kmp-mcp resolves here, each about is imported when absent, left unchanged when its events are already here, or extended when this store holds an exact prefix of them. A different history, a missing about, a reused idempotency key or a relation to a node neither side holds refuses the whole import and writes nothing. Running it again is a no-op.
