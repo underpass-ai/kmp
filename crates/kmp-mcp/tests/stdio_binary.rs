@@ -970,6 +970,7 @@ fn config_persists_and_initialize_survives_invalid_policy() {
     let initial = Command::new(bin)
         .arg("config")
         .env("XDG_CONFIG_HOME", config_home.path())
+        .current_dir(config_home.path())
         .output()
         .expect("config runs");
     assert!(initial.status.success());
@@ -982,6 +983,7 @@ fn config_persists_and_initialize_survives_invalid_policy() {
     let retired = Command::new(bin)
         .args(["config", "ask-fallback-languages", "en,fr"])
         .env("XDG_CONFIG_HOME", config_home.path())
+        .current_dir(config_home.path())
         .output()
         .expect("retired config verb is refused");
     assert_eq!(retired.status.code(), Some(2));
@@ -1020,6 +1022,7 @@ fn config_persists_and_initialize_survives_invalid_policy() {
     let unsupported_mode = Command::new(bin)
         .args(["config", "memory-routing", "sometimes"])
         .env("XDG_CONFIG_HOME", config_home.path())
+        .current_dir(config_home.path())
         .output()
         .expect("unsupported routing is rejected");
     assert_eq!(unsupported_mode.status.code(), Some(2));
@@ -1030,6 +1033,7 @@ fn config_persists_and_initialize_survives_invalid_policy() {
     let always = Command::new(bin)
         .args(["config", "memory-routing", "always"])
         .env("XDG_CONFIG_HOME", config_home.path())
+        .current_dir(config_home.path())
         .output()
         .expect("routing update runs");
     assert!(always.status.success());
@@ -1058,6 +1062,7 @@ fn config_persists_and_initialize_survives_invalid_policy() {
     let legacy = Command::new(bin)
         .arg("config")
         .env("XDG_CONFIG_HOME", config_home.path())
+        .current_dir(config_home.path())
         .output()
         .expect("legacy config is read");
     assert!(legacy.status.success());
@@ -1073,6 +1078,7 @@ fn config_persists_and_initialize_survives_invalid_policy() {
     let doctor = Command::new(bin)
         .arg("doctor")
         .env("XDG_CONFIG_HOME", config_home.path())
+        .current_dir(config_home.path())
         .env("KMP_MCP_DATA_DIR", data_dir.path())
         .env("KMP_VIEWER_ADDR", "off")
         .output()
@@ -1090,6 +1096,7 @@ fn config_persists_and_initialize_survives_invalid_policy() {
     let invalid = Command::new(bin)
         .arg("config")
         .env("XDG_CONFIG_HOME", config_home.path())
+        .current_dir(config_home.path())
         .output()
         .expect("invalid config is reported");
     assert_eq!(invalid.status.code(), Some(2));
@@ -1102,6 +1109,7 @@ fn config_persists_and_initialize_survives_invalid_policy() {
     let doctor = Command::new(bin)
         .arg("doctor")
         .env("XDG_CONFIG_HOME", config_home.path())
+        .current_dir(config_home.path())
         .env("KMP_MCP_DATA_DIR", data_dir.path())
         .env("KMP_VIEWER_ADDR", "off")
         .output()

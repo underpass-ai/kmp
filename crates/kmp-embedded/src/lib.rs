@@ -17,6 +17,7 @@ mod memory_api;
 pub mod memory_selection;
 mod memory_selection_refusal;
 mod migration;
+mod project_marker;
 mod read_head;
 mod tail_memo;
 pub mod user_config_file;

@@ -7,11 +7,10 @@ use kmp_domain::PortError;
 
 use crate::memory_selection::{self, SelectedMemory};
 use crate::memory_selection_refusal::SelectionRefusal;
+use crate::project_marker::{self, PROJECT_DIR_NAME, ProjectMarker};
 
 /// Explicit data directory override (ADR-012 rule 1).
 pub const DATA_DIR_ENV: &str = "KMP_MCP_DATA_DIR";
-
-const PROJECT_DIR_NAME: &str = ".kernel";
 
 /// Where a project keeps the committed copy of its memory, relative to the
 /// project root.
@@ -34,8 +33,20 @@ pub enum ResolvedDataDir {
     Explicit(PathBuf),
     /// The operator saved this selection in the user config file.
     Saved(PathBuf),
-    /// `<project-root>/.kernel/`, project root found by walking up to `.git`.
+    /// `<project-root>/.kernel/`, the project root being the nearest
+    /// directory above the working directory with a `.git` directory or an
+    /// existing store (`.kernel/FORMAT_VERSION`).
     Project(PathBuf),
+    /// A git worktree shares the store of its main checkout: memory belongs
+    /// to the project, not to a branch, and a worktree's own `.kernel/`
+    /// would vanish with it. The bundle stays in the worktree, because that
+    /// is the checkout whose commits carry it.
+    Worktree {
+        /// `<main-checkout>/.kernel/`.
+        path: PathBuf,
+        /// The worktree the working directory is in.
+        checkout: PathBuf,
+    },
     /// Per-user fallback under the platform data dir.
     UserDefault(PathBuf),
     /// A project store was present but could not be opened, so the live
@@ -65,7 +76,7 @@ impl ResolvedDataDir {
             | Self::Saved(path)
             | Self::Project(path)
             | Self::UserDefault(path) => path,
-            Self::UserFallback { path, .. } => path,
+            Self::Worktree { path, .. } | Self::UserFallback { path, .. } => path,
         }
     }
 
@@ -74,6 +85,7 @@ impl ResolvedDataDir {
             Self::Explicit(_) => "env",
             Self::Saved(_) => "saved",
             Self::Project(_) => "project",
+            Self::Worktree { .. } => "worktree",
             Self::UserDefault(_) => "user",
             Self::UserFallback { .. } => "user fallback",
         }
@@ -88,6 +100,10 @@ impl ResolvedDataDir {
             }
             Self::Saved(_) => "the selection saved in the user config file",
             Self::Project(_) => "the nearest project root above the working directory",
+            Self::Worktree { .. } => {
+                "the main checkout of the git worktree above the working directory, whose store \
+                 every worktree of the project shares"
+            }
             Self::UserDefault(_) => "the per-user default, because nothing more specific applied",
             Self::UserFallback { .. } => {
                 "the per-user default, because the project store beside a committed bundle could \
@@ -96,25 +112,42 @@ impl ResolvedDataDir {
         }
     }
 
+    /// Whether the saved selection was read to reach this decision. Every
+    /// rule above it wins first, so a broken selection is then an unused
+    /// setting to warn about, not a reason to refuse.
+    pub fn consulted_saved_selection(&self) -> bool {
+        matches!(self, Self::Saved(_) | Self::UserDefault(_))
+    }
+
     pub fn orphaned_bundle(&self) -> Option<&OrphanedProjectBundle> {
         match self {
             Self::UserFallback {
                 orphaned_bundle, ..
             } => Some(orphaned_bundle),
-            Self::Explicit(_) | Self::Saved(_) | Self::Project(_) | Self::UserDefault(_) => None,
+            Self::Explicit(_)
+            | Self::Saved(_)
+            | Self::Project(_)
+            | Self::Worktree { .. }
+            | Self::UserDefault(_) => None,
         }
     }
 }
 
-/// Resolution order: the environment override, then the saved selection,
-/// then the project `.kernel/`, then the per-user default.
+/// Resolution order: the environment override, then the nearest project,
+/// then the saved selection, then the per-user default.
 ///
 /// `KMP_MCP_DATA_DIR` stays first because it is the most explicit and most
 /// local thing anyone can say, and every test, baseline and reproduction
-/// script depends on that override meaning exactly one process. A saved
-/// selection then beats automatic discovery, which is the whole point of
-/// saving one: a workspace with no project marker must reach the memory the
-/// operator chose, not whatever the per-user default happens to hold.
+/// script depends on that override meaning exactly one process. A project
+/// comes next because it is local to the directory: a saved selection is one
+/// value for the whole machine, and letting it beat discovery sent every
+/// repository on the machine to the one store it named (#903). The saved
+/// selection is what a workspace with no project marker reaches instead of
+/// the per-user default (#680).
+///
+/// A project is the nearest directory with a `.git` directory, a `.git`
+/// worktree file, or an existing store (`.kernel/FORMAT_VERSION`), so a
+/// workspace that already has memory finds it without any setting.
 ///
 /// Pure function for testability; `resolve_data_dir_from_env` feeds it from
 /// the process environment and the user config file.
@@ -129,7 +162,7 @@ pub fn resolve_data_dir(
         saved,
         working_dir,
         user_data_home,
-        |candidate| candidate.join(".git").exists(),
+        project_marker::project_marker,
     )
 }
 
@@ -138,7 +171,7 @@ fn resolve_with_project_marker(
     saved: Option<&SelectedMemory>,
     working_dir: &Path,
     user_data_home: &Path,
-    is_project_root: impl Fn(&Path) -> bool,
+    marker: impl Fn(&Path) -> Option<ProjectMarker>,
 ) -> ResolvedDataDir {
     if let Some(explicit) = env_override
         .map(str::trim)
@@ -152,16 +185,24 @@ fn resolve_with_project_marker(
         });
     }
 
-    if let Some(saved) = saved {
-        return ResolvedDataDir::Saved(saved.path().to_path_buf());
-    }
-
     let mut current = Some(working_dir);
     while let Some(candidate) = current {
-        if is_project_root(candidate) {
-            return ResolvedDataDir::Project(candidate.join(PROJECT_DIR_NAME));
+        match marker(candidate) {
+            Some(ProjectMarker::Root) => {
+                return ResolvedDataDir::Project(candidate.join(PROJECT_DIR_NAME));
+            }
+            Some(ProjectMarker::Worktree { main_checkout }) => {
+                return ResolvedDataDir::Worktree {
+                    path: main_checkout.join(PROJECT_DIR_NAME),
+                    checkout: candidate.to_path_buf(),
+                };
+            }
+            None => current = candidate.parent(),
         }
-        current = candidate.parent();
+    }
+
+    if let Some(saved) = saved {
+        return ResolvedDataDir::Saved(saved.path().to_path_buf());
     }
 
     ResolvedDataDir::UserDefault(user_data_home.join("kmp").join("default"))
@@ -193,7 +234,8 @@ fn user_data_home_from(mut read: impl FnMut(&str) -> Option<OsString>) -> Option
 
 /// The conventional bundle path for the project `data_dir` belongs to.
 ///
-/// Only a project-scoped store has one: an explicit `KMP_MCP_DATA_DIR` or the
+/// Only a project-scoped store has one, in the checkout the working
+/// directory is in (a worktree's own, not its main checkout's): an explicit `KMP_MCP_DATA_DIR` or the
 /// per-user default has no repository to be committed to, and guessing one
 /// would put memory somewhere the operator did not choose.
 pub fn project_bundle_path(resolved: &ResolvedDataDir) -> Option<PathBuf> {
@@ -201,6 +243,7 @@ pub fn project_bundle_path(resolved: &ResolvedDataDir) -> Option<PathBuf> {
         ResolvedDataDir::Project(path) => path
             .parent()
             .map(|project_root| project_root.join(PROJECT_BUNDLE_PATH)),
+        ResolvedDataDir::Worktree { checkout, .. } => Some(checkout.join(PROJECT_BUNDLE_PATH)),
         ResolvedDataDir::Explicit(_)
         | ResolvedDataDir::Saved(_)
         | ResolvedDataDir::UserDefault(_)
@@ -238,28 +281,25 @@ pub fn locate_data_dir_from_env() -> Result<ResolvedDataDir, PortError> {
         )
     })?;
     reject_unexpanded_home_override(env_override.as_deref())?;
-    // An explicit override wins without depending on a lower-priority
-    // setting being readable. Without it, refuse a broken saved selection
-    // rather than silently falling through to automatic discovery.
-    let saved = if env_override
-        .as_deref()
-        .is_some_and(|value| !value.trim().is_empty())
-    {
-        None
-    } else {
-        memory_selection::saved_selection().map_err(|error| {
+    // The environment and a project both win without depending on a
+    // lower-priority setting being readable, so the saved selection is read
+    // only when nothing above it applied. There, refuse a broken one rather
+    // than silently falling through to the per-user default.
+    let mut resolved =
+        resolve_data_dir(env_override.as_deref(), None, &working_dir, &user_data_home);
+    if matches!(resolved, ResolvedDataDir::UserDefault(_)) {
+        let saved = memory_selection::saved_selection().map_err(|error| {
             PortError::InvalidState(format!(
                 "the saved user memory selection is unusable: {error}"
             ))
-        })?
-    };
-
-    let resolved = resolve_data_dir(
-        env_override.as_deref(),
-        saved.as_ref(),
-        &working_dir,
-        &user_data_home,
-    );
+        })?;
+        resolved = resolve_data_dir(
+            env_override.as_deref(),
+            saved.as_ref(),
+            &working_dir,
+            &user_data_home,
+        );
+    }
     Ok(fallback_from_unopenable_project(resolved, &user_data_home))
 }
 
@@ -267,18 +307,15 @@ fn fallback_from_unopenable_project(
     resolved: ResolvedDataDir,
     user_data_home: &Path,
 ) -> ResolvedDataDir {
-    let ResolvedDataDir::Project(project_store_path) = resolved else {
+    let Some(bundle_path) = project_bundle_path(&resolved) else {
         return resolved;
     };
-    let Some(project_root) = project_store_path.parent() else {
-        return ResolvedDataDir::Project(project_store_path);
-    };
-    let bundle_path = project_root.join(PROJECT_BUNDLE_PATH);
     if !bundle_path.is_file() {
-        return ResolvedDataDir::Project(project_store_path);
+        return resolved;
     }
+    let project_store_path = resolved.path().to_path_buf();
     let Err(error) = validate_store_layout(&project_store_path) else {
-        return ResolvedDataDir::Project(project_store_path);
+        return resolved;
     };
     let selected_store_path = user_data_home.join("kmp").join("default");
     ResolvedDataDir::UserFallback {
@@ -396,7 +433,7 @@ mod tests {
     }
 
     /// The whole precedence, one rule removed at a time: environment, then
-    /// the saved selection, then the project, then the per-user default.
+    /// the project, then the saved selection, then the per-user default.
     #[test]
     fn every_rule_wins_exactly_over_the_ones_below_it() {
         let selection = saved("/saved/dir");
@@ -406,7 +443,9 @@ mod tests {
                 saved,
                 Path::new("/workspace/project"),
                 Path::new("/home/u/.local/share"),
-                |candidate| candidate == Path::new("/workspace/project"),
+                |candidate| {
+                    (candidate == Path::new("/workspace/project")).then_some(ProjectMarker::Root)
+                },
             )
         };
 
@@ -414,10 +453,12 @@ mod tests {
             in_a_project(Some("/explicit/dir"), Some(&selection)),
             ResolvedDataDir::Explicit(PathBuf::from("/explicit/dir"))
         );
+        // #903: one machine-wide selection must not send every repository
+        // on the machine to the store it names.
         assert_eq!(
             in_a_project(None, Some(&selection)),
-            ResolvedDataDir::Saved(PathBuf::from("/saved/dir")),
-            "a saved selection beats project discovery, which is the point of saving one"
+            ResolvedDataDir::Project(PathBuf::from("/workspace/project/.kernel")),
+            "a project beats the saved selection, which is one value for the whole machine"
         );
         assert_eq!(
             in_a_project(None, None),
@@ -432,7 +473,7 @@ mod tests {
                 saved,
                 Path::new("/workspace/not-a-repository"),
                 Path::new("/home/u/.local/share"),
-                |_| false,
+                |_| None,
             )
         };
         let chosen = outside_a_project(Some(&selection));
@@ -466,7 +507,7 @@ mod tests {
             None,
             Path::new("/anywhere"),
             Path::new("/data"),
-            |_| false,
+            |_| None,
         );
         assert_eq!(resolved.rule_name(), "user");
 
@@ -475,7 +516,7 @@ mod tests {
             Some(&saved("/saved/dir")),
             Path::new("/anywhere"),
             Path::new("/data"),
-            |_| false,
+            |_| None,
         );
         assert_eq!(with_selection.rule_name(), "saved");
     }
@@ -494,6 +535,104 @@ mod tests {
         );
     }
 
+    /// A workspace that already holds a store is a project even without git:
+    /// it finds its memory with no machine-wide setting (#903).
+    #[test]
+    fn an_existing_store_marks_its_directory_as_a_project() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let workspace = temp.path().join("game");
+        let nested = workspace.join("scenes");
+        std::fs::create_dir_all(&nested).expect("nested dirs");
+        std::fs::create_dir_all(workspace.join(".kernel")).expect("store dir");
+        std::fs::write(workspace.join(".kernel/FORMAT_VERSION"), "4\n").expect("stamp");
+
+        let resolved = resolve_data_dir(
+            None,
+            Some(&saved("/saved/dir")),
+            &nested,
+            Path::new("/data"),
+        );
+        assert_eq!(
+            resolved,
+            ResolvedDataDir::Project(workspace.join(".kernel"))
+        );
+
+        // An empty `.kernel/` is not a store: nothing was ever written there,
+        // so it must not capture the directory.
+        let bare = temp.path().join("bare");
+        std::fs::create_dir_all(bare.join(".kernel")).expect("empty dir");
+        assert_eq!(
+            resolve_data_dir(None, Some(&saved("/saved/dir")), &bare, Path::new("/data")),
+            ResolvedDataDir::Saved(PathBuf::from("/saved/dir"))
+        );
+    }
+
+    fn git(dir: &Path, args: &[&str]) {
+        let status = std::process::Command::new("git")
+            .args(["-c", "user.email=t@t", "-c", "user.name=t"])
+            .args(args)
+            .current_dir(dir)
+            .status()
+            .expect("git runs");
+        assert!(status.success(), "git {args:?}");
+    }
+
+    /// A worktree shares its main checkout's store and keeps its own bundle
+    /// (#903): a per-worktree `.kernel/` vanished with the worktree.
+    #[test]
+    fn a_git_worktree_opens_its_main_checkout_store_and_keeps_its_own_bundle() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let main = temp.path().join("repo");
+        std::fs::create_dir_all(&main).expect("repo dir");
+        git(&main, &["init", "-q"]);
+        git(&main, &["commit", "-q", "--allow-empty", "-m", "init"]);
+        git(&main, &["worktree", "add", "-q", "../repo-feature"]);
+        let worktree = temp.path().join("repo-feature");
+        let nested = worktree.join("src");
+        std::fs::create_dir_all(&nested).expect("nested");
+
+        let main = std::fs::canonicalize(&main).expect("canonical main");
+        let resolved = resolve_data_dir(None, Some(&saved("/saved/dir")), &nested, Path::new("/d"));
+        assert_eq!(
+            resolved,
+            ResolvedDataDir::Worktree {
+                path: main.join(".kernel"),
+                checkout: worktree.clone(),
+            }
+        );
+        assert_eq!(resolved.rule_name(), "worktree");
+        assert_eq!(
+            project_bundle_path(&resolved),
+            Some(worktree.join(PROJECT_BUNDLE_PATH)),
+            "the bundle is committed with the worktree's branch"
+        );
+
+        // The main checkout itself is still a plain project.
+        assert_eq!(
+            resolve_data_dir(None, None, &main, Path::new("/d")),
+            ResolvedDataDir::Project(main.join(".kernel"))
+        );
+    }
+
+    /// A `.git` file that is not a worktree of a checkout (a submodule, a
+    /// bare repository's worktree, a broken pointer) keeps the directory as
+    /// its own project, as before.
+    #[test]
+    fn a_git_file_that_is_not_a_checkout_worktree_stays_its_own_project() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let submodule = temp.path().join("sub");
+        std::fs::create_dir_all(&submodule).expect("dir");
+        std::fs::write(
+            submodule.join(".git"),
+            "gitdir: ../nowhere/.git/modules/sub\n",
+        )
+        .expect("git file");
+        assert_eq!(
+            resolve_data_dir(None, None, &submodule, Path::new("/d")),
+            ResolvedDataDir::Project(submodule.join(".kernel"))
+        );
+    }
+
     #[test]
     fn no_project_falls_back_to_user_data_dir() {
         let resolved = resolve_with_project_marker(
@@ -501,7 +640,7 @@ mod tests {
             None,
             Path::new("/anywhere/nested"),
             Path::new("/home/u/.local/share"),
-            |_| false,
+            |_| None,
         );
         assert_eq!(
             resolved,
