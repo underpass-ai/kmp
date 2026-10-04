@@ -11,6 +11,12 @@ Detailed notes from the early release cycle remain available in the
 
 ### Changed
 
+- Every embedded MCP session names its store (#903): the `initialize`
+  instructions end with `Memory store: <path> (chosen by <rule>)`, and every
+  `kmp_wake` result carries `store: {path, rule}`. A `not found` wake starts
+  its text with the store too, because "nothing here" means nothing without
+  "here". The optional wake `outputSchema` declares the field; the default
+  `tools/list` is unchanged.
 - **Breaking:** store selection now runs `KMP_MCP_DATA_DIR`, then the nearest
   project, then the saved selection, then the per-user default (#903). A saved
   `memory_store` is one value for the whole machine and used to beat project
