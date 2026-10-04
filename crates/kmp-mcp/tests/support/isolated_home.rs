@@ -14,6 +14,7 @@ use std::process::Command;
 
 /// `program` with `HOME`, `XDG_DATA_HOME` and `XDG_CONFIG_HOME` pointed at
 /// a home private to this test process.
+#[allow(dead_code)]
 pub fn command(program: impl AsRef<OsStr>) -> Command {
     let home = home();
     let mut command = Command::new(program);
@@ -22,6 +23,12 @@ pub fn command(program: impl AsRef<OsStr>) -> Command {
         .env("XDG_DATA_HOME", home.join(".local/share"))
         .env("XDG_CONFIG_HOME", home.join(".config"));
     command
+}
+
+/// The data home an in-process server under test keeps its own state in.
+#[allow(dead_code)]
+pub fn data_home() -> PathBuf {
+    home().join(".local/share")
 }
 
 fn home() -> PathBuf {

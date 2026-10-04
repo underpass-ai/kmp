@@ -1,4 +1,6 @@
 //! The same attachment, source correction and replay through embedded SQLite and real gRPC.
+#[path = "support/isolated_home.rs"]
+mod isolated_home;
 
 #[path = "support/relation_write_fixture.rs"]
 pub mod fixture;
@@ -34,7 +36,8 @@ async fn a_link_declared_over_grpc_commits_exactly_what_the_embedded_path_commit
                 },
             ),
     );
-    let server = KernelMcpServer::grpc(endpoint);
+    let server =
+        KernelMcpServer::grpc(endpoint).with_remote_state_home(&isolated_home::data_home());
     let (remote_alias, remote_notice) = sources(&server).await;
     assert_eq!(
         remote_alias, alias,
