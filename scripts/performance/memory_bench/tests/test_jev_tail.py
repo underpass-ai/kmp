@@ -124,7 +124,7 @@ class TailTest(unittest.TestCase):
             seen.append((upstream, key))
             return []
         with mock.patch.object(jev_tail, 'measure', fake_measure):
-            report = jev_tail.run_tail(fast_settings(), env={jev_tail.API_KEY_ENV: secret})
+            report = jev_tail.run_tail(fast_settings(), env={jev_tail.KEY_VARIABLE_NAME: secret})
         self.assertEqual(seen, [(jev_tail.PROVIDER_URL, secret)])
         self.assertEqual(report['key'], {'source': 'env TYPESAFE_API_KEY', 'recorded': False})
         self.assertNotIn(secret, json.dumps(report))
@@ -168,7 +168,7 @@ class TailTest(unittest.TestCase):
     def test_the_cli_skips_without_a_key_and_exits_zero(self):
         out = public_layout().root / 'jev-tail' / f'test-{os.getpid()}'
         self.addCleanup(shutil.rmtree, out, True)
-        env = {k: v for k, v in os.environ.items() if k != jev_tail.API_KEY_ENV}
+        env = {k: v for k, v in os.environ.items() if k != jev_tail.KEY_VARIABLE_NAME}
         stdout = io.StringIO()
         with mock.patch.dict(os.environ, env, clear=True), contextlib.redirect_stdout(stdout):
             code = cli.main(['jev-tail', '--out', str(out)])
