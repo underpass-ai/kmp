@@ -3,7 +3,7 @@
 //! is already there.
 
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 
 /// The store directory inside a project root.
 pub(crate) const PROJECT_DIR_NAME: &str = ".kernel";
@@ -50,11 +50,31 @@ fn main_checkout_of_worktree(worktree: &Path, git_file: &Path) -> Option<PathBuf
     let git_dir = text.lines().find_map(|line| line.strip_prefix("gitdir:"))?;
     let git_dir = worktree.join(git_dir.trim());
     let common = fs::read_to_string(git_dir.join("commondir")).ok()?;
-    let common = fs::canonicalize(git_dir.join(common.trim())).ok()?;
+    let common = lexically_normal(&git_dir.join(common.trim()));
     if common.file_name()? != ".git" || !common.is_dir() {
         return None;
     }
     let main_checkout = common.parent()?.to_path_buf();
-    let same = fs::canonicalize(worktree).ok().as_deref() == Some(main_checkout.as_path());
+    // Canonical forms only decide identity: on Windows they are verbatim
+    // `\\?\` paths, which must not become the store path.
+    let same = fs::canonicalize(worktree).ok() == fs::canonicalize(&main_checkout).ok();
     (!same).then_some(main_checkout)
+}
+
+/// Collapses `.` and `..` without touching the disk, so the store path keeps
+/// the spelling git wrote.
+fn lexically_normal(path: &Path) -> PathBuf {
+    let mut normal = PathBuf::new();
+    for component in path.components() {
+        match component {
+            Component::CurDir => {}
+            Component::ParentDir => {
+                if !normal.pop() {
+                    normal.push(component);
+                }
+            }
+            other => normal.push(other),
+        }
+    }
+    normal
 }

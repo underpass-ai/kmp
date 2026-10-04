@@ -591,6 +591,8 @@ mod tests {
         let nested = worktree.join("src");
         std::fs::create_dir_all(&nested).expect("nested");
 
+        // git records the main checkout by its real path (`/private/var` on
+        // macOS, not `/var`), and the store keeps git's spelling.
         let main = std::fs::canonicalize(&main).expect("canonical main");
         let resolved = resolve_data_dir(None, Some(&saved("/saved/dir")), &nested, Path::new("/d"));
         assert_eq!(
