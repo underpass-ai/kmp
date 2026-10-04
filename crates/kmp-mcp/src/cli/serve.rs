@@ -257,8 +257,7 @@ async fn server_from_env() -> Result<KernelMcpServer, StartupFailure> {
             }
         }
     };
-    let server = KernelMcpServer::with_embedded_backend(backend)
-        .with_orphaned_bundle(resolved.orphaned_bundle().cloned());
+    let server = KernelMcpServer::with_embedded_backend(backend).with_resolved_store(&resolved);
     let server = match lease {
         Some(lease) => server.with_store_session_lease(lease),
         None => server,

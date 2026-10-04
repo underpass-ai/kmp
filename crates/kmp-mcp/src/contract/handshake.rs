@@ -28,16 +28,18 @@ pub(crate) fn canonical_tool_name(name: &str) -> &str {
 
 #[cfg(test)]
 pub(crate) fn initialize_result(backend: &str, grpc_tls: &str) -> Value {
-    initialize_result_with_apps(backend, grpc_tls, false, false)
+    initialize_result_with_apps(backend, grpc_tls, false, false, None)
 }
 
 /// `bridges_languages` says whether the backend's `kmp_ask` crosses languages
 /// on its own, which decides which language rule the agent is handed.
+/// `store` names the embedded store this session opened (#903).
 pub(crate) fn initialize_result_with_apps(
     backend: &str,
     grpc_tls: &str,
     apps: bool,
     bridges_languages: bool,
+    store: Option<&crate::serving::store_disclosure::StoreDisclosure>,
 ) -> Value {
     let mut capabilities = json!({"tools": {}});
     if apps {
@@ -53,7 +55,11 @@ pub(crate) fn initialize_result_with_apps(
             "name": SERVER_NAME,
             "version": SERVER_VERSION
         },
-        "instructions": crate::agent_policy::mcp_instructions(bridges_languages),
+        "instructions": format!(
+            "{}{}",
+            crate::agent_policy::mcp_instructions(bridges_languages),
+            store.map(|store| store.instruction()).unwrap_or_default()
+        ),
         "metadata": {
             "backend": backend,
             "grpc_tls": grpc_tls
