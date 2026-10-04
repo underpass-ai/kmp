@@ -199,8 +199,9 @@ fn print_subcommand_help(command: &str) {
              every store a command has opened or `register` named. Each shows how it is reached \
              (env, project, worktree, saved, user, user fallback or unreachable), its format, \
              size and last opening, and every about inside with its event count. Stores are read \
-             without being opened for use: no lease, no migration, no write. A format this \
-             engine cannot read is listed with its format and left untouched.\n\n`register` \
+             without being opened for use: no lease and no migration, and a store at rest gets \
+             no file written beside it. A format this engine cannot read is listed with its \
+             format and left untouched.\n\n`register` \
              adds an existing store directory (one holding FORMAT_VERSION) to the index; it \
              refuses relative and `~` paths and never creates anything. Nothing crawls the disk."
         );
