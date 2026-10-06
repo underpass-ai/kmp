@@ -1,0 +1,3 @@
+Usage: kmp-mcp demo [--no-viewer] [--dry-run]
+
+Writes a worked example — one checkout service, an incident, the decision that replaced an earlier one and the measurement that verified it — into the store kmp-mcp resolves here, under the about `example:kmp-demo`, then opens ChronoLoom on it and prints questions to ask your agent. Idempotent: a store that already holds the example gets nothing new. The example never enters a project's committed .kmp/memory.jsonl. --no-viewer writes and exits; --dry-run only says where it would write.
