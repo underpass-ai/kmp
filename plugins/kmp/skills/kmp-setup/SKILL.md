@@ -78,18 +78,23 @@ line; it is ignored and the doctor says so. Questions in Chinese, Japanese or
 Thai are not segmented by word yet; storage remains byte-exact. Upgrades must
 leave the policy file intact.
 
-Setup and update must not select or write a memory store. Guide sync is a
-separate, explicit data operation. Run it only when the user asks to install
-or refresh the guides:
+Setup and update must not select or write a memory store. The guide needs no
+step of its own: the first guide read on a fresh embedded store seeds it from
+the installed assets that match the engine. Run the explicit sync only when the
+user asks to refresh the guides, for a shared gRPC kernel, or when a guide read
+reports `GUIDE_UNAVAILABLE` and its `searched` lines show no matching assets:
 
 ```bash
 KMP_MCP_BIN=<path-to-kmp-mcp> <plugin-root>/scripts/kmp-guide-sync.sh sync
 ```
 
 It writes `guide:kmp-agent` and `guide:kmp` into the store selected by that
-command. In a project, that is project memory and its commit-native bundle.
-Name this effect before running it. Exact reruns add no events; a later plugin
+command. The guide abouts never enter a project's commit-native bundle. Name
+this effect before running it. Exact reruns add no events; a later plugin
 version supersedes only changed guide entries.
 
 Finish by rerunning `<plugin-root>/scripts/kmp-doctor.sh`. A running Codex
-session needs one restart to load changed skills or MCP wiring.
+session needs one restart to load changed skills or MCP wiring. Offer
+`kmp-mcp demo` to someone who has just installed KMP: it writes a worked
+example into this project's store, opens ChronoLoom on it and prints the
+questions to ask.

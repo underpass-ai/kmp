@@ -79,6 +79,8 @@ exit /b 127
 :run
 
 set "KMP_MCP_BACKEND=embedded"
+rem The engine seeds a fresh store's guide from the plugin that started it.
+if not defined KMP_PLUGIN_ROOT set "KMP_PLUGIN_ROOT=%PLUGIN_ROOT%"
 
 rem No %* — the launcher starts the MCP server and nothing else. The binary
 rem reads a leading argument as a maintenance command (`migrate`, `--version`),

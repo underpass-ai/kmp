@@ -1,5 +1,6 @@
 use crate::application::use_cases::check_changelog::CheckChangelog;
 use crate::application::use_cases::check_marketplace_contracts::CheckMarketplaceContracts;
+use crate::application::use_cases::collect_tagline_sources::CollectTaglineSources;
 use crate::application::use_cases::collect_version_sources::CollectVersionSources;
 use crate::domain::plugin_repository::PluginRepository;
 use crate::domain::readiness_check::ReadinessCheck;
@@ -50,6 +51,7 @@ where
             vec![
                 self.changelog(version),
                 self.version_sources(version),
+                self.tagline_sources(),
                 self.marketplace_catalogs(version),
                 self.working_tree(),
                 self.pushed_branch(),
@@ -90,6 +92,29 @@ where
             )
         } else {
             ReadinessCheck::failed("version sources", stale.join("\n"))
+        }
+    }
+
+    /// Every storefront reads its one-line description from a different
+    /// file; a release in which they disagree advertises several products.
+    fn tagline_sources(&self) -> ReadinessCheck {
+        let sources = match CollectTaglineSources::new(self.file_system).execute(self.root) {
+            Ok(sources) => sources,
+            Err(error) => return ReadinessCheck::failed("tagline sources", error.to_string()),
+        };
+        let total = sources.len();
+        let drifted = sources
+            .iter()
+            .filter(|source| !source.agrees())
+            .map(ToString::to_string)
+            .collect::<Vec<_>>();
+        if drifted.is_empty() {
+            ReadinessCheck::passed(
+                "tagline sources",
+                format!("all {total} storefront descriptions open with the workspace tagline"),
+            )
+        } else {
+            ReadinessCheck::failed("tagline sources", drifted.join("\n"))
         }
     }
 

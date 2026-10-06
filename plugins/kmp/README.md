@@ -1,18 +1,20 @@
 # KMP plugin — discovery for agents and humans
 
 <!-- kmp:public-overview:begin -->
-KMP gives Codex, Claude Code and Hermes Agent local-first memory that preserves
-what happened, when and why. It stores decisions and evidence, not transcripts,
-on embedded SQLite. Memory tools retrieve and audit that evidence, semantic
-view tools guide a shared ChronoLoom view, and a progressive guide teaches
-the agent how to use them. The running server’s `tools/list` defines the
-current tool surface.
+KMP is local-first memory for coding agents. It runs beside Codex, Claude Code
+and Hermes Agent as one small binary with an embedded SQLite store, and it
+remembers what was decided, what the evidence was and when it happened. Never
+the transcript. No account, no service, no API key: memory stays on your
+machine.
 
-Ask **“Show me the memory behind this decision.”** The agent retrieves the
-evidence, opens ChronoLoom at the relevant moment and lights up the proof path.
-ChronoLoom names who is guiding, shows why the agent moved, and lets you take
-control without losing the frame or its undo. A shared time window crosses real
-3D about layers; a flat camera shows the same memory, with labels as filters.
+Ask your agent **"Why did we choose SQLite?"** and it answers from stored
+evidence, or says `UNKNOWN` instead of guessing. Ask **"Show me the memory
+behind this decision"** and ChronoLoom, the viewer that ships inside the
+binary, opens on that decision and lights up its proof path, with time as a
+dimension you can move through and a view the agent and you steer together.
+Memory tools retrieve and audit the evidence, view tools steer that shared
+ChronoLoom view, and the running server's `tools/list` defines the current
+surface.
 <!-- kmp:public-overview:end -->
 
 The native plugin supplies skills, host discovery and one MCP registration
@@ -146,14 +148,32 @@ The Pi agent home is resolved the way Pi resolves it: `$PI_CODING_AGENT_DIR`
 The package's extension runs `kmp-mcp` from `PATH`, so `kmp-mcp doctor`
 inventories Pi as a peer host with the same engine proof as Codex and Hermes.
 
-### Initialize the selected store
+### The guide arrives on its own
 
-After setup and the host restart, ask Codex to run `kmp-guide`, or run
-`/kmp:guide` in Claude Code. This explicitly synchronizes the installed agent
-and human guides into the selected memory store. Setup alone installs the
-assets without writing a store. A fresh store can therefore return
-`GUIDE_UNAVAILABLE` until this step is complete. Repeat guide synchronization
-when changing stores or when an upgraded guide needs to be loaded.
+Setup installs the assets without writing a store. The first guide read on a
+fresh embedded store — `kmp_guide`, or an inspect of a guide node — seeds both
+installed guides from the assets that match the engine: the plugin root the
+launcher names in `KMP_PLUGIN_ROOT`, the plugin a bundled engine lives in, or
+the Claude or Codex plugin cache for this version. It happens once per session,
+through the ordinary writer, and the guide abouts never enter a project's
+committed bundle. `/kmp:guide` in Claude Code, or `kmp-guide` in Codex, still
+opens the human guide in ChronoLoom and forces a refresh when an upgraded guide
+must replace a partial or older one. A store with no matching assets anywhere
+returns `GUIDE_UNAVAILABLE`, naming where it looked and the explicit
+`kmp-mcp guide sync` repair; a shared gRPC kernel always uses that explicit
+sync.
+
+### See something in the first minute
+
+```bash
+kmp-mcp demo
+```
+
+writes a worked example — a checkout service, an incident, the decision that
+replaced an earlier one and the measurement that verified it — into the store
+this directory resolves to, opens ChronoLoom on it and prints four questions
+to ask your agent. It is idempotent and never enters a project's committed
+bundle. `--no-viewer` writes and exits.
 
 ### Agent routing policy
 
@@ -211,10 +231,11 @@ inside, reads supersession and expiry as they stood then, and an `UNKNOWN`
 names the nearest match outside the span.
 
 Setup and update install the versioned guide assets but never select or write
-a memory store. `/kmp:guide` performs the separate, explicit sync:
-`guide:kmp-agent` explains every live verb to the agent and `guide:kmp` is the
-short human path. The sync is deterministic, but it writes to the selected
-store. Check the selected store before synchronizing.
+a memory store. The first guide read seeds them into the store it was asked
+about: `guide:kmp-agent` explains every live verb to the agent and `guide:kmp`
+is the short human path. `/kmp:guide` opens the human path and forces an
+explicit, deterministic refresh when one is needed. Check the selected store
+before synchronizing explicitly.
 
 ## What you get
 
@@ -243,8 +264,9 @@ with the kernel. The skill teaches the shape; the schema carries the truth.
 with a random display name. Open one worked card by topic and consult its
 extended verb when needed. Context resets preserve identity; delivery records
 mean guidance was served, not learned. Agent metadata stays outside memory
-retrieval. The explicit `/kmp:guide` sync installs the versioned lessons in KMP.
-The separate `guide:kmp` is for people and opens visually in ChronoLoom.
+retrieval. The versioned lessons reach a fresh store on the first guide read;
+`/kmp:guide` refreshes them explicitly when needed. The separate `guide:kmp` is
+for people and opens visually in ChronoLoom.
 
 The payoff appears on the read path: `kmp_wake` reconstructs the causal
 spine, `kmp_ask` can keep the right citation when the question is
@@ -262,7 +284,7 @@ field-by-field model, safe fallbacks and worked examples.
 | `/kmp:doctor` | Diagnoses the setup end to end and names the one thing to fix |
 | `/kmp:info` | What this install is and which memory this project opens — and why that one |
 | `/kmp:moves` | The memory and ChronoLoom moves, read from the live surface when reachable |
-| `/kmp:guide` | Syncs the agent guide, then runs `open:guide` on the separate human path in ChronoLoom |
+| `/kmp:guide` | Opens the human guide in ChronoLoom through `open:guide`; refreshes the installed guides explicitly when a store needs it |
 | `/kmp:catchup` | What changed since you last looked, from the event log |
 | `/kmp:save` | Exports this project's maintained memory bundle and shows the diff; does not create a Git commit |
 | `/kmp:restore` | Loads the memory committed in the repository back into the store |

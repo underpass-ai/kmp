@@ -49,6 +49,11 @@ pub struct KernelMcpServer {
     /// `None` inside once it could not be, so no call retries it.
     pub(super) telemetry_salt:
         std::sync::OnceLock<Option<Arc<crate::serving::telemetry::FingerprintSalt>>>,
+    /// Whether this session already tried to seed the installed guide into
+    /// its store, taken before the attempt so two reads cannot both seed.
+    pub(super) guide_seed_attempted: AtomicBool,
+    /// What that attempt did, for the repair a later failed read carries.
+    pub(super) guide_seed: std::sync::OnceLock<crate::serving::guide_seed::GuideSeedOutcome>,
 }
 
 impl Default for KernelMcpServer {
@@ -125,6 +130,8 @@ impl KernelMcpServer {
             session: crate::serving::mcp_session::McpSession::new(),
             telemetry_salt_path: None,
             telemetry_salt: std::sync::OnceLock::new(),
+            guide_seed_attempted: AtomicBool::new(false),
+            guide_seed: std::sync::OnceLock::new(),
         }
     }
 
@@ -300,7 +307,7 @@ impl KernelMcpServer {
                 );
                 let commit_native = kmp_embedded::CommitNativeBundle::for_resolved_excluding_abouts(
                     &resolved,
-                    crate::guide::abouts_owned(),
+                    crate::local_abouts(),
                 );
                 let mut server = Self::with_retrying_embedded_backend(
                     crate::serving::RetryingEmbeddedKernelMcpBackend::new_with_commit_native(

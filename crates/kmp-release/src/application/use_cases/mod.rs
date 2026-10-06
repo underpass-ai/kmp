@@ -4,6 +4,7 @@ pub mod calculate_candidate_inputs;
 pub mod check_changelog;
 pub mod check_marketplace_contracts;
 pub mod check_release_readiness;
+pub mod collect_tagline_sources;
 pub mod collect_version_sources;
 pub mod load_guide_editorial;
 pub mod package_mcpb;

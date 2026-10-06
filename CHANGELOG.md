@@ -9,6 +9,62 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Changed
+
+- A fresh store gets its guide on the first guide read. `kmp_guide`, and an
+  inspect of a guide node, seed both installed guides from the assets that
+  match the engine — the plugin root the launcher names in `KMP_PLUGIN_ROOT`,
+  the plugin a bundled engine lives in, or the Claude or Codex plugin cache
+  for this version — once per session, through the ordinary `kmp_ingest`
+  with the guide's own idempotency keys, and read again. Setup and update
+  still write no memory, and a shared gRPC kernel keeps the explicit sync.
+  `GUIDE_UNAVAILABLE` now names where the session looked in `searched`
+  before asking for `kmp-mcp guide sync`. Both launchers export
+  `KMP_PLUGIN_ROOT`. Installing KMP is install, setup and one restart; the
+  `/kmp:guide` step is for opening the human guide and for an explicit
+  refresh.
+- The public overview block, and the first screen of the repository README,
+  are written for someone who has never seen KMP: the problem, the local
+  binary, two questions to ask, and how to see it in two minutes. The
+  language section moved to `docs/embedded/languages.md`; the deep sections
+  follow the install, not precede it.
+- Every storefront opens with the same tagline, the workspace `description`
+  in `Cargo.toml`: the `kmp-mcp` crate, the Codex plugin interface and the
+  ChatGPT app submission now say it, and `scripts/release.sh preflight`
+  fails when any manifest drifts (`tagline sources`).
+- The crate publish chain waits until each published version is visible in
+  the crates.io index before publishing the crates that depend on it. The
+  0.25.0 publication failed because `cargo publish -p kmp-mcp` could not
+  resolve `kmp-domain 0.25.0` two minutes after it was uploaded, which left
+  crates.io at 0.24.0 and the MCP Registry waiting. A chain that stops
+  halfway is resumed by dispatching `publish-distribution.yml` on the tag
+  with `resume_crates` set to that version.
+- The repository's own memory, `.kmp/memory.jsonl`, is a bundle this engine
+  reads again (format 3): seventeen decisions, constraints and observations
+  behind KMP, each naming its source, authored in
+  `examples/kmp-project/requests.json`. The previous bundle was format 2,
+  which no shipped binary has read since 0.6.
+
+### Added
+
+- `kmp-mcp demo [--no-viewer] [--dry-run]` writes a worked example — a
+  checkout service, an incident, the decision that replaced an earlier one
+  and the measurement that verified it — under `example:kmp-demo` into the
+  store that resolves here, opens ChronoLoom on it and prints four questions
+  to ask the agent. It is idempotent, and the example, like the guides,
+  never enters a project's committed bundle.
+- `examples/`: real memories to load and ask about, each with the packets
+  that wrote it, its exported bundle and a README. `scripts/examples/refresh.sh`
+  regenerates every bundle, and the `example_bundles` test imports each one
+  into an empty store.
+- `scripts/release/storefronts.sh` compares GitHub Releases, crates.io, the
+  MCP Registry and the `marketplace` branch for one version and exits
+  non-zero when any of them lags; `storefronts.yml` runs it after every
+  published release, once a day and on request.
+- `docs/development/distribution-channels.md`: every channel KMP is listed
+  on, what it reads from the tree, how it updates, and the submissions that
+  are still done by hand, with the one blurb to use everywhere.
+
 ## [0.25.0] - 2026-10-04
 
 ### Changed

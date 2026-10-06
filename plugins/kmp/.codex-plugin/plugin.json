@@ -25,9 +25,9 @@
     }
   },
   "interface": {
-    "displayName": "KMP by Underpass",
-    "shortDescription": "Temporal, navigable memory for coding agents",
-    "longDescription": "Wire the local kmp MCP server, learn when to reach for memory before re-deriving context, and diagnose a broken setup. Runs the embedded kernel \u2014 no service, database or network required.",
+    "displayName": "KMP",
+    "shortDescription": "Local-first agent memory that preserves what happened, when and why",
+    "longDescription": "Local-first agent memory that preserves what happened, when and why. KMP stores decisions and evidence, not transcripts, on embedded SQLite; the agent recovers known work before re-deriving it, answers from stored evidence or says UNKNOWN, navigates history in time and opens the same memory in ChronoLoom. No service, database or API key required.",
     "developerName": "Underpass AI",
     "category": "Developer Tools",
     "capabilities": [

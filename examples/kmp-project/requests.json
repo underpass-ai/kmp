@@ -1,0 +1,753 @@
+[
+  {
+    "about": "project:kmp",
+    "idempotency_key": "project:kmp:memory:2026-10-06:v1",
+    "provenance": {
+      "source_agent": "kmp-maintainers",
+      "source_kind": "human",
+      "correlation_id": "project:kmp:memory:v1",
+      "causation_id": "examples/kmp-project",
+      "observed_at": "2026-10-06T18:00:00Z"
+    },
+    "memory": {
+      "dimensions": [
+        {
+          "id": "timeline",
+          "kind": "timeline",
+          "title": "KMP decision history"
+        },
+        {
+          "id": "product",
+          "kind": "area",
+          "title": "Product"
+        },
+        {
+          "id": "documentation",
+          "kind": "area",
+          "title": "Documentation"
+        },
+        {
+          "id": "release",
+          "kind": "area",
+          "title": "Release"
+        },
+        {
+          "id": "agent-surface",
+          "kind": "area",
+          "title": "Agent surface"
+        },
+        {
+          "id": "storage",
+          "kind": "area",
+          "title": "Storage"
+        }
+      ],
+      "entries": [
+        {
+          "id": "project:kmp:decision:decisions-not-transcripts",
+          "kind": "decision",
+          "text": "KMP stores decisions, constraints, outcomes and the evidence behind them. It never stores transcripts.",
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "scope_id": "timeline",
+              "occurred_at": "2026-08-13T12:00:00Z",
+              "observed_at": "2026-08-13T12:00:00Z",
+              "sequence": 1
+            },
+            {
+              "dimension": "area",
+              "scope_id": "product",
+              "sequence": 1
+            }
+          ],
+          "metadata": {
+            "source": "repository",
+            "document": "README.md, section 'Talk to it like a human'"
+          }
+        },
+        {
+          "id": "project:kmp:decision:local-first-embedded",
+          "kind": "decision",
+          "text": "The default path is one local binary with an embedded SQLite store, a local stdio MCP transport and a loopback viewer. The shared Kubernetes topology is optional and self-operated.",
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "scope_id": "timeline",
+              "occurred_at": "2026-08-13T12:00:00Z",
+              "observed_at": "2026-08-13T12:00:00Z",
+              "sequence": 2
+            },
+            {
+              "dimension": "area",
+              "scope_id": "product",
+              "sequence": 2
+            }
+          ],
+          "metadata": {
+            "source": "repository",
+            "document": "README.md, section 'Local means local'"
+          }
+        },
+        {
+          "id": "project:kmp:constraint:public-overview-canonical",
+          "kind": "constraint",
+          "text": "The marked public-overview block in plugins/kmp/README.md is canonical. The GitHub and crates.io READMEs are synchronized from it with `kmp-release readme sync`, never edited by hand.",
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "scope_id": "timeline",
+              "occurred_at": "2026-08-26T12:00:00Z",
+              "observed_at": "2026-08-26T12:00:00Z",
+              "sequence": 3
+            },
+            {
+              "dimension": "area",
+              "scope_id": "documentation",
+              "sequence": 3
+            }
+          ],
+          "metadata": {
+            "source": "repository",
+            "document": "AGENTS.md, section 'Public README parity'"
+          }
+        },
+        {
+          "id": "project:kmp:constraint:guides-generated-from-editorial",
+          "kind": "constraint",
+          "text": "Both installed guides derive from plugins/kmp/guide/editorial.json. AGENT.md, guide.requests.json and guide/memory.jsonl are generated with the matching binary and never edited separately.",
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "scope_id": "timeline",
+              "occurred_at": "2026-08-28T12:00:00Z",
+              "observed_at": "2026-08-28T12:00:00Z",
+              "sequence": 4
+            },
+            {
+              "dimension": "area",
+              "scope_id": "documentation",
+              "sequence": 4
+            },
+            {
+              "dimension": "area",
+              "scope_id": "agent-surface",
+              "sequence": 4
+            }
+          ],
+          "metadata": {
+            "source": "repository",
+            "document": "AGENTS.md, section 'Guide parity'"
+          }
+        },
+        {
+          "id": "project:kmp:constraint:every-advertised-version-installable",
+          "kind": "constraint",
+          "text": "Every advertised version must be installable: the public marketplace branch must never point at a tag, or at engine assets, that are not public yet.",
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "scope_id": "timeline",
+              "occurred_at": "2026-08-30T12:00:00Z",
+              "observed_at": "2026-08-30T12:00:00Z",
+              "sequence": 5
+            },
+            {
+              "dimension": "area",
+              "scope_id": "release",
+              "sequence": 5
+            }
+          ],
+          "metadata": {
+            "source": "repository",
+            "document": "docs/development/releasing.md, section 'Before tagging'"
+          }
+        },
+        {
+          "id": "project:kmp:decision:catalog-after-assets",
+          "kind": "decision",
+          "text": "A release tags the reviewed candidate, waits until the GitHub release and all twenty-two checksummed assets are public, and only then advances the protected marketplace branch to that commit.",
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "scope_id": "timeline",
+              "occurred_at": "2026-08-30T12:00:00Z",
+              "observed_at": "2026-08-30T12:00:00Z",
+              "sequence": 6
+            },
+            {
+              "dimension": "area",
+              "scope_id": "release",
+              "sequence": 6
+            }
+          ],
+          "metadata": {
+            "source": "repository",
+            "document": "crates/kmp-release/src/application/use_cases/run_release_publication.rs (#446)"
+          }
+        },
+        {
+          "id": "project:kmp:constraint:setup-never-writes-memory",
+          "kind": "constraint",
+          "text": "Setup and update install the plugin tree and the checksummed engine. They never select a memory store and never write memory.",
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "scope_id": "timeline",
+              "occurred_at": "2026-08-28T12:00:00Z",
+              "observed_at": "2026-08-28T12:00:00Z",
+              "sequence": 7
+            },
+            {
+              "dimension": "area",
+              "scope_id": "agent-surface",
+              "sequence": 7
+            }
+          ],
+          "metadata": {
+            "source": "repository",
+            "document": "plugins/kmp/skills/kmp-setup/SKILL.md"
+          }
+        },
+        {
+          "id": "project:kmp:decision:guide-through-explicit-sync",
+          "kind": "decision",
+          "text": "A fresh store receives the installed guides only through the explicit kmp-guide workflow (`/kmp:guide` in Claude Code); until then a guide read returns GUIDE_UNAVAILABLE with the command to type.",
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "scope_id": "timeline",
+              "occurred_at": "2026-08-28T12:00:00Z",
+              "observed_at": "2026-08-28T12:00:00Z",
+              "sequence": 8
+            },
+            {
+              "dimension": "area",
+              "scope_id": "agent-surface",
+              "sequence": 8
+            }
+          ],
+          "metadata": {
+            "source": "repository",
+            "document": "plugins/kmp/README.md v0.25.0, section 'Initialize the selected store'"
+          }
+        },
+        {
+          "id": "project:kmp:observation:tools-list-dominated-journeys",
+          "kind": "observation",
+          "text": "Measured on v0.20.0, tools/list was 80 to 97 percent of the reference tokens of every agent journey.",
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "scope_id": "timeline",
+              "occurred_at": "2026-09-24T12:00:00Z",
+              "observed_at": "2026-09-24T12:00:00Z",
+              "sequence": 9
+            },
+            {
+              "dimension": "area",
+              "scope_id": "agent-surface",
+              "sequence": 9
+            }
+          ],
+          "metadata": {
+            "source": "repository",
+            "document": "GitHub issue #850"
+          }
+        },
+        {
+          "id": "project:kmp:decision:parameter-prose-served-by-guide",
+          "kind": "decision",
+          "text": "tools/list carries no parameter descriptions. Each tool keeps a one-line description naming its kmp_guide topic, and that topic's card returns the parameter descriptions as card.parameters. A session starts with 12,649 reference tokens instead of 24,426.",
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "scope_id": "timeline",
+              "occurred_at": "2026-09-28T12:00:00Z",
+              "observed_at": "2026-09-28T12:00:00Z",
+              "sequence": 10
+            },
+            {
+              "dimension": "area",
+              "scope_id": "agent-surface",
+              "sequence": 10
+            }
+          ],
+          "metadata": {
+            "source": "repository",
+            "document": "CHANGELOG.md, 0.25.0, Changed (#850)"
+          }
+        },
+        {
+          "id": "project:kmp:decision:saved-selection-beat-project-discovery",
+          "kind": "decision",
+          "text": "A saved memory_store selection applied to the whole machine and beat project discovery, so one saved value decided the store for every repository.",
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "scope_id": "timeline",
+              "occurred_at": "2026-09-05T12:00:00Z",
+              "observed_at": "2026-09-05T12:00:00Z",
+              "sequence": 11
+            },
+            {
+              "dimension": "area",
+              "scope_id": "storage",
+              "sequence": 11
+            }
+          ],
+          "metadata": {
+            "source": "repository",
+            "document": "CHANGELOG.md, 0.25.0, Changed (#903), describing the behavior before 0.25.0"
+          }
+        },
+        {
+          "id": "project:kmp:observation:saved-selection-captured-every-repository",
+          "kind": "observation",
+          "text": "A saved selection sent every repository on the machine to the one store it named, so project memory landed in a store nobody chose for that project.",
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "scope_id": "timeline",
+              "occurred_at": "2026-10-03T12:00:00Z",
+              "observed_at": "2026-10-03T12:00:00Z",
+              "sequence": 12
+            },
+            {
+              "dimension": "area",
+              "scope_id": "storage",
+              "sequence": 12
+            }
+          ],
+          "metadata": {
+            "source": "repository",
+            "document": "CHANGELOG.md, 0.25.0, Changed (#903)"
+          }
+        },
+        {
+          "id": "project:kmp:decision:store-selection-order",
+          "kind": "decision",
+          "text": "Store selection runs KMP_MCP_DATA_DIR, then the nearest project, then the saved selection, then the per-user default. A saved selection applies only where no project is found, and a git worktree opens its main checkout's store.",
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "scope_id": "timeline",
+              "occurred_at": "2026-10-04T12:00:00Z",
+              "observed_at": "2026-10-04T12:00:00Z",
+              "sequence": 13
+            },
+            {
+              "dimension": "area",
+              "scope_id": "storage",
+              "sequence": 13
+            }
+          ],
+          "metadata": {
+            "source": "repository",
+            "document": "CHANGELOG.md, 0.25.0, Changed (#903)"
+          }
+        },
+        {
+          "id": "project:kmp:observation:crates-publish-index-race",
+          "kind": "observation",
+          "text": "The v0.25.0 crate publication failed: `cargo publish -p kmp-mcp` could not resolve kmp-domain 0.25.0 from the crates.io index two minutes after that crate was published, so crates.io stayed at 0.24.0 and the MCP Registry publication waited for a package that never came.",
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "scope_id": "timeline",
+              "occurred_at": "2026-10-04T18:30:00Z",
+              "observed_at": "2026-10-04T18:30:00Z",
+              "sequence": 14
+            },
+            {
+              "dimension": "area",
+              "scope_id": "release",
+              "sequence": 14
+            }
+          ],
+          "metadata": {
+            "source": "repository",
+            "document": "GitHub Actions run 37224430411, job publish-crates"
+          }
+        },
+        {
+          "id": "project:kmp:decision:wait-for-index-before-dependents",
+          "kind": "decision",
+          "text": "The crate publish chain waits until each published version is visible in the crates.io index before publishing its dependents, the publication can be resumed by an explicit dispatch, and a storefront check reports where GitHub, crates.io, the MCP Registry and the marketplace branch disagree.",
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "scope_id": "timeline",
+              "occurred_at": "2026-10-06T12:00:00Z",
+              "observed_at": "2026-10-06T12:00:00Z",
+              "sequence": 15
+            },
+            {
+              "dimension": "area",
+              "scope_id": "release",
+              "sequence": 15
+            }
+          ],
+          "metadata": {
+            "source": "repository",
+            "document": "CHANGELOG.md, Unreleased"
+          }
+        },
+        {
+          "id": "project:kmp:decision:guide-seeded-on-first-read",
+          "kind": "decision",
+          "text": "A guide read on a store that has no guide seeds it from the installed assets that match the binary — the launcher's KMP_PLUGIN_ROOT, the bundled engine's plugin or the host plugin cache for this version — and reads again. The explicit sync remains for shared kernels and repair.",
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "scope_id": "timeline",
+              "occurred_at": "2026-10-06T12:00:00Z",
+              "observed_at": "2026-10-06T12:00:00Z",
+              "sequence": 16
+            },
+            {
+              "dimension": "area",
+              "scope_id": "agent-surface",
+              "sequence": 16
+            }
+          ],
+          "metadata": {
+            "source": "repository",
+            "document": "CHANGELOG.md, Unreleased"
+          }
+        },
+        {
+          "id": "project:kmp:constraint:no-benchmark-numbers-in-readme",
+          "kind": "constraint",
+          "text": "Benchmark numbers are not pasted into the README. Reproducible, current evidence belongs in docs/research before it becomes a claim.",
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "scope_id": "timeline",
+              "occurred_at": "2026-08-26T12:00:00Z",
+              "observed_at": "2026-08-26T12:00:00Z",
+              "sequence": 17
+            },
+            {
+              "dimension": "area",
+              "scope_id": "documentation",
+              "sequence": 17
+            }
+          ],
+          "metadata": {
+            "source": "repository",
+            "document": "README.md, section 'Project status'"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "id": "evidence:project:kmp:decision:decisions-not-transcripts",
+          "text": "README: \"KMP is memory, not surveillance. Store durable decisions and evidence, not transcripts.\"",
+          "source": "README.md, section 'Talk to it like a human'",
+          "time": "2026-08-13T12:00:00Z",
+          "supports": [
+            "project:kmp:decision:decisions-not-transcripts"
+          ],
+          "metadata": {
+            "source": "repository"
+          }
+        },
+        {
+          "id": "evidence:project:kmp:decision:local-first-embedded",
+          "text": "README: \"The normal path runs entirely on your machine. No KMP account. No hosted memory server. No Underpass cloud.\"",
+          "source": "README.md, section 'Local means local'",
+          "time": "2026-08-13T12:00:00Z",
+          "supports": [
+            "project:kmp:decision:local-first-embedded"
+          ],
+          "metadata": {
+            "source": "repository"
+          }
+        },
+        {
+          "id": "evidence:project:kmp:constraint:public-overview-canonical",
+          "text": "AGENTS.md: \"The marked kmp:public-overview block in plugins/kmp/README.md is canonical.\"",
+          "source": "AGENTS.md, section 'Public README parity'",
+          "time": "2026-08-26T12:00:00Z",
+          "supports": [
+            "project:kmp:constraint:public-overview-canonical"
+          ],
+          "metadata": {
+            "source": "repository"
+          }
+        },
+        {
+          "id": "evidence:project:kmp:constraint:guides-generated-from-editorial",
+          "text": "AGENTS.md: \"Do not edit this generated Markdown separately from its editorial source.\"",
+          "source": "AGENTS.md, section 'Guide parity'",
+          "time": "2026-08-28T12:00:00Z",
+          "supports": [
+            "project:kmp:constraint:guides-generated-from-editorial"
+          ],
+          "metadata": {
+            "source": "repository"
+          }
+        },
+        {
+          "id": "evidence:project:kmp:constraint:every-advertised-version-installable",
+          "text": "releasing.md: \"This ordering keeps every advertised version installable.\"",
+          "source": "docs/development/releasing.md, section 'Before tagging'",
+          "time": "2026-08-30T12:00:00Z",
+          "supports": [
+            "project:kmp:constraint:every-advertised-version-installable"
+          ],
+          "metadata": {
+            "source": "repository"
+          }
+        },
+        {
+          "id": "evidence:project:kmp:decision:catalog-after-assets",
+          "text": "run_release_publication.rs: \"publishing the catalog first would make Claude Code clone a tag that does not exist\".",
+          "source": "crates/kmp-release/src/application/use_cases/run_release_publication.rs (#446)",
+          "time": "2026-08-30T12:00:00Z",
+          "supports": [
+            "project:kmp:decision:catalog-after-assets"
+          ],
+          "metadata": {
+            "source": "repository"
+          }
+        },
+        {
+          "id": "evidence:project:kmp:constraint:setup-never-writes-memory",
+          "text": "kmp-setup: \"Setup and update must not select or write a memory store.\"",
+          "source": "plugins/kmp/skills/kmp-setup/SKILL.md",
+          "time": "2026-08-28T12:00:00Z",
+          "supports": [
+            "project:kmp:constraint:setup-never-writes-memory"
+          ],
+          "metadata": {
+            "source": "repository"
+          }
+        },
+        {
+          "id": "evidence:project:kmp:decision:guide-through-explicit-sync",
+          "text": "plugins/kmp/README.md v0.25.0: \"A fresh store can therefore return GUIDE_UNAVAILABLE until this step is complete.\"",
+          "source": "plugins/kmp/README.md v0.25.0, section 'Initialize the selected store'",
+          "time": "2026-08-28T12:00:00Z",
+          "supports": [
+            "project:kmp:decision:guide-through-explicit-sync"
+          ],
+          "metadata": {
+            "source": "repository"
+          }
+        },
+        {
+          "id": "evidence:project:kmp:observation:tools-list-dominated-journeys",
+          "text": "Issue #850 title: \"tokens: tools/list is 80–97% of every journey — move schema prose into kmp_guide (measured on v0.20.0)\".",
+          "source": "GitHub issue #850",
+          "time": "2026-09-24T12:00:00Z",
+          "supports": [
+            "project:kmp:observation:tools-list-dominated-journeys"
+          ],
+          "metadata": {
+            "source": "repository"
+          }
+        },
+        {
+          "id": "evidence:project:kmp:decision:parameter-prose-served-by-guide",
+          "text": "CHANGELOG 0.25.0: \"tools/list no longer carries parameter descriptions ... 12,649 reference tokens instead of 24,426 (o200k_base, −48 %)\".",
+          "source": "CHANGELOG.md, 0.25.0, Changed (#850)",
+          "time": "2026-09-28T12:00:00Z",
+          "supports": [
+            "project:kmp:decision:parameter-prose-served-by-guide"
+          ],
+          "metadata": {
+            "source": "repository"
+          }
+        },
+        {
+          "id": "evidence:project:kmp:decision:saved-selection-beat-project-discovery",
+          "text": "CHANGELOG 0.25.0: \"A saved memory_store is one value for the whole machine and used to beat project discovery\".",
+          "source": "CHANGELOG.md, 0.25.0, Changed (#903), describing the behavior before 0.25.0",
+          "time": "2026-09-05T12:00:00Z",
+          "supports": [
+            "project:kmp:decision:saved-selection-beat-project-discovery"
+          ],
+          "metadata": {
+            "source": "repository"
+          }
+        },
+        {
+          "id": "evidence:project:kmp:observation:saved-selection-captured-every-repository",
+          "text": "CHANGELOG 0.25.0: \"which sent every repository on the machine to the one store it named\".",
+          "source": "CHANGELOG.md, 0.25.0, Changed (#903)",
+          "time": "2026-10-03T12:00:00Z",
+          "supports": [
+            "project:kmp:observation:saved-selection-captured-every-repository"
+          ],
+          "metadata": {
+            "source": "repository"
+          }
+        },
+        {
+          "id": "evidence:project:kmp:decision:store-selection-order",
+          "text": "CHANGELOG 0.25.0: \"store selection now runs KMP_MCP_DATA_DIR, then the nearest project, then the saved selection, then the per-user default\".",
+          "source": "CHANGELOG.md, 0.25.0, Changed (#903)",
+          "time": "2026-10-04T12:00:00Z",
+          "supports": [
+            "project:kmp:decision:store-selection-order"
+          ],
+          "metadata": {
+            "source": "repository"
+          }
+        },
+        {
+          "id": "evidence:project:kmp:observation:crates-publish-index-race",
+          "text": "publish-crates log: \"failed to select a version for the requirement `kmp-domain = ^0.25.0`; candidate versions found which didn't match: 0.24.0\".",
+          "source": "GitHub Actions run 37224430411, job publish-crates",
+          "time": "2026-10-04T18:30:00Z",
+          "supports": [
+            "project:kmp:observation:crates-publish-index-race"
+          ],
+          "metadata": {
+            "source": "repository"
+          }
+        },
+        {
+          "id": "evidence:project:kmp:decision:wait-for-index-before-dependents",
+          "text": "CHANGELOG Unreleased: the publish chain waits for index visibility; `scripts/release/storefronts.sh` compares every storefront.",
+          "source": "CHANGELOG.md, Unreleased",
+          "time": "2026-10-06T12:00:00Z",
+          "supports": [
+            "project:kmp:decision:wait-for-index-before-dependents"
+          ],
+          "metadata": {
+            "source": "repository"
+          }
+        },
+        {
+          "id": "evidence:project:kmp:decision:guide-seeded-on-first-read",
+          "text": "CHANGELOG Unreleased: a fresh store no longer returns GUIDE_UNAVAILABLE when matching assets are installed; the repair names where the session looked.",
+          "source": "CHANGELOG.md, Unreleased",
+          "time": "2026-10-06T12:00:00Z",
+          "supports": [
+            "project:kmp:decision:guide-seeded-on-first-read"
+          ],
+          "metadata": {
+            "source": "repository"
+          }
+        },
+        {
+          "id": "evidence:project:kmp:constraint:no-benchmark-numbers-in-readme",
+          "text": "README: \"We do not paste old benchmark numbers into the README. Reproducible, current evidence belongs in Research before it becomes a claim.\"",
+          "source": "README.md, section 'Project status'",
+          "time": "2026-08-26T12:00:00Z",
+          "supports": [
+            "project:kmp:constraint:no-benchmark-numbers-in-readme"
+          ],
+          "metadata": {
+            "source": "repository"
+          }
+        }
+      ],
+      "relations": [
+        {
+          "from": "project:kmp:decision:catalog-after-assets",
+          "to": "project:kmp:constraint:every-advertised-version-installable",
+          "rel": "satisfies_constraint",
+          "class": "constraint",
+          "confidence": "high",
+          "why": "Advancing the catalog only after every asset is public is what keeps an advertised version installable.",
+          "evidence": "releasing.md: \"Publishing the catalog first would make Claude Code run git clone --branch against a tag that does not exist.\"",
+          "sequence": 1
+        },
+        {
+          "from": "project:kmp:decision:guide-seeded-on-first-read",
+          "to": "project:kmp:decision:guide-through-explicit-sync",
+          "rel": "supersedes",
+          "class": "evidential",
+          "confidence": "high",
+          "why": "The first guide read now installs the guide itself when matching assets are on the machine; the explicit workflow stops being the only way a fresh store gets it.",
+          "evidence": "CHANGELOG Unreleased: \"a fresh store no longer returns GUIDE_UNAVAILABLE when matching assets are installed\".",
+          "sequence": 2
+        },
+        {
+          "from": "project:kmp:decision:guide-seeded-on-first-read",
+          "to": "project:kmp:constraint:setup-never-writes-memory",
+          "rel": "satisfies_constraint",
+          "class": "constraint",
+          "confidence": "high",
+          "why": "What writes is the guide read on the store it was asked about, not setup or update, so the constraint holds unchanged.",
+          "evidence": "guide_seed.rs: \"Setup installs assets and never writes memory, and that stays true: what writes here is the guide read itself.\"",
+          "sequence": 3
+        },
+        {
+          "from": "project:kmp:decision:parameter-prose-served-by-guide",
+          "to": "project:kmp:observation:tools-list-dominated-journeys",
+          "rel": "chosen_because",
+          "class": "motivational",
+          "confidence": "high",
+          "why": "The measurement named tools/list as the cost to cut; moving parameter prose behind a topic card halved it.",
+          "evidence": "CHANGELOG 0.25.0 (#850): \"tools/list 23,961 → 12,178\".",
+          "sequence": 4
+        },
+        {
+          "from": "project:kmp:decision:store-selection-order",
+          "to": "project:kmp:decision:saved-selection-beat-project-discovery",
+          "rel": "supersedes",
+          "class": "evidential",
+          "confidence": "high",
+          "why": "The 0.25.0 order puts project discovery before the saved selection, replacing the machine-wide precedence.",
+          "evidence": "CHANGELOG 0.25.0: \"It now applies only where no project is found.\"",
+          "sequence": 5
+        },
+        {
+          "from": "project:kmp:decision:store-selection-order",
+          "to": "project:kmp:observation:saved-selection-captured-every-repository",
+          "rel": "chosen_because",
+          "class": "motivational",
+          "confidence": "high",
+          "why": "The order changed because the old precedence sent every repository to one store.",
+          "evidence": "CHANGELOG 0.25.0: \"which sent every repository on the machine to the one store it named\".",
+          "sequence": 6
+        },
+        {
+          "from": "project:kmp:observation:saved-selection-captured-every-repository",
+          "to": "project:kmp:decision:saved-selection-beat-project-discovery",
+          "rel": "contradicts",
+          "class": "evidential",
+          "confidence": "high",
+          "why": "The observed effect is the opposite of what a per-project memory promises.",
+          "evidence": "CHANGELOG 0.25.0 (#903).",
+          "sequence": 7
+        },
+        {
+          "from": "project:kmp:decision:wait-for-index-before-dependents",
+          "to": "project:kmp:observation:crates-publish-index-race",
+          "rel": "chosen_because",
+          "class": "motivational",
+          "confidence": "high",
+          "why": "The failure was the index lagging the upload; waiting for visibility is the direct answer to it.",
+          "evidence": "publish-crates log of run 37224430411: kmp-domain 0.25.0 published at 18:28, unresolvable at 18:30.",
+          "sequence": 8
+        },
+        {
+          "from": "project:kmp:decision:wait-for-index-before-dependents",
+          "to": "project:kmp:constraint:every-advertised-version-installable",
+          "rel": "satisfies_constraint",
+          "class": "constraint",
+          "confidence": "high",
+          "why": "`cargo install kmp-mcp` is one of the advertised installation paths; a chain that fails halfway leaves it uninstallable.",
+          "evidence": "README.md: \"cargo install kmp-mcp --locked remains the fallback for a platform with no published asset.\"",
+          "sequence": 9
+        },
+        {
+          "from": "project:kmp:constraint:guides-generated-from-editorial",
+          "to": "project:kmp:constraint:public-overview-canonical",
+          "rel": "depends_on",
+          "class": "causal",
+          "confidence": "high",
+          "why": "Both rules exist for the same reason: one editorial source per public surface, generated outputs everywhere else.",
+          "evidence": "AGENTS.md: 'Public README parity' and 'Guide parity' sections.",
+          "sequence": 10
+        }
+      ]
+    }
+  }
+]

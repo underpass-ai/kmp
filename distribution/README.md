@@ -8,6 +8,9 @@ Release and deployment assets that ship KMP live here.
   provenance;
 - [`mcpb/`](mcpb/) — the packaged MCP distribution.
 
+Where each published artifact is listed, how it gets there and what is still
+submitted by hand: [Distribution channels](../docs/development/distribution-channels.md).
+
 Historical standalone Kubernetes manifests remain available in Git history
 and are not a supported deployment path. See
 [Enterprise KMP](../docs/enterprise/README.md) for the current shared KMP
