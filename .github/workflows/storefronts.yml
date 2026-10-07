@@ -1,0 +1,40 @@
+name: storefronts
+
+# Every storefront a release reaches is published by a different job, and a
+# job that fails quietly leaves one of them a release behind. This asks each
+# of them where it stands — read-only, no publishing — after every release,
+# once a day, and on request, and turns red when any of them lags.
+
+on:
+  release:
+    types: [published]
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to check (X.Y.Z); empty means the one server.json declares"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      # A release event checks the version it published; a schedule or a
+      # plain dispatch checks what the default branch declares.
+      - name: Compare every storefront
+        shell: bash
+        run: |
+          version="${{ inputs.version }}"
+          if [[ -z "${version}" && "${{ github.event_name }}" == "release" ]]; then
+            version="${{ github.event.release.tag_name }}"
+          fi
+          bash scripts/release/storefronts.sh "${version}"

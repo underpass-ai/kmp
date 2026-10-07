@@ -18,6 +18,7 @@ Embedded is the default. Enterprise is optional and self-operated.
 - [Recover missing tools](runbooks/mcp-tools-missing.md) — engine, host ownership and stale sessions.
 - [Recover embedded memory](runbooks/embedded-recovery.md) — preserve a store and restore a portable bundle.
 - [Use the shipped guides](../plugins/kmp/guide/README.md) — progressive agent guidance and the human ChronoLoom path.
+- [Try a worked example](../examples/README.md) — `kmp-mcp demo`, loadable memories and KMP's own decision log.
 
 ## Other work
 

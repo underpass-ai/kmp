@@ -2,8 +2,8 @@
   "$schema": "https://developers.openai.com/apps-sdk/schemas/chatgpt-app-submission.v1.json",
   "schema_version": 1,
   "app_info": {
-    "display_name": "KMP by Underpass",
-    "subtitle": "Memory with evidence",
+    "display_name": "KMP",
+    "subtitle": "Local-first agent memory that preserves what happened, when and why",
     "description": "KMP stores decisions, evidence and their relationships in local memory. Recover prior work, find the sources behind a decision, navigate its history and record new knowledge while preserving previous events. Compact cards retain their own revision history. ChronoLoom displays the same memory and evidence paths. The MCP server runs locally over stdio; evidence returned to the host model follows the host’s data policies.",
     "category": "DEVELOPER_TOOLS"
   },

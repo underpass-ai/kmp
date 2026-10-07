@@ -11,6 +11,7 @@ should start with [Embedded KMP](../embedded/README.md).
 - [TypeSafe Jev with KMP](jev-evaluation.md) — judged corpus, recorded cassette and floors for curate, the pre-write check and Ask re-ranking.
 - [Visual projection performance](visual-projection-performance.md) — snapshot-bound ChronoLoom reuse, correctness and reproducible measurements.
 - [Releasing](releasing.md) — version, artifact and tag flow.
+- [Distribution channels](distribution-channels.md) — every storefront, what it reads from the tree, how it updates and what is submitted by hand.
 - [Agent token optimization](agent-token-optimization.md) — #544 integration track: token meter, Wake evidence identity and paired measurement.
 - [Agent-facing surface](agent-surface.md) — maintenance procedure for people and agents, including ownership, generation, validation and context cost.
 - [Conditional argument schemas](agent-schema-conditions.md) — preserve callable fields and validate equivalent call forms against captured catalogues.

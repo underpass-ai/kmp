@@ -1,10 +1,12 @@
 pub mod agent_policy;
 pub mod banner;
 pub mod clock;
+pub mod demo;
 pub mod document;
 mod guidance;
 pub mod guide;
 pub mod lifecycle;
+mod local_abouts;
 pub mod plugin_notice;
 pub mod pulse;
 pub mod snapshot;
@@ -18,6 +20,7 @@ mod projection;
 mod serving;
 mod write;
 
+pub use local_abouts::local_abouts;
 pub use serving::tool_error;
 pub use serving::{
     GRPC_ENDPOINT_ENV, GRPC_TLS_CA_PATH_ENV, GRPC_TLS_CERT_PATH_ENV, GRPC_TLS_DOMAIN_NAME_ENV,

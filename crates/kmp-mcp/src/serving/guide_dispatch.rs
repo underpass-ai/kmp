@@ -83,18 +83,30 @@ impl KernelMcpServer {
     }
 
     async fn guide_node(&self, node_ref: &str) -> Result<Value, ToolError> {
-        let response = self
-            .backend
-            .call_tool(
-                "kmp_inspect",
-                &json!({
-                    "about":"guide:kmp-agent","ref":node_ref,
-                    "include":{"details":false,"incoming":false,"outgoing":false,"raw":false},
-                    "budget":{"max_bytes":40000}
-                }),
-            )
-            .await
-            .map_err(|error| GuideRepair::missing(node_ref, error))?;
+        let arguments = json!({
+            "about":"guide:kmp-agent","ref":node_ref,
+            "include":{"details":false,"incoming":false,"outgoing":false,"raw":false},
+            "budget":{"max_bytes":40000}
+        });
+        let response = match self.backend.call_tool("kmp_inspect", &arguments).await {
+            Ok(response) => response,
+            // A store without the guide gets it written now, from the assets
+            // installed for this binary, and the read is made once more.
+            // Anything else — or no assets anywhere — is the explicit repair.
+            Err(error) if error.code == super::ToolErrorCode::NotFound => {
+                let seed = self.seed_installed_guide().await;
+                let searched = seed.searched();
+                if seed.seeded() {
+                    self.backend
+                        .call_tool("kmp_inspect", &arguments)
+                        .await
+                        .map_err(|error| GuideRepair::missing(node_ref, error, &searched))?
+                } else {
+                    return Err(GuideRepair::missing(node_ref, error, &searched));
+                }
+            }
+            Err(error) => return Err(error),
+        };
         let object = response["structuredContent"]["object"].clone();
         if !object["text"].is_string() {
             return Err(ToolError::backend(

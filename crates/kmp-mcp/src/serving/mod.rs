@@ -15,6 +15,7 @@ pub(crate) mod grpc_tls_config;
 pub(crate) mod grpc_tls_mode;
 mod guide_dispatch;
 mod guide_repair;
+pub(crate) mod guide_seed;
 pub(crate) mod json_rpc;
 pub(crate) mod judgement_answer;
 pub(crate) mod judgement_failure;

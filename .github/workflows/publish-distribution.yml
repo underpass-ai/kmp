@@ -6,14 +6,25 @@ name: publish-distribution
 # The `publish-crates` job at the bottom needs the repo secret
 # `CARGO_REGISTRY_TOKEN`, set on an account with a verified email; crates.io
 # rejects the upload otherwise. Without it the image and chart still publish.
-# `workflow_dispatch` deliberately does NOT publish crates, so an operator
-# re-rolling an image cannot accidentally mutate the registry.
+# A plain `workflow_dispatch` deliberately does NOT publish crates, so an
+# operator re-rolling an image cannot accidentally mutate the registry. A
+# chain that stopped halfway is resumed by dispatching with `resume_crates`
+# set to the exact version: the script skips what is already published and
+# waits for the index before each dependent, so the resume is idempotent.
 
 on:
   push:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      resume_crates:
+        description: >-
+          Resume the crates.io publication of this exact version (X.Y.Z),
+          after a chain that stopped halfway. Leave empty to publish only the
+          image and chart.
+        required: false
+        default: ""
 
 env:
   IMAGE_NAME: ghcr.io/underpass-ai/kmp
@@ -161,7 +172,7 @@ jobs:
   # a first release introduces twelve of them.
   publish-crates:
     needs: verify-release
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.resume_crates != '')
     runs-on: ubuntu-24.04
     timeout-minutes: 180
     permissions:
@@ -186,6 +197,18 @@ jobs:
           # failure annotations on an otherwise successful publication.
           cache-targets: false
           save-if: false
+
+      - name: Refuse a resume that names another version than this tree
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          version="$(cargo run --locked --quiet -p kmp-release -- version current)"
+          if [[ "${RESUME}" != "${version}" ]]; then
+            echo "resume_crates=${RESUME} but this tree is ${version}; dispatch from the v${RESUME} tag" >&2
+            exit 1
+          fi
+        env:
+          RESUME: ${{ inputs.resume_crates }}
 
       - name: Publish crates
         env:

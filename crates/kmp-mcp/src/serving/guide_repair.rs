@@ -6,24 +6,52 @@ use super::{ToolError, ToolErrorCode};
 pub(super) struct GuideRepair;
 
 impl GuideRepair {
-    pub(super) fn missing(node_ref: &str, error: ToolError) -> ToolError {
+    pub(super) fn missing(node_ref: &str, error: ToolError, searched: &[String]) -> ToolError {
         if error.code == ToolErrorCode::NotFound {
-            Self::unavailable(node_ref, error)
+            Self::unavailable_after(node_ref, error, searched)
         } else {
             error
         }
     }
 
-    pub(super) fn for_inspect(arguments: &Value, error: &ToolError) -> Option<ToolError> {
-        let about = arguments["about"].as_str()?;
-        let node_ref = arguments["ref"].as_str()?;
-        (crate::guide::is_guide_about(about)
+    /// Whether `arguments` read a guide node and `error` is the not-found
+    /// that an absent guide answers with.
+    pub(super) fn is_missing_guide_read(arguments: &Value, error: &ToolError) -> bool {
+        let (Some(about), Some(node_ref)) =
+            (arguments["about"].as_str(), arguments["ref"].as_str())
+        else {
+            return false;
+        };
+        crate::guide::is_guide_about(about)
             && node_ref.starts_with(&format!("{about}:"))
-            && error.code == ToolErrorCode::NotFound)
+            && error.code == ToolErrorCode::NotFound
+            && !Self::already_explained(error)
+    }
+
+    pub(super) fn for_inspect(arguments: &Value, error: &ToolError) -> Option<ToolError> {
+        let node_ref = arguments["ref"].as_str()?;
+        Self::is_missing_guide_read(arguments, error)
             .then(|| Self::unavailable(node_ref, error.clone()))
     }
 
-    pub(super) fn unavailable(node_ref: &str, mut error: ToolError) -> ToolError {
+    fn already_explained(error: &ToolError) -> bool {
+        error
+            .feedback
+            .iter()
+            .any(|item| item["code"] == "GUIDE_UNAVAILABLE")
+    }
+
+    pub(super) fn unavailable(node_ref: &str, error: ToolError) -> ToolError {
+        Self::unavailable_after(node_ref, error, &[])
+    }
+
+    /// The repair, naming where this session looked for installed assets
+    /// before asking a person to type the path.
+    pub(super) fn unavailable_after(
+        node_ref: &str,
+        mut error: ToolError,
+        searched: &[String],
+    ) -> ToolError {
         let reason = format!(
             "The selected store cannot serve guide node `{node_ref}`; its guide bundle may be \
              absent, incomplete or from another version. Check the ref and matching plugin assets."
@@ -36,9 +64,18 @@ impl GuideRepair {
             Sync writes both guide abouts and may update the maintained memory bundle. Then \
             restart this connection with the same store selection and retry the original call. \
             Repeating that sync is idempotent; a runtime guide read does not install assets.";
-        error.message = format!("{reason} {instructions} Cause: {}", error.message);
+        let looked = if searched.is_empty() {
+            String::new()
+        } else {
+            format!(
+                " This session looked for matching installed assets first: {}.",
+                searched.join("; ")
+            )
+        };
+        error.message = format!("{reason}{looked} {instructions} Cause: {}", error.message);
         error.with_feedback(json!({
             "code":"GUIDE_UNAVAILABLE", "field":"guide", "ref":node_ref, "reason":reason,
+            "searched":searched,
             "repair":{
                 "command":"kmp-mcp",
                 "arguments":["guide","sync","--plugin-root","<plugin-root>"],

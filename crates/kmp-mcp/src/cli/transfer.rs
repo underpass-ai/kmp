@@ -1,7 +1,5 @@
 use std::path::{Path, PathBuf};
 
-use kmp_mcp::guide;
-
 use super::{looks_like_option, unknown_option};
 
 /// `export` and `import`: the whole event log, in order, as one file.
@@ -142,7 +140,7 @@ pub(super) async fn run(command: &str, first_argument: Option<&str>, args: &[&st
                 // copy of the guide in every repository that uses KMP and
                 // produce a diff on every version that bumps it.
                 store
-                    .export_bundle_excluding_abouts(&guide::abouts_owned())
+                    .export_bundle_excluding_abouts(&kmp_mcp::local_abouts())
                     .await
             } else {
                 // An explicit path is a backup or a migration, and it takes

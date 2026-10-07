@@ -2,6 +2,10 @@
 set -eu
 
 plugin_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+# The engine seeds a fresh store's guide from the plugin that started it,
+# so it has to know where that plugin is. An explicit value wins.
+KMP_PLUGIN_ROOT=${KMP_PLUGIN_ROOT:-$plugin_root}
+export KMP_PLUGIN_ROOT
 if [ -n "${KMP_MCP_BIN:-}" ]; then
   [ -x "$KMP_MCP_BIN" ] || { echo "KMP plugin: KMP_MCP_BIN is not executable" >&2; exit 127; }
   exec "$KMP_MCP_BIN" "$@"
