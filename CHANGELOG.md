@@ -65,6 +65,15 @@ Detailed notes from the early release cycle remain available in the
   on, what it reads from the tree, how it updates, and the submissions that
   are still done by hand, with the one blurb to use everywhere.
 
+### Security
+
+- `rustls` moves to 0.23.46, which closes GHSA-c8m5-c952-6cm4,
+  GHSA-h2v8-394m-p7vv, GHSA-w44r-93j7-qv28 and GHSA-vp88-798v-h67f in the
+  shipped engine.
+- `zip` moves to 9.4.2, which closes GHSA-m665-v7pm-7grj. Only the
+  `kmp-release` tool links it, and it only writes the MCPB archive, so no
+  published engine was exposed.
+
 ## [0.25.0] - 2026-10-04
 
 ### Changed

@@ -100,7 +100,7 @@ tracing-opentelemetry = "0.33.0"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter", "json"] }
 url = "2.5.8"
 wait-timeout = "0.2.1"
-zip = { version = "8.2.0", default-features = false, features = ["deflate-flate2-zlib-rs"] }
+zip = { version = "9.4.2", default-features = false, features = ["deflate-flate2-zlib-rs"] }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
