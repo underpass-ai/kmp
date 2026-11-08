@@ -9,6 +9,8 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+## [0.26.0] - 2026-11-08
+
 ### Changed
 
 - A fresh store gets its guide on the first guide read. `kmp_guide`, and an
@@ -2707,7 +2709,8 @@ The initial agent schema that expands with use and persistent consultation profi
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.25.0...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.26.0...HEAD
+[0.26.0]: https://github.com/underpass-ai/kmp/compare/v0.25.0...v0.26.0
 [0.25.0]: https://github.com/underpass-ai/kmp/compare/v0.24.0...v0.25.0
 [0.24.0]: https://github.com/underpass-ai/kmp/compare/v0.23.0...v0.24.0
 [0.23.0]: https://github.com/underpass-ai/kmp/compare/v0.22.0...v0.23.0
