@@ -65,7 +65,7 @@ impl KernelMcpServer {
         // first; an empty or repeated value it did not name is still refused
         // before anything commits.
         let planned = planned.and_then(|planned| {
-            crate::contract::reject_invalid_arguments("kmp_write_memory", arguments)
+            crate::contract::reject_invalid_write_arguments("kmp_write_memory", arguments)
                 .map(|()| planned)
         });
         let (plan, expansions) = match planned {
@@ -172,6 +172,9 @@ impl KernelMcpServer {
             .as_object()
             .ok_or_else(|| ToolError::invalid_argument("tool arguments must be an object"))?;
         let about = required_string(object, "about")?;
+        // Once for the packet, before any store read or judge: a switch of
+        // the wrong type is refused at `options`, not once per record.
+        crate::write::write_options::WriteOptions::from_arguments(object)?;
         for field in [
             "labels",
             "occurred_at",

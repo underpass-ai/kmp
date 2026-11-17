@@ -8,8 +8,8 @@ use serde_json::Value;
 use super::lexical_order::{LexicalOrder, is_tool_error};
 use crate::contract::{
     advertised_input_schemas, canonical_tool_name, initialize_result_with_apps,
-    reject_invalid_arguments, reject_unknown_arguments, resource_read_result,
-    resources_list_result, tools_list_result_with_apps,
+    reject_invalid_arguments, reject_invalid_write_arguments, reject_unknown_arguments,
+    resource_read_result, resources_list_result, tools_list_result_with_apps,
 };
 use crate::serving::json_rpc::{jsonrpc_error, jsonrpc_result};
 use crate::serving::kernel_mcp_server::KernelMcpServer;
@@ -181,10 +181,11 @@ impl KernelMcpServer {
         // repeated values are refused too (#850), but a tool that names the
         // problem more precisely goes first: the writer's planner and the
         // read projections run their own checks, and this one follows them as
-        // a backstop. Every other write is checked here, before it commits.
+        // a backstop. Every other write is checked here, before it commits,
+        // and a declared boolean of another type is refused with it.
         let lexical_first = LexicalOrder::of(name) == LexicalOrder::BeforeDispatch;
         let checked = if lexical_first {
-            reject_invalid_arguments(name, arguments)
+            reject_invalid_write_arguments(name, arguments)
         } else {
             reject_unknown_arguments(name, arguments)
         };

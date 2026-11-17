@@ -15,6 +15,7 @@ use super::plan::KernelWritePlan;
 use super::relation_quality::relation_quality_metrics;
 use super::validated_arguments::{optional_string, required_string};
 use super::validation_error::WriteValidationError;
+use super::write_options::WriteOptions;
 
 const DEFAULT_SOURCE_KIND: &str = "agent";
 
@@ -31,11 +32,7 @@ pub(crate) fn build_expansion_plan(
     let about = required_string(arguments, "about")?;
     let actor = required_string(arguments, "actor")?;
     let observed_at = observation_time(arguments)?;
-    let dry_run = arguments
-        .get("options")
-        .and_then(|options| options.get("dry_run"))
-        .and_then(Value::as_bool)
-        .unwrap_or(false);
+    let WriteOptions { dry_run, .. } = WriteOptions::from_arguments(arguments)?;
     let mut metadata = existing.metadata.clone();
     metadata.extend(expansions.clone());
     let idempotency_key = optional_string(arguments.get("idempotency_key"))

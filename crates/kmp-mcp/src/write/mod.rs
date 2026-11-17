@@ -50,6 +50,8 @@ pub(crate) mod summary_planner;
 pub(crate) mod validated_arguments;
 pub(crate) mod validation_error;
 pub(crate) mod validation_errors;
+pub(crate) mod write_options;
+mod write_options_audit;
 mod writer_identity_audit;
 pub(crate) mod writer_label;
 
