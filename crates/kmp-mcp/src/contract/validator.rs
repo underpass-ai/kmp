@@ -23,10 +23,27 @@ pub(crate) fn reject_invalid_arguments(tool: &str, arguments: &Value) -> Result<
     check_against_schema(schema, arguments, tool, Lexical::Enforce)
 }
 
+/// Everything `reject_invalid_arguments` refuses, plus a declared boolean
+/// given as anything else. For the tools that write: their switches decide
+/// whether a call commits, and `"true"` read as the default `false` once
+/// turned a requested preview into a commit (QA, 13 nov 2026). Reads keep
+/// their current tolerance.
+pub(crate) fn reject_invalid_write_arguments(
+    tool: &str,
+    arguments: &Value,
+) -> Result<(), ToolError> {
+    let Some(schema) = tool_input_schema(tool) else {
+        return Ok(());
+    };
+    check_against_schema(schema, arguments, tool, Lexical::EnforceSwitches)
+}
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Lexical {
     Skip,
     Enforce,
+    /// `Enforce`, and a declared boolean must be a JSON boolean.
+    EnforceSwitches,
 }
 
 /// The schemas, built once.
@@ -88,10 +105,13 @@ fn check_against_schema(
     lexical: Lexical,
 ) -> Result<(), ToolError> {
     let schema = union_branch(schema, value).unwrap_or(schema);
+    if lexical == Lexical::EnforceSwitches {
+        check_switch(schema, value, path)?;
+    }
     match value {
-        Value::String(text) if lexical == Lexical::Enforce => check_length(schema, text, path),
+        Value::String(text) if lexical != Lexical::Skip => check_length(schema, text, path),
         Value::Array(array) => {
-            if lexical == Lexical::Enforce {
+            if lexical != Lexical::Skip {
                 check_unique(schema, array, path)?;
             }
             if let Some(items) = schema.get("items") {
@@ -176,6 +196,26 @@ fn union_branch<'a>(schema: &'a Value, value: &Value) -> Option<&'a Value> {
                 .any(|declared| declared == kind || (declared == "number" && kind == "integer")),
             _ => false,
         })
+}
+
+/// A declared boolean is read as given, never coerced from `"true"`, `1` or
+/// `null` and never replaced by its default.
+fn check_switch(schema: &Value, value: &Value, path: &str) -> Result<(), ToolError> {
+    if schema.get("type").and_then(Value::as_str) != Some("boolean") || value.is_boolean() {
+        return Ok(());
+    }
+    let received = match value {
+        Value::String(_) => "a string",
+        Value::Number(_) => "a number",
+        Value::Null => "null",
+        Value::Array(_) => "an array",
+        Value::Object(_) => "an object",
+        Value::Bool(_) => unreachable!("a boolean is accepted above"),
+    };
+    Err(ToolError::invalid_argument(format!(
+        "`{path}` must be a JSON boolean, true or false without quotes; received {received}: \
+         {value}. Nothing was written."
+    )))
 }
 
 fn check_length(schema: &Value, text: &str, path: &str) -> Result<(), ToolError> {

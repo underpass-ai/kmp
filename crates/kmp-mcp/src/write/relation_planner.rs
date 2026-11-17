@@ -36,6 +36,7 @@ use super::validated_arguments::{
 };
 use super::validation_error::WriteValidationError;
 use super::validation_errors::WriteValidationErrors;
+use super::write_options::WriteOptions;
 
 const DEFAULT_CONFIDENCE: &str = "high";
 const DEFAULT_SOURCE_KIND: &str = "agent";
@@ -71,15 +72,7 @@ pub(crate) fn build_relation_plan(
     validate_review_token(object.get("review_token"))?;
     let read_context = super::read_context::ReadContext::from_arguments(object)
         .map_err(|error| WriteValidationError::new(error).at("read_context").global())?;
-    let options = object.get("options").and_then(Value::as_object);
-    let dry_run = options
-        .and_then(|options| options.get("dry_run"))
-        .and_then(Value::as_bool)
-        .unwrap_or(false);
-    let strict = options
-        .and_then(|options| options.get("strict"))
-        .and_then(Value::as_bool)
-        .unwrap_or(true);
+    let WriteOptions { dry_run, strict } = WriteOptions::from_arguments(object)?;
     let identity = optional_string(object.get("idempotency_key"))
         .map(str::to_owned)
         .unwrap_or_else(|| stable_idempotency_key(object));

@@ -1387,3 +1387,48 @@ qdYqw8bDQbReT4w+psRqj/cT1buhRANCAARbE50GqAcOulovZQLg9fRjq1LTMvjC
 3mi/wb+E6QDWGw/nobEuShCwGt8UhaXv6x1iOzlwDt1pBPYiF9bXka0h
 -----END PRIVATE KEY-----
 "#;
+
+/// Parity with the embedded backend: a write switch of the wrong type is
+/// refused before the kernel is called, so no Ingest or Relabel reaches it.
+/// Over gRPC itself the hole cannot exist: `dry_run` is a proto `bool`.
+#[tokio::test]
+async fn grpc_backend_refuses_a_mistyped_write_switch_before_the_kernel() {
+    let recorded = RecordedMemoryRequests::default();
+    let endpoint = spawn_fake_memory_server(recorded.clone()).await;
+    let server = KernelMcpServer::grpc(endpoint);
+
+    let refused = call_tool(
+        &server,
+        1,
+        "kmp_write_memory",
+        json!({
+            "about": "project:qa-sandbox", "actor": "qa", "labels": {"topic": ["qa"]},
+            "memories": [{"id": "m", "kind": "observation", "summary": "QA test",
+                "evidence": "sandbox probe"}],
+            "options": {"dry_run": "true"}
+        }),
+    )
+    .await;
+    assert_eq!(refused["result"]["isError"], true, "{refused}");
+    let relabel = call_tool(
+        &server,
+        2,
+        "kmp_relabel",
+        json!({
+            "about": "project:qa-sandbox", "ref": "project:qa-sandbox:observation:a",
+            "actor": "qa", "observed_at": "2026-11-13T03:30:38Z",
+            "why": "It is a QA memory.", "add": {"topic": ["qa"]},
+            "options": {"dry_run": "true"}
+        }),
+    )
+    .await;
+    assert_eq!(relabel["result"]["isError"], true, "{relabel}");
+    assert!(
+        recorded.ingests().await.is_empty(),
+        "no Ingest reached the kernel"
+    );
+    assert!(
+        recorded.relabels.lock().await.is_empty(),
+        "no Relabel reached the kernel"
+    );
+}

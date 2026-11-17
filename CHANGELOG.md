@@ -9,6 +9,21 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Fixed
+
+- A write switch of the wrong type is refused instead of read as its
+  default. `kmp_write_memory` with `options.dry_run: "true"` (or `1`, or
+  `null`) used to commit the memory the caller meant only to preview. Now
+  `options.dry_run` and `options.strict` must be JSON booleans on every write
+  shape — `memories`, `search_summaries` and `relations` — and in
+  `kmp_relabel`; the refusal names the field (`INVALID_TYPE`) and nothing is
+  written. `options` itself must be an object. Every boolean the write tools
+  declare (`kmp_ingest`, `kmp_relabel`, `kmp_condense`, `kmp_curate` and the
+  writer) is checked by type before the tool runs, so `kmp_relabel`
+  `options.dry_run: "true"` no longer relabels and `kmp_curate`
+  `accepted[].reverse: "true"` is no longer read as `false`; `kmp_guide`
+  `fold` is checked the same way. Reads are unchanged.
+
 ## [0.26.0] - 2026-11-08
 
 ### Changed

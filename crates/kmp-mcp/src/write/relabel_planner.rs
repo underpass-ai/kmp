@@ -11,6 +11,7 @@ use super::arguments::*;
 use super::coordinates::reject_a_time_that_has_not_happened;
 use super::generated_ref::short_hash;
 use super::relabel_plan::RelabelPlan;
+use super::write_options::WriteOptions;
 use super::writer_label::{label_values, validate_label_key_at};
 
 const DEFAULT_SOURCE_KIND: &str = "agent";
@@ -42,15 +43,9 @@ pub(crate) fn build_relabel_plan(arguments: &Value) -> Result<RelabelPlan, Strin
         }
     }
 
+    let WriteOptions { dry_run, strict } =
+        WriteOptions::from_arguments(arguments).map_err(|error| error.to_string())?;
     let options = arguments.get("options").and_then(Value::as_object);
-    let dry_run = options
-        .and_then(|options| options.get("dry_run"))
-        .and_then(Value::as_bool)
-        .unwrap_or(false);
-    let strict = options
-        .and_then(|options| options.get("strict"))
-        .and_then(Value::as_bool)
-        .unwrap_or(true);
     let intended_new = options
         .and_then(|options| options.get("labels_new"))
         .and_then(Value::as_array)

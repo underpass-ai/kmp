@@ -14,6 +14,7 @@ pub(crate) mod temporal_entry_field;
 pub(crate) mod time_move;
 pub(crate) mod tools;
 pub(crate) mod validator;
+mod validator_switches_audit;
 mod view_absence_audit;
 mod writer_audit;
 pub(crate) mod writer_memory_kinds;
@@ -28,5 +29,6 @@ pub(crate) use registry::{
 };
 pub(crate) use time_move::{TIME_TOOL, TimeMove};
 pub(crate) use validator::{
-    reject_invalid_arguments, reject_unknown_arguments, validate_required_arguments,
+    reject_invalid_arguments, reject_invalid_write_arguments, reject_unknown_arguments,
+    validate_required_arguments,
 };
