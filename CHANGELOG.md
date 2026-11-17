@@ -19,9 +19,10 @@ Detailed notes from the early release cycle remain available in the
   `kmp_relabel`; the refusal names the field (`INVALID_TYPE`) and nothing is
   written. `options` itself must be an object. Every boolean the write tools
   declare (`kmp_ingest`, `kmp_relabel`, `kmp_condense`, `kmp_curate` and the
-  writer) is checked by type before the tool runs, so `accepted[].reverse:
-  "true"` no longer writes a curated link the other way round. Reads are
-  unchanged.
+  writer) is checked by type before the tool runs, so `kmp_relabel`
+  `options.dry_run: "true"` no longer relabels and `kmp_curate`
+  `accepted[].reverse: "true"` is no longer read as `false`; `kmp_guide`
+  `fold` is checked the same way. Reads are unchanged.
 
 ## [0.26.0] - 2026-11-08
 

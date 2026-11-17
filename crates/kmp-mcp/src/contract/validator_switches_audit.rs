@@ -54,6 +54,31 @@ fn input_schema(tool: &str) -> Value {
         .clone()
 }
 
+/// Every `"type": "boolean"` anywhere in a schema, unions included.
+fn declared_booleans(schema: &Value) -> usize {
+    match schema {
+        Value::Object(object) => {
+            usize::from(object.get("type").and_then(Value::as_str) == Some("boolean"))
+                + object.values().map(declared_booleans).sum::<usize>()
+        }
+        Value::Array(items) => items.iter().map(declared_booleans).sum(),
+        _ => 0,
+    }
+}
+
+#[test]
+fn the_walk_reaches_every_boolean_a_write_declares() {
+    for tool in WRITE_TOOLS {
+        let schema = input_schema(tool);
+        let walked = mistyped_booleans(&schema, tool, &|value| value).len();
+        assert_eq!(
+            walked,
+            declared_booleans(&schema),
+            "{tool}: a boolean the walk misses"
+        );
+    }
+}
+
 #[test]
 fn every_boolean_a_write_declares_is_refused_as_text() {
     let mut paths = Vec::new();

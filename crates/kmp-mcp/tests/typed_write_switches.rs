@@ -102,58 +102,92 @@ async fn a_mistyped_dry_run_is_refused_and_writes_nothing() {
     assert!(event_count(&store).await > before, "the commit is stored");
 }
 
+/// Two stored memories, so every shape below names real targets: a refusal
+/// here is the switch's, not a missing node's.
+async fn seed(server: &KernelMcpServer) -> (String, String) {
+    let seeded = call(
+        server,
+        "kmp_write_memory",
+        json!({
+            "about": "project:qa-sandbox", "actor": "qa", "labels": {"topic": ["qa"]},
+            "memories": [
+                {"id": "a", "kind": "observation", "summary": "The probe ran in the sandbox.",
+                    "evidence": "sandbox probe"},
+                {"id": "b", "kind": "decision", "summary": "Keep the probe in the sandbox.",
+                    "evidence": "sandbox probe"}
+            ],
+            "options": {"strict": false}
+        }),
+    )
+    .await;
+    assert_eq!(seeded["isError"], false, "{seeded}");
+    let refs = &seeded["structuredContent"]["local_refs"];
+    (
+        refs["a"].as_str().expect("ref a").to_owned(),
+        refs["b"].as_str().expect("ref b").to_owned(),
+    )
+}
+
 #[tokio::test]
 async fn every_write_shape_and_tool_refuses_a_mistyped_switch() {
     let dir = tempfile::tempdir().expect("store");
     let server = KernelMcpServer::embedded(dir.path()).expect("server");
     let store = EmbeddedKernelStore::open(dir.path()).expect("reader");
+    let (a, b) = seed(&server).await;
     let before = event_count(&store).await;
-    let observed = "2026-11-13T03:30:38Z";
+    let observed = "2026-11-17T21:00:00Z";
 
+    let summary = json!({
+        "about": "project:qa-sandbox", "actor": "qa", "observed_at": observed,
+        "search_summaries": [{"ref": a, "summary_en": "The probe ran inside the sandbox."}]
+    });
+    let expansions = json!({
+        "about": "project:qa-sandbox", "actor": "qa", "observed_at": observed,
+        "search_summaries": [{"ref": a, "search_expansions": {"entities": ["sandbox"]}}]
+    });
+    let relations = json!({
+        "about": "project:qa-sandbox", "actor": "qa", "observed_at": observed,
+        "relations": [{"from": a, "to": b, "rel": "supports", "class": "evidential",
+            "confidence": "high", "why": "The probe is why the decision was made.",
+            "evidence": "sandbox probe"}]
+    });
+    let relabel = json!({
+        "about": "project:qa-sandbox", "ref": a, "actor": "qa", "observed_at": observed,
+        "why": "It is a probe memory.", "add": {"area": ["probe"]}
+    });
+    let with_options = |mut arguments: Value, options: Value| {
+        arguments["options"] = options;
+        arguments
+    };
     let refusals = [
         (
             "search_summaries",
             "kmp_write_memory",
-            json!({
-                "about": "project:qa-sandbox", "actor": "qa", "observed_at": observed,
-                "search_summaries": [{"ref": "project:qa-sandbox:observation:a",
-                    "summary_en": "The probe ran in the sandbox."}],
-                "options": {"dry_run": "true"}
-            }),
+            with_options(summary, json!({"dry_run": "true"})),
             "options.dry_run",
         ),
         (
             "search_expansions",
             "kmp_write_memory",
-            json!({
-                "about": "project:qa-sandbox", "actor": "qa", "observed_at": observed,
-                "search_summaries": [{"ref": "project:qa-sandbox:observation:a",
-                    "search_expansions": {"entities": ["sandbox"]}}],
-                "options": {"dry_run": "true"}
-            }),
+            with_options(expansions, json!({"dry_run": "true"})),
             "options.dry_run",
         ),
         (
             "relations",
             "kmp_write_memory",
-            json!({
-                "about": "project:qa-sandbox", "actor": "qa", "observed_at": observed,
-                "relations": [{"from": "project:qa-sandbox:observation:a",
-                    "to": "project:qa-sandbox:decision:b", "rel": "supports",
-                    "class": "evidential", "confidence": "high",
-                    "why": "The probe is why.", "evidence": "Report R1."}],
-                "options": {"dry_run": "true"}
-            }),
+            with_options(relations.clone(), json!({"dry_run": "true"})),
             "options.dry_run",
+        ),
+        (
+            "relations strict",
+            "kmp_write_memory",
+            with_options(relations, json!({"strict": "false"})),
+            "options.strict",
         ),
         (
             "relabel",
             "kmp_relabel",
-            json!({
-                "about": "project:qa-sandbox", "ref": "project:qa-sandbox:observation:a",
-                "actor": "qa", "observed_at": observed, "why": "It is a QA memory.",
-                "add": {"topic": ["qa"]}, "options": {"dry_run": "true"}
-            }),
+            with_options(relabel, json!({"dry_run": "true"})),
             "dry_run",
         ),
         (
@@ -184,6 +218,10 @@ async fn every_write_shape_and_tool_refuses_a_mistyped_switch() {
             text(&refused).contains(field),
             "{shape} names `{field}`: {refused}"
         );
+        assert_eq!(
+            event_count(&store).await,
+            before,
+            "{shape} committed nothing"
+        );
     }
-    assert_eq!(event_count(&store).await, before, "nothing was committed");
 }
