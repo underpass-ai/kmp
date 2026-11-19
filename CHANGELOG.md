@@ -27,9 +27,10 @@ Detailed notes from the early release cycle remain available in the
   - `neo4rs` moves to 0.9.0-rc.11, which drops `backoff`, `instant`,
     `paste`, `rustls-pemfile`, `rustls-native-certs` 0.7 and
     `chrono-tz-build`. Since 0.9 the driver no longer retries a failed
-    connection attempt: a Neo4j that is unreachable when a query starts now
-    fails that query at once as unavailable instead of being retried for up
-    to a minute.
+    connection attempt, so the Neo4j adapter now retries a query whose
+    connection fails (doubling waits from 250 ms, capped at 8 s, for up to
+    60 s), as 0.8 did inside the driver; errors the server answers are not
+    retried.
 - The container integration suites no longer use `testcontainers`, whose
   `astral-tokio-tar` is unmaintained with no fixed release. `kmp-testkit`
   now starts the test containers through the `docker` CLI (or `podman` when
