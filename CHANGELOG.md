@@ -9,6 +9,31 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Security
+
+- Unmaintained and yanked dependencies flagged by RustSec are gone from the
+  lockfile:
+  - `hyper` 1.12 drops the unmaintained `pin-utils`,
+    and `chacha20` 0.10.2 replaces a yanked release.
+  - `serde_yaml` (and its `unsafe-libyaml`) is replaced by `serde-saphyr`
+    2.2. The Hermes MCP config reader in `kmp-mcp` keeps the YAML 1.2 core
+    reading it had: only `true`/`false` are booleans, numbers with leading
+    zeros or underscores stay strings, `<<` is an ordinary key and a
+    repeated key keeps its last value.
+  - The Valkey adapter reads TLS PEM files with `rustls-pki-types` instead
+    of `rustls-pemfile`.
+  - `tonic` and `tonic-build` move to 0.13.1 (`tls-aws-lc`, matching the
+    aws-lc-rs provider the server installs); `prost` stays on 0.13.
+  - `neo4rs` moves to 0.9.0-rc.11, which drops `backoff`, `instant`,
+    `paste`, `rustls-pemfile`, `rustls-native-certs` 0.7 and
+    `chrono-tz-build`. Since 0.9 the driver no longer retries a failed
+    connection attempt: a Neo4j that is unreachable when a query starts now
+    fails that query at once as unavailable instead of being retried for up
+    to a minute.
+- `deny.toml` accepts the two remaining `chrono` / `chrono-tz` unmaintained
+  advisories (RUSTSEC-2026-0543, RUSTSEC-2026-0555): both come only from
+  `neo4rs`, and no `neo4rs` release drops `chrono` yet.
+
 ## [0.26.2] - 2026-11-19
 
 ### Security
