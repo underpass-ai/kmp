@@ -25,16 +25,15 @@ use kmp_tests_shared::tls::nats::{
 };
 use kmp_tests_shared::tls::neo4j::{clear_neo4j_tls, start_neo4j_tls_container};
 use kmp_tests_shared::tls::valkey::{VALKEY_INTERNAL_PORT, start_valkey_tls_container};
-use testcontainers::GenericImage;
 use tokio::task::JoinHandle;
 use tokio::time::sleep;
 use tonic::transport::Channel;
 
 pub(crate) struct KernelTlsFixture {
     _tls: TlsMaterial,
-    _neo4j: testcontainers::ContainerAsync<GenericImage>,
-    _valkey: testcontainers::ContainerAsync<GenericImage>,
-    _nats: testcontainers::ContainerAsync<GenericImage>,
+    _neo4j: kmp_testkit::RunningContainer,
+    _valkey: kmp_testkit::RunningContainer,
+    _nats: kmp_testkit::RunningContainer,
     projection_runtime: RunningTlsProjectionRuntime,
     server: RunningTlsGrpcServer,
     query_client: ContextQueryServiceClient<Channel>,
@@ -59,9 +58,9 @@ impl KernelTlsFixture {
         let valkey = start_valkey_tls_container(&tls).await?;
         let nats = start_nats_tls_container(&tls).await?;
 
-        let neo4j_port = neo4j.get_host_port_ipv4(NEO4J_INTERNAL_PORT_VALUE).await?;
-        let valkey_port = valkey.get_host_port_ipv4(VALKEY_INTERNAL_PORT).await?;
-        let nats_port = nats.get_host_port_ipv4(NATS_INTERNAL_PORT).await?;
+        let neo4j_port = neo4j.host_port_ipv4(NEO4J_INTERNAL_PORT_VALUE)?;
+        let valkey_port = valkey.host_port_ipv4(VALKEY_INTERNAL_PORT)?;
+        let nats_port = nats.host_port_ipv4(NATS_INTERNAL_PORT)?;
         debug_log_value("neo4j tls host", format!("localhost:{neo4j_port}"));
         debug_log_value("valkey tls host", format!("localhost:{valkey_port}"));
         debug_log_value("nats tls host", format!("localhost:{nats_port}"));

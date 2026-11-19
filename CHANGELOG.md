@@ -30,6 +30,12 @@ Detailed notes from the early release cycle remain available in the
     connection attempt: a Neo4j that is unreachable when a query starts now
     fails that query at once as unavailable instead of being retried for up
     to a minute.
+- The container integration suites no longer use `testcontainers`, whose
+  `astral-tokio-tar` is unmaintained with no fixed release. `kmp-testkit`
+  now starts the test containers through the `docker` CLI (or `podman` when
+  Docker is absent; `KMP_CONTAINER_CLI` overrides the choice), with the same
+  images, wait conditions, published ports, copied TLS material and removal
+  on drop.
 - `deny.toml` accepts the two remaining `chrono` / `chrono-tz` unmaintained
   advisories (RUSTSEC-2026-0543, RUSTSEC-2026-0555): both come only from
   `neo4rs`, and no `neo4rs` release drops `chrono` yet.
