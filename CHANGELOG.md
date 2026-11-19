@@ -9,6 +9,18 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Security
+
+- `rusqlite` moves to 0.41.1, bringing the bundled SQLite of
+  `libsqlite3-sys` 0.39.1 (SQLite 3.54), which closes CVE-2026-119375
+  (RUSTSEC-2026-0459) in the embedded store: a crafted database and `-wal`
+  pair could return uninitialized page-cache memory.
+- `rustls-webpki` 0.103.17 and `webpki-roots` 1.0.12 close CVE-2026-111943
+  (RUSTSEC-2026-0381, RUSTSEC-2026-0382): distrusted emSign intermediates.
+- `h2` 0.4.20 closes RUSTSEC-2026-0258 (unbounded empty DATA frames).
+- `tokio` 1.54.1 and `rustix` 1.1.6 close the unsound advisories
+  RUSTSEC-2026-0386 and RUSTSEC-2026-0486.
+
 ## [0.26.1] - 2026-11-17
 
 ### Fixed
