@@ -9,7 +9,6 @@ use kmp_domain::{
     PortError, ProjectionEventHandler, ProjectionHandlingRequest, ProjectionHandlingResult,
 };
 use serde_json::{Value, json};
-use testcontainers::core::IntoContainerPort;
 use tokio::sync::Mutex;
 use tokio::time::{sleep, timeout};
 
@@ -57,8 +56,7 @@ async fn projection_runtime_processes_graph_and_detail_events() {
         .await
         .expect("container should start");
     let port = container
-        .get_host_port_ipv4(NATS_INTERNAL_PORT.tcp())
-        .await
+        .host_port_ipv4(NATS_INTERNAL_PORT)
         .expect("nats port should resolve");
     let url = format!("nats://127.0.0.1:{port}");
     let handler = RecordingProjectionHandler::default();
@@ -143,8 +141,7 @@ async fn projection_runtime_reconciles_existing_stream_subjects() {
         .await
         .expect("container should start");
     let port = container
-        .get_host_port_ipv4(NATS_INTERNAL_PORT.tcp())
-        .await
+        .host_port_ipv4(NATS_INTERNAL_PORT)
         .expect("nats port should resolve");
     let url = format!("nats://127.0.0.1:{port}");
     let client = connect_with_retry(&url)
@@ -215,8 +212,7 @@ async fn projection_runtime_naks_failed_events_and_stops_with_consumer_error() {
         .await
         .expect("container should start");
     let port = container
-        .get_host_port_ipv4(NATS_INTERNAL_PORT.tcp())
-        .await
+        .host_port_ipv4(NATS_INTERNAL_PORT)
         .expect("nats port should resolve");
     let url = format!("nats://127.0.0.1:{port}");
     let runtime = connect_projection_runtime_with_retry(

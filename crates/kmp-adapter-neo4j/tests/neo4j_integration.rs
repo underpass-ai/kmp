@@ -8,13 +8,8 @@ use kmp_ports::{
     GraphNeighborhoodReader, NodeProjection, NodeRelationProjection, NodeRelationshipReader,
     ProjectionMutation, ProjectionWriter,
 };
-use kmp_testkit::ensure_testcontainers_runtime;
+use kmp_testkit::ensure_container_runtime;
 use neo4rs::{Graph, query};
-use testcontainers::{
-    GenericImage, ImageExt,
-    core::{IntoContainerPort, WaitFor},
-    runners::AsyncRunner,
-};
 use tokio::time::{sleep, timeout};
 
 const NEO4J_INTERNAL_PORT: u16 = 7687;
@@ -29,8 +24,8 @@ const CONNECT_RETRY_DELAY: Duration = Duration::from_secs(1);
 async fn load_neighborhood_respects_directed_depth() -> Result<(), Box<dyn Error + Send + Sync>> {
     run_with_timeout(async {
         let container = start_neo4j_container().await?;
-        let host = container.get_host().await?;
-        let port = container.get_host_port_ipv4(NEO4J_INTERNAL_PORT).await?;
+        let host = container.host();
+        let port = container.host_port_ipv4(NEO4J_INTERNAL_PORT)?;
         let graph =
             connect_with_retry(format!("neo4j://{host}:{port}"), "neo4j", NEO4J_PASSWORD).await?;
         graph.run(query("MATCH (n) DETACH DELETE n")).await?;
@@ -196,8 +191,8 @@ async fn apply_mutations_persists_generic_nodes_and_relations()
 -> Result<(), Box<dyn Error + Send + Sync>> {
     run_with_timeout(async {
         let container = start_neo4j_container().await?;
-        let host = container.get_host().await?;
-        let port = container.get_host_port_ipv4(NEO4J_INTERNAL_PORT).await?;
+        let host = container.host();
+        let port = container.host_port_ipv4(NEO4J_INTERNAL_PORT)?;
         let graph =
             connect_with_retry(format!("neo4j://{host}:{port}"), "neo4j", NEO4J_PASSWORD).await?;
         graph.run(query("MATCH (n) DETACH DELETE n")).await?;
@@ -287,8 +282,8 @@ async fn relation_only_mutation_creates_explicit_placeholder_nodes()
 -> Result<(), Box<dyn Error + Send + Sync>> {
     run_with_timeout(async {
         let container = start_neo4j_container().await?;
-        let host = container.get_host().await?;
-        let port = container.get_host_port_ipv4(NEO4J_INTERNAL_PORT).await?;
+        let host = container.host();
+        let port = container.host_port_ipv4(NEO4J_INTERNAL_PORT)?;
         let graph =
             connect_with_retry(format!("neo4j://{host}:{port}"), "neo4j", NEO4J_PASSWORD).await?;
         graph.run(query("MATCH (n) DETACH DELETE n")).await?;
@@ -389,8 +384,8 @@ async fn load_context_path_returns_shortest_path_and_target_subtree()
 -> Result<(), Box<dyn Error + Send + Sync>> {
     run_with_timeout(async {
         let container = start_neo4j_container().await?;
-        let host = container.get_host().await?;
-        let port = container.get_host_port_ipv4(NEO4J_INTERNAL_PORT).await?;
+        let host = container.host();
+        let port = container.host_port_ipv4(NEO4J_INTERNAL_PORT)?;
         let graph =
             connect_with_retry(format!("neo4j://{host}:{port}"), "neo4j", NEO4J_PASSWORD).await?;
         graph.run(query("MATCH (n) DETACH DELETE n")).await?;
@@ -531,15 +526,15 @@ where
 }
 
 async fn start_neo4j_container()
--> Result<testcontainers::ContainerAsync<GenericImage>, Box<dyn Error + Send + Sync>> {
-    ensure_testcontainers_runtime()?;
+-> Result<kmp_testkit::RunningContainer, Box<dyn Error + Send + Sync>> {
+    ensure_container_runtime()?;
 
-    Ok(GenericImage::new(NEO4J_IMAGE, NEO4J_TAG)
-        .with_exposed_port(NEO4J_INTERNAL_PORT.tcp())
-        .with_wait_for(WaitFor::seconds(5))
+    kmp_testkit::ContainerSpec::new(NEO4J_IMAGE, NEO4J_TAG)
+        .with_exposed_port(NEO4J_INTERNAL_PORT)
+        .with_wait_for(kmp_testkit::WaitFor::seconds(5))
         .with_env_var("NEO4J_AUTH", format!("neo4j/{NEO4J_PASSWORD}"))
         .start()
-        .await?)
+        .await
 }
 
 async fn connect_with_retry(
@@ -550,10 +545,10 @@ async fn connect_with_retry(
     let mut last_error: Option<Box<dyn Error + Send + Sync>> = None;
 
     for _ in 0..CONNECT_RETRY_ATTEMPTS {
-        match Graph::new(&uri, user, password).await {
+        match ready_graph(Graph::new(&uri, user, password)).await {
             Ok(graph) => return Ok(graph),
             Err(error) => {
-                last_error = Some(Box::new(error));
+                last_error = Some(error);
                 sleep(CONNECT_RETRY_DELAY).await;
             }
         }
@@ -570,4 +565,14 @@ async fn single_row(
     rows.next()
         .await?
         .ok_or_else(|| "expected a row from neo4j query".into())
+}
+
+/// The driver opens connections lazily and, since neo4rs 0.9, does not retry
+/// a failed connection, so readiness is proven with a real round trip.
+async fn ready_graph(
+    graph: Result<Graph, neo4rs::Error>,
+) -> Result<Graph, Box<dyn Error + Send + Sync>> {
+    let graph = graph?;
+    graph.run(query("RETURN 1")).await?;
+    Ok(graph)
 }

@@ -35,7 +35,6 @@ kmp-transport-grpc.workspace = true
 prost-types.workspace = true
 serde_json.workspace = true
 tempfile = "3.26.0"
-testcontainers = "0.28.0"
 tokio.workspace = true
 tonic.workspace = true
 tower = { version = "0.5.3", features = ["util"] }

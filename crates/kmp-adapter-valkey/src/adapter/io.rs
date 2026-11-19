@@ -7,6 +7,7 @@ use std::sync::{Arc, Once};
 use tokio::io::{AsyncRead, AsyncWrite, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
 use tokio_rustls::TlsConnector;
+use tokio_rustls::rustls::pki_types::pem::{self, PemObject};
 use tokio_rustls::rustls::pki_types::{CertificateDer, PrivateKeyDer, ServerName};
 use tokio_rustls::rustls::{ClientConfig, RootCertStore};
 
@@ -237,7 +238,7 @@ fn read_pem_chain(path: &Path) -> Result<Vec<CertificateDer<'static>>, PortError
         ))
     })?;
 
-    rustls_pemfile::certs(&mut StdBufReader::new(file))
+    CertificateDer::pem_reader_iter(&mut StdBufReader::new(file))
         .collect::<Result<Vec<_>, _>>()
         .map_err(|error| {
             PortError::InvalidState(format!(
@@ -255,19 +256,16 @@ fn read_identity_der(path: &Path) -> Result<PrivateKeyDer<'static>, PortError> {
         ))
     })?;
 
-    rustls_pemfile::private_key(&mut StdBufReader::new(file))
-        .map_err(|error| {
-            PortError::InvalidState(format!(
-                "unable to read valkey private key file `{}`: {error}",
-                path.display()
-            ))
-        })?
-        .ok_or_else(|| {
-            PortError::InvalidState(format!(
-                "valkey private key file `{}` does not contain a private key",
-                path.display()
-            ))
-        })
+    PrivateKeyDer::from_pem_reader(&mut StdBufReader::new(file)).map_err(|error| match error {
+        pem::Error::NoItemsFound => PortError::InvalidState(format!(
+            "valkey private key file `{}` does not contain a private key",
+            path.display()
+        )),
+        error => PortError::InvalidState(format!(
+            "unable to read valkey private key file `{}`: {error}",
+            path.display()
+        )),
+    })
 }
 
 fn parse_server_name(endpoint: &ValkeyEndpoint) -> Result<ServerName<'static>, PortError> {

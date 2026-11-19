@@ -1,6 +1,7 @@
 use kmp_ports::PortError;
 use neo4rs::{Graph, Query, Row};
 
+use super::connection_retry::ConnectionRetry;
 use super::projection_store::Neo4jProjectionStore;
 
 impl Neo4jProjectionStore {
@@ -10,9 +11,10 @@ impl Neo4jProjectionStore {
         query: Query,
         operation: &str,
     ) -> Result<(), PortError> {
-        graph
-            .run(query)
+        ConnectionRetry::default()
+            .run(|| graph.run(query.clone()))
             .await
+            .map(|_| ())
             .map_err(|error| PortError::Unavailable(format!("neo4j {operation} failed: {error}")))
     }
 
@@ -22,9 +24,12 @@ impl Neo4jProjectionStore {
         query: Query,
         operation: &str,
     ) -> Result<Option<Row>, PortError> {
-        let mut rows = graph.execute(query).await.map_err(|error| {
-            PortError::Unavailable(format!("neo4j {operation} failed: {error}"))
-        })?;
+        let mut rows = ConnectionRetry::default()
+            .run(|| graph.execute(query.clone()))
+            .await
+            .map_err(|error| {
+                PortError::Unavailable(format!("neo4j {operation} failed: {error}"))
+            })?;
 
         rows.next().await.map_err(|error| {
             PortError::Unavailable(format!("neo4j {operation} stream failed: {error}"))
@@ -37,9 +42,12 @@ impl Neo4jProjectionStore {
         query: Query,
         operation: &str,
     ) -> Result<Vec<Row>, PortError> {
-        let mut rows = graph.execute(query).await.map_err(|error| {
-            PortError::Unavailable(format!("neo4j {operation} failed: {error}"))
-        })?;
+        let mut rows = ConnectionRetry::default()
+            .run(|| graph.execute(query.clone()))
+            .await
+            .map_err(|error| {
+                PortError::Unavailable(format!("neo4j {operation} failed: {error}"))
+            })?;
 
         let mut collected = Vec::new();
         while let Some(row) = rows.next().await.map_err(|error| {

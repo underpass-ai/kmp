@@ -8,7 +8,6 @@ use std::time::SystemTime;
 use kmp_adapter_nats::NatsContextEventStore;
 use kmp_domain::{ContextEventChange, ContextEventStore, ContextUpdatedEvent, PortError};
 use support::nats_container::{NATS_INTERNAL_PORT, connect_with_retry, start_nats_container};
-use testcontainers::core::IntoContainerPort;
 
 fn sample_event(
     root: &str,
@@ -40,8 +39,7 @@ fn sample_event(
 async fn append_and_read_revision() {
     let container = start_nats_container().await.expect("nats should start");
     let host_port = container
-        .get_host_port_ipv4(NATS_INTERNAL_PORT.tcp())
-        .await
+        .host_port_ipv4(NATS_INTERNAL_PORT)
         .expect("port should be mapped");
     let url = format!("nats://127.0.0.1:{host_port}");
     let client = connect_with_retry(&url).await.expect("nats should connect");
@@ -83,8 +81,7 @@ async fn append_and_read_revision() {
 async fn append_rejects_wrong_revision() {
     let container = start_nats_container().await.expect("nats should start");
     let host_port = container
-        .get_host_port_ipv4(NATS_INTERNAL_PORT.tcp())
-        .await
+        .host_port_ipv4(NATS_INTERNAL_PORT)
         .expect("port should be mapped");
     let url = format!("nats://127.0.0.1:{host_port}");
     let client = connect_with_retry(&url).await.expect("nats should connect");
@@ -105,8 +102,7 @@ async fn append_rejects_wrong_revision() {
 async fn idempotency_key_deduplication() {
     let container = start_nats_container().await.expect("nats should start");
     let host_port = container
-        .get_host_port_ipv4(NATS_INTERNAL_PORT.tcp())
-        .await
+        .host_port_ipv4(NATS_INTERNAL_PORT)
         .expect("port should be mapped");
     let url = format!("nats://127.0.0.1:{host_port}");
     let client = connect_with_retry(&url).await.expect("nats should connect");
@@ -142,8 +138,7 @@ async fn idempotency_key_deduplication() {
 async fn content_hash_tracks_latest_event() {
     let container = start_nats_container().await.expect("nats should start");
     let host_port = container
-        .get_host_port_ipv4(NATS_INTERNAL_PORT.tcp())
-        .await
+        .host_port_ipv4(NATS_INTERNAL_PORT)
         .expect("port should be mapped");
     let url = format!("nats://127.0.0.1:{host_port}");
     let client = connect_with_retry(&url).await.expect("nats should connect");
@@ -188,8 +183,7 @@ async fn content_hash_tracks_latest_event() {
 async fn concurrent_appends_one_wins_one_conflicts() {
     let container = start_nats_container().await.expect("nats should start");
     let host_port = container
-        .get_host_port_ipv4(NATS_INTERNAL_PORT.tcp())
-        .await
+        .host_port_ipv4(NATS_INTERNAL_PORT)
         .expect("port should be mapped");
     let url = format!("nats://127.0.0.1:{host_port}");
 

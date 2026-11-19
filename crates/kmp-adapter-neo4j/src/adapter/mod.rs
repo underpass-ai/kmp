@@ -1,3 +1,4 @@
+mod connection_retry;
 mod endpoint;
 mod load_memory_about_index;
 mod load_neighborhood;

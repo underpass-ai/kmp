@@ -22,7 +22,8 @@ tokio.workspace = true
 
 [dev-dependencies]
 kmp-testkit.workspace = true
-testcontainers = "0.28.0"
+# `start_paused` lets the retry tests measure a minute of backoff instantly.
+tokio = { workspace = true, features = ["test-util"] }
 
 [[test]]
 name = "neo4j_integration"

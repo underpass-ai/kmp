@@ -1,4 +1,4 @@
-mod container_runtime;
+pub mod container;
 pub mod dataset_generator;
 mod graph_batch_llm;
 mod in_memory_kernel_store;
@@ -23,7 +23,7 @@ pub mod seed_to_bundle;
 pub mod text_normalization;
 pub mod write_receipt;
 
-pub use container_runtime::ensure_testcontainers_runtime;
+pub use container::{ContainerSpec, RunningContainer, WaitFor, ensure_container_runtime};
 pub use dataset_generator::{
     Domain, GeneratedNode, GeneratedRelation, GeneratedSeed, GraphSeedConfig, NoiseMode,
     RelationMix, generate_seed,

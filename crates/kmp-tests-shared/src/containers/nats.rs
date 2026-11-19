@@ -1,12 +1,7 @@
 use std::time::Duration;
 
 use async_nats::Client;
-use kmp_testkit::ensure_testcontainers_runtime;
-use testcontainers::{
-    GenericImage, ImageExt,
-    core::{IntoContainerPort, WaitFor},
-    runners::AsyncRunner,
-};
+use kmp_testkit::ensure_container_runtime;
 use tokio::time::{sleep, timeout};
 
 use crate::containers::ContainerEndpoint;
@@ -23,24 +18,24 @@ const CONNECT_TIMEOUT: Duration = Duration::from_secs(20);
 
 /// Typed NATS container with JetStream enabled.
 pub struct NatsContainer {
-    container: testcontainers::ContainerAsync<GenericImage>,
+    container: kmp_testkit::RunningContainer,
     endpoint: ContainerEndpoint,
 }
 
 impl NatsContainer {
     pub async fn start() -> Result<Self, BoxError> {
         debug_log("starting nats container");
-        ensure_testcontainers_runtime()?;
+        ensure_container_runtime()?;
 
-        let container = GenericImage::new(NATS_IMAGE, NATS_TAG)
-            .with_exposed_port(NATS_INTERNAL_PORT.tcp())
-            .with_wait_for(WaitFor::seconds(NATS_STARTUP_WAIT.as_secs()))
+        let container = kmp_testkit::ContainerSpec::new(NATS_IMAGE, NATS_TAG)
+            .with_exposed_port(NATS_INTERNAL_PORT)
+            .with_wait_for(kmp_testkit::WaitFor::seconds(NATS_STARTUP_WAIT.as_secs()))
             .with_cmd(vec!["-js"])
             .start()
             .await?;
 
-        let host = container.get_host().await?.to_string();
-        let port = container.get_host_port_ipv4(NATS_INTERNAL_PORT).await?;
+        let host = container.host().to_string();
+        let port = container.host_port_ipv4(NATS_INTERNAL_PORT)?;
         let endpoint = ContainerEndpoint::new(host, port);
 
         Ok(Self {
@@ -62,7 +57,7 @@ impl NatsContainer {
         connect_nats_with_retry(&self.url()).await
     }
 
-    pub fn into_inner(self) -> testcontainers::ContainerAsync<GenericImage> {
+    pub fn into_inner(self) -> kmp_testkit::RunningContainer {
         self.container
     }
 }
