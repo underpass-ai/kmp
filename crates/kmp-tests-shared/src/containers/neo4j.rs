@@ -111,14 +111,22 @@ async fn connect_neo4j_inner(
     let mut last_error: Option<BoxError> = None;
 
     for _ in 0..NEO4J_CONNECT_RETRY_ATTEMPTS {
-        match Graph::new(&uri, &user, &password).await {
+        match ready_graph(Graph::new(&uri, &user, &password)).await {
             Ok(graph) => return Ok(graph),
             Err(error) => {
-                last_error = Some(Box::new(error));
+                last_error = Some(error);
                 sleep(CONNECT_RETRY_DELAY).await;
             }
         }
     }
 
     Err(last_error.expect("at least one connection attempt should fail"))
+}
+
+/// The driver opens connections lazily and, since neo4rs 0.9, does not retry
+/// a failed connection, so readiness is proven with a real round trip.
+async fn ready_graph(graph: Result<Graph, neo4rs::Error>) -> Result<Graph, BoxError> {
+    let graph = graph?;
+    graph.run(query("RETURN 1")).await?;
+    Ok(graph)
 }

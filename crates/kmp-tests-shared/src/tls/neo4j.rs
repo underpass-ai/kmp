@@ -99,7 +99,7 @@ async fn connect_with_retry_inner(
     let mut last_error: Option<Box<dyn Error + Send + Sync>> = None;
 
     for _ in 0..NEO4J_CONNECT_RETRY_ATTEMPTS {
-        match connect_tls_graph(&uri, &user, &password, ca_path).await {
+        match ready_graph(connect_tls_graph(&uri, &user, &password, ca_path).await).await {
             Ok(graph) => return Ok(graph),
             Err(error) => {
                 last_error = Some(error);
@@ -125,9 +125,7 @@ async fn connect_tls_graph(
         .with_client_certificate(ca_path)
         .build()?;
 
-    Graph::connect(config)
-        .await
-        .map_err(|error| Box::new(error) as Box<dyn Error + Send + Sync>)
+    Graph::connect(config).map_err(|error| Box::new(error) as Box<dyn Error + Send + Sync>)
 }
 
 fn prepare_neo4j_ssl_directory(
@@ -180,4 +178,14 @@ fn set_file_permissions(path: &Path) -> Result<(), Box<dyn Error + Send + Sync>>
 #[cfg(not(unix))]
 fn set_file_permissions(_path: &Path) -> Result<(), Box<dyn Error + Send + Sync>> {
     Ok(())
+}
+
+/// The driver opens connections lazily and, since neo4rs 0.9, does not retry
+/// a failed connection, so readiness is proven with a real round trip.
+async fn ready_graph(
+    graph: Result<Graph, Box<dyn Error + Send + Sync>>,
+) -> Result<Graph, Box<dyn Error + Send + Sync>> {
+    let graph = graph?;
+    graph.run(query("RETURN 1")).await?;
+    Ok(graph)
 }

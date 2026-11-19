@@ -1,3 +1,7 @@
+// The server future nests the gRPC, NATS, Valkey and Neo4j adapters; with
+// neo4rs 0.9 its layout query runs past rustc's default depth of 128.
+#![recursion_limit = "256"]
+
 mod nats_tls;
 mod projection_nats_runtime;
 mod telemetry_salt_location;

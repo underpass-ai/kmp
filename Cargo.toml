@@ -48,7 +48,7 @@ base64 = "0.22.1"
 flate2 = "1.1.10"
 getrandom = "0.2.17"
 jsonwebtoken = { version = "11.0.0", default-features = false, features = ["aws_lc_rs"] }
-neo4rs = "0.8.0"
+neo4rs = "=0.9.0-rc.11"
 rust-stemmers = "1.2.0"
 # Internal crates. The ones carrying a `version` are the twelve published to
 # crates.io — a path alone is enough to build here, but cargo refuses to

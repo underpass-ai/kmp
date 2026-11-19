@@ -550,10 +550,10 @@ async fn connect_with_retry(
     let mut last_error: Option<Box<dyn Error + Send + Sync>> = None;
 
     for _ in 0..CONNECT_RETRY_ATTEMPTS {
-        match Graph::new(&uri, user, password).await {
+        match ready_graph(Graph::new(&uri, user, password)).await {
             Ok(graph) => return Ok(graph),
             Err(error) => {
-                last_error = Some(Box::new(error));
+                last_error = Some(error);
                 sleep(CONNECT_RETRY_DELAY).await;
             }
         }
@@ -570,4 +570,14 @@ async fn single_row(
     rows.next()
         .await?
         .ok_or_else(|| "expected a row from neo4j query".into())
+}
+
+/// The driver opens connections lazily and, since neo4rs 0.9, does not retry
+/// a failed connection, so readiness is proven with a real round trip.
+async fn ready_graph(
+    graph: Result<Graph, neo4rs::Error>,
+) -> Result<Graph, Box<dyn Error + Send + Sync>> {
+    let graph = graph?;
+    graph.run(query("RETURN 1")).await?;
+    Ok(graph)
 }
