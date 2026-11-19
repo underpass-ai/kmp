@@ -196,7 +196,7 @@ fn parse_provider(s: &str) -> LlmProvider {
     }
 }
 
-fn yaml_str(cfg: &serde_yaml::Value, field: &str, context: &str) -> String {
+fn yaml_str(cfg: &serde_json::Value, field: &str, context: &str) -> String {
     cfg[field]
         .as_str()
         .unwrap_or_else(|| panic!("{context}: missing '{field}' in YAML"))
@@ -204,9 +204,9 @@ fn yaml_str(cfg: &serde_yaml::Value, field: &str, context: &str) -> String {
 }
 
 fn build_llm_config(
-    matrix: &serde_yaml::Value,
-    agent_cfg: &serde_yaml::Value,
-    judge_cfg: &serde_yaml::Value,
+    matrix: &serde_json::Value,
+    agent_cfg: &serde_json::Value,
+    judge_cfg: &serde_json::Value,
 ) -> LlmEvaluatorConfig {
     let tls = agent_cfg["tls"].as_bool().unwrap_or(false);
     let tls_section = &matrix["tls"];
@@ -518,7 +518,7 @@ async fn run_vllm_benchmark() -> Result<(), Box<dyn Error + Send + Sync>> {
         .unwrap_or_else(|_| format!("{resources}/evaluation-matrix.yaml"));
 
     // ── Load matrix ──
-    let matrix: serde_yaml::Value = serde_yaml::from_str(&fs::read_to_string(&matrix_path)?)?;
+    let matrix: serde_json::Value = serde_saphyr::from_str(&fs::read_to_string(&matrix_path)?)?;
 
     // ── Pick first agent + first judge from YAML (or filtered) ──
     let filter_models = env_filter("FILTER_MODELS");
@@ -526,26 +526,26 @@ async fn run_vllm_benchmark() -> Result<(), Box<dyn Error + Send + Sync>> {
     let filter_scales = env_filter("FILTER_SCALES");
     let filter_noise = env_filter("FILTER_NOISE");
 
-    let agents = matrix["agents"].as_mapping().expect("agents mapping");
-    let judges = matrix["judges"].as_mapping().expect("judges mapping");
+    let agents = matrix["agents"].as_object().expect("agents mapping");
+    let judges = matrix["judges"].as_object().expect("judges mapping");
 
     let (agent_name, agent_cfg) = agents
         .iter()
         .find(|(k, _)| {
-            let name = k.as_str().unwrap_or("");
+            let name = k.as_str();
             filter_models.is_empty() || filter_models.contains(&name.to_string())
         })
-        .map(|(k, v)| (k.as_str().expect("agent key").to_string(), v))
+        .map(|(k, v)| (k.as_str().to_string(), v))
         .expect("no agent matches FILTER_MODELS");
 
     let (judge_name, judge_cfg) = judges
         .iter()
         .find(|(k, _)| {
-            let name = k.as_str().unwrap_or("");
+            let name = k.as_str();
             (filter_judges.is_empty() || filter_judges.contains(&name.to_string()))
                 && name != agent_name
         })
-        .map(|(k, v)| (k.as_str().expect("judge key").to_string(), v))
+        .map(|(k, v)| (k.as_str().to_string(), v))
         .expect("no judge matches FILTER_JUDGES (excluding self-eval)");
 
     let llm_config = build_llm_config(&matrix, agent_cfg, judge_cfg);
@@ -590,12 +590,8 @@ async fn run_vllm_benchmark() -> Result<(), Box<dyn Error + Send + Sync>> {
         ("stress", |d| GraphSeedConfig::stress(d)),
     ];
     let yaml_scales: Vec<String> = matrix["scales"]
-        .as_mapping()
-        .map(|m| {
-            m.keys()
-                .filter_map(|k| k.as_str().map(String::from))
-                .collect()
-        })
+        .as_object()
+        .map(|m| m.keys().cloned().collect())
         .unwrap_or_default();
     let scales: Vec<ScaleEntry> = if yaml_scales.is_empty() {
         all_scales

@@ -12,8 +12,27 @@ use crate::lifecycle::domain::lifecycle_error::LifecycleError;
 pub struct HermesRuntimeStatusMapper;
 
 impl HermesRuntimeStatusMapper {
+    /// Parse Hermes config YAML into a dynamic value.
+    ///
+    /// The options keep the YAML 1.2 core reading Hermes output has always
+    /// had here: only `true`/`false` are booleans, numbers with leading zeros
+    /// or underscores stay strings, `<<` is an ordinary key and a repeated
+    /// key keeps its last value.
+    pub fn parse(config_yaml: &str) -> Result<Value, serde_saphyr::Error> {
+        serde_saphyr::from_str_with_options(
+            config_yaml,
+            serde_saphyr::options! {
+                strict_booleans: true,
+                leading_zero_numbers_as_strings: true,
+                underscored_numbers_as_strings: true,
+                duplicate_keys: serde_saphyr::DuplicateKeyPolicy::PassThrough,
+                merge_keys: serde_saphyr::MergeKeyPolicy::AsOrdinary,
+            },
+        )
+    }
+
     pub fn map(config_yaml: &str) -> Result<HostRuntimeStatus, LifecycleError> {
-        let body: Value = serde_yaml::from_str(config_yaml).map_err(|error| {
+        let body = Self::parse(config_yaml).map_err(|error| {
             LifecycleError::InvalidHostResponse(format!(
                 "Hermes returned invalid MCP config YAML: {error}"
             ))
@@ -82,5 +101,33 @@ mod tests {
         )
         .expect("status");
         assert_eq!(status, HostRuntimeStatus::Registered);
+    }
+
+    #[test]
+    fn empty_output_is_not_a_mapping_of_servers() {
+        let error = HermesRuntimeStatusMapper::map("").expect_err("empty output");
+        assert!(error.to_string().contains("not a mapping"));
+    }
+
+    #[test]
+    fn only_yaml_core_spellings_are_booleans() {
+        // `no` is a string under the YAML 1.2 core schema, so it does not
+        // switch the registration off, exactly as before the parser swap.
+        let status = HermesRuntimeStatusMapper::map("kmp:\n  command: kmp-mcp\n  enabled: no\n")
+            .expect("status");
+        assert_eq!(status, HostRuntimeStatus::Registered);
+        let body = HermesRuntimeStatusMapper::parse("a: yes\nb: 0755\nc: 1_000\n").expect("yaml");
+        assert_eq!(body["a"], "yes");
+        assert_eq!(body["b"], "0755");
+        assert_eq!(body["c"], "1_000");
+    }
+
+    #[test]
+    fn a_repeated_key_keeps_its_last_value() {
+        let status = HermesRuntimeStatusMapper::map(
+            "kmp:\n  command: kmp-mcp\nkmp:\n  command: kmp-mcp\n  enabled: false\n",
+        )
+        .expect("status");
+        assert_eq!(status, HostRuntimeStatus::Disabled);
     }
 }
