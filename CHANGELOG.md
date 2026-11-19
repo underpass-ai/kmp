@@ -9,6 +9,8 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+## [0.26.2] - 2026-11-19
+
 ### Security
 
 - `rusqlite` moves to 0.41.1, bringing the bundled SQLite of
@@ -2738,7 +2740,8 @@ The initial agent schema that expands with use and persistent consultation profi
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.26.1...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.26.2...HEAD
+[0.26.2]: https://github.com/underpass-ai/kmp/compare/v0.26.1...v0.26.2
 [0.26.1]: https://github.com/underpass-ai/kmp/compare/v0.26.0...v0.26.1
 [0.26.0]: https://github.com/underpass-ai/kmp/compare/v0.25.0...v0.26.0
 [0.25.0]: https://github.com/underpass-ai/kmp/compare/v0.24.0...v0.25.0
