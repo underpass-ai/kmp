@@ -259,7 +259,7 @@ Live backend mapping:
 | `kmp_condense` | `KernelMemoryService.Condense` |
 | `kmp_summaries_audit` | MCP-local reading of the embedded store's event log; unavailable in live gRPC mode |
 | `kmp_curate` | MCP-local; its TypeSafe opt-in lives beside the embedded store; unavailable in live gRPC mode |
-| `kmp_guide` | MCP-local persistent agent identity and progressive guidance |
+| `kmp_guide` | Stateless topic lookup: a worked card and argument prose, compiled into the engine |
 | `kmp_relabel` | `KernelMemoryService.Relabel` |
 | ChronoLoom app data | `KernelMemoryService.ProjectVisual` (hidden from model tool discovery) |
 

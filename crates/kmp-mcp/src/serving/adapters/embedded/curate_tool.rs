@@ -227,7 +227,6 @@ impl<'a> EmbeddedCurateTool<'a> {
                                     | "max_pairs"
                                     | "review_token"
                                     | "page"
-                                    | "context_id"
                                     | "from"
                                     | "to"
                                     | "max_hops"

@@ -9,6 +9,48 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Changed — breaking
+
+The guide is a stateless topic lookup (slim guide, on the way to 1.0).
+
+- `kmp_guide` takes only `{ "topic": <enum> }`; without a topic it returns the
+  topic index. `registration_key`, `agent_id`, `context_id`, `context_key` and
+  `fold` are gone and are refused as unknown arguments, together with agent
+  identities, contexts, guide revisions and the `served`/`used` delivery
+  records. Its result is `{summary, topic, ref, text, parameters}` (plus
+  `relation_vocabulary` for topic `relations`), or `{summary, topics}`.
+- The cards ship inside the engine. `kmp_guide` reads no store, never seeds
+  the stored guide and answers the same way on every install, with or without
+  a plugin tree or `KMP_PLUGIN_ROOT`.
+- The topics are `wake`, `write`, `relations`, `ingest`, `relabel`, `ask`,
+  `time`, `audit`, `trace`, `condense`, `relate`, `curate`, `view` and `guide`.
+  The old `write` card is split into `write`, `relations`, `ingest` and
+  `relabel`, and `audit` into `audit` and `trace`; each card serves only the
+  arguments it owns, so every argument is explained by exactly one topic and
+  no card response exceeds about 2,000 tokens.
+- `context_id` and `purpose` are removed from every tool and are refused as
+  unknown arguments. The `kmp_guidance` text block appended to work results,
+  with its usage counters and purpose-steered recommendations, is gone.
+- `actor` is optional on `kmp_write_memory`, `kmp_relabel`, `kmp_condense`
+  and `kmp_curate` apply. When omitted, the writer is the MCP client's name
+  from `initialize` (`clientInfo.name`), or `mcp-client` when the session
+  declared none.
+- A refusal no longer carries `structuredContent.help` or the `Usage help`
+  JSON in its text. Its text ends with one line, `Help: kmp_guide
+  {"topic":"…"}`, naming the topic of the first refused argument.
+- A first `kmp_wake` on an about with nothing recorded is no longer an error:
+  it answers `isError: false` with a short summary saying nothing is recorded
+  there, and still names the store it read.
+- A continuation resent with the same `about` or `actor` it was bound to is
+  accepted; a different value, or any other argument beside the handle except
+  Wake/Ask's `page.repeat_core`, is refused.
+- Retained continuations move from `agent-users.sqlite3` to
+  `continuations.sqlite3` beside the store (for gRPC,
+  `agent-users/<endpoint>.continuations.sqlite3` under the user data home).
+  A 0.27.0 `agent-users.sqlite3` is no longer opened and is left untouched;
+  handles it retained are reported as `CONTINUATION_UNAVAILABLE`.
+- The call log drops `context_fingerprint`.
+
 ### Changed
 
 - **Behaviour change:** a label coordinate with no time on the selected clock
@@ -35,6 +77,15 @@ Detailed notes from the early release cycle remain available in the
   session. `kmp-mcp viewer` and `kmp-mcp demo` bind as before.
 - `KMP_VIEWER_ADDR=off kmp-mcp viewer` says the variable turns the viewer off
   instead of trying to bind an address named `off`.
+
+### Added
+
+- `tools/list` carries one short description on the arguments agents were
+  refused over without the guide: `about` (on `kmp_write_memory` and
+  `kmp_wake`), `actor` (on the four writers), and on `kmp_write_memory`
+  `labels`, `memories[].labels`, `memories[].evidence` and `continuation`.
+- Server instructions drop the registration ceremony and say that
+  `kmp_guide {topic}` explains a verb's arguments before its first use.
 
 ### Removed
 
@@ -104,6 +155,9 @@ Detailed notes from the early release cycle remain available in the
 - `THIRD_PARTY_NOTICES.md` lists the vendored three.js 0.180.0 (it named
   pixi.js 8.19.0, which no longer ships) and carries the MIT license text,
   which the MCPB package ships with it.
+- The memory store selection order is stated correctly in the shipped guide
+  and the plugin README: environment, project root, saved selection, user
+  default.
 
 ## [0.27.0] - 2026-11-19
 

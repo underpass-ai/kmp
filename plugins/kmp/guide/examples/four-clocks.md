@@ -93,10 +93,10 @@ read it at delivery time. Only S1 gets `valid_from` and `valid_until`.
 ## Recover, write and inspect the original sources
 
 ```json
-{"tool":"kmp_wake","save_as":"initial","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000}},"expect_error":"not_found"}
+{"tool":"kmp_wake","save_as":"initial","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000}}}
 ```
 
-A fresh missing about returns not_found. An existing about requires recovery
+A wake on a fresh missing about says nothing is recorded. An existing about requires recovery
 and catalogue reuse; do not treat it as empty.
 
 ```json

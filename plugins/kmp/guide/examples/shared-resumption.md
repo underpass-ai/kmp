@@ -44,8 +44,8 @@ Within each session those bodies are read once and reused.
 
 ## Writer: recover, record and retry the same logical write
 
-Use a fresh isolated store and this exact about. An initial not_found is
-expected here. With an existing about, inspect its memory and catalogue
+Use a fresh isolated store and this exact about. An initial wake that finds
+nothing recorded is expected here. With an existing about, inspect its memory and catalogue
 instead of pretending it is empty. A write retry reuses its original payload
 and idempotency_key; it does not rephrase the source or create a new key.
 
@@ -53,7 +53,6 @@ and idempotency_key; it does not rephrase the source or create a new key.
 {
   "tool": "kmp_wake",
   "save_as": "initial",
-  "expect_error": "not_found",
   "arguments": {
     "about": "example:guide:shared-resumption",
     "budget": {

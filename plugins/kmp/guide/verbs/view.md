@@ -99,6 +99,6 @@ steps stay listed in the panel as outside the frame.
 The person can press **Declare…** on a proposed step and write the why and
 evidence. The loom does not write: it composes the exact `kmp_curate`
 `mode:"apply"` call and asks the person to give it to you. Run it unchanged
-(add your `context_id`, or keep the `actor` they named), handle `needs_review`
+(keep the `actor` they named), handle `needs_review`
 and doubts as for any apply, and draw the paths again to show the result. The
 `review_token` belongs to this serving process; after a restart, search again.

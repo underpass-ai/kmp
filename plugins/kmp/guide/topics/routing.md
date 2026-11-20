@@ -30,7 +30,8 @@ to the part of the goal the wake packet did not already answer.
 
 An initial call needs the arguments described by its verb. A returned
 `continuation` is a separate call form: send only that handle on its named
-tool. Do not add `about`, `context_id` or budget overrides to it. Tool schemas
+tool. Do not add budget overrides or a different `about` to it; the same
+`about` or `actor` it was bound to is accepted. Tool schemas
 keep the common argument fields visible and enforce these conditional
 requirements; an optional field in a host's type display does not make an
 initial call valid without the verb's required arguments.

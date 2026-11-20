@@ -10,7 +10,7 @@ pub(crate) fn tool_definition_with_output(
     let mut definition = json!({
         "name": name,
         "description": description,
-        // Even retrieval calls may persist guidance usage or read diagnostics.
+        // Even retrieval calls may persist continuation handles or read diagnostics.
         // The destructive flag describes replacement of current state, not
         // deletion of the canonical event history.
         "annotations": {

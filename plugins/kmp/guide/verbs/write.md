@@ -42,9 +42,8 @@ source. The canonical receipt and relation-quality detail retain the resolved
 class. This completion changes neither proof requirements nor the relation's
 direction and does not infer whether it is true.
 
-With `context_id`, actor defaults to the persistent agent name; an explicit
-actor overrides it. Without context, actor is required. Actor identifies the
-author. Omit `observed_at` or set it to null: KMP assigns the exact ingestion
+An omitted actor is the MCP client's name from `initialize` (or
+`mcp-client`); an explicit actor overrides it. Actor identifies the author. Omit `observed_at` or set it to null: KMP assigns the exact ingestion
 instant to this new observation and the packet's provenance. Supply an explicit
 observation time only when the source establishes it, with the actual UTC offset.
 KMP never chooses it from event dates or from a different record.
@@ -183,10 +182,9 @@ finish relevant pages.
 
 After reviewing, execute `next_actions[0]` to resume the unchanged packet, or
 correct it and submit again. The action is a `continuation` handle: the server
-retains the packet and its `review_token` (in the agent directory with
-`context_id`, in the serving process otherwise). A corrected packet is sent
-as a new call and returns a fresh review. Do not add arguments to a
-continuation. Tokens bind the exact
+retains the packet and its `review_token` beside the store. A corrected packet
+is sent as a new call and returns a fresh review. Do not add arguments to a
+continuation; resending the same `about` or `actor` is accepted. Tokens bind the exact
 logical proposal and complete selected source material, including omissions.
 A changed proposal or relevant context returns a fresh review without writing.
 A race at commit is safely retryable under the same idempotency key. An accepted

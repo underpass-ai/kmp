@@ -43,11 +43,7 @@ mod tests {
     /// reads already share or this response's own projection.
     #[test]
     fn every_advertised_argument_is_scope_vocabulary_or_response_projection() {
-        let mut fields = keys(&schema());
-        // MCP interaction metadata, removed before dispatch like every
-        // other tool's.
-        assert!(fields.remove("context_id"));
-        assert!(fields.remove("purpose"));
+        let fields = keys(&schema());
 
         assert_eq!(
             fields,

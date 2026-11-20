@@ -48,13 +48,13 @@ result; every other error or incomplete page stops this bounded replay.
 
 Read the brief installed `guide/AGENT.md` and the live tool schemas first. Consult extended verbs on first use and reuse them while in context. The lesson
 starts by recovering its own about and label catalogue. On this fresh store,
-the about does not exist: the embedded engine returns `not_found`, not an
-empty successful wake packet. That expected result permits the first write.
+the about does not exist: the wake answers that nothing is recorded for it in
+this store. That expected result permits the first write.
 If the about already exists, inspect its memory and labels; do not treat it
 as empty to bypass strict relation validation. Other errors need diagnosis.
 
 ```json
-{"tool":"kmp_wake","save_as":"initial","expect_error":"not_found","arguments":{"about":"example:guide:decision-history","budget":{"max_bytes":20000,"detail":"full"}}}
+{"tool":"kmp_wake","save_as":"initial","arguments":{"about":"example:guide:decision-history","budget":{"max_bytes":20000,"detail":"full"}}}
 ```
 
 ## Write the requirement, then the decision it motivates

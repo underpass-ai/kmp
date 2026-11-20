@@ -55,7 +55,7 @@ pub(crate) fn definition() -> Value {
                         "card_revision": {"type": "integer", "minimum": 1, "description": "The card revision you are replacing. Refused if another reader replaced it first."}
                     }
                 },
-                "actor": string_schema("Writer name recorded as the card's author. Required without context_id; when omitted with a valid context_id, defaults to the persistent agent name.")
+                "actor": string_schema("Writer name recorded as the card's author. Omitted: the MCP client name from initialize.")
             }
         }),
         condense_output_schema(),

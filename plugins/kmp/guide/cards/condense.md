@@ -15,9 +15,11 @@ Condense a canonical body you have read; reuse its short phrase on later paths.
 ```
 
 Call `kmp_condense` with the candidate's actual `source` and `expect`, replacing
-the illustrative values above. Without `context_id`, `actor` is required; with
-a valid context, an omitted actor defaults to the persistent agent name. Text
+the illustrative values above. An omitted `actor` is the MCP client's name. Text
 must be at most 4096 UTF-8 bytes and shorter than its body. On conflict, reread.
+A search rendering of a stored memory (`summary_en`, `search_expansions`) is a
+`kmp_write_memory` call with `search_summaries`; `kmp_summaries_audit` lists
+what is still owed.
 
 4. Reuse: start the same Trace with `proof:true,compact:{language:"en"}`.
    **Omit `proof_refs`, `expect_selection` and the old page cursor.**

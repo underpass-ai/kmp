@@ -11,13 +11,20 @@ use crate::serving::ports::kernel_tool_backend::KernelMcpToolBackend;
 use crate::serving::GrpcKernelMcpBackend;
 use crate::serving::adapters::fixture_backend::FixtureKernelMcpBackend;
 
+/// Retained read continuations beside the store. Version 0.27.0 kept them in
+/// `agent-users.sqlite3` with agent identities; that file is no longer read.
+const CONTINUATIONS_FILE: &str = "continuations.sqlite3";
+
 pub struct KernelMcpServer {
     pub(super) shared_passages: bool,
     /// Advertise each tool's `outputSchema` in `tools/list` (off by default).
     pub(super) output_schemas: bool,
     pub(super) backend: Arc<dyn KernelMcpToolBackend>,
-    pub(super) agent_directory: std::sync::OnceLock<Arc<dyn crate::guidance::AgentDirectory>>,
-    pub(super) agent_directory_path: Option<std::path::PathBuf>,
+    /// Retained read continuations, opened on first use.
+    pub(super) continuation_store:
+        std::sync::OnceLock<Arc<dyn crate::continuation::ContinuationStore>>,
+    /// Where they are kept; `None` keeps them in memory for this process.
+    pub(super) continuation_store_path: Option<std::path::PathBuf>,
     /// Shared store-use claim held until this MCP transport exits. Selective
     /// uninstall must acquire the exclusive counterpart before it can remove
     /// the directory.
@@ -77,9 +84,11 @@ impl KernelMcpServer {
         let endpoint = endpoint.into();
         let key = format!("{:x}", Sha256::digest(endpoint.as_bytes()));
         let mut server = Self::with_backend(GrpcKernelMcpBackend::new(endpoint, tls));
-        server.agent_directory_path = kmp_embedded::user_data_home()
-            .map(|home| home.join("agent-users").join(format!("{key}.sqlite3")));
-        // A remote store's salt stays on this machine, beside its agents.
+        // A remote store's continuations and salt stay on this machine.
+        server.continuation_store_path = kmp_embedded::user_data_home().map(|home| {
+            home.join("agent-users")
+                .join(format!("{key}.{CONTINUATIONS_FILE}"))
+        });
         server.telemetry_salt_path = kmp_embedded::user_data_home().map(|home| {
             home.join("agent-users").join(format!(
                 "{key}.{}",
@@ -104,7 +113,7 @@ impl KernelMcpServer {
         let opened_engine = backend.engine();
         let mut server = Self::with_backend(backend);
         server.embedded_engine = Some(opened_engine);
-        server.agent_directory_path = Some(data_dir.join("agent-users.sqlite3"));
+        server.continuation_store_path = Some(data_dir.join(CONTINUATIONS_FILE));
         server.telemetry_salt_path =
             Some(data_dir.join(crate::serving::telemetry::TELEMETRY_SALT_FILE));
         Ok(server)
@@ -119,8 +128,8 @@ impl KernelMcpServer {
             shared_passages: false,
             output_schemas: false,
             backend,
-            agent_directory: std::sync::OnceLock::new(),
-            agent_directory_path: None,
+            continuation_store: std::sync::OnceLock::new(),
+            continuation_store_path: None,
             store_session_lease: None,
             embedded_engine: None,
             viewer: None,
@@ -141,11 +150,11 @@ impl KernelMcpServer {
     pub fn with_embedded_backend(backend: crate::serving::EmbeddedKernelMcpBackend) -> Self {
         let engine = backend.engine();
         let data_dir = std::path::Path::new(backend.data_dir());
-        let agents = data_dir.join("agent-users.sqlite3");
+        let continuations = data_dir.join(CONTINUATIONS_FILE);
         let salt = data_dir.join(crate::serving::telemetry::TELEMETRY_SALT_FILE);
         let mut server = Self::with_backend(backend);
         server.embedded_engine = Some(engine);
-        server.agent_directory_path = Some(agents);
+        server.continuation_store_path = Some(continuations);
         server.telemetry_salt_path = Some(salt);
         server
     }
@@ -257,6 +266,23 @@ impl KernelMcpServer {
         result
     }
 
+    /// A wake that found nothing names the store in its text too: "nothing
+    /// here" must say where "here" is to a host that shows only text.
+    pub(super) fn disclose_store_in_text(
+        &self,
+        mut result: serde_json::Value,
+    ) -> serde_json::Value {
+        if let Some(store) = &self.store_disclosure
+            && let Some(text) = result
+                .pointer("/content/0/text")
+                .and_then(|text| text.as_str().map(str::to_string))
+        {
+            result["content"][0]["text"] =
+                serde_json::json!(format!("{}{text}", store.error_prefix()));
+        }
+        result
+    }
+
     pub(super) fn orphaned_bundle_notice(&self) -> Option<&kmp_embedded::OrphanedProjectBundle> {
         let orphaned = self.orphaned_bundle.as_ref()?;
         self.orphaned_bundle_offered
@@ -332,9 +358,10 @@ impl KernelMcpServer {
                     ),
                 )
                 .with_resolved_store(&resolved);
-                // Open lazily after a guide read opened the kernel. A metadata
-                // file must not make a not-yet-created kernel look non-empty.
-                server.agent_directory_path = Some(resolved.path().join("agent-users.sqlite3"));
+                // Opened lazily, on the first continuation a read returns. A
+                // metadata file must not make a not-yet-created kernel look
+                // non-empty.
+                server.continuation_store_path = Some(resolved.path().join(CONTINUATIONS_FILE));
                 server.telemetry_salt_path = Some(
                     resolved
                         .path()

@@ -18,13 +18,13 @@ Las rutas son relativas a la raíz del repositorio.
 | --- | --- | --- |
 | Comportamiento del núcleo | Dominio, casos de uso y adaptadores que implementan la operación | Prueba de comportamiento y contrato MCP correspondiente |
 | Argumentos, resultados y descripción de una herramienta | [contract/tools](../../crates/kmp-mcp/src/contract/tools/) y [contract/schema](../../crates/kmp-mcp/src/contract/schema/); registro en [registry.rs](../../crates/kmp-mcp/src/contract/registry.rs) | Fixture de superficie, guía del verbo y ejemplo afectado |
-| Explicación de un argumento | La `description` del esquema en [contract/tools](../../crates/kmp-mcp/src/contract/tools/); `tools/list` la elimina y `kmp_guide` la sirve en `card.parameters` del tema que enseña la herramienta, según `TOPIC_TOOLS` en [guide_scheme.rs](../../crates/kmp-mcp/src/guidance/guide_scheme.rs) y la proyección de [parameter_guide.rs](../../crates/kmp-mcp/src/contract/parameter_guide.rs) | Todo tool nuevo debe pertenecer a un tema; `parameter_guide_audit` lo comprueba |
+| Explicación de un argumento | La `description` del esquema en [contract/tools](../../crates/kmp-mcp/src/contract/tools/); `tools/list` la elimina (salvo las líneas cortas de `ADVERTISED_LINES`) y `kmp_guide` la sirve en `parameters` del tema dueño de esa ruta, según `serves` en [guide_topic.rs](../../crates/kmp-mcp/src/guide/guide_topic.rs) y la proyección de [parameter_guide.rs](../../crates/kmp-mcp/src/contract/parameter_guide.rs) | Todo tool nuevo debe pertenecer a un tema; `parameter_guide_audit` comprueba que cada argumento lo sirve exactamente un tema y `tests/guide_topics.rs` que ninguna ficha pasa de 2.000 tokens |
 | Reglas comunes al conectar un agente | [agent_policy/instructions.rs](../../crates/kmp-mcp/src/agent_policy/instructions.rs), servido por [handshake.rs](../../crates/kmp-mcp/src/contract/handshake.rs) | Casos de routing y captura de initialize y del catálogo que expone el host |
 | Vocabulario de relaciones | `KnownMemoryRelationType` y su especificación en [relation_type.rs](../../crates/kmp-domain/src/value_objects/relation_type.rs) | Proyección [relation_vocabulary.rs](../../crates/kmp-mcp/src/contract/schema/relation_vocabulary.rs), casos positivos/negativos y enseñanza de why/evidence |
 | Entrada breve del agente | [guide/agent-entry.md](../../plugins/kmp/guide/agent-entry.md) | Regenerar el índice y comprobar su tamaño; no insertar el manual completo |
 | Explicación extendida o ejemplo | [editorial.json](../../plugins/kmp/guide/editorial.json) y sus `text_file` en `verbs/`, `topics/` o `examples/` | Referencia válida, prueba nativa y lectura selectiva |
 | Correspondencia entre herramienta y verbo | `tool_verb` en [GuideRequestMapper](../../crates/kmp-release/src/application/mappers/guide_request_mapper.rs) | Todo tool público debe resolver a un verbo indexado |
-| Ayuda ante un rechazo de uso | [tool_error_help.rs](../../crates/kmp-mcp/src/serving/tool_error_help.rs) y su envoltorio en `tool_result.rs` | Elegir por código/ruta tipados, conservar feedback y ejecutar las lecturas sugeridas |
+| Ayuda ante un rechazo de uso | [tool_error_help.rs](../../crates/kmp-mcp/src/serving/tool_error_help.rs) y su envoltorio en `tool_result.rs`: una línea `Help: kmp_guide {"topic":…}` | Elegir el tema por la ruta tipada del feedback, conservar feedback y comprobar que el tema existe |
 | Cómo se entra desde Codex o Claude | [skills](../../plugins/kmp/skills/), [adaptadores Claude](../../plugins/kmp/claude/commands/) y [capabilities.json](../../plugins/kmp/capabilities.json) | Paridad de capacidades y acceso a la misma entrada; evitar otra copia del manual |
 | Relato público del producto | Bloque `kmp:public-overview` de [plugins/kmp/README.md](../../plugins/kmp/README.md) | Sincronizar README de repositorio y crate; revisar guía humana |
 | Siembra de la guía en la primera lectura y demo | [guide/asset_locator.rs](../../crates/kmp-mcp/src/guide/asset_locator.rs), [serving/guide_seed.rs](../../crates/kmp-mcp/src/serving/guide_seed.rs), [demo.rs](../../crates/kmp-mcp/src/demo.rs) y su paquete en `fixtures/demo/` | Pruebas `guide_seed`, `guide_repair` y `demo_cli`; `verbs/guide.md`, las skills de guía y setup, y `examples/retry-budget` regenerado con `scripts/examples/refresh.sh` |
@@ -42,7 +42,7 @@ por qué, no como lista que una CI deba comprobar.
 | `serving/adapters/fixture_backend.rs` y su fixture de respuesta | El backend de ejemplos responde a todo lo que anuncia |
 | `tool_error_help.rs` | Un rechazo devuelve su propio verbo y su propia lección; apuntar a la lección de otro movimiento responde peor que no responder |
 | `guide_request_mapper.rs::tool_verb` | Todo tool público resuelve a un verbo indexado |
-| `guidance/guide_scheme.rs`, `contract/tools/guide.rs`, `guide/cards/` y su relación al verbo | El tema existe en el esquema progresivo y sirve una ficha y ampliación ejecutables; indexar el verbo solo no lo hace descubrible |
+| `guide/guide_topic.rs`, `guide/cards/` (fuente editorial y copia compilada en `crates/kmp-mcp/src/guide/cards/`) y su relación al verbo | El tema existe en el índice y sirve una ficha compilada en el motor; indexar el verbo solo no lo hace descubrible |
 | `guide/editorial.json` más su `text_file` | La fuente canónica de la guía; regenerar con `guide assets write` |
 | `plugins/kmp/capabilities.json` | El generador compara la lista viva contra este inventario y falla si divergen |
 | `distribution/mcpb/manifest.json` | Lo que instala el host |
@@ -325,15 +325,15 @@ llamada porque el agente tiene que leerlas para elegir.
 | Pieza | Dónde |
 | --- | --- |
 | Acortar y resolver | `serving/read_continuations.rs` (`shorten_read_actions`, `resolve_read_arguments`) |
-| Almacén sin contexto | tabla `open_continuations` en `agent-users.sqlite3` junto al store (`sqlite_read_continuations.rs`); en memoria si el servidor no tiene ruta |
-| Almacén con `context_id` | `read_continuations`, como antes |
-| Esquema de entrada | `contract/registry.rs`: con `continuation` sólo se admite, en Wake/Ask, `page.repeat_core` |
+| Almacén | tabla `open_continuations` en `continuations.sqlite3` junto al store (`continuation/adapters/sqlite_continuation_store.rs`); en memoria si el servidor no tiene ruta. El `agent-users.sqlite3` de 0.27.0 ya no se abre |
+| Esquema de entrada | `contract/registry.rs`: junto a `continuation` sólo se admiten `about`/`actor` con el mismo valor ligado y, en Wake/Ask, `page.repeat_core` |
 
 El handle son 128 bits aleatorios: nombra una llamada, no concede nada. HTTP
 resuelve antes de autorizar y autoriza la llamada resuelta. La llamada guardada
 conserva su cursor, así que un cambio de selección sigue rechazándose con
 `conflict` y un reinicio completo en `feedback[].action`. Otros argumentos junto
-al handle se rechazan con `invalid_argument`; para cambiar el tamaño de página o
+al handle se rechazan con `invalid_argument` (`about` o `actor` iguales a los
+ligados se aceptan; distintos se rechazan); para cambiar el tamaño de página o
 el presupuesto se envían los argumentos originales con `page.cursor` (el camino
 sin estado sigue vigente). Retención: 24 h, 256 llamadas por directorio, 32 KiB
 por llamada. Un handle caducado o de otro store devuelve
@@ -397,36 +397,26 @@ usa el contenido nuevo. El manifiesto registra referencias, hashes y líneas par
 comprobar que se entregó todo sin truncamiento. Esa comprobación de entrega no
 demuestra aprendizaje ni evita el coste de cargar un contexto nuevo.
 
-El asesor tiene su propia identidad y contexto. La identidad persiste; el
-contenido del contexto lo conserva el host. Tras compactación se recarga la guía
-completa. La carga local no escribe las marcas `served` del MCP. Comparar la
-revisión del archivo con la del store antes de consultar. El agente de trabajo
+El asesor tiene su propio contexto, que conserva el host. Tras compactación se
+recarga la guía completa. Comparar la revisión del archivo con la del store antes de consultar. El agente de trabajo
 conserva la decisión sobre las fuentes y ejecuta las propuestas autorizadas.
 Verificar el flujo con consultas reales de un subagente y contabilizar ambos
 participantes. Esta evaluación es informativa, sin gates editoriales nuevos.
 
-### Descubrimiento progresivo y errores
+### Temas de guía y errores
 
-`kmp_guide` sirve el esquema y una ficha por consulta. Identidad y contextos
-viven en `agent-users.sqlite3` junto al store embedded; para gRPC son metadatos
-locales del cliente, separados por endpoint. No forman parte de la memoria,
-la evidencia, los bundles ni la autorización. Una conexión compartida no
-identifica al agente: el cliente conserva los ids devueltos.
+`kmp_guide` es una consulta sin estado: sin `topic` devuelve el índice; con
+`topic`, la ficha de ese tema y la prosa de los argumentos que posee. Las fichas
+se compilan en el motor desde `crates/kmp-mcp/src/guide/cards/`, copia exacta de
+`plugins/kmp/guide/cards/` (la fuente editorial de la guía almacenada;
+`tests/guide_topics.rs` comprueba que coinciden). No lee ni siembra el store y
+responde igual en toda instalación. No hay identidad, contexto ni registro de
+entregas.
 
-La clave de registro identifica un agente lógico y hace idempotente su alta.
-`context_id` basta para continuar; `agent_id` con una nueva `context_key`
-identifica un reinicio de contexto tras compactación. `served` registra entrega,
-no aprendizaje ni retención. `fold` cambia lo expandido y conserva esa entrega.
-Un cambio de revisión de guía abre una vista nueva de entregas sin borrar el
-historial. El cliente debe recuperar las fichas que necesite de nuevo.
-
-Las fichas breves viven en `guide/cards/`; los verbos extendidos en `verbs/`.
-El mapper estampa el digest del asset en cada nodo: cambiar contenido exige
-regenerar el conjunto. Al añadir un tema, actualizar catálogo progresivo, schema, ficha,
-verbo y relación entre ambos; ejecutar las acciones de ampliación devueltas.
-Initialize y las skills entran por el esquema; el Markdown es la alternativa.
-No duplicar ambas cargas. Reutilizar el target de este checkout para iterar;
-no repetir suites ya aprobadas si no cambia el comportamiento que comprueban.
+Al añadir un tema, actualizar `guide_topic.rs`, la ficha en ambos sitios, su
+entrada en `editorial.json` y su relación al verbo; regenerar los assets.
+Initialize y las skills nombran `kmp_guide {topic}`; el Markdown es la
+alternativa. No duplicar ambas cargas.
 
 
 La entrada generada muestra los grupos de verbos y dos mapas de ejemplos. Los
@@ -436,18 +426,16 @@ cuerpos para completar el índice. El registro de una consulta anterior no prueb
 comprensión ni presencia en el contexto actual.
 
 La ayuda de rechazo se decide por nombre de herramienta, código y ruta del
-feedback, nunca analizando su mensaje. `help.guide` y `help.examples` contienen
-llamadas completas a nodos existentes. Conservar las acciones directas de
+feedback, nunca analizando su mensaje: una sola línea `Help: kmp_guide
+{"topic":…}` con el tema dueño del primer argumento rechazado. Conservar las acciones directas de
 reparación y reinicio, los códigos del backend y la ausencia de escrituras en
 un rechazo. La consulta de guía no reintenta ni sincroniza automáticamente. Los
 fallos de infraestructura y de lectura de la guía no generan un bucle de ayuda.
 UNKNOWN sigue siendo una respuesta semántica válida.
 
-Probar que los enlaces se ejecutan contra los assets generados, incluyendo las
-herramientas que comparten verbo. Medir la entrada y las lecturas posteriores:
-mover una lista a un nodo no elimina su coste cuando ese nodo se consulta. La
-misma ayuda aparece en texto para hosts que no muestran structuredContent;
-contar por separado esa representación y el sobre completo.
+Probar que el tema apuntado existe y explica la herramienta rechazada. Medir la
+entrada y las lecturas posteriores: mover una lista a una ficha no elimina su
+coste cuando esa ficha se consulta.
 
 ### Contexto previo de escritura
 
@@ -653,27 +641,13 @@ and export/import; previews and refusals must create neither a receipt nor memor
 Coverage describes submitted declarations, never completeness against sources the
 writer did not submit. Do not add graph memories or another CI rule for receipts.
 
-### Contexto y recomendaciones del agente
+### Escritor por defecto
 
-Los argumentos comunes context_id/purpose se agregan en el registro de tools.
-CallGuidance los resuelve y elimina antes de compilar, calcular idempotencia o
-llamar al backend. No son una autorización. El escritor y Relabel pueden tomar
-actor del perfil; un actor explícito prevalece. AgentDirectory guarda uso y
-entregas fuera del grafo. Una entrega no acredita aprendizaje.
-
-GuidanceRecommendation elige por campos tipados del resultado, conserva las
-acciones nativas y declara cuándo inicia otra selección. Un verbo nuevo necesita
-su ruta de ayuda, criterios de recomendación sólo si tiene una señal real, y
-comprobación de que la acción devuelta se ejecuta sin perder reloj o alcance.
-No crear reglas por palabras de mensajes de error ni puntuaciones de confianza
-sin fundamento. La tabla consultable está en verbs/guide.md.
-
-La ayuda de trabajo se serializa una vez en un bloque de texto kmp_guidance:
-structuredContent conserva su contrato y presupuesto. Medir ambos costes y
-comprobar que el host entrega el bloque adicional al modelo. Una aplicación que
-sólo conserva structuredContent oculta la ayuda. El fallo de metadatos después
-de una escritura aceptada debe conservar la aceptación y el recibo; el contador
-de uso nunca certifica una nueva escritura frente a un replay.
+`serving/default_actor.rs` completa `actor` en `kmp_write_memory`,
+`kmp_relabel`, `kmp_condense` y `kmp_curate` apply cuando falta: el
+`clientInfo.name` de `initialize` o `mcp-client`. Se aplica antes de planificar,
+así que el digest de idempotencia y la continuación retenida lo llevan. Un actor
+explícito prevalece.
 
 ### Ejemplos de inferencia
 
@@ -731,32 +705,6 @@ dirección o alcance cuando evite ambigüedad. `supersedes` marca todo el destin
 SUPERSEDED; `corrects` no cambia su estado de ciclo de vida. No prometer que la
 aceptación o la categoría rich verifican el significado. Esta revisión editorial
 es informativa: no añadir un gate de frases o tamaño al CI.
-
-## Continuaciones retenidas en el contexto del agente
-
-Los nueve verbos de lectura admiten la alternativa `{continuation: id}` sola.
-El registro central conserva los requisitos de la llamada inicial en otra rama
-del schema; no debilitar sus `required`/alternativas al añadir esta entrada.
-`serving/read_continuations.rs` transforma únicamente acciones nativas devueltas,
-cuando el identificador no aumenta su tamaño. El directorio SQLite existente
-conserva sus argumentos completos como metadatos: 24 horas, 16 por contexto,
-256 por directorio y 32 KiB por llamada. No contiene páginas de evidencia ni
-forma parte del bundle. Fallos de retención conservan la acción completa.
-
-Resolver antes de autorizar en HTTP, bajo los permisos actuales, y ejecutar esa
-misma petición resuelta. La identidad de guía no sustituye la identidad del
-transporte. Verificar raw, abouts, ámbitos dimensionales, all_abouts y refs en
-el recorrido HTTP real. No ampliar permisos porque se conoce un identificador.
-
-Comprobar replay de una página, progreso al ejecutar su siguiente acción,
-reinicio del proceso, caducidad/cupo, cambios de evidencia y mezcla de argumentos.
-Conservar reloj, propósito, contexto, selección, cursor y aumento de presupuesto.
-Los suelos y mínimos de progreso nativos se calculan antes de abreviar; no
-agrandar el paquete al codificar y recalcular `projection.budget.used_bytes`.
-Medir el recorrido completo y la entrada extra del schema/guía, no sólo el ahorro
-de la petición siguiente. La llamada sin contexto sigue siendo explícita.
-El ejemplo `budget-proof` ejecuta ambos caminos. Son recomendaciones de
-mantenimiento y pruebas de comportamiento; no nuevos gates editoriales.
 
 ### Output schemas bajo demanda
 

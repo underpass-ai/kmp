@@ -76,15 +76,15 @@ fn install_assets_under(root: &Path) {
 }
 
 #[test]
-fn the_launcher_variable_seeds_a_fresh_store_on_the_first_guide_read() {
+fn the_launcher_variable_seeds_a_fresh_store_on_the_first_guide_node_read() {
     let scratch = tempfile::tempdir().expect("scratch");
     let store = scratch.path().join("store");
     let mut first = command(scratch.path(), &store);
     first.env("KMP_PLUGIN_ROOT", plugin_root());
-    let opening = json!({"registration_key":"seed-agent","topic":"write"});
-    let opened = call(first, "kmp_guide", opening.clone());
+    let opening = json!({"about":"guide:kmp-agent","ref":"guide:kmp-agent:overview"});
+    let opened = call(first, "kmp_inspect", opening.clone());
     assert_eq!(opened["isError"], false, "{opened}");
-    assert!(opened["structuredContent"]["card"]["text"].is_string());
+    assert!(opened["structuredContent"]["object"]["text"].is_string());
     let (events, abouts) = exported_events(scratch.path(), &store, "after.jsonl");
     assert_eq!(events, 2);
     assert_eq!(abouts, vec!["guide:kmp", "guide:kmp-agent"]);
@@ -92,11 +92,11 @@ fn the_launcher_variable_seeds_a_fresh_store_on_the_first_guide_read() {
     // Seeded once; the second session reads what is there and writes nothing.
     let mut second = command(scratch.path(), &store);
     second.env("KMP_PLUGIN_ROOT", plugin_root());
-    let again = call(second, "kmp_guide", opening);
+    let again = call(second, "kmp_inspect", opening);
     assert_eq!(again["isError"], false, "{again}");
     assert_eq!(
-        again["structuredContent"]["agent"],
-        opened["structuredContent"]["agent"]
+        again["structuredContent"]["object"],
+        opened["structuredContent"]["object"]
     );
     assert_eq!(exported_events(scratch.path(), &store, "retry.jsonl").0, 2);
 }
@@ -130,8 +130,8 @@ fn the_host_plugin_cache_for_this_version_seeds_without_a_launcher() {
     install_assets_under(&cache);
     let opened = call(
         command(scratch.path(), &store),
-        "kmp_guide",
-        json!({"registration_key":"cache-agent"}),
+        "kmp_inspect",
+        json!({"about":"guide:kmp-agent","ref":"guide:kmp-agent:card:wake"}),
     );
     assert_eq!(opened["isError"], false, "{opened}");
     assert_eq!(exported_events(scratch.path(), &store, "cache.jsonl").0, 2);
@@ -157,8 +157,8 @@ fn without_matching_assets_the_repair_says_where_it_looked_and_writes_nothing() 
     session.env("KMP_PLUGIN_ROOT", &stale);
     let missing = call(
         session,
-        "kmp_guide",
-        json!({"registration_key":"stale-agent","topic":"write"}),
+        "kmp_inspect",
+        json!({"about":"guide:kmp-agent","ref":"guide:kmp-agent:card:write"}),
     );
     assert_eq!(missing["isError"], true, "{missing}");
     let feedback = &missing["structuredContent"]["feedback"][0];

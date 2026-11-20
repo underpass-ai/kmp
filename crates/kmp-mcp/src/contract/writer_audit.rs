@@ -33,7 +33,7 @@ mod tests {
         );
     }
     /// The vocabulary is generated from the writer spec and served by
-    /// `kmp_guide` topic `write`; `tools/list` keeps the doctrine and names
+    /// `kmp_guide` topic `relations`; `tools/list` keeps the doctrine and names
     /// where the vocabulary lives, in both the writer's and the batch surface.
     #[test]
     fn relation_vocabulary_documentation_matches_the_writer_spec() {
@@ -54,7 +54,7 @@ mod tests {
                 "documentation states the anemic-fallback doctrine"
             );
             assert!(
-                doc.contains("kmp_guide topic write"),
+                doc.contains("kmp_guide topic relations"),
                 "documentation names where the vocabulary lives"
             );
         }

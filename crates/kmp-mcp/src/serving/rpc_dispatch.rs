@@ -213,30 +213,18 @@ impl KernelMcpServer {
             Err(error) => return jsonrpc_result(id, tool_error_result(name, arguments, &error)),
         };
         let arguments = resolved.as_ref().unwrap_or(arguments);
-        let guidance = match super::call_guidance::CallGuidance::prepare(self, arguments) {
-            Ok(guidance) => guidance,
-            Err(error) => return jsonrpc_result(id, tool_error_result(name, arguments, &error)),
-        };
-        let memory_arguments = guidance
-            .as_ref()
-            .map(|g| g.memory_arguments(name, arguments));
+        let defaulted = super::default_actor::with_default_actor(name, arguments, session);
         let reply_id = id.clone();
         let result = self
             .dispatch_memory_call(
                 id,
                 name,
-                memory_arguments.as_ref().unwrap_or(arguments),
+                defaulted.as_ref().unwrap_or(arguments),
                 start,
                 &origin,
             )
             .await;
-        let result = match guidance {
-            Some(guidance) => {
-                let result = self.shorten_read_actions(Some(&guidance), result);
-                self.complete_work_guidance(name, arguments, &guidance, result)
-            }
-            None => self.shorten_read_actions(None, result),
-        };
+        let result = self.shorten_read_actions(result);
         if LexicalOrder::of(name) == LexicalOrder::AfterRead
             && !is_tool_error(&result)
             && let Err(error) = reject_invalid_arguments(name, arguments)
@@ -359,6 +347,21 @@ impl KernelMcpServer {
                 jsonrpc_result(id, self.disclose_store(name, result))
             }
             Err(error) => {
+                if let Some(result) =
+                    super::wake_unrecorded::unrecorded_wake(name, arguments, &error)
+                {
+                    record_call_success(
+                        self.call_source(origin, false),
+                        self.backend_name(),
+                        self.grpc_tls_mode_name(),
+                        name,
+                        arguments,
+                        &result,
+                        start.elapsed(),
+                    );
+                    let result = self.disclose_store(name, result);
+                    return jsonrpc_result(id, self.disclose_store_in_text(result));
+                }
                 record_call_error(
                     self.call_source(origin, false),
                     self.backend_name(),

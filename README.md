@@ -274,7 +274,7 @@ agent identity and progressive guidance. `tools/list` is the authority.
 
 | Tool | Purpose |
 |:--|:--|
-| `kmp_guide` | Open a capability map, preserve agent identity and expand one worked card. |
+| `kmp_guide` | Explain one topic: a worked card and the arguments of its tools. |
 | `kmp_wake` | Recover compact state before continuing work. |
 | `kmp_ask` | Retrieve evidence for a semantic question, or `UNKNOWN`. |
 | `kmp_relate` | Read what the memories of several abouts have to do with each other in a span, off the scopes and clocks they share. |

@@ -1070,7 +1070,6 @@ line and only when they apply (an absent field means "does not apply", never zer
 | `client_version` | string | with `client_name` | `clientInfo.version`, ≤ 32 chars (empty when not a string) |
 | `is_continuation` | bool | every tool call | the call pages an earlier one (`continuation` handle or `page.cursor`) instead of starting a new call; always `false` for tools that do not page |
 | `subject_fingerprint` | hex64 | `kmp_ask` (question), `kmp_wake` (intent) | the whole HMAC-SHA256 under the store salt of the question or intent after Unicode NFC, lower case and whitespace collapsed to one space (punctuation kept); a page carries its first call's |
-| `context_fingerprint` | hex64 | any call with a `context_id` (reads and writes) | HMAC-SHA256 of the guidance `context_id` |
 | `answer_status` | `answered`, `partial`, `unknown` | successful `kmp_ask` the anchored gate settled | as returned |
 | `unknown_reason` | enum | with `answer_status = unknown` | as returned (`no_candidates`, `no_bearing`, `out_of_window`, `anchor_absent_in_selection`, `attribute_not_found`) |
 | `confidence` | enum | successful `kmp_ask`, `kmp_wake` with a proof | `proof.confidence` as returned |
@@ -1098,7 +1097,7 @@ carry the same outcome fields, `is_continuation` (`page.cursor` set), `client_na
 session's host; else the `user-agent`), `client_version` (`kmp-client-version`) and
 `subject_fingerprint`, keyed by the server's salt: `KMP_TELEMETRY_SALT_PATH`, else
 `telemetry-salt` in `KMP_DATA_DIR`, else in `$XDG_DATA_HOME/kmp/server` (same creation
-rules). The API has no guidance context, so no `context_fingerprint`.
+rules).
 
 Counting calls: `is_continuation = false` counts calls, `true` counts pages; group by
 `client_name` to separate hosts from the harnesses (`kmp-guide`, `kmp-lifecycle`, the bench).

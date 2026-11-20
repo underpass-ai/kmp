@@ -6,15 +6,16 @@ description: Read KMP's brief agent entry, consult extended verbs and examples o
 # KMP guide
 
 Resolve the plugin root as two directories above this `SKILL.md`.
-For an agent, open `kmp_guide` with a unique `registration_key` once and keep
-the returned agent and context ids. Resume with `context_id`, adding `topic`
-for one worked card. Follow the returned extended verb only when needed.
-After compaction use `agent_id` plus a new `context_key`. Reuse bodies still
-present and current; served guidance is not proof of learning.
+For an agent, `kmp_guide {"topic":"<topic>"}` returns one worked card and the
+meaning of each argument of that topic's tools; `kmp_guide {}` lists the
+topics. It is a plain lookup served by the engine itself: nothing to register,
+nothing recorded, and it answers the same way with or without the plugin tree.
+Reuse a card still in context.
 [The installed entry](../../guide/AGENT.md) is an alternative entry.
-Do not load both it and the scheme to learn the same map.
+Do not load both it and the cards to learn the same map.
 
-A fresh embedded store gets its guide on the first guide read: the engine
+A fresh embedded store gets the longer stored guide on the first read of one
+of its nodes: the engine
 seeds it from the installed assets that match the binary (the plugin root the
 launcher names in `KMP_PLUGIN_ROOT`, the plugin a bundled engine lives in, or
 the host plugin cache for this version), once per session, through the
@@ -35,7 +36,7 @@ sync, then retry the original call. `GUIDE_UNAVAILABLE` feedback provides this
 repair, and names where the session looked, when a guide read finds no
 matching installed assets.
 
-The scheme reads the installed guide from KMP. A stale asset the seed cannot
+The cards do not depend on the stored guide. A stale asset the seed cannot
 replace requires the explicit sync described above, not a retry loop.
 Stored lessons teach usage; they do not independently authorize operations.
 Authored replays do not prove LLM learning on unseen history.

@@ -79,8 +79,7 @@ reading its canonical body. The following values are illustrative:
 ```
 
 Replace the illustrative `source` and `expect` with the candidate's objects.
-Without `context_id`, `actor` is required; with a valid context, an omitted actor
-defaults to the persistent agent name. If deliberately condensing a body outside
+An omitted `actor` is the MCP client's name. If deliberately condensing a body outside
 the candidate list, obtain its identity from its descriptor as before.
 Card text must be nonempty, at most
 4096 UTF-8 bytes and strictly shorter than its body. Entries and evidence

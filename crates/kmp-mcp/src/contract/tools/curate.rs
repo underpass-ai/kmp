@@ -47,7 +47,7 @@ pub(crate) fn curate_schema() -> Value {
                 "reverse": {"type": "boolean", "description": "Declare it from `to` to `from`."},
                 "confirm_doubted": {"type": "boolean", "description": "Write it although Jev doubted it in an earlier apply of these items."}
             }}},
-            "actor": string_schema("apply: writer name; defaults to the persistent agent name when context_id is supplied."),
+            "actor": string_schema("apply: writer name. Omitted: the MCP client name from initialize."),
             "write_review_token": {"type": "string", "description": "apply: the neighbourhood review token a needs_review answer returned; its next action carries it."},
             "idempotency_key": string_schema("apply: logical write identity; a needs_review answer's next action carries the one to reuse.")
         }
