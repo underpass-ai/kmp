@@ -208,6 +208,7 @@ pub(super) async fn run(command: &str, first_argument: Option<&str>, args: &[&st
                                 path,
                                 resolved.path(),
                                 &bundle,
+                                !abouts.is_empty(),
                                 overwrite,
                             )
                     {

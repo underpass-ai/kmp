@@ -162,8 +162,11 @@ fn a_clone_and_a_pull_keep_the_teammate_memory_and_a_divergence_is_told() {
     );
     let warnings = replies[0]["warnings"].to_string();
     assert!(warnings.contains("different histories"), "{warnings}");
-    assert!(warnings.contains("--overwrite-committed"), "{warnings}");
+    assert!(warnings.contains("kmp-mcp doctor"), "{warnings}");
     assert_eq!(replies[1]["status"], "unconfirmed", "{:?}", replies[1]);
+    let refusal = replies[1]["error"]["message"].to_string();
+    assert!(refusal.contains("--overwrite-committed"), "{refusal}");
+    assert!(refusal.contains("mv "), "{refusal}");
     let refused = kmp(&clone, &home, &["export"], "");
     assert_eq!(refused.status.code(), Some(2), "{refused:?}");
     let committed = std::fs::read_to_string(clone.join(".kmp/memory.jsonl")).expect("bundle");

@@ -23,9 +23,11 @@ pub fn diverged_advice(bundle: &Path, data_dir: &Path, relation: &HistoryRelatio
         "the committed memory `{bundle}` ({committed} events) and the live store `{store}` \
          ({live} events) are different histories: they first differ at event {position}, and \
          KMP will not merge two branches. To keep the committed history, move `{store}` aside \
-         (for example `mv {store} {store}.mine`) and reopen: the next session rebuilds the store \
-         from the bundle; bring your own abouts back with `kmp-mcp import --from {store}.mine \
-         --about <about>`. To keep this store's history instead and drop the events only the \
+         (for example `mv {store} {store}.mine`; it stays gitignored) and reopen: the next \
+         session rebuilds the store from the bundle. An about only this store wrote comes back \
+         with `kmp-mcp import --from {store}.mine --about <about>` and then `kmp-mcp export`; \
+         what this store added to an about the bundle also changed cannot be merged and has to \
+         be written again. To keep this store's history instead and drop the events only the \
          bundle holds, run `kmp-mcp export {flag}` and commit the result.",
         bundle = bundle.display(),
         store = data_dir.display(),

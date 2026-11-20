@@ -18,6 +18,7 @@ pub(super) fn refuse_shrinking_committed(
     path: &Path,
     data_dir: &Path,
     exported: &str,
+    subset: bool,
     overwrite: bool,
 ) -> Result<(), String> {
     if overwrite {
@@ -46,6 +47,14 @@ pub(super) fn refuse_shrinking_committed(
         })?;
     let relation = kmp_embedded::compare_bundle_histories(exported, &authored)
         .map_err(|error| format!("export refused; nothing was written. {error}"))?;
+    if subset && !relation.bundle_is_prefix_of_store() {
+        return Err(format!(
+            "export refused; nothing was written. `--about` writes only the named abouts, and \
+             over the committed memory `{}` that would drop the others it holds. Export the \
+             subset to another file, or pass {OVERWRITE_COMMITTED_FLAG} to replace it anyway.",
+            path.display()
+        ));
+    }
     match relation {
         HistoryRelation::Equal { .. } | HistoryRelation::StoreAhead { .. } => Ok(()),
         HistoryRelation::BundleAhead {
@@ -107,15 +116,21 @@ mod tests {
         let file = teammate.path().join("memory.jsonl");
         std::fs::write(&file, &committed).expect("committed");
 
-        let refused = refuse_shrinking_committed(&file, mine.path(), &short, false)
+        let refused = refuse_shrinking_committed(&file, mine.path(), &short, false, false)
             .expect_err("a shrinking export is refused");
         assert!(refused.contains("drop the 1 events"), "{refused}");
         assert!(refused.contains(OVERWRITE_COMMITTED_FLAG), "{refused}");
-        assert!(refuse_shrinking_committed(&file, mine.path(), &short, true).is_ok());
-        assert!(refuse_shrinking_committed(&file, mine.path(), &committed, false).is_ok());
+        assert!(refuse_shrinking_committed(&file, mine.path(), &short, false, true).is_ok());
+        assert!(refuse_shrinking_committed(&file, mine.path(), &committed, false, false).is_ok());
         assert!(
-            refuse_shrinking_committed(&mine.path().join("absent"), mine.path(), &short, false)
-                .is_ok()
+            refuse_shrinking_committed(
+                &mine.path().join("absent"),
+                mine.path(),
+                &short,
+                false,
+                false
+            )
+            .is_ok()
         );
     }
 }

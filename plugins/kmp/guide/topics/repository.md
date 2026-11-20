@@ -19,9 +19,11 @@ event by event:
   is published to the bundle and the marker cleared.
 - **The two diverge** (both sides hold events the other lacks): nothing is
   changed. Reads carry a notice and writes are refused with both ways out:
-  move `.kernel/` aside and reopen to rebuild from the bundle, then bring your
-  own abouts back with `kmp-mcp import --from <moved store> --about <about>`;
-  or keep the store's history with `kmp-mcp export --overwrite-committed`.
+  move `.kernel/` aside and reopen to rebuild from the bundle (an about only
+  your store wrote comes back with `kmp-mcp import --from <moved store>
+  --about <about>` and then `kmp-mcp export`; what you added to an about the
+  bundle also changed cannot be merged and has to be written again); or keep
+  the store's history with `kmp-mcp export --overwrite-committed`.
 
 Do not catch a project store up with one `import --from .kmp/memory.jsonl
 --about` per about: a tail that interleaves several abouts would be appended

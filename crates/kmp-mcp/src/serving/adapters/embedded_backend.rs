@@ -244,11 +244,18 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
 
     fn call_tool<'a>(&'a self, name: &'a str, arguments: &'a Value) -> KernelMcpToolFuture<'a> {
         Box::pin(async move {
+            let writes = writes_memory(name);
+            if !writes && let Some(bundle) = &self.commit_native {
+                self.committed_history.refresh(bundle, self.kernel.store());
+            }
             let outcome = self.dispatch(name, arguments).await;
             // A write the log now holds is followed by the lexical sidecar
             // at once (DESIGN L6); asks follow whatever other writers did.
-            if outcome.is_ok() && writes_memory(name) {
+            if outcome.is_ok() && writes {
                 self.lexical.catch_up(self.kernel.store(), None).await;
+                if let Some(bundle) = &self.commit_native {
+                    self.committed_history.note_published(bundle);
+                }
             }
             outcome.map(|result| self.committed_history.qualify(name, result))
         })

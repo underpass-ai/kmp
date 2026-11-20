@@ -55,8 +55,10 @@ store. Opening the store appends the bundle's tail in the bundle's order;
 there is nothing to run. When the two are different histories, nothing is
 changed: reads carry a notice and writes are refused. Keep the committed
 history by moving `.kernel/` aside and reopening (the store is rebuilt from
-the bundle; bring your own abouts back with `kmp-mcp import --from
-<moved store> --about <about>`), or keep the store's history with
+the bundle; an about only your store wrote comes back with `kmp-mcp import
+--from <moved store> --about <about>` followed by `kmp-mcp export`, while what
+you added to an about the bundle also changed cannot be merged and has to be
+written again), or keep the store's history with
 `kmp-mcp export --overwrite-committed`. `export` refuses to replace a
 committed bundle whose events it would not keep unless that flag is given.
 
