@@ -33,9 +33,17 @@ async fn explicit_older_seed_preserves_newer_dependency_for_each_temporal_verb()
     assert_eq!(goto.entries[0].r#ref, "claim:rachel-denver");
     assert_eq!(goto.dependency_entries.len(), 1);
     assert_eq!(goto.dependency_entries[0].r#ref, "claim:rachel-austin");
-    // Goto bounds proof at 106 and excludes a sequence-only membership.
-    // The other moves have frontier proof unless an interval end is supplied.
-    assert_eq!(goto.dependency_entries[0].coordinates.len(), 2);
+    // Goto bounds proof at 106. The sequence-only membership carries no
+    // time of its own, so it stands where its entry stands (V-01) and is
+    // inside the bound. The other moves have frontier proof unless an
+    // interval end is supplied.
+    assert_eq!(goto.dependency_entries[0].coordinates.len(), 3);
+    assert!(
+        goto.dependency_entries[0]
+            .coordinates
+            .iter()
+            .any(|coordinate| coordinate.dimension == "benchmark_record")
+    );
     let unbounded = service
         .rewind(Request::new(RewindRequest {
             about: request.about.clone(),
