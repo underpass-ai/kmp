@@ -34,7 +34,6 @@ KMP_APP.gestures = (() => {
       const previous = view.windowStack.pop();
       if (previous) viewport().setWindow(previous[0], previous[1], false);
     });
-    $("btn-fit").addEventListener("click", () => { if (view.full) viewport().setWindow(view.full.t0, view.full.t1); });
 
     $("nav-canvas").addEventListener("pointerdown", (event) => {
       if (!view.full) return;
@@ -118,8 +117,11 @@ KMP_APP.gestures = (() => {
 
   function wireKeyboard() {
     addEventListener("keydown", (event) => {
+      // Ctrl+F, Ctrl+plus, Alt+left and the rest belong to the browser.
+      if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return;
       const target = event.target;
       if (target && (target.tagName === "INPUT" || target.tagName === "SELECT" || target.tagName === "TEXTAREA")) return;
+      if (target && (target.isContentEditable || target.closest?.("dialog[open]"))) return;
       if (!view.full) return;
       const span = view.t1 - view.t0;
       if (event.key === "f" || event.key === "F") viewport().setWindow(view.full.t0, view.full.t1);

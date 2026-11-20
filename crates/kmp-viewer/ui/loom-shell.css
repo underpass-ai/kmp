@@ -612,7 +612,8 @@ select {
 
 /* An empty window is a result, not a failure: name what is empty, then say
    which control widens it. Both lines stay in the live region. */
-#scene-empty {
+#scene-empty,
+#scene-unavailable {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -628,13 +629,15 @@ select {
   font-size: var(--fs-body);
   color: var(--text);
 }
-#scene-empty strong {
+#scene-empty strong,
+#scene-unavailable strong {
   display: block;
   font-size: var(--fs-lead);
   font-weight: 500;
   margin-bottom: var(--space-2);
 }
-#scene-empty .hint {
+#scene-empty .hint,
+#scene-unavailable .hint {
   display: block;
   color: var(--muted);
   font-size: var(--fs-compact);
@@ -750,8 +753,28 @@ select {
   font-size: var(--fs-small);
   color: var(--text);
 }
-#error-slot {
+#error-slot,
+#notice-slot {
   font-size: var(--fs-small);
+}
+/* A state that holds until it changes: a partial read, an ended session,
+   no renderer. It sits beside the stats, not in the error colour. */
+#notice-slot {
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#notice-slot:empty {
+  display: none;
+}
+.store-path {
+  color: var(--muted);
+  font-size: var(--fs-micro);
+  max-width: 32ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
 }
 .rel-list p {
   line-height: 1.6;
@@ -1005,63 +1028,15 @@ select {
   font-size: var(--fs-compact);
   white-space: nowrap;
 }
-#agent-guide,
-#guide-next {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 9%, var(--panel));
-  color: var(--text);
-}
 #take-control {
   border-color: var(--teal);
   color: var(--teal);
-}
-.demo-tag {
-  font: var(--fs-micro) var(--mono);
-  color: var(--accent);
-  margin-left: 5px;
-  letter-spacing: 0.8px;
 }
 #connection-status {
   text-align: right;
   color: var(--muted);
   font: var(--fs-micro) var(--mono);
   white-space: nowrap;
-}
-.agent-note {
-  position: absolute;
-  top: var(--space-3);
-  right: var(--space-4);
-  max-width: 360px;
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
-  border-left: 3px solid var(--accent);
-  border-radius: var(--radius-2);
-  background: color-mix(in srgb, var(--panel) 96%, transparent);
-  box-shadow: var(--shadow-2);
-  pointer-events: none;
-  z-index: 3;
-}
-.agent-note-heading {
-  display: flex;
-  gap: var(--space-5);
-  justify-content: space-between;
-  font: var(--fs-micro) var(--mono);
-  letter-spacing: 1px;
-  color: var(--accent);
-  margin-bottom: var(--space-2);
-}
-.agent-note strong {
-  font-weight: 500;
-  font-size: var(--fs-lead);
-}
-.agent-note p {
-  font-size: var(--fs-compact);
-  line-height: 1.6;
-  margin: var(--space-1) 0 var(--space-2);
-}
-.agent-note-hint {
-  font-size: var(--fs-micro);
-  color: var(--muted);
 }
 /* The strip sheds context before it sheds identity, and identity before it
    sheds the way back. Nothing here hides a control; only its prose. */
@@ -1109,11 +1084,6 @@ select {
   }
   .control-participants {
     display: none;
-  }
-  .agent-note {
-    right: var(--space-3);
-    top: var(--space-2);
-    max-width: 245px;
   }
 }
 

@@ -65,7 +65,22 @@ KMP_APP.sync = (() => {
         // which means the view server restarted and began counting again.
         // Waiting only for a higher number left the browser deaf for good.
         if (state.view_revision !== sync.revision) await adoptAgentState(state);
+        KMP_APP.dom.setNotice("connection", "");
       } catch (error) {
+        // An ended session never comes back under this capability: stop
+        // asking (the API port has said so on the page).
+        if (error.status === 401) {
+          sync.polling = false;
+          KMP_APP.dom.setNotice("connection", "");
+          return;
+        }
+        // A stopped server may come back; until it does the page says the
+        // memory on screen is not live.
+        KMP_APP.dom.setNotice(
+          "connection",
+          "Lost contact with this session's viewer; what is on screen may be stale. Retrying",
+        );
+        KMP_APP.control.unavailable();
         await new Promise((resolve) => setTimeout(resolve, 2000));
       }
     }

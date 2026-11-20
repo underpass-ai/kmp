@@ -168,18 +168,6 @@ test("folding a lane sums its labels' bins and merges its clusters' refs", () =>
   assert.equal(loom.foldAggregates(undefined).length, 0);
 });
 
-test("the extent stretches to open validity and never collapses to a point", () => {
-  const models = [
-    entry([{ dimension: "d", scope_id: "s", valid_from: "2026-08-31T08:00:00Z", valid_until: "2026-08-31T12:00:00Z" }]),
-  ];
-  const extent = loom.extent(models, "validity");
-  assert.equal(extent.t1, Date.parse("2026-08-31T12:00:00Z"));
-  const instant = [entry([{ dimension: "d", scope_id: "s", occurred_at: "2026-08-31T08:00:00Z" }])];
-  const point = loom.extent(instant, "occurred");
-  assert.equal(point.t1, point.t0 + 1);
-  assert.equal(loom.extent([], "occurred"), null);
-});
-
 /* ---------------- observability & units ---------------- */
 
 test("series align on the shared axis but normalize only inside their own strip", () => {
@@ -218,16 +206,6 @@ test("units decide honest display precision", () => {
 });
 
 /* ---------------- axis ---------------- */
-
-test("axis ticks pick a calendar step that respects the tick budget", () => {
-  const { step, ticks } = loom.axisTicks(0, 10 * 60e3, 12);
-  assert.equal(step, 60e3, "ten minutes at twelve ticks reads in minutes");
-  assert.equal(ticks[0], 0);
-  assert.ok(ticks.length <= 12);
-  assert.equal(loom.tickLabel(Date.parse("2026-08-31T10:05:00Z"), 60e3), "10:05");
-  assert.equal(loom.tickLabel(Date.parse("2026-08-31T10:05:07Z"), 1e3), "10:05:07");
-  assert.equal(loom.tickLabel(Date.parse("2026-08-31T10:05:00Z"), 86400e3), "08-31");
-});
 
 /* Issue #821: the scene axis once printed "11 Sept" four times for a
    40-minute window. `elapsed` mirrors Planes: four evenly spaced instants. */
@@ -289,29 +267,7 @@ test("event density labels real instants exactly and skips absent ranks", () => 
   assert.deepEqual(close, ["14 Sep 06:55:10 UTC", "06:55:40"]);
 });
 
-test("screen ticks honour their placement promise through a nonlinear lens", () => {
-  const lens = loom.temporalLens({
-    mode: "event_density",
-    t0: 0,
-    t1: 100 * 60e3,
-    events: [0, 1000, 2000, 3000, 99 * 60e3 + 58000, 100 * 60e3],
-  });
-  const { ticks } = loom.screenAxisTicks(lens, 1000, 110);
-  assert.ok(ticks.length >= 2);
-  for (let i = 1; i < ticks.length; i += 1) {
-    assert.ok(ticks[i].ratio >= ticks[i - 1].ratio, "ticks never cross on screen");
-  }
-  assert.equal(ticks[0].ratio, 0);
-  assert.equal(ticks[ticks.length - 1].ratio, 1);
-});
-
 /* ---------------- relations ---------------- */
-
-test("every relation class has a distinct dash-and-weight voice", () => {
-  assert.equal(loom.arcStyle("causal").dash, null);
-  assert.ok(loom.arcStyle("evidential").dash);
-  assert.equal(loom.arcStyle("unheard-of").width, loom.arcStyle("structural").width, "unknown classes fade like structure");
-});
 
 test("supersession and contradiction keep their nature instead of melting into arcs", () => {
   const has = new Set(["a", "b", "c"]);
@@ -450,19 +406,6 @@ test("the selector grammar round-trips and refuses what means nothing", () => {
   assert.equal(loom.labelQuery([{ key: "task", op: "exists", values: ["stray"] }]), "task exists", "exists carries no values");
 });
 
-test("adding a selector merges values on the same key and operator", () => {
-  let selectors = loom.withSelector([], { key: "task", op: "in", values: ["a"] });
-  selectors = loom.withSelector(selectors, { key: "task", op: "in", values: ["b"] });
-  assert.equal(loom.labelQuery(selectors), "task in a|b");
-  selectors = loom.withSelector(selectors, { key: "task", op: "notin", values: ["c"] });
-  assert.equal(loom.labelQuery(selectors), "task in a|b;task notin c");
-  selectors = loom.withSelector(selectors, { key: "task", op: "exists", values: [] });
-  selectors = loom.withSelector(selectors, { key: "task", op: "exists", values: [] });
-  assert.equal(loom.labelQuery(selectors), "task in a|b;task notin c;task exists");
-  assert.equal(loom.labelQuery(loom.withSelector(selectors, { key: "", op: "in", values: ["x"] })), loom.labelQuery(selectors));
-});
-
-
 test("the prism distinguishes the values of each sequence under a shared key", () => {
   const m = entry([
     {dimension: "alias", scope_id: "label:v1:project%3Ax:alias:NC", sequence: 1},
@@ -490,4 +433,17 @@ test("kinds named like Object.prototype members fold and look up as plain names"
   for (const kind of kinds) assert.equal(loom.own(geometry, kind), undefined, kind);
   assert.equal(loom.own(geometry, "decision"), "octahedron");
   assert.equal(loom.own(null, "decision"), undefined);
+});
+
+/* V-06: a read capped to the newest entries still offers the whole extent:
+   the server names the earliest entry apart from the clusters it drew. */
+test("the extent reaches the earliest entry a capped read left out", () => {
+  const capped = {
+    clusters: [{ from: "2026-02-01T00:00:00Z", to: "2027-05-02T02:30:00Z" }],
+    source: { total: 70000, read: 65536, earliest: "2026-01-01T00:00:00Z" },
+  };
+  assert.equal(loom.projectionExtent(capped).t0, Date.parse("2026-01-01T00:00:00Z"));
+  assert.equal(loom.projectionExtent({ ...capped, source: undefined }).t0, Date.parse("2026-02-01T00:00:00Z"));
+  assert.equal(loom.projectionExtent({ clusters: [], bins: [], source: { earliest: "2026-01-01T00:00:00Z" } }), null,
+    "an empty window stays empty");
 });

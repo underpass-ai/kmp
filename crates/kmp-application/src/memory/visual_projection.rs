@@ -173,6 +173,22 @@ pub struct VisualProjectionPage {
     pub next_cursor: Option<String>,
 }
 
+/// What the projection read from, independent of the range it shows. A
+/// projection reads at most [`MAX_VISUAL_SOURCE_ENTRIES`] entries, the newest
+/// up to the range's end; these say how many there were and where the oldest
+/// stands, so a renderer can offer the whole extent and say what it left out.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct VisualSource {
+    /// Entries on this clock, up to the range's end, that the selection
+    /// matches.
+    pub total: usize,
+    /// How many of them, newest first, the projection read.
+    pub read: usize,
+    /// The earliest position on this clock among all `total` entries, also
+    /// when the read left that entry out.
+    pub earliest: Option<String>,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct VisualProjectionResult {
     pub contract: String,
@@ -198,6 +214,7 @@ pub struct VisualProjectionResult {
     pub revision: u64,
     pub content_hash: String,
     pub page: VisualProjectionPage,
+    pub source: VisualSource,
     pub truncated: bool,
     pub missing: Vec<String>,
 }
@@ -361,6 +378,13 @@ pub fn build_visual_projection(
     let relation_count = relations.len();
     let source_truncated = temporal.traversal.page().has_more();
     let missing = visual_missing(source_truncated, missing_axis_entries);
+    // Without a cut, the read holds every entry up to the range's end, so
+    // its earliest is the earliest; with one, the caller finds it apart.
+    let source = VisualSource {
+        total: temporal.traversal.page().total(),
+        read: temporal.traversal.page().returned(),
+        earliest: earliest_entry_position(&temporal.traversal, query.axis),
+    };
 
     Ok(VisualProjectionResult {
         contract: "kmp.visual.projection.v1".to_string(),
@@ -413,6 +437,7 @@ pub fn build_visual_projection(
             has_more,
             next_cursor,
         },
+        source,
         truncated: source_truncated || has_more,
         missing,
     })
@@ -644,6 +669,23 @@ pub(super) fn include_owned_declarations(
             _ => {}
         }
     }
+}
+
+/// The earliest position on `axis` among a traversal's entries, as stored.
+pub(super) fn earliest_entry_position(
+    traversal: &kmp_domain::TemporalTraversalResult,
+    axis: TemporalAxis,
+) -> Option<String> {
+    traversal
+        .entries()
+        .iter()
+        .flat_map(|entry| entry.coordinates())
+        .filter_map(|coordinate| {
+            let value = axis_time(coordinate, axis)?;
+            Some((timestamp_nanos(value)?, value))
+        })
+        .min_by_key(|(position, _)| *position)
+        .map(|(_, value)| value.to_string())
 }
 
 fn axis_time(coordinate: &TemporalCoordinate, axis: TemporalAxis) -> Option<&str> {
@@ -910,6 +952,61 @@ mod tests {
             vec!["visual_source_entries", "temporal_positions"]
         );
         assert_eq!(visual_missing(false, 0), Vec::<String>::new());
+    }
+
+    /// V-06: a read capped to the newest entries still finds the oldest
+    /// one, by one forward step from before any time the kernel holds.
+    #[test]
+    fn the_earliest_entry_is_found_past_a_capped_read() {
+        let node =
+            |id: &str| BundleNode::new(id, "memory", id, id, "ACTIVE", vec![], BTreeMap::new());
+        let edge = |id: &str, occurred: &str| {
+            let explanation = RelationExplanation::new(RelationSemanticClass::Structural)
+                .with_dimension("lane")
+                .with_scope_id("scope")
+                .with_occurred_at(occurred);
+            BundleRelationship::new("scope", id, "contains_entry", explanation)
+        };
+        let bundle = KmpBundle::new(
+            CaseId::new("about").expect("about"),
+            Role::new("memory").expect("role"),
+            node("about"),
+            vec![node("scope"), node("old"), node("middle"), node("new")],
+            vec![
+                edge("old", "2026-01-01T00:00:00Z"),
+                edge("middle", "2026-05-01T00:00:00Z"),
+                edge("new", "2026-08-01T00:00:00Z"),
+            ],
+            vec![],
+            BundleMetadata::initial("visual-test"),
+        )
+        .expect("bundle");
+        let capped = TemporalTraversalRequest::new(
+            TemporalDirection::Goto,
+            TemporalCursor::time("2026-09-01T00:00:00Z").expect("cursor"),
+        )
+        .with_axis(TemporalAxis::Occurred)
+        .with_limit_entries(1)
+        .expect("limit");
+        let read = TemporalMemoryTraversal::traverse(&bundle, &capped).expect("capped read");
+        assert_eq!((read.page().returned(), read.page().total()), (1, 3));
+        assert_eq!(
+            earliest_entry_position(&read, TemporalAxis::Occurred).as_deref(),
+            Some("2026-08-01T00:00:00Z"),
+            "the capped read only holds the newest"
+        );
+        let forward = TemporalTraversalRequest::new(
+            TemporalDirection::Forward,
+            TemporalCursor::time("0000-01-01T00:00:00Z").expect("cursor"),
+        )
+        .with_axis(TemporalAxis::Occurred)
+        .with_limit_entries(1)
+        .expect("limit");
+        let first = TemporalMemoryTraversal::traverse(&bundle, &forward).expect("forward step");
+        assert_eq!(
+            earliest_entry_position(&first, TemporalAxis::Occurred).as_deref(),
+            Some("2026-01-01T00:00:00Z")
+        );
     }
 
     #[test]

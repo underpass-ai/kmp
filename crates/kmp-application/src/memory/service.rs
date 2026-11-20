@@ -667,8 +667,13 @@ where
         } else {
             Vec::new()
         };
-        let temporal = temporal_result(temporal_query, read)?;
+        let temporal = temporal_result(temporal_query.clone(), &read)?;
         let mut projection = build_visual_projection(&query, temporal, catalogue)?;
+        if projection.source.read < projection.source.total {
+            // The read kept the newest entries; the oldest is found apart,
+            // by one forward step from before any time the kernel holds.
+            projection.source.earliest = earliest_visual_position(&temporal_query, &read)?;
+        }
         super::visual_projection::include_owned_declarations(&mut projection, declarations);
         if let Some(identity) = identity
             && let Ok(mut cache) = self.visual_projection_cache.lock()
@@ -1180,17 +1185,17 @@ struct TemporalRead {
 /// Narrows the read to its selection and traverses it.
 fn temporal_result(
     query: TemporalMemoryQuery,
-    read: TemporalRead,
+    read: &TemporalRead,
 ) -> Result<TemporalMemoryResult, ApplicationError> {
     let TemporalRead { bundle, dimensions } = read;
 
-    let request = temporal_request(&query, &dimensions)?;
+    let request = temporal_request(&query, dimensions)?;
 
-    let traversal = TemporalMemoryTraversal::traverse(&bundle, &request)?;
+    let traversal = TemporalMemoryTraversal::traverse(bundle, &request)?;
     let source_bundle = filter_bundle_by_memory_dimensions_with_labels(
-        &bundle,
-        &dimensions,
-        &traversal.proof_labels(&bundle)?,
+        bundle,
+        dimensions,
+        &traversal.proof_labels(bundle)?,
     )?;
     Ok(TemporalMemoryResult {
         traversal,
@@ -1198,6 +1203,29 @@ fn temporal_result(
         include: query.include,
     })
 }
+
+/// The earliest position on the query's clock among the entries its
+/// selection matches: the first entry one forward step from before any time
+/// the kernel holds.
+fn earliest_visual_position(
+    query: &TemporalMemoryQuery,
+    read: &TemporalRead,
+) -> Result<Option<String>, ApplicationError> {
+    let earliest = TemporalMemoryQuery {
+        direction: kmp_domain::TemporalDirection::Forward,
+        cursor: Some(kmp_domain::TemporalCursor::time(EARLIEST_TIME_CURSOR)?),
+        limit_entries: Some(1),
+        ..query.clone()
+    };
+    let request = temporal_request(&earliest, &read.dimensions)?;
+    let traversal = TemporalMemoryTraversal::traverse(&read.bundle, &request)?;
+    Ok(super::visual_projection::earliest_entry_position(
+        &traversal, query.axis,
+    ))
+}
+
+/// Before any time a timestamp can name.
+const EARLIEST_TIME_CURSOR: &str = "0000-01-01T00:00:00Z";
 
 fn temporal_request(
     query: &TemporalMemoryQuery,
