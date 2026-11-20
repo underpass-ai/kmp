@@ -255,7 +255,7 @@ impl LifecycleRescue<'_> {
     }
 
     fn stands(&self, node: &str) -> bool {
-        !self.context.lifecycle.is_superseded(node) && !self.context.lifecycle.is_expired(node)
+        self.context.lifecycle.stands(node)
     }
 
     /// Marks a rescued memory with its route. Every page may repeat the

@@ -2328,7 +2328,7 @@ async fn view_intents_resolve_label_selectors_against_the_catalogue() {
         .await
         .expect("responds");
     assert!(
-        shapeless.contains("is not a label operator"),
+        shapeless.contains("must be one of `in`, `notin`, `exists`, `notexists`"),
         "an operator outside the vocabulary is refused: {shapeless}"
     );
 }

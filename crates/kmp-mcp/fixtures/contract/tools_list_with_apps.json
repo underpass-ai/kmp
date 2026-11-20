@@ -11,7 +11,11 @@
       },
       {
         "code": "conflict",
-        "means": "the operation conflicted with current state; follow the message — a retryable write conflict is safely replayed with the same idempotency key, while a key already accepted with different content must not be reused"
+        "means": "the operation conflicted with current state; follow the message and do not replay it unchanged — a key already accepted with different content must not be reused"
+      },
+      {
+        "code": "retryable_conflict",
+        "means": "the store moved while this write was prepared and nothing was applied; the server retried it already, and replaying the same call with the same idempotency key is safe"
       },
       {
         "code": "unavailable",
@@ -74,7 +78,7 @@
             "type": "string"
           },
           "memory": {
-            "additionalProperties": true,
+            "additionalProperties": false,
             "if": {
               "properties": {
                 "entries": {
@@ -85,7 +89,7 @@
             "properties": {
               "dimensions": {
                 "items": {
-                  "additionalProperties": true,
+                  "additionalProperties": false,
                   "properties": {
                     "id": {
                       "type": "string"
@@ -113,11 +117,11 @@
               },
               "entries": {
                 "items": {
-                  "additionalProperties": true,
+                  "additionalProperties": false,
                   "properties": {
                     "coordinates": {
                       "items": {
-                        "additionalProperties": true,
+                        "additionalProperties": false,
                         "properties": {
                           "dimension": {
                             "type": "string"
@@ -200,7 +204,7 @@
               },
               "evidence": {
                 "items": {
-                  "additionalProperties": true,
+                  "additionalProperties": false,
                   "properties": {
                     "id": {
                       "type": "string"
@@ -249,7 +253,7 @@
               },
               "relations": {
                 "items": {
-                  "additionalProperties": true,
+                  "additionalProperties": false,
                   "properties": {
                     "caused_by_node_id": {
                       "type": "string"
@@ -296,7 +300,7 @@
                       "type": "string"
                     },
                     "coordinate": {
-                      "additionalProperties": true,
+                      "additionalProperties": false,
                       "properties": {
                         "dimension": {
                           "type": "string"

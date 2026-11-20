@@ -26,7 +26,7 @@ pub(crate) fn definition() -> Value {
                 "default_observation_to_ingestion": json!({"type":"boolean","default":false,"description":"Semantic-writer policy: fill missing observations on new coordinates, source times, packet provenance and explicit proof clock objects using exact kernel ingestion. Preserve supplied observations and restored clocks. Absent relation/support clock objects inherit packet observation. Ordinary canonical ingest preserves unknown entry clocks."}),
                 "memory": {
                     "type": "object",
-                    "additionalProperties": true,
+                    "additionalProperties": false,
                     "required": ["dimensions", "entries"],
                     "if":{"properties":{"entries":{"maxItems":0}}},
                     "then":{"required":["relations"],"properties":{"relations":{"minItems":1}}},
@@ -36,7 +36,7 @@ pub(crate) fn definition() -> Value {
                             "description": "Declare new dimensions, or leave empty when the about already holds the required dimensions.",
                             "items": {
                                 "type": "object",
-                                "additionalProperties": true,
+                                "additionalProperties": false,
                                 "required": ["id", "kind"],
                                 "properties": {
                                     "id": string_schema("Dimension scope id."),
@@ -51,7 +51,7 @@ pub(crate) fn definition() -> Value {
                             "description": "Entries this command creates or replaces. Leave empty to attach relations and evidence to existing refs without rewriting them.",
                             "items": {
                                 "type": "object",
-                                "additionalProperties": true,
+                                "additionalProperties": false,
                                 "required": ["id", "kind", "text", "coordinates"],
                                 "properties": {
                                     "id": string_schema("Memory entry id. Must be a safe descendant of the exact about, beginning with `<about>:`; the about anchor and refs owned by another about are refused."),
@@ -79,7 +79,7 @@ pub(crate) fn definition() -> Value {
                             "type": "array",
                             "items": {
                                 "type": "object",
-                                "additionalProperties": true,
+                                "additionalProperties": false,
                                 "required": ["from", "to", "rel", "class"],
                                 "properties": {
                                     "from": string_schema("Source ref owned by the exact about, its anchor, or a declared dimension id."),
@@ -117,7 +117,7 @@ pub(crate) fn definition() -> Value {
                             "type": "array",
                             "items": {
                                 "type": "object",
-                                "additionalProperties": true,
+                                "additionalProperties": false,
                                 "required": ["id", "text"],
                                 "properties": {
                                     "id": string_schema("Evidence id. Must begin with `evidence:<about>:` so it cannot overwrite evidence owned by another about."),

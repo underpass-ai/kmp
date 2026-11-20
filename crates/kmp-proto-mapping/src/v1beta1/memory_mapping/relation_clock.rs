@@ -20,15 +20,7 @@ pub struct RelationClock {
 impl RelationClock {
     pub fn of(explanation: &RelationExplanation) -> Self {
         Self {
-            latest: [
-                instant(explanation.occurred_at()),
-                instant(explanation.observed_at()),
-                instant(explanation.ingested_at()),
-                instant(explanation.valid_from()),
-            ]
-            .into_iter()
-            .flatten()
-            .max(),
+            latest: present_of(explanation),
             valid_until: explanation.valid_until().map(str::to_string),
             sequence: explanation.sequence(),
         }
@@ -38,6 +30,23 @@ impl RelationClock {
     pub fn valid_until_instant(&self) -> Option<(i64, i32)> {
         instant(self.valid_until.as_deref())
     }
+}
+
+/// What one relation says about the store's present: when it was observed or
+/// recorded. Never `valid_from`, and `occurred_at` only when the relation
+/// carries neither: both may name the future — a rota that starts next year,
+/// a planned event — and one memory dated ahead used to move the whole
+/// about's "now" forward and serve the memory in force as expired (B4 of the
+/// 1.0 review). The scan path and the lexical sidecar both read it here.
+pub(super) fn present_of(explanation: &RelationExplanation) -> Option<(i64, i32)> {
+    [
+        instant(explanation.observed_at()),
+        instant(explanation.ingested_at()),
+    ]
+    .into_iter()
+    .flatten()
+    .max()
+    .or_else(|| instant(explanation.occurred_at()))
 }
 
 fn instant(value: Option<&str>) -> Option<(i64, i32)> {
@@ -63,6 +72,22 @@ mod tests {
             clock.valid_until_instant(),
             instant(Some("2026-09-01T11:00:00Z"))
         );
+        let ahead = RelationClock::of(
+            &RelationExplanation::new(RelationSemanticClass::Structural)
+                .with_observed_at("2026-11-01T10:00:00Z")
+                .with_valid_from("2027-01-01T00:00:00Z")
+                .with_occurred_at("2027-02-01T00:00:00Z"),
+        );
+        assert_eq!(
+            ahead.latest,
+            instant(Some("2026-11-01T10:00:00Z")),
+            "neither a future validity nor a planned occurrence is the present"
+        );
+        let occurred_only = RelationClock::of(
+            &RelationExplanation::new(RelationSemanticClass::Structural)
+                .with_occurred_at("2026-05-01T00:00:00Z"),
+        );
+        assert_eq!(occurred_only.latest, instant(Some("2026-05-01T00:00:00Z")));
         let bare = RelationClock::of(&RelationExplanation::new(RelationSemanticClass::Structural));
         assert_eq!(bare, RelationClock::default());
         assert_eq!(bare.valid_until_instant(), None);

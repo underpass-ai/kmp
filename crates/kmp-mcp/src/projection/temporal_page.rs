@@ -75,7 +75,12 @@ impl TemporalPage {
             // never an unchanged zero-progress cursor loop.
             let required = plan.minimum_progress_bytes(offset);
             let mut retry = plan.page_action(offset);
-            retry["arguments"]["budget"]["max_bytes"] = json!(required);
+            super::argument_slot::set_nested(
+                &mut retry["arguments"],
+                "budget",
+                "max_bytes",
+                json!(required),
+            );
             page["next_actions"] = json!([retry]);
             page["page"]["minimum_progress_bytes"] = json!(required);
             page["warnings"].as_array_mut().expect("warnings").push(json!(format!(
@@ -203,7 +208,12 @@ impl TemporalPage {
         let mut retry = self.clone();
         let mut required = serialized_len(&retry.render(offset, 1));
         loop {
-            retry.arguments["budget"]["max_bytes"] = json!(required);
+            super::argument_slot::set_nested(
+                &mut retry.arguments,
+                "budget",
+                "max_bytes",
+                json!(required),
+            );
             let measured = serialized_len(&retry.render(offset, 1));
             if measured <= required {
                 return required;
@@ -214,7 +224,12 @@ impl TemporalPage {
 
     fn page_action(&self, offset: usize) -> Value {
         let mut arguments = self.arguments.clone();
-        arguments["page"]["cursor"] = json!(format!("{CURSOR_VERSION}:{offset}:{}", self.hash));
+        super::argument_slot::set_nested(
+            &mut arguments,
+            "page",
+            "cursor",
+            json!(format!("{CURSOR_VERSION}:{offset}:{}", self.hash)),
+        );
         self.movement.action(arguments)
     }
 

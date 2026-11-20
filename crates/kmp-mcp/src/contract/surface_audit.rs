@@ -21,7 +21,7 @@ mod tests {
     use serde_json::json;
 
     #[test]
-    fn former_tool_names_resolve_to_the_advertised_kmp_surface() {
+    fn former_tool_names_are_no_longer_callable() {
         let former = [
             "kernel_ingest",
             "kernel_write_memory",
@@ -38,14 +38,17 @@ mod tests {
             .map(|tool| tool["name"].as_str().expect("tool name"))
             .collect::<Vec<_>>();
 
-        // Every former name still resolves to something this surface
-        // advertises. It is not an equality: the view tools were born with
-        // their kmp_ names and never had a kernel_ one to rename.
-        for name in former.map(canonical_tool_name) {
-            assert!(
-                current.contains(&name),
-                "former name resolves to `{name}`, which the surface no longer advertises"
-            );
+        // The migration release is over (E10 of the 1.0 review): a name
+        // tools/list does not carry is not callable, the two that never had
+        // a schema included.
+        for name in former
+            .into_iter()
+            .chain(["kernel_remember", "kernel_ingest_context"])
+        {
+            assert!(!current.contains(&name));
+            let error = crate::contract::reject_invalid_arguments(name, &json!({"about": "a:b"}))
+                .expect_err("an unlisted name is refused");
+            assert_eq!(error.code, ToolErrorCode::UnknownTool, "{name}");
         }
         assert!(current.iter().all(|name| name.starts_with("kmp_")));
     }

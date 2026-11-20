@@ -320,11 +320,12 @@ return `needs_review`; resume after reviewing. Independent observations stay one
 The relation guide documents explicit previews and validation before commit.
 
 Use one `idempotency_key` per logical write. Replaying the same accepted write
-returns its success rather than duplicating memory. A `conflict` can also mean
-the store advanced before this attempt committed: follow the error message,
-rebase, and retry the same logical write with the same key when it says the
-conflict is retryable. A key already accepted with different content must not
-be reused.
+returns its success rather than duplicating memory. When the store advances
+before a write commits, the server plans and commits it again itself; only if
+every attempt lost does the call answer `retryable_conflict`, and replaying the
+same logical write with the same key is then safe. `conflict` means do not
+replay unchanged: a key already accepted with different content must not be
+reused.
 
 For a relation, read `guide:kmp-agent:advanced:relations`. For event and observation timestamps read `guide:kmp-agent:verb:time`; for English search summaries read `guide:kmp-agent:advanced:summary`. Read the lifecycle and cross-about topics when the write uses those features. These are exact refs in `guide:kmp-agent`; reuse bodies already in context.
 

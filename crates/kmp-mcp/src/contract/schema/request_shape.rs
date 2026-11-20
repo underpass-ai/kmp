@@ -75,7 +75,7 @@ pub(crate) fn label_selector_schema() -> Value {
 pub(crate) fn temporal_coordinate_schema() -> Value {
     json!({
         "type": "object",
-        "additionalProperties": true,
+        "additionalProperties": false,
         "required": ["dimension", "scope_id"],
         "properties": {
             "dimension": string_schema("Dimension kind for this coordinate."),

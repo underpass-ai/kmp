@@ -70,7 +70,7 @@ impl LifecycleAnchors {
         links: &BundleLifecycleLinks,
         lifecycle: &MemoryLifecycle,
     ) -> BTreeMap<String, (String, &'static str)> {
-        let stands = |node: &str| !lifecycle.is_superseded(node) && !lifecycle.is_expired(node);
+        let stands = |node: &str| lifecycle.stands(node);
         let mut heads = BTreeMap::new();
         for (from, named) in &self.named_by {
             if !named.contains(principal) || stands(from) {

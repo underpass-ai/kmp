@@ -885,6 +885,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
             .collect::<BTreeSet<_>>();
         let mut blocked = self.context.lifecycle.superseded_refs().clone();
         blocked.extend(self.context.lifecycle.expired_refs().cloned());
+        blocked.extend(self.context.lifecycle.pending_refs().cloned());
         let equivalents = self.context.reach_graph.equivalents_of(&seeds, &blocked);
         if equivalents.is_empty() {
             return (Vec::new(), rejected);
@@ -1036,6 +1037,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
         // edge pointing at them.
         let mut blocked = self.context.lifecycle.superseded_refs().clone();
         blocked.extend(self.context.lifecycle.expired_refs().cloned());
+        blocked.extend(self.context.lifecycle.pending_refs().cloned());
         blocked.extend(seeds.iter().cloned());
 
         let reached =

@@ -50,7 +50,9 @@ impl AnswerCandidate {
         // question that asks about history is asking for exactly them.
         if matches!(
             context.temporal_state(&item),
-            CandidateTemporalState::Superseded | CandidateTemporalState::Expired
+            CandidateTemporalState::Superseded
+                | CandidateTemporalState::Expired
+                | CandidateTemporalState::NotYetInForce
         ) && !query_requests_lifecycle(question_terms, &context.morphology)
         {
             return Err(Box::new((item, terms)));

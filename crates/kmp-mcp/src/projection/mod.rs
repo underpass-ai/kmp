@@ -2,6 +2,7 @@
 //! reads, held to the byte ceilings the surface publishes. One mapper per
 //! response family; the budgets trim after the mapper has spoken.
 
+mod argument_slot;
 pub(crate) mod condense_projection;
 pub(crate) mod ingest_projection;
 pub(crate) mod inspect_budget;

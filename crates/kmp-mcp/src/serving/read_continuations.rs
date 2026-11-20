@@ -48,9 +48,7 @@ impl KernelMcpServer {
         if request["method"] != "tools/call" {
             return Ok(request);
         }
-        let name = crate::contract::canonical_tool_name(
-            request["params"]["name"].as_str().unwrap_or_default(),
-        );
+        let name = request["params"]["name"].as_str().unwrap_or_default();
         if let Some(arguments) =
             self.resolve_read_arguments(name, &request["params"]["arguments"])?
         {
@@ -90,7 +88,7 @@ impl KernelMcpServer {
                 "continuation belongs to a different verb; copy the returned action",
             ));
         }
-        crate::contract::reject_unknown_arguments(name, &call.arguments)?;
+        crate::contract::reject_invalid_arguments(name, &call.arguments)?;
         alongside.check_bound(&call.arguments)?;
         let mut arguments = call.arguments;
         if alongside.repeat_core {

@@ -4,6 +4,7 @@ use kmp_domain::{KmpBundle, TemporalAxis, TemporalCoordinate};
 use kmp_proto::v1beta1::ExpiredMemory;
 use prost_types::Timestamp;
 
+use super::relation_clock::present_of;
 use super::scalars::timestamp_from_sort_or_rfc3339;
 use super::temporal_admission::{LifecycleInstant, clock_instant};
 
@@ -29,6 +30,11 @@ pub(super) struct MemoryLifecycle {
     frontier: Option<(i64, i32)>,
     expired: BTreeMap<String, Option<Timestamp>>,
     superseded: BTreeSet<String>,
+    /// When each entry comes into force, from its `valid_from`.
+    starts: BTreeMap<String, (i64, i32)>,
+    /// Entries whose `valid_from` is still ahead of the instant this reads
+    /// at: recorded, but not yet in force.
+    pending: BTreeSet<String>,
     /// Whether the caller named the instant this was read at (`as_of`, an
     /// interval): a question standing in the past asks about history.
     at_an_instant: bool,
@@ -39,17 +45,9 @@ impl MemoryLifecycle {
         let frontier = bundle
             .relationships()
             .iter()
-            .flat_map(|relationship| {
-                let explanation = relationship.explanation();
-                [
-                    instant(explanation.occurred_at()),
-                    instant(explanation.observed_at()),
-                    instant(explanation.ingested_at()),
-                    instant(explanation.valid_from()),
-                ]
-            })
-            .flatten()
+            .filter_map(|relationship| present_of(relationship.explanation()))
             .max();
+        let starts = starts_of(bundle);
 
         let superseded = bundle
             .relationships()
@@ -78,10 +76,13 @@ impl MemoryLifecycle {
             })
             .unwrap_or_default();
 
+        let pending = pending_at(&starts, frontier, |start, frontier| start > frontier);
         Self {
             frontier,
             expired,
             superseded,
+            starts,
+            pending,
             at_an_instant: false,
         }
     }
@@ -96,6 +97,9 @@ impl MemoryLifecycle {
     ) -> Self {
         self.frontier = indexed.frontier();
         self.expired = indexed.expired();
+        self.pending = pending_at(&self.starts, self.frontier, |start, frontier| {
+            start > frontier
+        });
         self
     }
 
@@ -173,10 +177,14 @@ impl MemoryLifecycle {
             })
             .collect();
 
+        let starts = starts_of(bundle);
+        let pending = pending_at(&starts, Some(at), |start, _| !already(start));
         Self {
             frontier: Some(at),
             expired,
             superseded,
+            starts,
+            pending,
             at_an_instant: true,
         }
     }
@@ -200,6 +208,22 @@ impl MemoryLifecycle {
 
     pub(super) fn expired_refs(&self) -> impl Iterator<Item = &String> {
         self.expired.keys()
+    }
+
+    /// Recorded, but its `valid_from` is still ahead: not yet in force.
+    pub(super) fn is_pending(&self, memory_ref: &str) -> bool {
+        self.pending.contains(memory_ref)
+    }
+
+    pub(super) fn pending_refs(&self) -> impl Iterator<Item = &String> {
+        self.pending.iter()
+    }
+
+    /// Neither replaced, nor run out, nor still to come: current advice.
+    pub(super) fn stands(&self, memory_ref: &str) -> bool {
+        !self.is_superseded(memory_ref)
+            && !self.is_expired(memory_ref)
+            && !self.is_pending(memory_ref)
     }
 
     pub(super) fn superseded_refs(&self) -> &BTreeSet<String> {
@@ -244,6 +268,41 @@ impl MemoryLifecycle {
             _ => 1,
         }
     }
+}
+
+/// When each entry of the bundle comes into force: the earliest `valid_from`
+/// its `contains_entry` edges name.
+fn starts_of(bundle: &KmpBundle) -> BTreeMap<String, (i64, i32)> {
+    let mut starts = BTreeMap::<String, (i64, i32)>::new();
+    for relationship in bundle
+        .relationships()
+        .iter()
+        .filter(|relationship| relationship.relationship_type() == "contains_entry")
+    {
+        let Some(start) = instant(relationship.explanation().valid_from()) else {
+            continue;
+        };
+        let earliest = starts
+            .entry(relationship.target_node_id().to_string())
+            .or_insert(start);
+        *earliest = (*earliest).min(start);
+    }
+    starts
+}
+
+fn pending_at(
+    starts: &BTreeMap<String, (i64, i32)>,
+    at: Option<(i64, i32)>,
+    ahead: impl Fn((i64, i32), (i64, i32)) -> bool,
+) -> BTreeSet<String> {
+    let Some(at) = at else {
+        return BTreeSet::new();
+    };
+    starts
+        .iter()
+        .filter(|(_, start)| ahead(**start, at))
+        .map(|(memory_ref, _)| memory_ref.clone())
+        .collect()
 }
 
 /// Reads a stored instant in either shape the kernel writes it.
@@ -318,6 +377,64 @@ mod tests {
 
         assert!(lifecycle.is_expired("claim:expired"));
         assert!(!lifecycle.is_expired("claim:live"));
+    }
+
+    fn dated(target: &str, observed: &str, from: &str, until: Option<&str>) -> BundleRelationship {
+        let mut explanation = RelationExplanation::new(RelationSemanticClass::Structural)
+            .with_dimension("timeline")
+            .with_scope_id("scope:timeline")
+            .with_observed_at(observed)
+            .with_valid_from(from);
+        if let Some(until) = until {
+            explanation = explanation.with_valid_until(until);
+        }
+        BundleRelationship::new("scope:timeline", target, "contains_entry", explanation)
+    }
+
+    /// B4 of the 1.0 review: a memory whose validity starts next year used to
+    /// move the about's "now" to next year, so the memory in force this year
+    /// was served as expired with high confidence.
+    #[test]
+    fn a_future_validity_neither_moves_now_nor_counts_as_current() {
+        let rota = bundle(
+            vec![
+                dated(
+                    "claim:marta",
+                    "2026-11-01T10:00:00Z",
+                    "2026-01-01T00:00:00Z",
+                    Some("2026-12-31T23:59:59Z"),
+                ),
+                dated(
+                    "claim:diego",
+                    "2026-11-01T10:05:00Z",
+                    "2027-01-01T00:00:00Z",
+                    None,
+                ),
+            ],
+            &["scope:timeline", "claim:marta", "claim:diego"],
+        );
+        let lifecycle = MemoryLifecycle::read(&rota);
+        assert_eq!(
+            lifecycle.frontier(),
+            instant(Some("2026-11-01T10:05:00Z")),
+            "the present is the latest observation, not a validity ahead of it"
+        );
+        assert!(!lifecycle.is_expired("claim:marta"));
+        assert!(lifecycle.stands("claim:marta"));
+        assert!(lifecycle.is_pending("claim:diego"));
+        assert!(!lifecycle.stands("claim:diego"));
+
+        // Asked as of next February, Diego is in force and Marta ran out.
+        let later = MemoryLifecycle::read_at(
+            &rota,
+            LifecycleInstant {
+                at: instant(Some("2027-02-01T00:00:00Z")).expect("instant"),
+                inclusive: true,
+            },
+            TemporalAxis::Observed,
+        );
+        assert!(later.is_expired("claim:marta"));
+        assert!(later.stands("claim:diego"));
     }
 
     #[test]

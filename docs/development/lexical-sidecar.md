@@ -78,9 +78,11 @@ reads the same while no node lies one hop past depth 2 (`lex_far` empty).
 - Every write is one transaction that first checks the position it read; a
   writer that lost the race writes nothing and follows again.
 - Opened unless `KMP_LEXICAL_INDEX=off`. It can be deleted any time: the next
-  ask of an about builds it again. The index version is `lexical-index-4`
+  ask of an about builds it again. The index version is `lexical-index-5`
   (P13's clocks and vocabulary; `-4` since «quién» and «con» became stop
-  words); a sidecar of another version is emptied.
+  words; `-5` since a relation's clock no longer takes `valid_from` or an
+  `occurred_at` it has nothing else beside as the about's present); a
+  sidecar of another version is emptied.
 
 ## Shadow comparison
 

@@ -12,11 +12,12 @@ Source R1: “On 2026-09-01 at 09:00 UTC, we observed the cache fail.”
 Expect `accepted:true`, refs and a receipt; copy the refs. Acceptance validates
 the packet, not fidelity to the source. On rejection nothing is committed: read
 every `feedback` item, repair from the source and retry. Replay an accepted
-packet with its same key.
+packet with its same key; `retryable_conflict` (the store kept moving and
+nothing was written) is replayed the same way, `conflict` is not.
 
-Clocks: omit `observed_at` for KMP's exact ingestion time; supply it only when
-the source gives another. Omit unknown `occurred_at`, `valid_from` and
-`valid_until`; observation is never onset. Root clocks are record defaults; a
+Clocks: give a zone (`Z` or `+01:00`). Omit `observed_at` for KMP's exact
+ingestion time; supply it only when the source gives another. Omit unknown
+`occurred_at`, `valid_from` and `valid_until`; observation is never onset. Root clocks are record defaults; a
 record's null clears one. Keep a later check out of an earlier event's summary.
 
 A link (`connect_to`, `relations`) is taught by topic `relations`. Rich links

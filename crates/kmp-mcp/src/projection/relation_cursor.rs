@@ -92,13 +92,23 @@ impl RelationCursor {
 
     pub(crate) fn action(&self, offset: usize) -> Value {
         let mut arguments = self.arguments.clone();
-        arguments["page"]["cursor"] = json!(self.token(offset));
+        super::argument_slot::set_nested(
+            &mut arguments,
+            "page",
+            "cursor",
+            json!(self.token(offset)),
+        );
         json!({"tool":self.tool,"arguments":arguments})
     }
 
     pub(crate) fn with_budget(&self, bytes: usize) -> Self {
         let mut result = self.clone();
-        result.arguments["budget"]["max_bytes"] = json!(bytes);
+        super::argument_slot::set_nested(
+            &mut result.arguments,
+            "budget",
+            "max_bytes",
+            json!(bytes),
+        );
         result
     }
 

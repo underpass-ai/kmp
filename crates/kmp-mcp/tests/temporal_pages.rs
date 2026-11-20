@@ -263,22 +263,22 @@ async fn time_moves_refuse_a_missing_or_foreign_cursor_with_the_accepted_call() 
     let cases = [
         (
             json!({"about":"project:paging","at":{"time":"2026-09-01T00:00:00Z"}}),
-            "TIME_INVALID_MOVE",
+            "SCHEMA_VIOLATION",
             "move",
         ),
         (
             json!({"about":"project:paging","move":"goto","from":{"time":"2026-09-01T00:00:00Z"}}),
-            "TIME_CURSOR_MISMATCH",
-            "from",
+            "SCHEMA_VIOLATION",
+            "at",
         ),
         (
             json!({"about":"project:paging","move":"near","interval":{"start":"2026-09-01T00:00:00Z"}}),
-            "TIME_MISSING_CURSOR",
+            "SCHEMA_VIOLATION",
             "around",
         ),
         (
             json!({"about":"project:paging","move":"rewind"}),
-            "TIME_MISSING_CURSOR",
+            "SCHEMA_VIOLATION",
             "from",
         ),
     ];

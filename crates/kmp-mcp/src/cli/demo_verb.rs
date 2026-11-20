@@ -22,7 +22,15 @@ pub(super) async fn run_demo_command(args: &[&str]) -> i32 {
         }
     }
 
-    let resolved = match kmp_mcp::lifecycle::resolve_memory_for_use() {
+    // A preview only says where the demo would go: locating writes nothing,
+    // while resolving for use prepares the store and records it in the
+    // machine's index (N1 of the 1.0 review).
+    let located = if dry_run {
+        kmp_embedded::locate_data_dir_from_env()
+    } else {
+        kmp_mcp::lifecycle::resolve_memory_for_use()
+    };
+    let resolved = match located {
         Ok(resolved) => resolved,
         Err(error) => {
             eprintln!("kmp-mcp: {error}");

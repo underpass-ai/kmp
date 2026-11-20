@@ -12,4 +12,6 @@ pub(super) enum CandidateTemporalState {
     /// lifecycle KMP models that names no successor, so it cannot be found
     /// by following `supersedes`.
     Expired,
+    /// Recorded, but its `valid_from` is still ahead: not yet in force.
+    NotYetInForce,
 }

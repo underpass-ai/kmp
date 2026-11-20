@@ -327,7 +327,10 @@ fn prioritize_wake_evidence(
             .any(|item_ref| lifecycle.is_superseded(item_ref))
         {
             0
-        } else if refs.iter().any(|item_ref| lifecycle.is_expired(item_ref)) {
+        } else if refs
+            .iter()
+            .any(|item_ref| lifecycle.is_expired(item_ref) || lifecycle.is_pending(item_ref))
+        {
             1
         } else {
             2
