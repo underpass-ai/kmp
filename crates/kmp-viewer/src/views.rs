@@ -8,13 +8,12 @@
 use std::collections::BTreeMap;
 
 use kmp_application::{
-    GetContextPathResult, GetContextResult, GetNodeDetailResult, GraphNodeView,
-    GraphRelationshipView, InspectMemoryResult, RenderedContext, TemporalMemoryResult,
-    VisualProjectionResult,
+    GetContextPathResult, GetNodeDetailResult, GraphNodeView, GraphRelationshipView,
+    InspectMemoryResult, RenderedContext, VisualProjectionResult,
 };
 use kmp_domain::{
     BundleNode, BundleQualityMetrics, BundleRelationship, MemoryNodesResult, NodeProjection,
-    RelationExplanation, TemporalCoordinate, TemporalDirection, TraceSearchStop,
+    RelationExplanation, TemporalCoordinate, TraceSearchStop,
 };
 use serde::Serialize;
 
@@ -276,7 +275,19 @@ pub fn readable_time(value: impl AsRef<str>) -> String {
 /// Convert the application's sortable timestamps at the HTTP boundary. The
 /// projection stays renderer-neutral in the application layer; browsers get
 /// RFC3339 so `Date.parse` never has to understand the store's sort encoding.
-pub fn visual_projection_view(mut result: VisualProjectionResult) -> VisualProjectionResult {
+/// The placeholder snapshot hash goes out as `null`, like every other view's
+/// (see `real_hash`).
+pub fn visual_projection_view(result: VisualProjectionResult) -> serde_json::Value {
+    let content_hash = real_hash(&result.content_hash);
+    let mut value = serde_json::to_value(readable_projection(result))
+        .unwrap_or_else(|error| serde_json::json!({ "error": error.to_string() }));
+    if let Some(object) = value.as_object_mut() {
+        object.insert("content_hash".to_string(), serde_json::json!(content_hash));
+    }
+    value
+}
+
+fn readable_projection(mut result: VisualProjectionResult) -> VisualProjectionResult {
     result.range.from = readable_time(&result.range.from);
     result.range.to = readable_time(&result.range.to);
     for bin in &mut result.bins {
@@ -356,58 +367,6 @@ pub(crate) fn rfc3339_utc_nanos(seconds: i64, nanos: u32) -> String {
         fraction.pop();
     }
     format!("{}.{fraction}Z", whole.trim_end_matches('Z'))
-}
-
-/// One recalled neighborhood, ready to draw: nodes, typed edges, details, and
-/// the kernel's rendered context with its quality account.
-#[derive(Debug, Clone, Serialize)]
-pub struct GraphView {
-    pub about: String,
-    pub root_id: String,
-    pub revision: u64,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub content_hash: Option<String>,
-    pub nodes: Vec<NodeView>,
-    pub edges: Vec<EdgeView>,
-    pub details: Vec<DetailView>,
-    pub rendered: RenderedView,
-    pub quality: QualityView,
-}
-
-pub fn graph_view(about: &str, result: &GetContextResult) -> GraphView {
-    let bundle = &result.bundle;
-    let mut nodes = Vec::with_capacity(1 + bundle.neighbor_nodes().len());
-    nodes.push(NodeView::from_bundle_node(bundle.root_node()));
-    nodes.extend(
-        bundle
-            .neighbor_nodes()
-            .iter()
-            .map(NodeView::from_bundle_node),
-    );
-    GraphView {
-        about: about.to_string(),
-        root_id: bundle.root_node_id().as_str().to_string(),
-        revision: bundle.metadata().revision,
-        content_hash: real_hash(&bundle.metadata().content_hash),
-        nodes,
-        edges: bundle
-            .relationships()
-            .iter()
-            .map(EdgeView::from_bundle_relationship)
-            .collect(),
-        details: bundle
-            .node_details()
-            .iter()
-            .map(|detail| DetailView {
-                id: detail.node_id().to_string(),
-                detail: detail.detail().to_string(),
-                content_hash: real_hash(detail.content_hash()),
-                revision: detail.revision(),
-            })
-            .collect(),
-        rendered: RenderedView::from_rendered(&result.rendered),
-        quality: QualityView::from_metrics(&result.rendered.quality),
-    }
 }
 
 /// One node in full: summary card, detail text, and its typed links both ways.
@@ -507,76 +466,6 @@ pub fn node_batch_view(result: &MemoryNodesResult) -> NodeBatchView {
             .map_or("complete", TraceSearchStop::as_str)
             .to_string(),
         scanned_edges: result.scanned_edges,
-    }
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct TimelineEntryView {
-    pub ref_id: String,
-    pub kind: String,
-    pub text: String,
-    pub coordinates: Vec<CoordinateView>,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct TimelinePageView {
-    pub returned: usize,
-    pub total: usize,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub next_cursor: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct TimelineView {
-    pub about: String,
-    pub direction: String,
-    pub resolved_cursor: Option<CoordinateView>,
-    pub included_dimensions: Vec<String>,
-    pub missing_dimensions: Vec<String>,
-    pub entries: Vec<TimelineEntryView>,
-    pub page: TimelinePageView,
-    pub missing: Vec<String>,
-}
-
-pub fn timeline_view(about: &str, result: &TemporalMemoryResult) -> TimelineView {
-    let traversal = &result.traversal;
-    TimelineView {
-        about: about.to_string(),
-        direction: direction_name(traversal.direction()).to_string(),
-        resolved_cursor: traversal
-            .resolved_cursor()
-            .map(CoordinateView::from_coordinate),
-        included_dimensions: traversal.included_dimensions().to_vec(),
-        missing_dimensions: traversal.missing_dimensions().to_vec(),
-        entries: traversal
-            .entries()
-            .iter()
-            .map(|entry| TimelineEntryView {
-                ref_id: entry.ref_id().to_string(),
-                kind: entry.kind().to_string(),
-                text: entry.text().to_string(),
-                coordinates: entry
-                    .coordinates()
-                    .iter()
-                    .map(CoordinateView::from_coordinate)
-                    .collect(),
-            })
-            .collect(),
-        page: TimelinePageView {
-            returned: traversal.page().returned(),
-            total: traversal.page().total(),
-            next_cursor: traversal.page().next_cursor().map(ToString::to_string),
-        },
-        missing: traversal.missing().to_vec(),
-    }
-}
-
-fn direction_name(direction: TemporalDirection) -> &'static str {
-    match direction {
-        TemporalDirection::Goto => "goto",
-        TemporalDirection::Near => "near",
-        TemporalDirection::Rewind => "rewind",
-        TemporalDirection::Forward => "forward",
     }
 }
 

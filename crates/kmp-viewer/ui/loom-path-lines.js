@@ -20,7 +20,7 @@ KMP_APP.pathLines = (() => {
       this.arrowGeometry = new THREE.ConeGeometry(2.8, 8, 8);
     }
     create(hop) {
-      const dashed = dashes[hop.kind];
+      const dashed = KMP_LOOM.own(dashes, hop.kind);
       const material = dashed
         ? new THREE.LineDashedMaterial({ transparent: true, depthWrite: false, ...dashed })
         : new THREE.LineBasicMaterial({ transparent: true, depthWrite: false });

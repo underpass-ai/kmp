@@ -13,6 +13,8 @@ globalThis.KMP_APP = globalThis.KMP_APP || {};
 KMP_APP.dom = (() => {
   const $ = (id) => document.getElementById(id);
 
+  /* A one-off failure: it fades after a while, because nothing about the
+     page stays wrong once it has been said. */
   function showError(message) {
     $("error-slot").textContent = message || "";
     if (message) {
@@ -104,7 +106,7 @@ KMP_APP.panels = (() => {
     const DASH_CLASS = { evidential: "dashed", motivational: "dotted", constraint: "dashed", procedural: "dashed" };
     for (const [cls, count] of [...classes.entries()].sort((a, b) => b[1] - a[1])) {
       const item = el("li", "");
-      const dash = el("span", `legend-dash ${DASH_CLASS[cls] || ""}`);
+      const dash = el("span", `legend-dash ${KMP_LOOM.own(DASH_CLASS, cls) || ""}`);
       dash.style.borderTopColor = classColor(cls);
       item.append(dash, el("span", "", cls), el("span", "muted legend-count", String(count)));
       classList.append(item);

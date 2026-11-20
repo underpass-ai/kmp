@@ -327,11 +327,15 @@ was written, so treat it with the same confidentiality as the store.
 
 ## Viewer and local telemetry
 
-An embedded session attempts to serve a read-only viewer rooted at
-`http://127.0.0.1:7317/`. It binds loopback only and prints a random,
-per-session capability link. `kmp_view_open` and `kmp_view_get_state` return
-the same link, so an agent can hand it over even when its host hides server
-output. Opening the link exchanges the capability for an HttpOnly, SameSite
+An embedded session can serve a read-only viewer rooted at
+`http://127.0.0.1:7317/`, but listens on no port until the viewer is
+requested: the first `kmp_view_open` binds it (a free loopback port when
+another session owns 7317) and it stays up for the session. It binds loopback
+only and prints a random, per-session capability link. `kmp_view_open`
+returns the same link, and `kmp_view_get_state` does once the viewer listens,
+so an agent can hand it over even when its host hides server output. A port
+that cannot be bound at that moment comes back in the `kmp_view_open` result,
+naming the address and the reason. Opening the link exchanges the capability for an HttpOnly, SameSite
 cookie and redirects to the clean URL; requests from other local processes
 receive `401`. Set `KMP_VIEWER_ADDR` to a different loopback address or `off`
 to disable it.

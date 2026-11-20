@@ -93,10 +93,21 @@ KMP_APP.data = (() => {
     return KMP_APP.layers?.load();
   }
 
+  /* Only the newest window's read is worth its cost: each one makes the
+     server read the whole about. A newer request aborts the older one,
+     which also takes it out of the server's queue. */
+  let projectionRead = null;
+  function supersedeProjectionRead() {
+    projectionRead?.abort();
+    projectionRead = typeof AbortController === "function" ? new AbortController() : null;
+    return projectionRead?.signal;
+  }
+
   async function loadProjection() {
     if (!model.about || !view.full) return;
     KMP_APP.layers?.invalidate();
     const generation = ++model.loadGeneration;
+    const signal = supersedeProjectionRead();
     const width = Math.max(1, KMP_APP.scene.canvas().clientWidth || 1);
     const msPerPx = (view.t1 - view.t0) / width;
     let lod =
@@ -112,6 +123,7 @@ KMP_APP.data = (() => {
         level,
         bins,
         KMP_LOOM.labelQuery(view.selectors),
+        signal,
       );
     try {
       let projection = await fetchAt(lod);
@@ -140,6 +152,7 @@ KMP_APP.data = (() => {
         showError("");
       }
     } catch (error) {
+      if (KMP_APP.api.aborted(error)) return;
       if (generation === model.loadGeneration) showError(error.message);
     }
   }
@@ -231,6 +244,7 @@ KMP_APP.data = (() => {
         "episode",
         128,
         KMP_LOOM.labelQuery(view.selectors),
+        supersedeProjectionRead(),
       );
       if (generation !== model.loadGeneration) return;
       const combined = KMP_APP.layers
@@ -310,7 +324,7 @@ KMP_APP.data = (() => {
       sync.applying = previouslyApplying;
       if (announce && !previouslyApplying) await KMP_APP.sync.viewOpen();
     } catch (error) {
-      showError(error.message);
+      if (!KMP_APP.api.aborted(error)) showError(error.message);
     } finally {
       sync.applying = previouslyApplying;
     }

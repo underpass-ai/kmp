@@ -201,7 +201,7 @@ KMP_APP.three = (() => {
       for (const node of layout.nodes) {
         const selected = node.entry.ref === state.selected,
           linked = layout.neighbors.has(node.entry.ref),
-          color = (light ? lightKindColors : kindColors)[node.entry.kind] || kindColors.observation;
+          color = KMP_LOOM.own(light ? lightKindColors : kindColors, node.entry.kind) || kindColors.observation;
         const faded = node.dimmed || (state.relations === "selection" && layout.neighbors.size > 0 && !selected && !linked);
         let mesh = this.nodeMeshes.get(node.entry.ref);
         if (!mesh) {
@@ -210,7 +210,7 @@ KMP_APP.three = (() => {
           mesh.userData.baseScale = new THREE.Vector3();
           this.nodeMeshes.set(node.entry.ref, mesh); this.group.add(mesh);
         }
-        mesh.geometry = node.entry.aggregate ? this.geometry.constraint : this.geometry[node.entry.kind] || this.geometry.normal;
+        mesh.geometry = node.entry.aggregate ? this.geometry.constraint : KMP_LOOM.own(this.geometry, node.entry.kind) || this.geometry.normal;
         const material = mesh.material;
         material.color.set(color); material.emissive.set(color);
         material.emissiveIntensity = selected ? 0.7 : 0.1;
@@ -238,7 +238,7 @@ KMP_APP.three = (() => {
       }));
       const colors = pathColors[light ? "light" : "dark"];
       this.labels.push(...this.pathLines.update(layout.pathHops || [], nodeByRef, hop => ({
-        color: colors[hop.kind],
+        color: KMP_LOOM.own(colors, hop.kind) || colors.declared,
         opacity: hop.kind === "avoided" ? 0.6 : 0.95,
         text: KMP_APP.pathModel.hopLabel(hop),
       })));

@@ -742,6 +742,19 @@ fn basic_rfc3339_nanos(value: &str) -> Option<i128> {
     {
         return None;
     }
+    // A field out of its range is not a date the calendar can place:
+    // `0000-00-00` used to read as a day in the year -1.
+    if !(1..=12).contains(&month)
+        || !(1..=days_in_month(year, month)).contains(&day)
+        || hour > 23
+        || minute > 59
+        || second > 60
+        || [year, month, day, hour, minute, second]
+            .iter()
+            .any(|field| *field < 0)
+    {
+        return None;
+    }
     let tail = value.get(19..)?;
     let timezone_start = tail
         .char_indices()
@@ -778,6 +791,15 @@ fn basic_rfc3339_nanos(value: &str) -> Option<i128> {
     Some(seconds as i128 * 1_000_000_000 + nanos)
 }
 
+fn days_in_month(year: i64, month: i64) -> i64 {
+    match month {
+        2 if (year % 4 == 0 && year % 100 != 0) || year % 400 == 0 => 29,
+        2 => 28,
+        4 | 6 | 9 | 11 => 30,
+        _ => 31,
+    }
+}
+
 fn days_from_civil(year: i64, month: i64, day: i64) -> i64 {
     let year = if month <= 2 { year - 1 } else { year };
     let era = if year >= 0 { year } else { year - 399 } / 400;
@@ -796,6 +818,23 @@ mod tests {
         TemporalWindow,
     };
     use std::collections::BTreeMap;
+
+    #[test]
+    fn a_timestamp_with_a_field_out_of_range_is_not_a_timestamp() {
+        assert!(timestamp_nanos("2026-02-28T23:59:59Z").is_some());
+        assert!(timestamp_nanos("2024-02-29T00:00:00Z").is_some());
+        for broken in [
+            "0000-00-00T00:00:00Z",
+            "2026-13-01T00:00:00Z",
+            "2026-02-29T00:00:00Z",
+            "2026-04-31T00:00:00Z",
+            "2026-01-01T24:00:00Z",
+            "2026-01-01T00:60:00Z",
+            "2026-01--1T00:00:00Z",
+        ] {
+            assert!(timestamp_nanos(broken).is_none(), "{broken}");
+        }
+    }
 
     #[test]
     fn sortable_and_rfc3339_timestamps_share_one_coordinate_space() {

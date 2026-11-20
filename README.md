@@ -179,7 +179,7 @@ KMP, turns returned evidence into conversational prose.
 |:--|:--|
 | Memory | Stored on your machine, normally in the repository's `.kernel/`. |
 | MCP transport | Local stdio between the agent host and `kmp-mcp`. |
-| Viewer | Read-only loopback HTTP, normally rooted at `http://127.0.0.1:7317/`, behind a random per-session capability. |
+| Viewer | Read-only loopback HTTP, normally rooted at `http://127.0.0.1:7317/`, behind a random per-session capability; nothing listens until the viewer is requested. |
 | External services | None required; optional TypeSafe Jev integrations send selected text to the configured service. |
 | Underpass | Receives no memory and operates no service in this path. |
 | Updates | Setup and updates contact GitHub Releases for checksummed packages; the Claude session hook can check releases daily. |
