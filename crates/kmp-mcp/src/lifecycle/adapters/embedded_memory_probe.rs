@@ -38,7 +38,8 @@ pub(crate) fn store_file_on_disk(data_dir: &Path) -> Option<PathBuf> {
 
 pub(crate) fn describe_data_dir(resolved: &ResolvedDataDir) -> LifecycleFinding {
     let path = resolved.path();
-    let layout = kmp_embedded::validate_store_layout(path);
+    let layout = kmp_embedded::validate_store_layout(path)
+        .and_then(|stamped| kmp_embedded::refuse_vanished_store_database(path).map(|()| stamped));
     let saved = kmp_embedded::memory_selection::saved_selection();
     let ignored_selection_error = saved
         .as_ref()

@@ -9,6 +9,40 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Fixed
+
+- A project store catches up with its committed `.kmp/memory.jsonl` when it
+  opens. After a fresh clone or a `git pull` the bundle's new events are
+  appended in the bundle's own order, so reads see the teammate's memory and
+  writes work; a write in a session opened before the pull catches up first.
+  Before, reads were stale or empty with no warning and every write was
+  refused.
+- `doctor` and `info` tell a committed bundle ahead of the store from one
+  behind it, by comparing events rather than counts. A bundle ahead is
+  reported as such and `kmp-mcp export` is never advised for it; before, it
+  was called "behind" and following the advice deleted the teammate's memory
+  from the bundle.
+- A write killed between its commit and its publish no longer leaves a
+  project memory read-only: the next open (or a full `export`) publishes the
+  store and clears the marker when no other session holds the lock and the
+  bundle is an exact prefix of the store.
+- When the store and the bundle are different histories, every read carries
+  a notice in `warnings` and in its text, and the write refusal, `doctor` and
+  `export` name both ways out.
+
+### Changed
+
+- `kmp-mcp export` to the project head refuses to replace a committed bundle
+  whose events it would not keep (a bundle ahead or divergent); the new
+  `--overwrite-committed` flag replaces it anyway. A full export to the
+  project head first catches the store up with a bundle that is ahead.
+- Opening a project store may append to it (the catch-up above) and may
+  rewrite `.kmp/memory.jsonl` (the recovery above).
+- A store whose database file is missing or empty, beside files that prove it
+  held memory (the telemetry salt, a write-ahead log, an indexed lexical
+  index), is refused on open and by `doctor` instead of being restarted
+  empty; the message names the way out.
+
 ## [0.27.0] - 2026-11-19
 
 ### Security

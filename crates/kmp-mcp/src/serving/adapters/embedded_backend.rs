@@ -2,10 +2,10 @@ use super::curate_doubt_cache::CurateDoubtCache;
 use super::curate_review_cache::CurateReviewCache;
 use super::doubt_band_judge::DoubtBandJudge;
 use super::embedded::{
-    EmbeddedAskTool, EmbeddedCondenseTool, EmbeddedCurateTool, EmbeddedIngestTool,
-    EmbeddedInspectTool, EmbeddedNearTool, EmbeddedReadTelemetry, EmbeddedRelabelTool,
-    EmbeddedRelateTool, EmbeddedSummariesAuditTool, EmbeddedTemporalMoveTool, EmbeddedTraceTool,
-    EmbeddedVisualProjectionTool, EmbeddedWakeTool, FrozenRecallReads,
+    CommittedHistoryNotice, EmbeddedAskTool, EmbeddedCondenseTool, EmbeddedCurateTool,
+    EmbeddedIngestTool, EmbeddedInspectTool, EmbeddedNearTool, EmbeddedReadTelemetry,
+    EmbeddedRelabelTool, EmbeddedRelateTool, EmbeddedSummariesAuditTool, EmbeddedTemporalMoveTool,
+    EmbeddedTraceTool, EmbeddedVisualProjectionTool, EmbeddedWakeTool, FrozenRecallReads,
 };
 use super::judgement_reranker::JudgementReranker;
 use super::lexical_index::lexical_sidecar::LexicalSidecar;
@@ -45,6 +45,8 @@ pub struct EmbeddedKernelMcpBackend {
     kernel: EmbeddedKernel,
     data_dir: String,
     commit_native: Option<CommitNativeBundle>,
+    /// What reads say while the store and its committed bundle disagree.
+    committed_history: CommittedHistoryNotice,
     /// The word table `ask` bridges languages with, read once beside the
     /// store. Silent when none is installed.
     lexical_bridge: LexicalBridge,
@@ -124,6 +126,12 @@ impl EmbeddedKernelMcpBackend {
     ) -> Result<Self, String> {
         let kernel = EmbeddedKernel::open_with_engine(data_dir, engine)
             .map_err(|error| error.to_string())?;
+        // Before anything reads: a pull or a fresh clone is caught up, and an
+        // interrupted write is published, whenever the histories prove it.
+        let committed_history = commit_native
+            .as_ref()
+            .map(|bundle| CommittedHistoryNotice::on_open(bundle, kernel.store()))
+            .unwrap_or_default();
         let loads = StoreConfigLoads::load(data_dir, VerdictBookAccess::Open);
         loads.report(data_dir).emit();
         let StoreConfigLoads {
@@ -155,6 +163,7 @@ impl EmbeddedKernelMcpBackend {
             kernel,
             data_dir: data_dir.display().to_string(),
             commit_native,
+            committed_history,
             lexical_bridge,
             lexical_cache: Arc::default(),
             frozen_recalls: ProcessFrozenRecalls::default(),
@@ -241,7 +250,7 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
             if outcome.is_ok() && writes_memory(name) {
                 self.lexical.catch_up(self.kernel.store(), None).await;
             }
-            outcome
+            outcome.map(|result| self.committed_history.qualify(name, result))
         })
     }
 }

@@ -4,13 +4,42 @@ Project-scoped embedded writes maintain `.kmp/memory.jsonl` automatically and
 atomically before returning success. The store itself (`.kernel/`) is machine
 state and stays gitignored — the bundle is a different thing, and committing
 it is what makes a fresh clone arrive with the project's decisions instead of
-an empty memory. `kmp-mcp export` is the explicit repair/checkpoint command;
-`kmp-mcp import` reads the bundle into an empty store.
+an empty memory.
 
-If `doctor` reports a pending export, stop other KMP sessions, run the normal
-export and inspect its diff, then use `kmp-mcp export --repair-pending` to
-acknowledge recovery. The normal export intentionally does not clear an
-in-flight marker that could belong to another SQLite writer.
+When a session opens a project store it compares the store with the bundle,
+event by event:
+
+- **The bundle is ahead** (a fresh clone, or a `git pull` that brought a
+  teammate's memory): the store is caught up by appending the bundle's tail
+  in the bundle's own order. Nothing to run; the first read already sees it.
+  A write made in a session that was open before the pull catches up the
+  same way first.
+- **The store is ahead** after an interrupted write (a pending marker, the
+  bundle an exact prefix of the store, no other session writing): the store
+  is published to the bundle and the marker cleared.
+- **The two diverge** (both sides hold events the other lacks): nothing is
+  changed. Reads carry a notice and writes are refused with both ways out:
+  move `.kernel/` aside and reopen to rebuild from the bundle, then bring your
+  own abouts back with `kmp-mcp import --from <moved store> --about <about>`;
+  or keep the store's history with `kmp-mcp export --overwrite-committed`.
+
+Do not catch a project store up with one `import --from .kmp/memory.jsonl
+--about` per about: a tail that interleaves several abouts would be appended
+grouped by about, which is a different history from the bundle's, and every
+later write would refuse it.
+
+`kmp-mcp export` is the explicit checkpoint command. With no file it writes
+the project head; a full export catches the store up first, and it refuses to
+replace a committed bundle whose events it would not keep unless you pass
+`--overwrite-committed`. `kmp-mcp import <file>` reads a bundle into an empty
+store. If `doctor` still reports a pending export (the bundle is not a prefix
+of the store), stop other KMP sessions, run the normal export and inspect its
+diff, then use `kmp-mcp export --repair-pending` to acknowledge recovery.
+
+A store directory whose database file is gone, beside files that prove it
+held memory (the telemetry salt, a write-ahead log, an indexed lexical
+index), is refused rather than restarted empty. Restore the database, or move
+the directory aside; a project store is then rebuilt from its bundle.
 
 The bundle contains a header followed by one JSON event per line in sequence
 order. An event can contain several memories and relations, so the number of
