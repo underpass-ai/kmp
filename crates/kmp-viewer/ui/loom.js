@@ -5,7 +5,7 @@
 
 (() => {
   const { model, sync } = KMP_APP.state;
-  const { showError } = KMP_APP.dom;
+  const { showError, setNotice } = KMP_APP.dom;
   const api = (...args) => KMP_APP.api.call(...args);
 
   async function init() {
@@ -21,8 +21,12 @@
     try {
       await KMP_APP.scene.setup();
     } catch (error) {
-      showError(`renderer failed to start: ${error.message}`);
-      return;
+      // Without WebGL only the 3D scene is lost. Layers, labels, search,
+      // the time window and memory detail read the kernel, not the GPU,
+      // so the page goes on loading and says, for as long as it is true,
+      // what is missing.
+      KMP_APP.scene.unavailable(error.message);
+      setNotice("renderer", "3D scene unavailable: this browser cannot start WebGL");
     }
     try {
       // These describe independent authorities: server identity, the memory
@@ -33,15 +37,17 @@
       const viewRead = api("/api/view", { id: KMP_APP.sync.VIEW_ID }).catch(
         () => null,
       );
-      const [, aboutsView, existing] = await Promise.all([
+      const [info, aboutsView, existing] = await Promise.all([
         infoRead,
         aboutsRead,
         viewRead,
       ]);
+      showStore(info);
       model.abouts = aboutsView.abouts;
       KMP_APP.panels.renderAbouts();
       if (!model.abouts.length) {
-        showError("the kernel holds no abouts yet — ingest some memory first");
+        setNotice("store", "This store holds no memory yet; ingest some and reload");
+        KMP_APP.provenance.idle("Nothing to show yet", "No memory in this store");
         return;
       }
 
@@ -59,6 +65,16 @@
     } catch (error) {
       showError(error.message);
     }
+  }
+
+  /* Which store is open: several sessions each serve a viewer, and the
+     header is where a person tells them apart. */
+  function showStore(info) {
+    const slot = KMP_APP.dom.$("store-path");
+    if (!slot || !info?.data_dir) return;
+    slot.textContent = info.data_dir;
+    slot.title = `Store: ${info.data_dir}`;
+    slot.hidden = false;
   }
 
   init();

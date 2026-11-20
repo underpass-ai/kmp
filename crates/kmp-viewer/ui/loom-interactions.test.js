@@ -135,3 +135,47 @@ test("scene sliders coalesce to the final state and replacing the renderer dispo
   assert.equal(renders.length, 2); assert.equal(renders.at(-1).gap, 229); assert.equal(renders.at(-1).opacity, 99);
   await app.scene.setup(); assert.equal(disposed.length, 1); flush(frames);
 });
+
+/* V-08: Ctrl+F, Ctrl+plus/minus and Alt+arrow are the browser's. Only the
+   bare keys move the time window. */
+test("window shortcuts ignore modified keys and keys another handler took", () => {
+  const { context, app, calls } = harness();
+  const handlers = {};
+  context.addEventListener = (name, fn) => { handlers[name] = fn; };
+  load(context, "loom-gestures.js"); app.gestures.wire();
+  const press = (event) => handlers.keydown({ target: { tagName: "BODY" }, ...event });
+  for (const event of [
+    { key: "f", ctrlKey: true }, { key: "f", metaKey: true }, { key: "=", ctrlKey: true },
+    { key: "-", ctrlKey: true }, { key: "ArrowLeft", altKey: true }, { key: "ArrowRight", defaultPrevented: true },
+  ]) press(event);
+  assert.equal(calls.length, 0, "no modified shortcut moved the window");
+  handlers.keydown({ key: "ArrowLeft", target: { tagName: "DIV", closest: (selector) => selector === "dialog[open]" } });
+  assert.equal(calls.length, 0, "keys inside an open dialog are the dialog's");
+  press({ key: "ArrowLeft" });
+  assert.deepEqual(calls.at(-1), [100, 500, false]);
+  press({ key: "f" });
+  assert.deepEqual(calls.at(-1), [0, 1000]);
+});
+
+/* V-09: the search says what it looked at, and Enter frames the hits. */
+test("search names what it reads and Enter frames its hits", () => {
+  const { context, app, $, calls, flush, timers } = harness();
+  load(context, "loom-core.js"); load(context, "loom-panels.js"); app.panels.wire();
+  const model = app.state.model, view = app.state.view;
+  view.clock = "occurred";
+  const at = (ref, text, time) => ({ ref, kind: "decision", text, coords: [], clocks: { occurred: Date.parse(time) } });
+  model.currentLod = "atlas"; model.entries = []; model.byRef = new Map(); model.total = 900;
+  $("search").value = "retry"; $("search").emit("input"); flush(timers);
+  assert.match($("search-results").children.at(-1).textContent, /grouped/);
+  model.currentLod = "moment";
+  model.entries = [at("a", "retry the payment", "2026-08-31T10:00:00Z"), at("b", "retry once more", "2026-08-31T12:00:00Z"), at("c", "unrelated", "2026-09-30T00:00:00Z")];
+  model.byRef = new Map(model.entries.map((entry) => [entry.ref, entry]));
+  $("search").value = "nothing-matches"; $("search").emit("input"); flush(timers);
+  assert.equal($("search-results").children.at(-1).textContent,
+    "No memory among the 3 loaded in this window matches. The window holds 900; zoom in to load the rest.");
+  $("search").value = "retry"; $("search").emit("keydown", { key: "Enter" });
+  assert.deepEqual([...view.searchHits].sort(), ["a", "b"]);
+  const [from, to] = calls.filter(Array.isArray).at(-1);
+  assert.ok(from < Date.parse("2026-08-31T10:00:00Z") && to > Date.parse("2026-08-31T12:00:00Z"));
+  assert.ok(to < Date.parse("2026-09-30T00:00:00Z"), "the window closes around the hits");
+});

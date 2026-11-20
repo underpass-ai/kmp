@@ -25,6 +25,13 @@ KMP_APP.provenance = (() => {
   function unavailable() {
     $("connection-status").textContent = "View sync unavailable · reconnecting";
   }
+  /* A page with nothing to join, or a session that is over, says so in the
+     place that would otherwise read "Joining the view…" forever. */
+  function idle(owner, status) {
+    $("control-owner").textContent = owner;
+    $("connection-status").textContent = status;
+    $("take-control").hidden = true;
+  }
   function busy(value) {
     $("take-control").disabled = value;
   }
@@ -33,5 +40,5 @@ KMP_APP.provenance = (() => {
       KMP_APP.control.takeControl(),
     );
   }
-  return { render, unavailable, busy, wire };
+  return { render, unavailable, idle, busy, wire };
 })();

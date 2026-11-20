@@ -17,9 +17,7 @@
 :root {
   /* the mark's gradient — banner.rs, six anchors */
   --grad-1: #815bf0;
-  --grad-2: #646ae9;
   --grad-3: #4878e0;
-  --grad-4: #348dc0;
   --grad-5: #269f9b;
   --grad-6: #1baf7a;
 
@@ -63,7 +61,6 @@
   --radius-1: 6px;
   --radius-2: 10px;
   --dur-1: 120ms;
-  --dur-2: 240ms;
   --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
 
   /* two elevations only: an attached panel and a floating one */
@@ -246,14 +243,6 @@ body {
   font-size: var(--fs-body);
   z-index: 10;
   overflow-wrap: anywhere;
-}
-.tooltip .tt-title { font-weight: 600; }
-.tooltip .tt-sub { color: var(--text-secondary); }
-.tooltip .tt-quote {
-  color: var(--text-secondary);
-  border-left: 2px solid var(--border);
-  padding-left: 6px;
-  margin-top: 3px;
 }
 
 /* ---- detail: evidence + prism ---- */

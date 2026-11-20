@@ -26,12 +26,24 @@ KMP_APP.api = (() => {
       if (!response.ok) {
         const error = new Error(body.error || `${path} failed with ${response.status}`);
         error.status = response.status;
+        if (response.status === 401) sessionEnded();
         throw error;
       }
       return body;
     } finally {
       finish?.();
     }
+  }
+
+  /* The capability belongs to one MCP process. A 401 means that process
+     restarted or stopped: nothing this page holds is live any more, and
+     only a new link opens the new session. */
+  function sessionEnded() {
+    KMP_APP.dom?.setNotice?.(
+      "session",
+      "This ChronoLoom session has ended; ask the agent to open the loom again for a new link",
+    );
+    KMP_APP.provenance?.idle?.("Session ended", "Open the new link to continue");
   }
 
   /* The whole span the kernel could ever hold; the extent probe's frame. */

@@ -1,4 +1,5 @@
 /* WebGL camera adapter: fit the complete layered volume. */
+"use strict";
 KMP_APP.camera = (() => {
   const { THREE } = KMP_THREE;
 

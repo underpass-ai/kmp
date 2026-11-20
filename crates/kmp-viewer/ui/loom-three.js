@@ -1,4 +1,5 @@
 /* Three.js adapter. Receives a scene value; has no memory or transport port. */
+"use strict";
 KMP_APP.three = (() => {
   const { THREE, OrbitControls } = KMP_THREE;
   const { fittedCamera } = KMP_APP.camera;

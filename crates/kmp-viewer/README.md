@@ -45,8 +45,10 @@ Five reading moves sit on top of the loom:
   own why and evidence and composes the exact `kmp_curate` apply call for
   the agent to run. The loom never writes memory, so the write keeps the
   writer's review and Jev's re-read. **Put away** clears the paths.
-- **Search** — plain words or `kind:` / `dim:` / `id:`; Enter frames the
-  hits and steps everything else back.
+- **Search** — plain words or `kind:` / `dim:` / `id:` over the memories the
+  window has loaded at Memories detail (grouped levels load none, and the
+  search says so); Enter frames the hits and the scene steps everything else
+  back.
 - **Lens and compare** — elapsed time remains proportional; event-density
   compresses silence on a non-uniform axis. Two pinned instants remain on
   screen with entry, relation, validity and evidence diffs.
@@ -56,9 +58,16 @@ series retains its exact unit and scope, and exemplars resolve to the operation
 that emitted them; the viewer does not infer health or causality from temporal
 alignment.
 
-Edges wear their semantic class — causal blue, evidential green, temporal
-violet, structural quiet — and node kinds wear the wire's own names in both
-themes.
+Edges wear their semantic class — causal blue, evidential green,
+motivational violet, procedural teal, constraint amber, structural quiet —
+and node kinds wear the wire's own names in both themes.
+
+Without WebGL the 3D scene says it cannot start; layers, labels, search, the
+time window and memory detail keep working. A state the page is in (a store
+with no memory, a read that left older memories out, an ended session, a lost
+connection) stays in the status bar until it changes. When an about holds
+more memories than one read takes (65,536), the window still spans them all
+and the status bar says how many of how many it shows.
 
 ## Why in-process
 
