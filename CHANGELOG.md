@@ -9,6 +9,8 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+## [0.27.1] - 2026-11-20
+
 ### Changed
 
 - **Behaviour change:** a label coordinate with no time on the selected clock
@@ -2793,7 +2795,8 @@ The initial agent schema that expands with use and persistent consultation profi
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.27.0...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.27.1...HEAD
+[0.27.1]: https://github.com/underpass-ai/kmp/compare/v0.27.0...v0.27.1
 [0.27.0]: https://github.com/underpass-ai/kmp/compare/v0.26.2...v0.27.0
 [0.26.2]: https://github.com/underpass-ai/kmp/compare/v0.26.1...v0.26.2
 [0.26.1]: https://github.com/underpass-ai/kmp/compare/v0.26.0...v0.26.1
