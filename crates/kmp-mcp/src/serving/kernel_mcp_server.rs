@@ -25,8 +25,9 @@ pub struct KernelMcpServer {
     /// The storage engine under an embedded backend, for the startup line
     /// and the doctor. `None` for the other backends.
     pub(super) embedded_engine: Option<kmp_embedded::StorageEngine>,
-    /// Where this process's viewer is serving, when it mounted one.
-    pub(super) viewer_url: Option<String>,
+    /// This session's viewer, when it may have one. It listens only from
+    /// the first request that asks for it.
+    pub(super) viewer: Option<std::sync::Arc<crate::viewer::SessionViewer>>,
     /// Whether the viewer has already been offered on this session. The
     /// invitation is worth saying once and is noise said twice, and the
     /// moment worth saying it at is the first memory the session writes:
@@ -122,7 +123,7 @@ impl KernelMcpServer {
             agent_directory_path: None,
             store_session_lease: None,
             embedded_engine: None,
-            viewer_url: None,
+            viewer: None,
             viewer_offered: AtomicBool::new(false),
             orphaned_bundle: None,
             store_disclosure: None,
@@ -168,8 +169,22 @@ impl KernelMcpServer {
     /// write can hand a human the link to their own graph. Without this the
     /// viewer is reachable and unmentioned, which is how it went unnoticed.
     pub fn serving_viewer_at(mut self, url: impl Into<String>) -> Self {
-        self.viewer_url = Some(url.into());
+        self.viewer = Some(std::sync::Arc::new(
+            crate::viewer::SessionViewer::already_serving(url),
+        ));
         self
+    }
+
+    /// Mounts a viewer that binds its port on the first request for it, so
+    /// a session nobody looks at listens on nothing.
+    pub fn with_viewer_on_demand(mut self, viewer: crate::viewer::SessionViewer) -> Self {
+        self.viewer = Some(std::sync::Arc::new(viewer));
+        self
+    }
+
+    /// The viewer link when the viewer is already listening; never starts it.
+    pub(super) fn viewer_url(&self) -> Option<&str> {
+        self.viewer.as_deref()?.url()
     }
 
     pub fn with_store_session_lease(mut self, lease: crate::lifecycle::StoreSessionLease) -> Self {
@@ -181,7 +196,7 @@ impl KernelMcpServer {
     /// flag before returning it, so two concurrent writes cannot both claim
     /// to be the first.
     pub(super) fn viewer_invitation(&self) -> Option<&str> {
-        let url = self.viewer_url.as_deref()?;
+        let url = self.viewer_url()?;
         self.viewer_offered
             .swap(true, Ordering::SeqCst)
             .eq(&false)

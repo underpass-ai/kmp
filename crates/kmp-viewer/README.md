@@ -73,11 +73,14 @@ embedded edition mounts it over its selected local engine and another edition
 can mount it over its own composition unchanged.
 
 The usual way in is [`kmp-mcp`](https://crates.io/crates/kmp-mcp): every
-embedded MCP session brings the viewer up over its own kernel at
-`127.0.0.1:7317`, unasked. When another session already owns that default,
+embedded MCP session can serve the viewer over its own kernel at
+`127.0.0.1:7317`, but listens on no port until the viewer is requested. The
+first `kmp_view_open` (or `kmp-mcp viewer`, or `kmp-mcp demo`) binds it and it
+stays up for the session. When another session already owns that default,
 the new process takes a free loopback port instead. The session's printed
-link carries a random capability for that process only; `kmp_view_open` and `kmp_view_get_state`
-return the same link when the host hides server output. The first browser
+link carries a random capability for that process only; `kmp_view_open`
+returns the same link when the host hides server output, and
+`kmp_view_get_state` does once the viewer listens. The first browser
 request exchanges it for an HttpOnly, SameSite cookie and redirects to the
 clean URL. A local process with only the port gets `401`. `KMP_VIEWER_ADDR`
 moves it to an explicit address (and refuses if that address is busy); `off`
@@ -88,7 +91,7 @@ is required, and the bulk visual chunks stay in app structured content.
 
 ## A deliberately small surface
 
-A hand-rolled HTTP/1.1 GET server bound to loopback, a UI compiled into the
+A hand-rolled HTTP/1.1 server bound to loopback, a UI compiled into the
 binary with `include_str!`, and no dependency the embedded edition does not
 already carry: no HTTP framework, no runtime bundler, no CDN, nothing fetched at
 runtime. Three.js and OrbitControls are vendored as one pinned bundle. The render engine is vendored and hash-verified in

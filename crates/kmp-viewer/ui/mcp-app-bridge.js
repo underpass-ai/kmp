@@ -125,15 +125,6 @@
     return state;
   };
 
-  const nodeFromEntry = (entry) => ({
-    id: entry.ref_id,
-    kind: entry.kind,
-    title: entry.text,
-    summary: entry.text,
-    status: "",
-    labels: [],
-    properties: {},
-  });
   const edgeFromRelation = (edge) => ({ ...edge, ...(edge.clocks || {}), source: edge.from, target: edge.to });
 
   async function appApi(path, params, method) {
@@ -145,20 +136,6 @@
     }
     if (path === "/api/projection") {
       return callTool("kmp_view_read_projection", projectionArgs(params));
-    }
-    if (path === "/api/graph") {
-      const projection = await callTool("kmp_view_read_projection", projectionArgs({ ...params, lod: "moment" }));
-      return {
-        about: projection.about,
-        root_id: projection.about,
-        revision: projection.revision,
-        content_hash: projection.content_hash,
-        nodes: (projection.entries || []).map(nodeFromEntry),
-        edges: (projection.relations || []).map(edgeFromRelation),
-        details: [],
-        rendered: { content: "Visual projection", token_count: 0 },
-        quality: {},
-      };
     }
     if (path === "/api/node") {
       const activeAbout = params.about || await about();

@@ -91,11 +91,14 @@ fn view_error(error: ViewError) -> ToolError {
 /// open over memory that is really there, so a ref it cannot frame costs the
 /// view one element and not its honesty; that verb degrades and names what it
 /// dropped. Do not collapse the two: the asymmetry is the decision.
+/// `viewer` is the link, `Ok(None)` when this session has no viewer, or why
+/// the viewer could not start (which address, what refused it).
 pub(crate) fn open(
     arguments: &Value,
     about_exists: bool,
-    viewer_url: Option<&str>,
+    viewer: Result<Option<&str>, String>,
 ) -> Result<Value, ToolError> {
+    let viewer_url = viewer.as_ref().ok().copied().flatten();
     let Some(about) = arguments.get("about").and_then(Value::as_str) else {
         return Err(ToolError::invalid_argument(
             "kmp_view_open needs `about`: the memory the loom should weave",
@@ -127,9 +130,7 @@ pub(crate) fn open(
         "semantic_zoom_ladder": SemanticZoom::NAMES,
     });
     if viewer_url.is_none() {
-        extra["unhonored"] = json!([
-            "ChronoLoom is unavailable in this session; the semantic view was recorded but no browser can render it"
-        ]);
+        extra["unhonored"] = json!([crate::viewer::unrendered_view_notice(viewer.err())]);
     }
     Ok(state_result(&state, extra, viewer_url))
 }

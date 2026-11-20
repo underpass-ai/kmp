@@ -13,6 +13,12 @@ use crate::view::ports::{SlotOutcome, ViewSessionStore};
 /// quietly turn a camera position into memory.
 const VIEW_TTL: Duration = Duration::from_secs(6 * 60 * 60);
 
+/// Open views this process keeps at once. Any id opens a view, and a browser
+/// page on another port of this host could otherwise open thousands that
+/// live six hours each. A browser holds one and an agent a few; when a new
+/// view needs a slot, the one nobody touched for longest is forgotten.
+const MAX_OPEN_VIEWS: usize = 64;
+
 struct StoredSession {
     session: ViewSession,
     touched: SystemTime,
@@ -48,6 +54,7 @@ impl ViewSessionStore for InMemorySessions {
             None => {
                 let outcome = operation(None);
                 if let Some(session) = outcome.open {
+                    evict_least_recent(&mut views, MAX_OPEN_VIEWS - 1);
                     views.insert(
                         id.as_str().to_string(),
                         StoredSession {
@@ -72,6 +79,20 @@ impl ViewSessionStore for InMemorySessions {
     }
 }
 
+/// Forgets the least recently touched views until at most `keep` remain.
+fn evict_least_recent(views: &mut HashMap<String, StoredSession>, keep: usize) {
+    while views.len() > keep {
+        let Some(oldest) = views
+            .iter()
+            .min_by_key(|(_, stored)| stored.touched)
+            .map(|(id, _)| id.clone())
+        else {
+            return;
+        };
+        views.remove(&oldest);
+    }
+}
+
 fn prune(views: &mut HashMap<String, StoredSession>) {
     let now = SystemTime::now();
     views.retain(|_, stored| {
@@ -79,4 +100,25 @@ fn prune(views: &mut HashMap<String, StoredSession>) {
             .map(|age| age < VIEW_TTL)
             .unwrap_or(true)
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::view::ViewRegistry;
+
+    #[test]
+    fn opening_past_the_cap_forgets_the_view_touched_longest_ago() {
+        let registry = ViewRegistry::new();
+        registry.ensure_open(Some("watched"), Some("about:x".into()));
+        for index in 0..MAX_OPEN_VIEWS * 3 {
+            registry.ensure_open(Some(&format!("flood-{index}")), Some("about:x".into()));
+            // A view someone reads stays fresh.
+            assert!(registry.view_state(Some("watched")).is_some());
+        }
+        assert!(registry.view_state(Some("watched")).is_some());
+        assert!(registry.view_state(Some("flood-0")).is_none());
+        let last = format!("flood-{}", MAX_OPEN_VIEWS * 3 - 1);
+        assert!(registry.view_state(Some(&last)).is_some());
+    }
 }

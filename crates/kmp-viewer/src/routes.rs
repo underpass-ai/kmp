@@ -4,19 +4,19 @@
 
 use kmp_application::{
     ApplicationError, InspectMemoryQuery, MAX_VISUAL_BINS, MAX_VISUAL_PAGE_ENTRIES,
-    ObservabilityQuery, TemporalIncludeOptions, TemporalMemoryQuery, TraceMemoryQuery,
-    TracePageRequest, VisualLevelOfDetail, VisualProjectionQuery, WakeMemoryQuery,
+    ObservabilityQuery, TraceMemoryQuery, TracePageRequest, VisualLevelOfDetail,
+    VisualProjectionQuery,
 };
 use kmp_domain::{
     ContextEventStore, DomainError, GraphNeighborhoodReader, GraphReadRevision,
     MemoryAboutIndexReader, MemoryNodesRequest, NodeDetailReader, NodeRelationshipReader,
-    PortError, ProjectionWriter, SnapshotStore, TemporalWindow,
+    PortError, ProjectionWriter, SnapshotStore,
 };
 
 use crate::http::{HttpRequest, HttpResponse};
 use crate::query_params::{
-    axis_param, budget_param, cursor_param, depth_param, dimension_selection, direction_param,
-    max_edges_param, numeric_param, tier_param, window_param,
+    axis_param, budget_param, depth_param, dimension_selection, max_edges_param, numeric_param,
+    optional_numeric_param,
 };
 use crate::{MemoryViewerServer, view, views};
 
@@ -75,6 +75,10 @@ where
                     "the view state changes by POST; a GET must be safe to make",
                 );
             }
+            // A POST from another page on this host carries the cookie too.
+            if let Some(refusal) = request.cross_origin_refusal() {
+                return refusal;
+            }
             return self.answer(request).await;
         }
         if request.method != "GET" && !head_only {
@@ -96,10 +100,8 @@ where
             "/" | "/index.html" => HttpResponse::html(INDEX_HTML),
             "/api/info" => self.info(),
             "/api/abouts" => self.abouts().await,
-            "/api/graph" => self.graph(request).await,
             "/api/node" => self.node(request).await,
             "/api/nodes" => self.nodes(request).await,
-            "/api/timeline" => self.timeline(request).await,
             "/api/projection" => self.visual_projection(request).await,
             "/api/observability" => self.observability(request).await,
             "/api/trace" => self.trace(request).await,
@@ -122,35 +124,6 @@ where
     async fn abouts(&self) -> HttpResponse {
         match self.service.list_abouts().await {
             Ok(abouts) => HttpResponse::json(&views::AboutsView { abouts }),
-            Err(error) => application_error_response(&error),
-        }
-    }
-
-    async fn graph(&self, request: &HttpRequest) -> HttpResponse {
-        let Some(about) = request.param("about") else {
-            return HttpResponse::error(400, "missing required parameter `about`");
-        };
-        let dimensions = match dimension_selection(request) {
-            Ok(dimensions) => dimensions,
-            Err(response) => return response,
-        };
-        let max_tier = match tier_param(request) {
-            Ok(max_tier) => max_tier,
-            Err(response) => return response,
-        };
-        let query = WakeMemoryQuery {
-            about: about.to_string(),
-            role: VIEWER_ROLE.to_string(),
-            intent: "render the memory graph for a human reader".to_string(),
-            dimensions,
-            token_budget: param_or_refuse!(budget_param(request)),
-            depth: param_or_refuse!(depth_param(request)),
-            max_tier,
-            max_entries: None,
-            temporal: kmp_domain::TemporalSelection::Frontier,
-        };
-        match self.service.wake(query).await {
-            Ok(result) => HttpResponse::json(&views::graph_view(about, &result)),
             Err(error) => application_error_response(&error),
         }
     }
@@ -218,53 +191,6 @@ where
         }
     }
 
-    async fn timeline(&self, request: &HttpRequest) -> HttpResponse {
-        let Some(about) = request.param("about") else {
-            return HttpResponse::error(400, "missing required parameter `about`");
-        };
-        let cursor = match cursor_param(request) {
-            Ok(cursor) => cursor,
-            Err(response) => return response,
-        };
-        let direction = match direction_param(request) {
-            Ok(direction) => direction,
-            Err(response) => return response,
-        };
-        let axis = match axis_param(request) {
-            Ok(axis) => axis,
-            Err(response) => return response,
-        };
-        let dimensions = match dimension_selection(request) {
-            Ok(dimensions) => dimensions,
-            Err(response) => return response,
-        };
-        let query = TemporalMemoryQuery {
-            entry_selection: None,
-            about: about.to_string(),
-            direction,
-            axis,
-            cursor: Some(cursor),
-            interval: None,
-            dimensions,
-            window: TemporalWindow::new(
-                param_or_refuse!(window_param(request, "before")),
-                param_or_refuse!(window_param(request, "after")),
-            ),
-            limit_entries: request
-                .param("limit")
-                .and_then(|value| value.parse::<usize>().ok())
-                .filter(|limit| *limit > 0),
-            include: TemporalIncludeOptions::default(),
-            token_budget: param_or_refuse!(budget_param(request)),
-            depth: param_or_refuse!(depth_param(request)),
-            max_tier: None,
-        };
-        match self.service.temporal(query).await {
-            Ok(result) => HttpResponse::json(&views::timeline_view(about, &result)),
-            Err(error) => application_error_response(&error),
-        }
-    }
-
     async fn visual_projection(&self, request: &HttpRequest) -> HttpResponse {
         let Some(about) = request.param("about") else {
             return HttpResponse::error(400, "missing required parameter `about`");
@@ -305,8 +231,15 @@ where
             cursor: request.param("cursor").map(ToString::to_string),
             depth: param_or_refuse!(depth_param(request)),
         };
+        // A closed semaphore cannot happen (nothing closes it); reading
+        // without a turn is still correct, only less frugal.
+        let _turn = self.projection_turn.acquire().await.ok();
         match self.service.visual_projection(query).await {
             Ok(result) => HttpResponse::json(&views::visual_projection_view(result)),
+            // The one thing this read looks up is the about.
+            Err(ApplicationError::NotFound(_)) => {
+                HttpResponse::error(404, &format!("no memory is held under about `{about}`"))
+            }
             Err(error) => application_error_response(&error),
         }
     }
@@ -359,12 +292,8 @@ where
             role: VIEWER_ROLE.to_string(),
             token_budget: param_or_refuse!(budget_param(request)),
             page: TracePageRequest {
-                entries: request
-                    .param("entries")
-                    .and_then(|value| value.parse::<usize>().ok()),
-                cursor: request
-                    .param("cursor")
-                    .and_then(|value| value.parse::<usize>().ok()),
+                entries: param_or_refuse!(optional_numeric_param(request, "entries")),
+                cursor: param_or_refuse!(optional_numeric_param(request, "cursor")),
             },
             limits: None,
         };
