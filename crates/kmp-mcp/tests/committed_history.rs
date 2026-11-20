@@ -2,17 +2,19 @@
 //! store: a fresh clone and a pull read and write without a human step, a
 //! divergence is told on every read, and nothing ever drops the teammate's
 //! memory from the bundle (B1).
+#[path = "support/isolated_home.rs"]
+mod isolated_home;
 
 use std::io::Write;
 use std::path::Path;
-use std::process::{Command, Output, Stdio};
+use std::process::{Output, Stdio};
 
 use serde_json::{Value, json};
 
 /// Runs the binary inside `project` with a home of its own: nothing here
 /// reaches the developer's real store, selection or plugin caches.
 fn kmp(project: &Path, home: &Path, args: &[&str], stdin: &str) -> Output {
-    let mut command = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"));
+    let mut command = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"));
     command
         .args(args)
         .current_dir(project)

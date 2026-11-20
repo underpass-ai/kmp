@@ -3,9 +3,11 @@
 //! out through `kmp-mcp export` and back in through `kmp-mcp import` into a
 //! fresh store on a hermetic machine: HOME, XDG and both stores are temporary.
 //! The whole catalogue, every page of it, must come back unchanged.
+#[path = "support/isolated_home.rs"]
+mod isolated_home;
 
 use std::path::Path;
-use std::process::{Command, Output};
+use std::process::Output;
 
 use kmp_mcp::KernelMcpServer;
 use serde_json::{Value, json};
@@ -124,7 +126,7 @@ struct Machine {
 
 impl Machine {
     fn run(&self, store: &Path, args: &[&str]) -> Output {
-        let output = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+        let output = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"))
             .args(args)
             .current_dir(self.home.path())
             .env("HOME", self.home.path())

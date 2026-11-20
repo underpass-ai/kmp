@@ -2,6 +2,8 @@
 //! observed clocks a label selector found nothing and ChronoLoom counted
 //! every label `0/7` (V-01): a label with no time on the selected clock now
 //! stands where its entry stands.
+#[path = "support/isolated_home.rs"]
+mod isolated_home;
 use std::io::Write;
 use std::path::Path;
 use std::process::{Command, Stdio};
@@ -10,7 +12,7 @@ use serde_json::{Value, json};
 
 fn kmp(scratch: &Path) -> Command {
     let home = scratch.join("home");
-    let mut command = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"));
+    let mut command = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"));
     command
         .current_dir(scratch)
         .env_remove("KMP_MCP_BACKEND")

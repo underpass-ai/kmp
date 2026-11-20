@@ -1,9 +1,11 @@
 //! A stdio session listens on nothing until someone asks for the viewer.
 //! The first `kmp_view_open` binds it; every later request reuses it.
+#[path = "support/isolated_home.rs"]
+mod isolated_home;
 
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::TcpStream;
-use std::process::{Child, ChildStdout, Command, Stdio};
+use std::process::{Child, ChildStdout, Stdio};
 
 use serde_json::{Value, json};
 
@@ -21,7 +23,7 @@ impl Session {
     fn start(viewer_addr: Option<&str>) -> Self {
         let data = tempfile::tempdir().expect("store dir");
         let home = tempfile::tempdir().expect("home dir");
-        let mut command = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"));
+        let mut command = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"));
         command
             .env("KMP_MCP_DATA_DIR", data.path())
             .env("HOME", home.path())
@@ -224,7 +226,7 @@ fn a_busy_default_address_falls_forward_to_a_session_port_on_first_use() {
 fn a_named_address_that_is_not_loopback_is_refused_at_start() {
     let data = tempfile::tempdir().expect("store dir");
     let home = tempfile::tempdir().expect("home dir");
-    let output = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+    let output = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"))
         .env("KMP_VIEWER_ADDR", "0.0.0.0:7400")
         .env("KMP_MCP_DATA_DIR", data.path())
         .env("HOME", home.path())

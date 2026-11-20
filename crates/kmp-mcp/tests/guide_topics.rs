@@ -2,6 +2,8 @@
 //! a first session needs nothing from it to wake and write.
 #[path = "support/route_fixture.rs"]
 mod fixture;
+#[path = "support/isolated_home.rs"]
+mod isolated_home;
 #[path = "support/write_neighborhood_fixture.rs"]
 mod neighborhood;
 use fixture::{ABOUT, call};
@@ -90,7 +92,7 @@ fn every_topic_answers_from_the_binary_without_plugin_assets_or_store() {
             .to_string(),
         );
     }
-    let mut child = std::process::Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+    let mut child = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"))
         .env_remove("KMP_PLUGIN_ROOT")
         .env_remove("CODEX_HOME")
         .env("HOME", scratch.path().join("home"))
@@ -125,7 +127,7 @@ fn every_topic_answers_from_the_binary_without_plugin_assets_or_store() {
     }
     // Nothing was seeded or written: the store holds no event at all.
     let bundle = scratch.path().join("after.jsonl");
-    let export = std::process::Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+    let export = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"))
         .arg("export")
         .arg(&bundle)
         .env_remove("KMP_PLUGIN_ROOT")
