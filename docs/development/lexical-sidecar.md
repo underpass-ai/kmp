@@ -222,7 +222,11 @@ whole admitted pool: no semantic retrieval, no remote re-ranking, no doubt band
 4. **Ranking.** The ranker ranks those candidates against the whole about as the
    sidecar holds it: N, Σ length and df under both readings (the collection), the
    frontier and expiries (`lex_clock`), the language and the vocabulary the bridge
-   reads. Equal integers give equal scores to the bit.
+   reads. Equal integers give equal scores to the bit. The ranker also takes
+   each candidate's own counts (the terms of its text, its content, direct and
+   expansion fields) from its row rather than tokenizing it again: the row was
+   read by the same `surface_counts`. A candidate without a row (a node the
+   walk brought in) is read from its text as before.
 
 Everything else reads the about as before and says why at debug
 (`kmp_lexical_answer`, `answered = false`, `reason`): another clock, several
@@ -344,7 +348,14 @@ a declared lifecycle can rescue, `lifecycle_docs`) and the best
 and keeps the answer only when it is certified: the reading did not carry
 the whole ranking, and every eligible candidate it carried ranks strictly
 above the best prefix left unread. Otherwise it reads four times as many, up
-to every candidate. The 35 % cost bound applies to each selection. A
+to every candidate; when the round carried the whole ranking of what it read
+because too few of its candidates were eligible, it reads enough to find the
+eligible candidates its depth needs at the rate it found them, twice over
+(`next_limit`). Which round certifies changes how much is read, never the
+answer. Every round reads at the same position and keeps what it read point
+by point (`PartsMemo`: nodes, kept edges, bodies, sidecar node states), so a
+later round reads only what no earlier round did and walks the selection
+afresh over those reads. The 35 % cost bound applies to each selection. A
 question whose anchors the gate requires is ranked as the gate ranks it
 (once an anchor decides: the question without its facets, the focus counted
 but not required) and every candidate naming one of its anchors is always

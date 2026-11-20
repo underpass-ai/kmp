@@ -148,6 +148,21 @@ pub fn wake_response_with_focus(
     temporal: &TemporalSelection,
     focus: Option<&super::judged_selection::JudgedSelection>,
 ) -> ProtoMappingResult<WakeResponse> {
+    wake_response_rendering(intent, max_entries, result, temporal, focus, None)
+}
+
+/// [`wake_response_with_focus`] for a wake read with a summary render
+/// ([`kmp_application::RenderDemand::Summary`]): `sections_render` renders
+/// the flat sections from the bundle when its current state needs them, so
+/// the packet is the one a structure render gives.
+pub fn wake_response_rendering(
+    intent: &str,
+    max_entries: Option<usize>,
+    result: GetContextResult,
+    temporal: &TemporalSelection,
+    focus: Option<&super::judged_selection::JudgedSelection>,
+    sections_render: Option<super::wake_current_state::WakeSectionsRender<'_>>,
+) -> ProtoMappingResult<WakeResponse> {
     // A packet bounded in time stands on the selection: its evidence, its
     // spine, its cursor and its proof are the selection's. The rendered
     // prose is the about's, because it is rendered before this reads it.
@@ -174,7 +189,12 @@ pub fn wake_response_with_focus(
         .into_iter()
         .filter(|item| admission.admits(item))
         .collect::<Vec<_>>();
-    let current_state = rendered_current_state(&result.rendered, &result.bundle, &lifecycle);
+    let current_state = rendered_current_state(
+        &result.rendered,
+        &result.bundle,
+        &lifecycle,
+        sections_render,
+    );
     let summary = rendered_summary(&result.rendered);
     // The L0 summary already selects one blocker and one next action. Leaving
     // the typed lists empty made the same packet assert `Blocker:` / `Next:`

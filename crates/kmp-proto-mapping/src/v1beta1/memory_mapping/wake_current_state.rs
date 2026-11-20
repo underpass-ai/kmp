@@ -9,12 +9,17 @@
 
 use std::collections::BTreeSet;
 
-use kmp_application::RenderedContext;
+use kmp_application::{RenderDemand, RenderedContext};
 use kmp_domain::{KmpBundle, RelationSemanticClass};
 
 use super::memory_lifecycle::MemoryLifecycle;
 
 const STATE_LINES: usize = 5;
+
+/// Renders a wake's flat sections from its bundle, for a wake read with a
+/// summary render ([`RenderDemand::Summary`]) whose live memories leave room
+/// for them.
+pub type WakeSectionsRender<'a> = &'a dyn Fn(&KmpBundle) -> RenderedContext;
 
 /// Relations that record where a memory's support or placement comes from,
 /// not what the memory says.
@@ -24,6 +29,7 @@ pub(super) fn rendered_current_state(
     rendered: &RenderedContext,
     bundle: &KmpBundle,
     lifecycle: &MemoryLifecycle,
+    sections_render: Option<WakeSectionsRender<'_>>,
 ) -> Vec<String> {
     let entries = bundle
         .relationships()
@@ -61,6 +67,17 @@ pub(super) fn rendered_current_state(
             }
         })
         .partition(|node| lifecycle.stands(node.node_id()));
+    // A summary render carries no sections. They are read only when the
+    // live memories leave state lines for them (or there are none at all),
+    // and then rendered from the same bundle, as a structure render has them.
+    let full;
+    let rendered = match sections_render {
+        Some(render) if rendered.demand == RenderDemand::Summary && live.len() < STATE_LINES => {
+            full = render(bundle);
+            &full
+        }
+        _ => rendered,
+    };
     // The ref is how a reader follows a memory up; the title mostly repeats
     // the summary, so it is left out.
     let memory_line = |node: &&kmp_domain::BundleNode| {

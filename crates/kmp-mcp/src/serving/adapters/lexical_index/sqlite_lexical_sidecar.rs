@@ -35,6 +35,8 @@ CREATE TABLE IF NOT EXISTS lex_node(
 CREATE TABLE IF NOT EXISTS lex_relation(
     about TEXT NOT NULL, source TEXT NOT NULL, target TEXT NOT NULL, type TEXT NOT NULL,
     signals BLOB NOT NULL, PRIMARY KEY (about, source, target, type)) WITHOUT ROWID;
+-- An about's lifecycle relations, and what supports each end (lifecycle_docs).
+CREATE INDEX IF NOT EXISTS lex_relation_by_type ON lex_relation(about, type, target);
 CREATE TABLE IF NOT EXISTS lex_fwd(
     about TEXT NOT NULL, doc TEXT NOT NULL, ordinal INTEGER NOT NULL,
     fingerprint INTEGER NOT NULL, row BLOB NOT NULL,
@@ -85,6 +87,18 @@ impl SqliteLexicalSidecar {
             .map_err(storage)?;
         connection
             .execute_batch("PRAGMA synchronous = NORMAL;")
+            .map_err(storage)?;
+        // Every statement here is cached and re-bound per row read. Without
+        // the planner stability guarantee SQLite re-plans a statement whose
+        // parameters it once compared against the join (`relation`'s
+        // `lex_clock` join), on every new binding: an ask spent a quarter of
+        // its time re-parsing that one statement. The plan is the same for
+        // every binding, so nothing read changes.
+        connection
+            .set_db_config(
+                rusqlite::config::DbConfig::SQLITE_DBCONFIG_ENABLE_QPSG,
+                true,
+            )
             .map_err(storage)?;
         connection.execute_batch(SCHEMA).map_err(storage)?;
         Ok(Self {

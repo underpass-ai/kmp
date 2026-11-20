@@ -4,6 +4,7 @@ use kmp_application::RecallParts;
 use kmp_domain::{GraphPointReads, NodeNeighborhood, NodeProjection, NodeRelationProjection};
 
 use super::node_state::NodeState;
+use super::parts_memo::PartsMemo;
 use super::relation_key::{CONTAINS_ENTRY, RelationKey, SUPPORTS};
 use super::sqlite_lexical_sidecar::SqliteLexicalSidecar;
 
@@ -31,11 +32,14 @@ const LIFECYCLE: [&str; 3] = ["supersedes", "corrects", "updates_state"];
 /// Every candidate that can score is here, and every one the ranker's
 /// rescues can reach from those that do; what else is here scores nothing
 /// and reaches nothing the ranker could return.
+///
+/// Every point read goes through `memo`, which a later top-k round of the
+/// same ask, at the same position, passes again ([`PartsMemo`]).
 pub(super) struct IndexedParts<'a> {
     reads: &'a dyn GraphPointReads,
     sidecar: &'a SqliteLexicalSidecar,
     about: &'a str,
-    states: BTreeMap<String, Option<NodeState>>,
+    memo: &'a mut PartsMemo,
     nodes: BTreeMap<String, NodeProjection>,
     relations: BTreeMap<RelationKey, NodeRelationProjection>,
 }
@@ -49,12 +53,13 @@ impl<'a> IndexedParts<'a> {
         reads: &'a dyn GraphPointReads,
         sidecar: &'a SqliteLexicalSidecar,
         about: &'a str,
+        memo: &'a mut PartsMemo,
     ) -> Self {
         Self {
             reads,
             sidecar,
             about,
-            states: BTreeMap::new(),
+            memo,
             nodes: BTreeMap::new(),
             relations: BTreeMap::new(),
         }
@@ -66,7 +71,7 @@ impl<'a> IndexedParts<'a> {
         mut self,
         candidates: &BTreeSet<String>,
     ) -> Result<Option<RecallParts>, String> {
-        let Some(root) = self.reads.node(self.about).map_err(port)? else {
+        let Some(root) = self.read_node(self.about)? else {
             return Ok(None);
         };
         let core = candidates
@@ -182,9 +187,20 @@ impl<'a> IndexedParts<'a> {
             }
         }
         let mut details = BTreeMap::new();
-        for id in self.nodes.keys() {
-            if let Some(detail) = self.reads.detail(id).map_err(port)? {
-                details.insert(id.clone(), detail);
+        for id in self.nodes.keys().cloned().collect::<Vec<_>>() {
+            let detail = match self.memo.details.get(&id) {
+                Some(detail) => detail.clone(),
+                None => {
+                    let detail = self.reads.detail(&id).map_err(port)?;
+                    self.count_miss();
+                    if !self.memo.read_through {
+                        self.memo.details.insert(id.clone(), detail.clone());
+                    }
+                    detail
+                }
+            };
+            if let Some(detail) = detail {
+                details.insert(id, detail);
             }
         }
         let neighbors = self
@@ -205,12 +221,37 @@ impl<'a> IndexedParts<'a> {
     }
 
     fn state(&mut self, id: &str) -> Result<Option<NodeState>, String> {
-        if !self.states.contains_key(id) {
-            let state = self.sidecar.node(self.about, id)?;
-            self.states.insert(id.to_string(), state);
+        if let Some(state) = self.memo.states.get(id) {
+            return Ok(state.clone());
         }
-        Ok(self.states[id].clone())
+        let state = self.sidecar.node(self.about, id)?;
+        self.count_miss();
+        // A node's state is read for every edge that reaches it: it is kept
+        // for the round even when nothing is kept for a later one.
+        self.memo.states.insert(id.to_string(), state.clone());
+        Ok(state)
     }
+
+    /// A node as the store holds it at the read's position.
+    fn read_node(&mut self, id: &str) -> Result<Option<NodeProjection>, String> {
+        if let Some(node) = self.memo.nodes.get(id) {
+            return Ok(node.clone());
+        }
+        let node = self.reads.node(id).map_err(port)?;
+        self.count_miss();
+        if !self.memo.read_through {
+            self.memo.nodes.insert(id.to_string(), node.clone());
+        }
+        Ok(node)
+    }
+
+    #[cfg(test)]
+    fn count_miss(&mut self) {
+        self.memo.misses += 1;
+    }
+
+    #[cfg(not(test))]
+    fn count_miss(&mut self) {}
 
     fn included(&mut self, id: &str) -> Result<bool, String> {
         Ok(self.state(id)?.is_some_and(|state| state.included()))
@@ -231,7 +272,7 @@ impl<'a> IndexedParts<'a> {
 
     fn add_node(&mut self, id: &str) -> Result<(), String> {
         if !self.nodes.contains_key(id)
-            && let Some(node) = self.reads.node(id).map_err(port)?
+            && let Some(node) = self.read_node(id)?
         {
             self.nodes.insert(id.to_string(), node);
         }
@@ -248,6 +289,25 @@ impl<'a> IndexedParts<'a> {
     /// The edges the selection keeps at a node, out of it and into it.
     fn kept_edges(
         &mut self,
+        id: &str,
+        outgoing: bool,
+        incoming: bool,
+        relation_type: Option<&'static str>,
+    ) -> Result<Vec<NodeRelationProjection>, String> {
+        let query = (id.to_string(), outgoing, incoming, relation_type);
+        if let Some(kept) = self.memo.edges.get(&query) {
+            return Ok(kept.clone());
+        }
+        let kept = self.read_kept_edges(id, outgoing, incoming, relation_type)?;
+        self.count_miss();
+        if !self.memo.read_through {
+            self.memo.edges.insert(query, kept.clone());
+        }
+        Ok(kept)
+    }
+
+    fn read_kept_edges(
+        &self,
         id: &str,
         outgoing: bool,
         incoming: bool,
