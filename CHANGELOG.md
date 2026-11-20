@@ -25,6 +25,9 @@ Detailed notes from the early release cycle remain available in the
   inherited. Memories written with `kmp_write_memory` are unaffected: their
   label coordinates already carry the clocks.
 
+### Fixed
+- Undated labels now inherit their entry's clock (#929).
+
 ## [0.27.0] - 2026-11-19
 
 ### Security
