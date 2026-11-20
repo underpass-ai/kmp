@@ -1,59 +1,29 @@
-Write separate facts, with source evidence and labels that make them navigable.
-Pass your `context_id`; KMP supplies your persistent agent name as actor.
-Without a context, supply actor explicitly as in this standalone example. A label can hold several values; reuse a known
-key/value before inventing another. A shared account is not a person's alias.
-
-Clocks: omit `observed_at` to use KMP's exact `ingested_at`. Supply it only
-when the source establishes another observation time. Unknown `occurred_at`:
-omit it or use null; KMP never copies observation into occurrence. Root clocks
-are defaults for records; a record's null clears that default. Each record's
-effective observation also dates its generated evidence and connect_to declarations;
-the target's dates do not date a new link.
-One report can describe several events: separate execution from a later check;
-keep the later result out of the earlier summary. Example:
-`guide:kmp-agent:example:event-separation`.
+Write separate facts, each with its source evidence and labels that make it
+navigable. A label can hold several values; reuse a known key/value (the wake
+label catalogue) before inventing another. Omit `actor` to be recorded under
+the MCP client's name.
 
 Source R1: “On 2026-09-01 at 09:00 UTC, we observed the cache fail.”
-One `kmp_write_memory` example:
 
 ```json
-{"about":"project:sample","actor":"writer","idempotency_key":"sample-r1","observed_at":"2026-09-01T09:00:00Z","occurred_at":"2026-09-01T09:00:00Z","labels":{"component":["cache"],"source":["R1"]},"memories":[{"id":"failure","kind":"observation","summary":"The cache failed.","evidence":"R1: On 2026-09-01 at 09:00 UTC, we observed the cache fail."}]}
+{"about":"project:sample","idempotency_key":"sample-r1","observed_at":"2026-09-01T09:00:00Z","occurred_at":"2026-09-01T09:00:00Z","labels":{"component":["cache"],"source":["R1"]},"memories":[{"id":"failure","kind":"observation","summary":"The cache failed.","evidence":"R1: On 2026-09-01 at 09:00 UTC, we observed the cache fail."}]}
 ```
 
-Expect `accepted:true`, generated refs and a receipt. Copy the refs. Acceptance
-validates the packet, not fidelity to the source. Check the stored clocks and
-evidence. On rejection no part of the batch is committed: read all feedback,
-repair from the source, and retry. Replay an accepted packet with its same key.
+Expect `accepted:true`, refs and a receipt; copy the refs. Acceptance validates
+the packet, not fidelity to the source. On rejection nothing is committed: read
+every `feedback` item, repair from the source and retry. Replay an accepted
+packet with its same key.
 
-Rich links return `status:needs_review`, `accepted:false`: nothing written.
-Review the stored/proposed neighborhood and link directions. Expand omissions
-when needed. Resume the returned write action, or correct the proposal. Local
-links and `strict:false` still require review; stale context refreshes it. This
-is your review, not a request for human approval. A short view is not full proof.
+Clocks: omit `observed_at` for KMP's exact ingestion time; supply it only when
+the source gives another. Omit unknown `occurred_at`, `valid_from` and
+`valid_until`; observation is never onset. Root clocks are record defaults; a
+record's null clears one. Keep a later check out of an earlier event's summary.
 
-Read returned `relations` as `from -> rel -> to` (`@id` uses `local_refs`).
-In `connect_to`, the containing memory is `from`; `ref` is `to`:
-
-Use an exact local id, such as `"check"` or `"@check"`, for another record in
-the packet. Omit `class` when the relation allows one class (`verified_by`
-completes `evidential`). `authorizes`, `chosen_because` and `confirms_selection`
-need an explicit choice. A rejected class reports `allowed_values`.
-This card's `relation_vocabulary` lists every relation as
-`name (quality; classes; when to use)`: pick the richest one the source proves.
-
-- approval -> `authorizes` -> permitted action (not proof it ran);
-- claim/outcome -> `verified_by` -> actual verifying check;
-- exclusion record -> `excluded_from` -> total/set;
-- corrected fact -> `corrects` -> earlier fact;
-- replacement -> `supersedes` -> **entire** old memory, marking it SUPERSEDED.
-
-For a partial correction, preserve unrelated facts; do not supersede their
-whole report. Omit unknown `valid_from`/`valid_until`; observation is not onset.
-
-For a decision, use its own source and connect it to the observation with the
-relation's own why and evidence. Separate facts with different validity. Never
-invent an onset, alias, permission or proof to satisfy the schema.
+A link (`connect_to`, `relations`) is taught by topic `relations`. Rich links
+return `status:needs_review`, `accepted:false`: nothing written. Review the
+returned neighborhood, then send the returned `continuation` (alone, or with
+the same `about`/`actor`) or correct the proposal. That review is yours, not a
+request for human approval. Never invent a date, alias or proof to pass.
 
 More: `guide:kmp-agent:example:first-decision`,
-`guide:kmp-agent:example:semantic-batch`,
-`guide:kmp-agent:example:dimensional-memberships`.
+`guide:kmp-agent:example:event-separation`.

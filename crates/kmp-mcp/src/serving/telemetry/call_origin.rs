@@ -1,7 +1,6 @@
-//! Where a tool call came from: the host session, whether it pages an
-//! earlier call, and the guidance context it ran in. Read before the call's
-//! arguments are resolved, because a continuation resolves into the call it
-//! continues.
+//! Where a tool call came from: the host session and whether it pages an
+//! earlier call. Read before the call's arguments are resolved, because a
+//! continuation resolves into the call it continues.
 
 use serde_json::Value;
 
@@ -17,8 +16,6 @@ pub(crate) struct CallOrigin {
     /// handle or a `page.cursor`) rather than a new call; `None` only for
     /// a call nothing was read of.
     pub(crate) is_continuation: Option<bool>,
-    /// Kept only to be fingerprinted; never logged as itself.
-    context_id: Option<String>,
 }
 
 impl CallOrigin {
@@ -32,17 +29,12 @@ impl CallOrigin {
         Self {
             client,
             is_continuation: Some(continues),
-            context_id: arguments
-                .get("context_id")
-                .and_then(Value::as_str)
-                .filter(|id| !id.is_empty())
-                .map(str::to_string),
         }
     }
 
-    /// Fingerprints of an ask's question or a wake's intent, from the
-    /// resolved `arguments` (a page carries its first call's question), and
-    /// of the context id of any call. Nothing without a salt.
+    /// The fingerprint of an ask's question or a wake's intent, from the
+    /// resolved `arguments` (a page carries its first call's question).
+    /// Nothing without a salt.
     pub(crate) fn fingerprints(
         &self,
         name: &str,
@@ -62,10 +54,6 @@ impl CallOrigin {
                 let text = arguments.get(key).and_then(Value::as_str)?;
                 salt.fingerprint_text(key, text)
             }),
-            context: self
-                .context_id
-                .as_deref()
-                .map(|id| salt.fingerprint("context", id)),
         }
     }
 }
@@ -97,10 +85,10 @@ mod tests {
     }
 
     #[test]
-    fn fingerprints_follow_the_question_and_context_not_their_spelling() {
+    fn fingerprints_follow_the_question_not_its_spelling() {
         let dir = tempfile::tempdir().expect("dir");
         let salt = salt(&dir);
-        let origin = CallOrigin::read(&json!({"context_id": "ctx-1"}), None);
+        let origin = CallOrigin::read(&json!({}), None);
 
         let one = origin.fingerprints(
             "kmp_ask",
@@ -120,8 +108,6 @@ mod tests {
 
         assert_eq!(one, two);
         assert_ne!(one.subject, other.subject);
-        assert_eq!(one.context, other.context);
-        assert!(one.context.is_some());
         assert_ne!(one.subject.as_deref(), Some("who approved it?"));
     }
 
@@ -137,12 +123,10 @@ mod tests {
         );
         let inspect = origin.fingerprints("kmp_inspect", &json!({"question": "q"}), Some(&salt));
         assert_eq!(inspect.subject, None);
-        let write = CallOrigin::read(&json!({"context_id": "ctx"}), None);
-        let write = write.fingerprints("kmp_write_memory", &json!({}), Some(&salt));
-        assert_eq!(write.context, Some(salt.fingerprint("context", "ctx")));
+        let write = origin.fingerprints("kmp_write_memory", &json!({}), Some(&salt));
+        assert_eq!(write.subject, None);
         let wake = origin.fingerprints("kmp_wake", &json!({"intent": " "}), Some(&salt));
         assert_eq!(wake.subject, None);
-        assert_eq!(wake.context, None);
         let intent = origin.fingerprints("kmp_wake", &json!({"intent": "resume"}), Some(&salt));
         assert!(intent.subject.is_some());
     }

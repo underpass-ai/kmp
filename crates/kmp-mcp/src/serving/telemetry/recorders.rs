@@ -100,7 +100,6 @@ pub(crate) fn record_call_error(
         client_version = origin.client.as_ref().map(|client| client.version.as_str()),
         is_continuation = origin.is_continuation,
         subject_fingerprint = prints.subject.as_deref(),
-        context_fingerprint = prints.context.as_deref(),
         feedback_count = feedback.as_ref().map(|codes| codes.count),
         feedback_codes = feedback.as_ref().map(|codes| codes.entries.as_str()),
         "kernel mcp tool error"
@@ -247,7 +246,6 @@ fn log_tool_success(
         client_version = origin.client.as_ref().map(|client| client.version.as_str()),
         is_continuation = origin.is_continuation,
         subject_fingerprint = provenance.prints.subject.as_deref(),
-        context_fingerprint = provenance.prints.context.as_deref(),
         answer_status = outcome.and_then(|o| o.answer_status.as_deref()),
         unknown_reason = outcome.and_then(|o| o.unknown_reason.as_deref()),
         confidence = outcome.and_then(|o| o.confidence.as_deref()),
@@ -369,7 +367,7 @@ mod tests {
         let client = McpClient::from_initialize(&json!({
             "params": {"clientInfo": {"name": "codex-mcp-client", "version": "0.154.0"}}
         }));
-        let sent = json!({"continuation": "call-1", "context_id": "ctx-secret"});
+        let sent = json!({"continuation": "call-1"});
         let origin = CallOrigin::read(&sent, client);
         let source = CallSource {
             origin: &origin,
@@ -429,10 +427,6 @@ mod tests {
         assert_eq!(
             lines[1]["fields"]["feedback_codes"],
             "LABELS_REQUIRED@labels"
-        );
-        assert_eq!(
-            fields["context_fingerprint"],
-            salt.fingerprint("context", "ctx-secret").as_str()
         );
         for line in &lines {
             let text = line.to_string();

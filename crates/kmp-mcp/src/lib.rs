@@ -3,7 +3,6 @@ pub mod banner;
 pub mod clock;
 pub mod demo;
 pub mod document;
-mod guidance;
 pub mod guide;
 pub mod lifecycle;
 mod local_abouts;
@@ -14,6 +13,7 @@ pub mod style;
 pub mod summaries;
 pub mod viewer;
 
+mod continuation;
 mod contract;
 mod curate;
 mod projection;

@@ -107,7 +107,7 @@ pub(crate) fn write_memory_schema() -> Value {
         "required":["about","actor"],
         "properties":{
             "about":string_schema("Exact about receiving this one transaction. Never inferred or changed by a default."),
-            "actor":string_schema("Human, agent or component producing the write."),
+            "actor":string_schema("Human, agent or component producing the write. Omitted: the MCP client name from initialize, or mcp-client."),
             "observed_at":json!({"type":["string","null"],"description":"Shared observation and packet provenance. Omit or null for the exact ingestion time. Preserve an explicit source-backed RFC3339 observation; records may override it. Unknown occurrence is never inferred."}),
             "occurred_at":occurred,
             "valid_from":valid_from,

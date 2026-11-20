@@ -1,25 +1,31 @@
-use serde_json::{Value, json};
+use serde_json::Value;
 
 use super::{ToolError, ToolErrorCode};
+use crate::guide::GuideTopic;
 
-/// On-demand lessons for a refused call. They teach usage, never repair data.
+/// The guide topic a refused call points at: one short line, never a lesson
+/// body. It teaches usage, never repairs data.
 pub(crate) struct ToolErrorHelp;
 
 impl ToolErrorHelp {
-    pub(super) fn topic(tool: &str) -> Option<&'static str> {
-        Self::route(tool)?.0.strip_prefix("verb:")
+    /// `Help: kmp_guide {"topic":"…"}` for a refusal the guide can teach.
+    pub(crate) fn line(tool: &str, arguments: &Value, error: &ToolError) -> Option<String> {
+        Self::topic(tool, arguments, error)
+            .map(|topic| format!("Help: kmp_guide {{\"topic\":\"{topic}\"}}"))
     }
 
-    pub(crate) fn for_call(tool: &str, arguments: &Value, error: &ToolError) -> Option<Value> {
+    fn topic(tool: &str, arguments: &Value, error: &ToolError) -> Option<&'static str> {
         // A failed guide read must not recommend itself. Infrastructure failures
         // are not fixed by changing source data or repeatedly reading this store.
-        if matches!(
-            error.code,
-            ToolErrorCode::BackendError | ToolErrorCode::Unavailable
-        ) || arguments
-            .get("about")
-            .and_then(Value::as_str)
-            .is_some_and(crate::guide::is_guide_about)
+        if tool == "kmp_guide"
+            || matches!(
+                error.code,
+                ToolErrorCode::BackendError | ToolErrorCode::Unavailable
+            )
+            || arguments
+                .get("about")
+                .and_then(Value::as_str)
+                .is_some_and(crate::guide::is_guide_about)
             || error
                 .feedback
                 .iter()
@@ -27,118 +33,55 @@ impl ToolErrorHelp {
         {
             return None;
         }
-        let (verb, default_example) = Self::route(tool)?;
-        let mut examples = Vec::new();
-        for feedback in &error.feedback {
-            if let Some(example) = Self::for_feedback(feedback)
-                && !examples.contains(&example)
-            {
-                examples.push(example);
-            }
-        }
-        if examples.is_empty() {
-            examples.push(
-                if tool == "kmp_trace" && trace_has_body_options(arguments) {
-                    "example:reader-cards"
-                } else if tool == "kmp_trace" && arguments.pointer("/search/seek").is_some() {
-                    "example:evidence-seek"
-                } else {
-                    default_example
-                },
-            );
-        }
-        Some(json!({
-            "guide": Self::read(verb),
-            "examples": examples.into_iter().map(Self::read).collect::<Vec<_>>()
-        }))
-    }
-
-    fn for_feedback(feedback: &Value) -> Option<&'static str> {
-        match feedback["code"].as_str().unwrap_or_default() {
-            "FUTURE_OBSERVATION" => return Some("example:four-clocks"),
-            "INVALID_LABELS" => return Some("example:dimensional-memberships"),
-            "MEMORY_EVIDENCE_REQUIRED" | "INVALID_KIND" => return Some("example:first-decision"),
-            "RELATE_PROPOSAL_REQUIRED" | "CROSS_ABOUT_RELATION" => {
-                return Some("example:distributed-incident");
-            }
-            "RELATION_PROOF_REQUIRED"
-            | "RELATION_CLASS_MISMATCH"
-            | "PRIOR_CONTEXT_REQUIRED"
-            | "INVALID_RELATION"
-            | "SELF_RELATION" => return Some("example:decision-history"),
-            "SEARCH_SUMMARY_REQUIRED"
-            | "INVALID_SEARCH_SUMMARY"
-            | "INVALID_LOCAL_ID"
-            | "DUPLICATE_LOCAL_ID"
-            | "UNKNOWN_LOCAL_REF"
-            | "WRITE_OPERATION_REQUIRED"
-            | "EMPTY_MEMORIES" => return Some("example:semantic-batch"),
-            _ => {}
-        }
-        // Read validator-produced argument paths, never words in its message.
-        let field = feedback["field"].as_str().unwrap_or_default();
-        let segments = field.split(['.', '[']);
-        for segment in segments {
-            match segment {
-                "occurred_at" | "observed_at" | "valid_from" | "valid_until" | "axis"
-                | "interval" | "as_of" => return Some("example:four-clocks"),
-                "page" | "budget" => return Some("example:budget-proof"),
-                "labels" | "dimensions" => return Some("example:dimensional-memberships"),
-                _ => {}
-            }
-        }
-        None
-    }
-
-    fn route(tool: &str) -> Option<(&'static str, &'static str)> {
-        Some(match tool {
-            "kmp_guide" => ("verb:guide", "card:guide"),
-            "kmp_write_memory" => ("verb:write", "example:semantic-batch"),
-            "kmp_relabel" => ("verb:write", "example:dimensional-memberships"),
-            "kmp_ingest" => ("verb:write", "example:canonical-ingest"),
-            // Its own verb and its own lesson. Pointing a refused card at the
-            // writer's ingest example answered with something that teaches a
-            // different move entirely, which is worse than answering nothing.
-            "kmp_condense" => ("verb:condense", "example:reader-cards"),
-            // The audit is the read half of the summary loop; its repair
-            // is a write with search_summaries, which the write verb
-            // teaches beside the lint that refused the summary.
-            "kmp_summaries_audit" => ("verb:write", "example:semantic-batch"),
-            "kmp_wake" => ("verb:wake", "example:shared-resumption"),
-            "kmp_ask" => ("verb:ask", "example:decision-history"),
-            "kmp_relate" => ("verb:relate", "example:distributed-incident"),
-            "kmp_curate" => ("verb:curate", "example:curate-review"),
-            "kmp_time" => ("verb:time", "example:four-clocks"),
-            "kmp_inspect" => ("verb:audit", "example:budget-proof"),
-            "kmp_trace" => ("verb:audit", "example:decision-history"),
-            "kmp_view_open" | "kmp_view_get_state" | "kmp_view_apply_intent" => {
-                ("verb:view", "example:shared-resumption")
-            }
-            _ => return None,
-        })
-    }
-
-    fn read(suffix: &str) -> Value {
-        json!({"tool":"kmp_inspect", "arguments":{
-            "about":"guide:kmp-agent", "ref":format!("guide:kmp-agent:{suffix}"),
-            "include":{"details":false,"incoming":false,"outgoing":false,"raw":false},
-            "budget":{"max_bytes":10000}
-        }})
+        // The topic that teaches the first refused argument, read from the
+        // validator's typed path, never from words in its message.
+        error
+            .feedback
+            .iter()
+            .filter(|item| item["severity"] != "warning")
+            .filter_map(|item| item["field"].as_str())
+            .filter(|field| !field.is_empty())
+            .find_map(|field| GuideTopic::explaining(tool, field))
+            .or_else(|| GuideTopic::of_tool(tool))
+            .map(|topic| topic.name)
     }
 }
 
-fn trace_has_body_options(arguments: &Value) -> bool {
-    arguments
-        .get("search")
-        .and_then(Value::as_object)
-        .is_some_and(|search| {
-            [
-                "max_body_record_bytes",
-                "proof_refs",
-                "expect_selection",
-                "compact",
-            ]
-            .iter()
-            .any(|key| search.contains_key(*key))
-        })
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn a_refusal_points_at_the_topic_of_its_first_refused_argument() {
+        let relation = ToolError::invalid_argument("bad").with_feedback(
+            json!({"code":"INVALID_RELATION","severity":"error","field":"memories[0].connect_to[1].rel"}),
+        );
+        assert_eq!(
+            ToolErrorHelp::line("kmp_write_memory", &json!({}), &relation).as_deref(),
+            Some(r#"Help: kmp_guide {"topic":"relations"}"#)
+        );
+        let plain = ToolError::invalid_argument("bad");
+        assert_eq!(
+            ToolErrorHelp::line("kmp_write_memory", &json!({}), &plain).as_deref(),
+            Some(r#"Help: kmp_guide {"topic":"write"}"#)
+        );
+        let seek = ToolError::invalid_argument("bad")
+            .with_feedback(json!({"severity":"error","field":"search.seek[0].via"}));
+        assert_eq!(
+            ToolErrorHelp::line("kmp_trace", &json!({}), &seek).as_deref(),
+            Some(r#"Help: kmp_guide {"topic":"trace"}"#)
+        );
+    }
+
+    #[test]
+    fn guide_reads_infrastructure_and_unknown_tools_get_no_pointer() {
+        let bad = ToolError::invalid_argument("bad");
+        assert!(ToolErrorHelp::line("kmp_guide", &json!({}), &bad).is_none());
+        assert!(ToolErrorHelp::line("kmp_unknown", &json!({}), &bad).is_none());
+        let guide = json!({"about":"guide:kmp-agent"});
+        assert!(ToolErrorHelp::line("kmp_inspect", &guide, &bad).is_none());
+        let down = ToolError::backend("down");
+        assert!(ToolErrorHelp::line("kmp_ask", &json!({}), &down).is_none());
+    }
 }

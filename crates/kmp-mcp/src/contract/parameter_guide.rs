@@ -4,15 +4,60 @@
 //! the schema they explain, in `contract::tools`, and nowhere else. What
 //! changes is where they are advertised. `tools/list` is paid by every host on
 //! every session and parameter prose was more than half of it, so the
-//! advertised input schemas carry types, enums, bounds and required fields
-//! only. `kmp_guide` projects the same descriptions, at serve time and from
-//! the same full contract, into the card of the topic that teaches each tool
-//! (`card.parameters`). The two can never drift because there is one source.
+//! advertised input schemas carry types, enums, bounds and required fields,
+//! plus one short line on the few arguments agents were refused over
+//! ([`ADVERTISED_LINES`]). `kmp_guide` projects the full descriptions, at serve
+//! time and from the same contract, into the card of the topic that teaches
+//! each argument (`parameters`). The two can never drift because there is one
+//! source.
 
 use serde_json::{Map, Value, json};
 
 use crate::contract::registry::tools_list_result;
-use crate::guidance::topic_tools;
+use crate::guide::GuideTopic;
+
+/// The short lines `tools/list` keeps, written once here: each answers a
+/// refusal agents met when they saw only the bare schema, on the tools where
+/// it was met (`about` on the two first calls of new work, `continuation` on
+/// the write that resumes its review). `tools` empty means every tool with
+/// that argument.
+pub(crate) const ADVERTISED_LINES: [(&[&str], &str, &str); 6] = [
+    (
+        &["kmp_write_memory", "kmp_wake"],
+        "about",
+        "Copy exactly from the task or a returned result.",
+    ),
+    (
+        &[
+            "kmp_write_memory",
+            "kmp_relabel",
+            "kmp_condense",
+            "kmp_curate",
+        ],
+        "actor",
+        "Writer name. Omitted: the MCP client name.",
+    ),
+    (
+        &["kmp_write_memory"],
+        "labels",
+        "At least one key with one value, here or per memory: {\"topic\":[\"x\"]}.",
+    ),
+    (
+        &["kmp_write_memory"],
+        "memories[].labels",
+        "At least one key with one value, here or on the packet.",
+    ),
+    (
+        &["kmp_write_memory"],
+        "memories[].evidence",
+        "Required: the source text or observation behind this memory.",
+    ),
+    (
+        &["kmp_write_memory"],
+        "continuation",
+        "Send alone, exactly as returned.",
+    ),
+];
 
 /// The schema keywords whose value is itself a schema at the same path.
 const SAME_PATH: [&str; 5] = ["if", "then", "else", "not", "contains"];
@@ -78,63 +123,109 @@ fn visit(schema: &mut Value, path: &str, f: &mut impl FnMut(&str, &mut Map<Strin
     }
 }
 
-/// One `path: description` line per documented argument of one input schema,
-/// in schema order, without repeating an identical line.
-pub(crate) fn parameter_lines(input_schema: &Value) -> Vec<String> {
+/// One `(path, description)` pair per documented argument of one input
+/// schema, in schema order, without repeating an identical pair.
+fn documented(input_schema: &Value) -> Vec<(String, String)> {
     let mut schema = input_schema.clone();
-    let mut lines: Vec<String> = Vec::new();
+    let mut pairs: Vec<(String, String)> = Vec::new();
     visit(&mut schema, "", &mut |path, object| {
         if let Some(description) = object.get("description").and_then(Value::as_str) {
-            let line = if path.is_empty() {
-                format!("(arguments): {description}")
-            } else {
-                format!("{path}: {description}")
-            };
-            if !lines.contains(&line) {
-                lines.push(line);
+            let pair = (path.to_string(), description.to_string());
+            if !pairs.contains(&pair) {
+                pairs.push(pair);
             }
         }
     });
-    lines
+    pairs
 }
 
-/// `card.parameters` for one guide topic: every tool the topic teaches, with
-/// its argument lines projected from the full contract.
-pub(crate) fn topic_parameters(topic: &str) -> Value {
+fn line(path: &str, description: &str) -> String {
+    if path.is_empty() {
+        format!("(arguments): {description}")
+    } else {
+        format!("{path}: {description}")
+    }
+}
+
+/// One `path: description` line per documented argument of one input schema,
+/// in schema order, without repeating an identical line.
+#[cfg(test)]
+pub(crate) fn parameter_lines(input_schema: &Value) -> Vec<String> {
+    documented(input_schema)
+        .iter()
+        .map(|(path, description)| line(path, description))
+        .collect()
+}
+
+/// `parameters` for one guide topic: every tool the topic teaches, with the
+/// argument lines it owns, projected from the full contract. A description
+/// the same tool already gave for another argument is not spelled twice:
+/// that line reads `path: as <first path>.`
+pub(crate) fn topic_parameters(topic: &GuideTopic) -> Value {
     let contract = tools_list_result();
     let mut parameters = Map::new();
-    for name in topic_tools(topic) {
+    for name in topic.tools() {
         if let Some(tool) = contract["tools"]
             .as_array()
             .into_iter()
             .flatten()
-            .find(|tool| tool["name"] == *name)
+            .find(|tool| tool["name"] == name)
         {
-            parameters.insert(
-                (*name).to_string(),
-                json!(parameter_lines(&tool["inputSchema"])),
-            );
+            let mut first: Vec<(String, String)> = Vec::new();
+            let mut lines = Vec::new();
+            for (path, description) in documented(&tool["inputSchema"]) {
+                if !topic.serves_path(name, &path) {
+                    continue;
+                }
+                match first.iter().find(|(_, seen)| *seen == description) {
+                    Some((earlier, _)) if !path.is_empty() && !earlier.is_empty() => {
+                        lines.push(format!("{path}: as {earlier}."));
+                    }
+                    _ => {
+                        lines.push(line(&path, &description));
+                        first.push((path, description));
+                    }
+                }
+            }
+            parameters.insert(name.to_string(), json!(lines));
         }
     }
     Value::Object(parameters)
 }
 
-/// Drops every parameter description from the advertised input schemas and
-/// points each tool at the guide topic that now serves them. `tools_list_result`
-/// keeps them: it is the contract the guide reads.
+/// Drops every parameter description from the advertised input schemas,
+/// except the short [`ADVERTISED_LINES`], and points each tool at the guide
+/// topic that serves the rest. `tools_list_result` keeps them all: it is the
+/// contract the guide reads.
 pub(crate) fn without_parameter_descriptions(mut result: Value) -> Value {
     for tool in result["tools"].as_array_mut().into_iter().flatten() {
+        let name = tool["name"].as_str().unwrap_or_default().to_owned();
         if let Some(schema) = tool.get_mut("inputSchema") {
-            visit(schema, "", &mut |_, object| {
+            // The property schema is visited before the subschemas at its
+            // path, so the line lands once, on the property itself.
+            let mut placed: Vec<&str> = Vec::new();
+            visit(schema, "", &mut |path, object| {
                 object.remove("description");
+                if let Some((_, advertised, line)) =
+                    ADVERTISED_LINES.iter().find(|(tools, advertised, _)| {
+                        *advertised == path && (tools.is_empty() || tools.contains(&name.as_str()))
+                    })
+                    && !placed.contains(advertised)
+                {
+                    placed.push(advertised);
+                    object.insert("description".into(), json!(line));
+                }
             });
         }
-        let name = tool["name"].as_str().unwrap_or_default().to_owned();
-        if let Some(topic) = crate::guidance::tool_topic(&name)
+        if name == "kmp_guide" {
+            continue;
+        }
+        if let Some(topic) = GuideTopic::of_tool(&name)
             && let Some(description) = tool["description"].as_str()
         {
             tool["description"] = json!(format!(
-                "{description} Arguments explained: kmp_guide topic {topic}."
+                "{description} Arguments explained: kmp_guide topic {}.",
+                topic.name
             ));
         }
     }

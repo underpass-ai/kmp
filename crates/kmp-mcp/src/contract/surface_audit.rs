@@ -138,12 +138,8 @@ mod tests {
                 .contains(&json!("actor"))
         );
         assert_eq!(
-            tools[1]["inputSchema"]["else"]["if"],
-            json!({"not":{"required":["actor"]}})
-        );
-        assert_eq!(
-            tools[1]["inputSchema"]["else"]["then"],
-            json!({"required":["context_id"]})
+            tools[1]["inputSchema"]["then"],
+            json!({"propertyNames":{"enum":["continuation","about","actor"]}})
         );
         assert_eq!(
             tools[1]["inputSchema"]["properties"]["memories"]["items"]["properties"]["connect_to"]
@@ -246,10 +242,6 @@ mod tests {
         let schema = |name: &str| &tools[name]["inputSchema"];
         let memory_keys = |name: &str| {
             let mut fields = keys(schema(name));
-            // These are MCP interaction metadata. CallGuidance removes both
-            // before compilation or RPC; native continuation checks prove it.
-            assert!(fields.remove("context_id"), "{name} context metadata");
-            assert!(fields.remove("purpose"), "{name} recommendation metadata");
             // Retained calls resolve before authorization/dispatch; the backend
             // receives their full native arguments, never the transport handle.
             fields.remove("continuation");

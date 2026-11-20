@@ -103,7 +103,7 @@ fn the_session_names_its_store_at_initialize_and_on_every_wake() {
     // The answer that misled four sessions: nothing here. It must say where
     // "here" is, in the text a host shows as well as in the structure.
     let missing = &responses[3]["result"];
-    assert_eq!(missing["isError"], true, "{missing}");
+    assert_eq!(missing["isError"], false, "{missing}");
     assert_eq!(missing["structuredContent"]["store"], expected);
     let text = missing["content"][0]["text"].as_str().expect("text");
     assert!(

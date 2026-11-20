@@ -37,7 +37,7 @@
         "openWorldHint": false,
         "readOnlyHint": false
       },
-      "description": "Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape. Arguments explained: kmp_guide topic write.",
+      "description": "Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape. Arguments explained: kmp_guide topic ingest.",
       "inputSchema": {
         "additionalProperties": false,
         "if": {
@@ -54,9 +54,6 @@
         },
         "properties": {
           "about": {
-            "type": "string"
-          },
-          "context_id": {
             "type": "string"
           },
           "default_observation_to_ingestion": {
@@ -429,15 +426,6 @@
               "source_agent"
             ],
             "type": "object"
-          },
-          "purpose": {
-            "enum": [
-              "continue",
-              "audit",
-              "history",
-              "answer"
-            ],
-            "type": "string"
           }
         },
         "required": [
@@ -924,13 +912,6 @@
               }
             }
           ],
-          "if": {
-            "not": {
-              "required": [
-                "actor"
-              ]
-            }
-          },
           "oneOf": [
             {
               "required": [
@@ -950,12 +931,7 @@
           ],
           "required": [
             "about"
-          ],
-          "then": {
-            "required": [
-              "context_id"
-            ]
-          }
+          ]
         },
         "if": {
           "required": [
@@ -964,15 +940,15 @@
         },
         "properties": {
           "about": {
+            "description": "Copy exactly from the task or a returned result.",
             "type": "string"
           },
           "actor": {
-            "type": "string"
-          },
-          "context_id": {
+            "description": "Writer name. Omitted: the MCP client name.",
             "type": "string"
           },
           "continuation": {
+            "description": "Send alone, exactly as returned.",
             "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
@@ -987,6 +963,7 @@
               "minItems": 1,
               "type": "array"
             },
+            "description": "At least one key with one value, here or per memory: {\"topic\":[\"x\"]}.",
             "minProperties": 1,
             "type": "object"
           },
@@ -1092,6 +1069,7 @@
                   "type": "array"
                 },
                 "evidence": {
+                  "description": "Required: the source text or observation behind this memory.",
                   "type": "string"
                 },
                 "id": {
@@ -1121,6 +1099,7 @@
                     "minItems": 1,
                     "type": "array"
                   },
+                  "description": "At least one key with one value, here or on the packet.",
                   "minProperties": 1,
                   "type": "object"
                 },
@@ -1207,15 +1186,6 @@
               }
             },
             "type": "object"
-          },
-          "purpose": {
-            "enum": [
-              "continue",
-              "audit",
-              "history",
-              "answer"
-            ],
-            "type": "string"
           },
           "rank": {
             "minimum": 1,
@@ -1477,7 +1447,13 @@
           }
         },
         "then": {
-          "maxProperties": 1
+          "propertyNames": {
+            "enum": [
+              "continuation",
+              "about",
+              "actor"
+            ]
+          }
         },
         "type": "object"
       },
@@ -2044,6 +2020,7 @@
         },
         "properties": {
           "about": {
+            "description": "Copy exactly from the task or a returned result.",
             "type": "string"
           },
           "as_of": {
@@ -2100,9 +2077,6 @@
               }
             },
             "type": "object"
-          },
-          "context_id": {
-            "type": "string"
           },
           "continuation": {
             "pattern": "^read_[0-9a-fA-F]{32}$",
@@ -2220,21 +2194,18 @@
             },
             "type": "object"
           },
-          "purpose": {
-            "enum": [
-              "continue",
-              "audit",
-              "history",
-              "answer"
-            ],
-            "type": "string"
-          },
           "role": {
             "type": "string"
           }
         },
         "then": {
-          "maxProperties": 2
+          "propertyNames": {
+            "enum": [
+              "continuation",
+              "about",
+              "page"
+            ]
+          }
         },
         "type": "object"
       },
@@ -2739,9 +2710,6 @@
             },
             "type": "object"
           },
-          "context_id": {
-            "type": "string"
-          },
           "continuation": {
             "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
@@ -2855,21 +2823,18 @@
             },
             "type": "object"
           },
-          "purpose": {
-            "enum": [
-              "continue",
-              "audit",
-              "history",
-              "answer"
-            ],
-            "type": "string"
-          },
           "question": {
             "type": "string"
           }
         },
         "then": {
-          "maxProperties": 2
+          "propertyNames": {
+            "enum": [
+              "continuation",
+              "about",
+              "page"
+            ]
+          }
         },
         "type": "object"
       },
@@ -3185,9 +3150,6 @@
             },
             "type": "object"
           },
-          "context_id": {
-            "type": "string"
-          },
           "continuation": {
             "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
@@ -3293,19 +3255,15 @@
               }
             },
             "type": "object"
-          },
-          "purpose": {
-            "enum": [
-              "continue",
-              "audit",
-              "history",
-              "answer"
-            ],
-            "type": "string"
           }
         },
         "then": {
-          "maxProperties": 1
+          "propertyNames": {
+            "enum": [
+              "continuation",
+              "about"
+            ]
+          }
         },
         "type": "object"
       },
@@ -3613,9 +3571,6 @@
             },
             "type": "object"
           },
-          "context_id": {
-            "type": "string"
-          },
           "continuation": {
             "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
@@ -3797,15 +3752,6 @@
             },
             "type": "object"
           },
-          "purpose": {
-            "enum": [
-              "continue",
-              "audit",
-              "history",
-              "answer"
-            ],
-            "type": "string"
-          },
           "refs": {
             "items": {
               "type": "string"
@@ -3829,7 +3775,12 @@
           }
         },
         "then": {
-          "maxProperties": 1
+          "propertyNames": {
+            "enum": [
+              "continuation",
+              "about"
+            ]
+          }
         },
         "type": "object"
       },
@@ -4281,9 +4232,6 @@
             },
             "type": "object"
           },
-          "context_id": {
-            "type": "string"
-          },
           "continuation": {
             "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
@@ -4318,15 +4266,6 @@
               }
             },
             "type": "object"
-          },
-          "purpose": {
-            "enum": [
-              "continue",
-              "audit",
-              "history",
-              "answer"
-            ],
-            "type": "string"
           },
           "role": {
             "type": "string"
@@ -4859,7 +4798,12 @@
           }
         },
         "then": {
-          "maxProperties": 1
+          "propertyNames": {
+            "enum": [
+              "continuation",
+              "about"
+            ]
+          }
         },
         "type": "object"
       },
@@ -5158,9 +5102,6 @@
             },
             "type": "object"
           },
-          "context_id": {
-            "type": "string"
-          },
           "continuation": {
             "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
@@ -5213,21 +5154,17 @@
             },
             "type": "object"
           },
-          "purpose": {
-            "enum": [
-              "continue",
-              "audit",
-              "history",
-              "answer"
-            ],
-            "type": "string"
-          },
           "ref": {
             "type": "string"
           }
         },
         "then": {
-          "maxProperties": 1
+          "propertyNames": {
+            "enum": [
+              "continuation",
+              "about"
+            ]
+          }
         },
         "type": "object"
       },
@@ -5389,21 +5326,15 @@
         "openWorldHint": false,
         "readOnlyHint": false
       },
-      "description": "Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing. Arguments explained: kmp_guide topic write.",
+      "description": "Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing. Arguments explained: kmp_guide topic relabel.",
       "inputSchema": {
         "additionalProperties": false,
-        "if": {
-          "not": {
-            "required": [
-              "actor"
-            ]
-          }
-        },
         "properties": {
           "about": {
             "type": "string"
           },
           "actor": {
+            "description": "Writer name. Omitted: the MCP client name.",
             "type": "string"
           },
           "add": {
@@ -5415,9 +5346,6 @@
               "type": "array"
             },
             "type": "object"
-          },
-          "context_id": {
-            "type": "string"
           },
           "idempotency_key": {
             "type": "string"
@@ -5442,15 +5370,6 @@
               }
             },
             "type": "object"
-          },
-          "purpose": {
-            "enum": [
-              "continue",
-              "audit",
-              "history",
-              "answer"
-            ],
-            "type": "string"
           },
           "ref": {
             "type": "string"
@@ -5484,11 +5403,6 @@
           "observed_at",
           "why"
         ],
-        "then": {
-          "required": [
-            "context_id"
-          ]
-        },
         "type": "object"
       },
       "name": "kmp_relabel",
@@ -5565,25 +5479,16 @@
       "description": "Write your own compact card for one stored body, so later reads of the same paths can show the card instead of the whole body. Entries and the evidence sources of the same about can both be condensed, which matters because a source shared by several paths is usually the largest record on them. The card is your derived view, never canonical memory and never proof: it stands only for the body version you declare, and a later write makes it stale rather than wrong. Accepted revisions are preserved in event history and survive export/import and rebuild without changing the canonical body. Declare the revision and record digest the read gave you; a body that moved under you is refused with both versions named. Arguments explained: kmp_guide topic condense.",
       "inputSchema": {
         "additionalProperties": false,
-        "if": {
-          "not": {
-            "required": [
-              "actor"
-            ]
-          }
-        },
         "properties": {
           "about": {
             "type": "string"
           },
           "actor": {
+            "description": "Writer name. Omitted: the MCP client name.",
             "type": "string"
           },
           "card": {
             "maxLength": 4096,
-            "type": "string"
-          },
-          "context_id": {
             "type": "string"
           },
           "expect": {
@@ -5618,15 +5523,6 @@
             "type": "object"
           },
           "language": {
-            "type": "string"
-          },
-          "purpose": {
-            "enum": [
-              "continue",
-              "audit",
-              "history",
-              "answer"
-            ],
             "type": "string"
           },
           "ref": {
@@ -5666,11 +5562,6 @@
           "source",
           "expect"
         ],
-        "then": {
-          "required": [
-            "context_id"
-          ]
-        },
         "type": "object"
       },
       "name": "kmp_condense",
@@ -5773,9 +5664,6 @@
             },
             "type": "object"
           },
-          "context_id": {
-            "type": "string"
-          },
           "dimensions": {
             "additionalProperties": false,
             "properties": {
@@ -5809,15 +5697,6 @@
               }
             },
             "type": "object"
-          },
-          "purpose": {
-            "enum": [
-              "continue",
-              "audit",
-              "history",
-              "answer"
-            ],
-            "type": "string"
           },
           "states": {
             "items": {
@@ -6132,6 +6011,7 @@
             "type": "array"
           },
           "actor": {
+            "description": "Writer name. Omitted: the MCP client name.",
             "type": "string"
           },
           "axis": {
@@ -6176,9 +6056,6 @@
               }
             },
             "type": "object"
-          },
-          "context_id": {
-            "type": "string"
           },
           "dimensions": {
             "additionalProperties": false,
@@ -6314,15 +6191,6 @@
               }
             },
             "type": "object"
-          },
-          "purpose": {
-            "enum": [
-              "continue",
-              "audit",
-              "history",
-              "answer"
-            ],
-            "type": "string"
           },
           "review_token": {
             "pattern": "^[0-9a-f]{64}$",
@@ -6933,21 +6801,9 @@
           "about": {
             "type": "string"
           },
-          "context_id": {
-            "type": "string"
-          },
           "expected_revision": {
             "minimum": 1,
             "type": "integer"
-          },
-          "purpose": {
-            "enum": [
-              "continue",
-              "audit",
-              "history",
-              "answer"
-            ],
-            "type": "string"
           },
           "view_id": {
             "type": "string"
@@ -7038,9 +6894,6 @@
         "additionalProperties": false,
         "properties": {
           "actor": {
-            "type": "string"
-          },
-          "context_id": {
             "type": "string"
           },
           "expected_revision": {
@@ -7187,15 +7040,6 @@
             },
             "type": "object"
           },
-          "purpose": {
-            "enum": [
-              "continue",
-              "audit",
-              "history",
-              "answer"
-            ],
-            "type": "string"
-          },
           "search": {
             "type": [
               "string",
@@ -7316,18 +7160,6 @@
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
-          "context_id": {
-            "type": "string"
-          },
-          "purpose": {
-            "enum": [
-              "continue",
-              "audit",
-              "history",
-              "answer"
-            ],
-            "type": "string"
-          },
           "view_id": {
             "type": "string"
           }
@@ -7409,32 +7241,21 @@
         "openWorldHint": false,
         "readOnlyHint": false
       },
-      "description": "Open the brief capability map and persistent agent context. Start once with a unique registration_key; preserve the returned agent_id and context_id. Resume or expand a topic using context_id. After compaction use agent_id plus a new context_key, retaining the same agent. fold hides a topic without erasing its delivery record. This records served guidance, not understanding or authorization. Missing installed assets return explicit guide-sync repair instructions; preserve the selected store when applying them. Arguments explained: kmp_guide topic guide.",
+      "description": "Explain one topic before its first use: a short worked card and the arguments of the tools it teaches. Without a topic, list the topics. A plain lookup that reads no store and records nothing.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
-          "agent_id": {
-            "type": "string"
-          },
-          "context_id": {
-            "type": "string"
-          },
-          "context_key": {
-            "type": "string"
-          },
-          "fold": {
-            "type": "boolean"
-          },
-          "registration_key": {
-            "type": "string"
-          },
           "topic": {
             "enum": [
               "wake",
               "write",
+              "relations",
+              "ingest",
+              "relabel",
               "ask",
               "time",
               "audit",
+              "trace",
               "condense",
               "relate",
               "curate",
@@ -7450,85 +7271,41 @@
       "outputSchema": {
         "additionalProperties": false,
         "properties": {
-          "agent": {
-            "additionalProperties": false,
-            "properties": {
-              "id": {
-                "description": "Stable opaque identity; preserve across contexts.",
+          "parameters": {
+            "additionalProperties": {
+              "items": {
                 "type": "string"
               },
-              "name": {
-                "description": "Random persistent display name; not an authorization credential.",
-                "type": "string"
-              }
+              "type": "array"
             },
-            "required": [
-              "id",
-              "name"
-            ],
+            "description": "Argument guide for each tool this topic teaches, one `path: description` line per argument it owns. tools/list advertises types and constraints only.",
             "type": "object"
           },
-          "card": {
-            "description": "One requested canonical worked card; null for the map or a fold.",
-            "properties": {
-              "parameters": {
-                "additionalProperties": {
-                  "items": {
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                "description": "Argument guide for each tool this topic teaches, one `path: description` line per documented argument. tools/list advertises types and constraints only.",
-                "type": "object"
-              },
-              "ref": {
-                "type": "string"
-              },
-              "relation_vocabulary": {
-                "description": "Topic write only: every writer relation as `name (quality; classes; when to use)`.",
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              "text": {
-                "type": "string"
-              }
-            },
-            "type": [
-              "object",
-              "null"
-            ]
-          },
-          "context_id": {
-            "description": "Exact token to resume this agent context.",
+          "ref": {
+            "description": "The same card's node in the stored agent guide, guide:kmp-agent.",
             "type": "string"
           },
-          "durable": {
-            "description": "Whether agent metadata survives a server restart.",
-            "type": "boolean"
-          },
-          "expanded": {
-            "description": "Topics opened in this context and revision, excluding folded ones.",
+          "relation_vocabulary": {
+            "description": "Topic relations only: every writer relation as `name (quality; classes; when to use)`.",
             "items": {
               "type": "string"
             },
             "type": "array"
           },
-          "guide_changed": {
-            "description": "This context previously used another guide revision; rediscover required topics.",
-            "type": "boolean"
-          },
-          "guide_revision": {
-            "description": "Content revision used for this scheme and its delivery records.",
+          "summary": {
+            "description": "What was returned and how to read it.",
             "type": "string"
           },
-          "next_actions": {
-            "description": "Complete optional calls for the extended verb.",
-            "type": "array"
+          "text": {
+            "description": "The worked card.",
+            "type": "string"
           },
-          "scheme": {
-            "description": "Available topics; expanded lists the currently opened ones.",
+          "topic": {
+            "description": "The topic explained.",
+            "type": "string"
+          },
+          "topics": {
+            "description": "Without a topic: every topic and what it teaches.",
             "items": {
               "properties": {
                 "purpose": {
@@ -7540,21 +7317,6 @@
               },
               "type": "object"
             },
-            "type": "array"
-          },
-          "served": {
-            "description": "Topic cards and exact guide/example refs delivered in this context and revision; not learned or retained.",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "summary": {
-            "description": "Identity and next guide operation.",
-            "type": "string"
-          },
-          "used": {
-            "description": "Observed work calls in this context and revision, never a learning score.",
             "type": "array"
           }
         },
