@@ -35,10 +35,10 @@ impl CondenseRequestMapper {
             arguments.get("expect").ok_or("condense requires expect")?,
             "expect",
         )?;
-        let expect_absent = expect
-            .get("absent")
-            .and_then(Value::as_bool)
-            .unwrap_or(false);
+        // A compare-and-set guard is read as given, never as its default.
+        let expect_absent =
+            JsonFieldReader::optional_bool_field(expect, "absent", "expect.absent")?
+                .unwrap_or(false);
         let expect_card_revision = expect
             .get("card_revision")
             .and_then(Value::as_u64)

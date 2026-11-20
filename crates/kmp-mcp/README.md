@@ -1,18 +1,20 @@
 # kmp-mcp
 
 <!-- kmp:public-overview:begin -->
-KMP gives Codex, Claude Code and Hermes Agent local-first memory that preserves
-what happened, when and why. It stores decisions and evidence, not transcripts,
-on embedded SQLite. Memory tools retrieve and audit that evidence, semantic
-view tools guide a shared ChronoLoom view, and a progressive guide teaches
-the agent how to use them. The running server’s `tools/list` defines the
-current tool surface.
+KMP is local-first memory for coding agents. It runs beside Codex, Claude Code
+and Hermes Agent as one small binary with an embedded SQLite store, and it
+remembers what was decided, what the evidence was and when it happened. Never
+the transcript. No account, no service, no API key: memory stays on your
+machine.
 
-Ask **“Show me the memory behind this decision.”** The agent retrieves the
-evidence, opens ChronoLoom at the relevant moment and lights up the proof path.
-ChronoLoom names who is guiding, shows why the agent moved, and lets you take
-control without losing the frame or its undo. A shared time window crosses real
-3D about layers; a flat camera shows the same memory, with labels as filters.
+Ask your agent **"Why did we choose SQLite?"** and it answers from stored
+evidence, or says `UNKNOWN` instead of guessing. Ask **"Show me the memory
+behind this decision"** and ChronoLoom, the viewer that ships inside the
+binary, opens on that decision and lights up its proof path, with time as a
+dimension you can move through and a view the agent and you steer together.
+Memory tools retrieve and audit the evidence, view tools steer that shared
+ChronoLoom view, and the running server's `tools/list` defines the current
+surface.
 <!-- kmp:public-overview:end -->
 
 - MCP Registry name: `mcp-name: io.github.underpass-ai/kmp`
@@ -21,8 +23,7 @@ control without losing the frame or its undo. A shared time window crosses real
 cargo install kmp-mcp --locked
 ```
 
-For native installation, diagnosis and the explicit first-store guide sync,
-see the
+For native installation, diagnosis and the worked `kmp-mcp demo`, see the
 [KMP plugin](https://github.com/underpass-ai/kmp/tree/main/plugins/kmp) for
 Codex, Claude Code and Hermes Agent.
 

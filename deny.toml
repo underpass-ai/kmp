@@ -1,0 +1,8 @@
+# cargo-deny configuration. Only advisories are configured here; every other
+# check keeps cargo-deny's defaults.
+
+[advisories]
+ignore = [
+    { id = "RUSTSEC-2026-0543", reason = "chrono is pulled only by neo4rs, the Neo4j Bolt driver; no neo4rs release drops chrono; revisit when it does" },
+    { id = "RUSTSEC-2026-0555", reason = "chrono-tz is pulled only by neo4rs, the Neo4j Bolt driver; no neo4rs release drops chrono; revisit when it does" },
+]

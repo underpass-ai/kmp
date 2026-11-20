@@ -30,7 +30,7 @@ impl PromptConfig {
             Some(p) => std::fs::read_to_string(p)?,
             None => include_str!("../resources/llm_prompts.yaml").to_string(),
         };
-        Ok(serde_yaml::from_str(&yaml)?)
+        Ok(serde_saphyr::from_str(&yaml)?)
     }
 }
 
@@ -40,7 +40,7 @@ static PROMPT_CONFIG: LazyLock<PromptConfig> = LazyLock::new(|| {
             .unwrap_or_else(|e| panic!("failed to read prompts from {path}: {e}")),
         Err(_) => include_str!("../resources/llm_prompts.yaml").to_string(),
     };
-    serde_yaml::from_str(&yaml).expect("failed to parse llm_prompts.yaml")
+    serde_saphyr::from_str(&yaml).expect("failed to parse llm_prompts.yaml")
 });
 
 /// Supported LLM API providers.

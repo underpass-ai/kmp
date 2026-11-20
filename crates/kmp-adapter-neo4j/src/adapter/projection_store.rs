@@ -52,7 +52,7 @@ impl Neo4jProjectionStore {
                     ))
                 })?;
 
-                Graph::connect(config).await.map(Arc::new).map_err(|error| {
+                Graph::connect(config).map(Arc::new).map_err(|error| {
                     PortError::Unavailable(format!(
                         "neo4j connection failed for `{}`: {error}",
                         self.endpoint.connection_uri

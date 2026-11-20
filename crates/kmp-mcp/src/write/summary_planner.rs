@@ -20,6 +20,7 @@ use super::plan::KernelWritePlan;
 use super::relation_quality::relation_quality_metrics;
 use super::search_summary::decide_search_summary;
 use super::validated_arguments::*;
+use super::write_options::WriteOptions;
 
 const DEFAULT_SOURCE_KIND: &str = "agent";
 
@@ -54,15 +55,7 @@ pub(crate) fn build_summary_plan(
                 .to_string(),
         ));
     }
-    let options = arguments.get("options").and_then(Value::as_object);
-    let dry_run = options
-        .and_then(|options| options.get("dry_run"))
-        .and_then(Value::as_bool)
-        .unwrap_or(false);
-    let strict = options
-        .and_then(|options| options.get("strict"))
-        .and_then(Value::as_bool)
-        .unwrap_or(true);
+    let WriteOptions { dry_run, strict } = WriteOptions::from_arguments(arguments)?;
 
     // The one judgement this write makes, and the same one the ingest and
     // the ranker make: a summary that will not carry is refused here, while

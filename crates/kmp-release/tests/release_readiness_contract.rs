@@ -162,6 +162,7 @@ impl ReadinessHarness {
         for directory in [
             ".agents/plugins",
             ".claude-plugin",
+            "crates/kmp-mcp",
             "distribution/charts/kmp",
             "distribution/mcpb",
             "plugins/kmp/.claude-plugin",
@@ -177,7 +178,15 @@ impl ReadinessHarness {
         );
         harness.write(
             "Cargo.toml",
-            "[workspace.package]\nversion = \"0.6.1\"\n\n[workspace.dependencies]\nkmp-domain = { path = \"crates/kmp-domain\", version = \"0.6.1\" }\n",
+            "[workspace.package]\nversion = \"0.6.1\"\ndescription = \"Local-first agent memory\"\n\n[workspace.dependencies]\nkmp-domain = { path = \"crates/kmp-domain\", version = \"0.6.1\" }\n",
+        );
+        harness.write(
+            "crates/kmp-mcp/Cargo.toml",
+            "[package]\nname = \"kmp-mcp\"\ndescription = \"Local-first agent memory, exposed as typed MCP tools\"\n",
+        );
+        harness.write(
+            "chatgpt-app-submission.json",
+            "{\n  \"app_info\": {\"display_name\": \"KMP\", \"subtitle\": \"Local-first agent memory\"}\n}\n",
         );
         harness.write(
             "distribution/charts/kmp/Chart.yaml",
@@ -186,17 +195,18 @@ impl ReadinessHarness {
         for host in [".claude-plugin", ".codex-plugin"] {
             harness.write(
                 &format!("plugins/kmp/{host}/plugin.json"),
-                "{\n  \"name\": \"kmp\",\n  \"version\": \"0.6.1\"\n}\n",
+                "{\n  \"name\": \"kmp\",\n  \"version\": \"0.6.1\",\n  \"description\": \"Local-first agent memory: wires the server\",\n  \"interface\": {\"shortDescription\": \"Local-first agent memory\"}\n}\n",
             );
         }
         harness.write(
             "distribution/mcpb/manifest.json",
-            "{\n  \"name\": \"kmp\",\n  \"version\": \"0.6.1\"\n}\n",
+            "{\n  \"name\": \"kmp\",\n  \"version\": \"0.6.1\",\n  \"description\": \"Local-first agent memory\"\n}\n",
         );
         harness.write(
             "server.json",
             r#"{
   "version": "0.6.1",
+  "description": "Local-first agent memory",
   "packages": [
     {
       "registryType": "mcpb",
@@ -347,4 +357,29 @@ fn a_half_bumped_tree_names_every_source_left_behind() {
     // appVersion was bumped, so the report must not accuse it.
     assert!(!report.contains("Chart.yaml appVersion is"), "{report}");
     assert_eq!(readiness.failures().len(), 1);
+}
+
+#[test]
+fn a_storefront_that_describes_another_product_is_named() {
+    let harness = ReadinessHarness::prepared();
+    harness.write(
+        "chatgpt-app-submission.json",
+        "{\n  \"app_info\": {\"display_name\": \"KMP\", \"subtitle\": \"Memory with evidence\"}\n}\n",
+    );
+
+    let readiness = harness.readiness();
+
+    let failed = readiness
+        .failures()
+        .iter()
+        .map(|check| check.name().to_string())
+        .collect::<Vec<_>>();
+    assert_eq!(failed, vec!["tagline sources"]);
+    let report = readiness.to_string();
+    assert!(
+        report.contains(
+            "chatgpt-app-submission.json app_info.subtitle (ChatGPT apps) opens with \"Memory with evidence\", not \"Local-first agent memory\""
+        ),
+        "{report}"
+    );
 }

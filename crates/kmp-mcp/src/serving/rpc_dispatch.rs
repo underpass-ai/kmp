@@ -8,8 +8,8 @@ use serde_json::Value;
 use super::lexical_order::{LexicalOrder, is_tool_error};
 use crate::contract::{
     advertised_input_schemas, canonical_tool_name, initialize_result_with_apps,
-    reject_invalid_arguments, reject_unknown_arguments, resource_read_result,
-    resources_list_result, tools_list_result_with_apps,
+    reject_invalid_arguments, reject_invalid_write_arguments, reject_unknown_arguments,
+    resource_read_result, resources_list_result, tools_list_result_with_apps,
 };
 use crate::serving::json_rpc::{jsonrpc_error, jsonrpc_result};
 use crate::serving::kernel_mcp_server::KernelMcpServer;
@@ -181,10 +181,11 @@ impl KernelMcpServer {
         // repeated values are refused too (#850), but a tool that names the
         // problem more precisely goes first: the writer's planner and the
         // read projections run their own checks, and this one follows them as
-        // a backstop. Every other write is checked here, before it commits.
+        // a backstop. Every other write is checked here, before it commits,
+        // and a declared boolean of another type is refused with it.
         let lexical_first = LexicalOrder::of(name) == LexicalOrder::BeforeDispatch;
         let checked = if lexical_first {
-            reject_invalid_arguments(name, arguments)
+            reject_invalid_write_arguments(name, arguments)
         } else {
             reject_unknown_arguments(name, arguments)
         };
@@ -320,7 +321,28 @@ impl KernelMcpServer {
             .client
             .as_ref()
             .map(|client| (client.name.as_str(), client.version.as_str()));
-        match self.backend.call_tool_for(name, arguments, caller).await {
+        let mut outcome = self.backend.call_tool_for(name, arguments, caller).await;
+        // A guide node a human or an agent reads directly is seeded the same
+        // way kmp_guide seeds it, and read once more; a store that still has
+        // no guide answers with the repair and where this session looked.
+        if name == "kmp_inspect"
+            && let Err(error) = &outcome
+            && super::guide_repair::GuideRepair::is_missing_guide_read(arguments, error)
+        {
+            let seed = self.seed_installed_guide().await;
+            if seed.seeded() {
+                outcome = self.backend.call_tool_for(name, arguments, caller).await;
+            }
+            if let Err(error) = outcome {
+                let node_ref = arguments["ref"].as_str().unwrap_or_default();
+                outcome = Err(super::guide_repair::GuideRepair::missing(
+                    node_ref,
+                    error,
+                    &seed.searched(),
+                ));
+            }
+        }
+        match outcome {
             Ok(result) => {
                 // A wake or an ask that answered is the first moment the
                 // store surely exists: its salt may be created then.

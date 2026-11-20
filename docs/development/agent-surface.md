@@ -27,6 +27,7 @@ Las rutas son relativas a la raíz del repositorio.
 | Ayuda ante un rechazo de uso | [tool_error_help.rs](../../crates/kmp-mcp/src/serving/tool_error_help.rs) y su envoltorio en `tool_result.rs` | Elegir por código/ruta tipados, conservar feedback y ejecutar las lecturas sugeridas |
 | Cómo se entra desde Codex o Claude | [skills](../../plugins/kmp/skills/), [adaptadores Claude](../../plugins/kmp/claude/commands/) y [capabilities.json](../../plugins/kmp/capabilities.json) | Paridad de capacidades y acceso a la misma entrada; evitar otra copia del manual |
 | Relato público del producto | Bloque `kmp:public-overview` de [plugins/kmp/README.md](../../plugins/kmp/README.md) | Sincronizar README de repositorio y crate; revisar guía humana |
+| Siembra de la guía en la primera lectura y demo | [guide/asset_locator.rs](../../crates/kmp-mcp/src/guide/asset_locator.rs), [serving/guide_seed.rs](../../crates/kmp-mcp/src/serving/guide_seed.rs), [demo.rs](../../crates/kmp-mcp/src/demo.rs) y su paquete en `fixtures/demo/` | Pruebas `guide_seed`, `guide_repair` y `demo_cli`; `verbs/guide.md`, las skills de guía y setup, y `examples/retry-budget` regenerado con `scripts/examples/refresh.sh` |
 
 ## Añadir un verbo: lo que hizo falta para `kmp_condense`
 

@@ -12,35 +12,32 @@ use kmp_ports::{
     NodeDetailProjection, NodeDetailReader, ProcessedEventStore, ProjectionCheckpoint,
     ProjectionCheckpointStore, ProjectionMutation, ProjectionWriter, SnapshotStore,
 };
-use kmp_testkit::ensure_testcontainers_runtime;
+use kmp_testkit::ensure_container_runtime;
 use serde_json::{Value, json};
-use testcontainers::{
-    GenericImage,
-    core::{IntoContainerPort, WaitFor},
-    runners::AsyncRunner,
-};
 use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
 
 const VALKEY_INTERNAL_PORT: u16 = 6379;
 
 async fn start_valkey_container()
--> Result<testcontainers::ContainerAsync<GenericImage>, Box<dyn Error + Send + Sync>> {
-    ensure_testcontainers_runtime()?;
+-> Result<kmp_testkit::RunningContainer, Box<dyn Error + Send + Sync>> {
+    ensure_container_runtime()?;
 
-    Ok(GenericImage::new("docker.io/valkey/valkey", "8.1.5-alpine")
-        .with_exposed_port(VALKEY_INTERNAL_PORT.tcp())
-        .with_wait_for(WaitFor::message_on_stdout("Ready to accept connections"))
+    kmp_testkit::ContainerSpec::new("docker.io/valkey/valkey", "8.1.5-alpine")
+        .with_exposed_port(VALKEY_INTERNAL_PORT)
+        .with_wait_for(kmp_testkit::WaitFor::message_on_stdout(
+            "Ready to accept connections",
+        ))
         .start()
-        .await?)
+        .await
 }
 
 #[tokio::test]
 async fn save_bundle_persists_snapshot_in_valkey() -> Result<(), Box<dyn Error + Send + Sync>> {
     let container = start_valkey_container().await?;
 
-    let host = container.get_host().await?;
-    let port = container.get_host_port_ipv4(VALKEY_INTERNAL_PORT).await?;
+    let host = container.host();
+    let port = container.host_port_ipv4(VALKEY_INTERNAL_PORT)?;
     let address = format!("{host}:{port}");
 
     let store = ValkeySnapshotStore::new(format!(
@@ -137,8 +134,8 @@ async fn save_bundle_persists_snapshot_in_valkey() -> Result<(), Box<dyn Error +
 async fn save_bundle_respects_request_ttl_override() -> Result<(), Box<dyn Error + Send + Sync>> {
     let container = start_valkey_container().await?;
 
-    let host = container.get_host().await?;
-    let port = container.get_host_port_ipv4(VALKEY_INTERNAL_PORT).await?;
+    let host = container.host();
+    let port = container.host_port_ipv4(VALKEY_INTERNAL_PORT)?;
     let address = format!("{host}:{port}");
 
     let store = ValkeySnapshotStore::new(format!(
@@ -190,8 +187,8 @@ async fn node_detail_roundtrip_reads_expanded_detail_from_valkey()
 -> Result<(), Box<dyn Error + Send + Sync>> {
     let container = start_valkey_container().await?;
 
-    let host = container.get_host().await?;
-    let port = container.get_host_port_ipv4(VALKEY_INTERNAL_PORT).await?;
+    let host = container.host();
+    let port = container.host_port_ipv4(VALKEY_INTERNAL_PORT)?;
     let address = format!("{host}:{port}");
 
     let store = ValkeyNodeDetailStore::new(format!(
@@ -233,8 +230,8 @@ async fn processed_event_store_roundtrip_uses_real_valkey()
 -> Result<(), Box<dyn Error + Send + Sync>> {
     let container = start_valkey_container().await?;
 
-    let host = container.get_host().await?;
-    let port = container.get_host_port_ipv4(VALKEY_INTERNAL_PORT).await?;
+    let host = container.host();
+    let port = container.host_port_ipv4(VALKEY_INTERNAL_PORT)?;
     let address = format!("{host}:{port}");
 
     let store = ValkeyProcessedEventStore::new(format!(
@@ -275,8 +272,8 @@ async fn projection_checkpoint_store_roundtrip_uses_real_valkey()
 -> Result<(), Box<dyn Error + Send + Sync>> {
     let container = start_valkey_container().await?;
 
-    let host = container.get_host().await?;
-    let port = container.get_host_port_ipv4(VALKEY_INTERNAL_PORT).await?;
+    let host = container.host();
+    let port = container.host_port_ipv4(VALKEY_INTERNAL_PORT)?;
     let address = format!("{host}:{port}");
 
     let store = ValkeyProjectionCheckpointStore::new(format!(
@@ -414,9 +411,7 @@ fn sample_cmd_event(root: &str, role: &str, revision: u64) -> ContextUpdatedEven
 #[tokio::test]
 async fn valkey_event_store_append_and_read() -> Result<(), Box<dyn Error + Send + Sync>> {
     let container = start_valkey_container().await?;
-    let port = container
-        .get_host_port_ipv4(VALKEY_INTERNAL_PORT.tcp())
-        .await?;
+    let port = container.host_port_ipv4(VALKEY_INTERNAL_PORT)?;
     let uri = format!("redis://127.0.0.1:{port}");
 
     let store = ValkeyContextEventStore::new(&uri)?;
@@ -436,9 +431,7 @@ async fn valkey_event_store_append_and_read() -> Result<(), Box<dyn Error + Send
 #[tokio::test]
 async fn valkey_event_store_rejects_wrong_revision() -> Result<(), Box<dyn Error + Send + Sync>> {
     let container = start_valkey_container().await?;
-    let port = container
-        .get_host_port_ipv4(VALKEY_INTERNAL_PORT.tcp())
-        .await?;
+    let port = container.host_port_ipv4(VALKEY_INTERNAL_PORT)?;
     let uri = format!("redis://127.0.0.1:{port}");
 
     let store = ValkeyContextEventStore::new(&uri)?;
@@ -459,9 +452,7 @@ async fn valkey_event_store_rejects_wrong_revision() -> Result<(), Box<dyn Error
 async fn valkey_concurrent_appends_one_wins_one_conflicts()
 -> Result<(), Box<dyn Error + Send + Sync>> {
     let container = start_valkey_container().await?;
-    let port = container
-        .get_host_port_ipv4(VALKEY_INTERNAL_PORT.tcp())
-        .await?;
+    let port = container.host_port_ipv4(VALKEY_INTERNAL_PORT)?;
     let uri = format!("redis://127.0.0.1:{port}");
 
     let store_a = Arc::new(ValkeyContextEventStore::new(&uri)?);

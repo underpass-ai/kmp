@@ -12,15 +12,18 @@
 //! `KMP_BLESS_CLI_SURFACE=1 cargo test -p kmp-mcp --test cli_surface_parity`
 //! and review the diff as the interface change it is.
 
+#[path = "support/isolated_home.rs"]
+mod isolated_home;
+
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 const BLESS: &str = "KMP_BLESS_CLI_SURFACE";
 
 /// Every verb the executable accepts. A verb that stops being advertised, or
 /// starts being advertised without a usage line, fails here.
-const SUBCOMMANDS: [&str; 14] = [
+const SUBCOMMANDS: [&str; 15] = [
     "config",
+    "demo",
     "doctor",
     "document",
     "export",
@@ -43,7 +46,7 @@ fn fixtures() -> PathBuf {
 /// Runs the binary with a clean environment, so the pinned text is the
 /// executable's own and not a reflection of this machine.
 fn help(arguments: &[&str]) -> String {
-    let mut command = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"));
+    let mut command = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"));
     command.args(arguments);
     for name in ["KMP_MCP_DATA_DIR", "KMP_MCP_BACKEND", "KMP_VIEWER_ADDR"] {
         command.env_remove(name);

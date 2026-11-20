@@ -1,13 +1,8 @@
 use std::time::Duration;
 
 use kmp_adapter_neo4j::{Neo4jProjectionReader, Neo4jProjectionStore};
-use kmp_testkit::ensure_testcontainers_runtime;
+use kmp_testkit::ensure_container_runtime;
 use neo4rs::{Graph, query};
-use testcontainers::{
-    GenericImage, ImageExt,
-    core::{IntoContainerPort, WaitFor},
-    runners::AsyncRunner,
-};
 use tokio::time::{sleep, timeout};
 
 use crate::containers::ContainerEndpoint;
@@ -24,23 +19,23 @@ const CONNECT_TIMEOUT: Duration = Duration::from_secs(20);
 
 /// Typed Neo4j container — owns lifecycle, exposes domain-typed stores.
 pub struct Neo4jContainer {
-    container: testcontainers::ContainerAsync<GenericImage>,
+    container: kmp_testkit::RunningContainer,
     endpoint: ContainerEndpoint,
 }
 
 impl Neo4jContainer {
     pub async fn start() -> Result<Self, BoxError> {
-        ensure_testcontainers_runtime()?;
+        ensure_container_runtime()?;
 
-        let container = GenericImage::new(NEO4J_IMAGE, NEO4J_TAG)
-            .with_exposed_port(NEO4J_INTERNAL_PORT.tcp())
-            .with_wait_for(WaitFor::seconds(NEO4J_STARTUP_WAIT.as_secs()))
+        let container = kmp_testkit::ContainerSpec::new(NEO4J_IMAGE, NEO4J_TAG)
+            .with_exposed_port(NEO4J_INTERNAL_PORT)
+            .with_wait_for(kmp_testkit::WaitFor::seconds(NEO4J_STARTUP_WAIT.as_secs()))
             .with_env_var("NEO4J_AUTH", format!("neo4j/{NEO4J_PASSWORD}"))
             .start()
             .await?;
 
-        let host = container.get_host().await?.to_string();
-        let port = container.get_host_port_ipv4(NEO4J_INTERNAL_PORT).await?;
+        let host = container.host().to_string();
+        let port = container.host_port_ipv4(NEO4J_INTERNAL_PORT)?;
         let endpoint = ContainerEndpoint::new(host, port);
 
         Ok(Self {
@@ -80,7 +75,7 @@ impl Neo4jContainer {
     }
 
     /// Keeps the underlying container alive (moved into the fixture).
-    pub fn into_inner(self) -> testcontainers::ContainerAsync<GenericImage> {
+    pub fn into_inner(self) -> kmp_testkit::RunningContainer {
         self.container
     }
 }
@@ -111,14 +106,22 @@ async fn connect_neo4j_inner(
     let mut last_error: Option<BoxError> = None;
 
     for _ in 0..NEO4J_CONNECT_RETRY_ATTEMPTS {
-        match Graph::new(&uri, &user, &password).await {
+        match ready_graph(Graph::new(&uri, &user, &password)).await {
             Ok(graph) => return Ok(graph),
             Err(error) => {
-                last_error = Some(Box::new(error));
+                last_error = Some(error);
                 sleep(CONNECT_RETRY_DELAY).await;
             }
         }
     }
 
     Err(last_error.expect("at least one connection attempt should fail"))
+}
+
+/// The driver opens connections lazily and, since neo4rs 0.9, does not retry
+/// a failed connection, so readiness is proven with a real round trip.
+async fn ready_graph(graph: Result<Graph, neo4rs::Error>) -> Result<Graph, BoxError> {
+    let graph = graph?;
+    graph.run(query("RETURN 1")).await?;
+    Ok(graph)
 }

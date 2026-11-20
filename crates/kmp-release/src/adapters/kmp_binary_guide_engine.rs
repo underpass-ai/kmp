@@ -28,6 +28,28 @@ impl KmpBinaryGuideEngine {
         Ok(Self { binary })
     }
 
+    /// Every location the engine reads or writes is derived from `data_dir`
+    /// (#910): the store, its config and machine index, and a `HOME` whose
+    /// plugin caches a serve start prunes. Locations a developer may export
+    /// outside `HOME` are removed so they cannot point back at the real ones.
+    fn confine(command: &mut Command, data_dir: &Path) {
+        for name in [
+            "CODEX_HOME",
+            "CLAUDE_CONFIG_DIR",
+            "HERMES_HOME",
+            "PI_CODING_AGENT_DIR",
+            "XDG_CACHE_HOME",
+            "XDG_STATE_HOME",
+        ] {
+            command.env_remove(name);
+        }
+        command
+            .env("KMP_MCP_DATA_DIR", data_dir)
+            .env("HOME", data_dir.join("home"))
+            .env("XDG_CONFIG_HOME", data_dir.join("config"))
+            .env("XDG_DATA_HOME", data_dir.join("xdg-data"));
+    }
+
     fn initialize(identifier: u64) -> Value {
         json!({
             "jsonrpc": "2.0",
@@ -53,9 +75,7 @@ impl KmpBinaryGuideEngine {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
         if let Some(data_dir) = data_dir {
-            command
-                .env("KMP_MCP_DATA_DIR", data_dir)
-                .env("XDG_CONFIG_HOME", data_dir.join("config"));
+            Self::confine(&mut command, data_dir);
         }
         let mut child = command.spawn().map_err(|error| {
             ReleaseError::invalid(format!(
@@ -107,15 +127,12 @@ impl KmpBinaryGuideEngine {
     }
 
     fn run_cli(&self, arguments: &[&str], data_dir: &Path) -> Result<(), ReleaseError> {
-        let output = Command::new(&self.binary)
-            .args(arguments)
-            .env("KMP_VIEWER_ADDR", "off")
-            .env("KMP_MCP_DATA_DIR", data_dir)
-            .env("XDG_CONFIG_HOME", data_dir.join("config"))
-            .output()
-            .map_err(|error| {
-                ReleaseError::invalid(format!("could not run guide engine: {error}"))
-            })?;
+        let mut command = Command::new(&self.binary);
+        command.args(arguments).env("KMP_VIEWER_ADDR", "off");
+        Self::confine(&mut command, data_dir);
+        let output = command.output().map_err(|error| {
+            ReleaseError::invalid(format!("could not run guide engine: {error}"))
+        })?;
         if output.status.success() {
             Ok(())
         } else {
@@ -249,5 +266,44 @@ impl GuideEngine for KmpBinaryGuideEngine {
         }
         let responses = self.exchange(&messages, Some(data_dir))?;
         Self::structured_results(&responses, calls.len())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::os::unix::fs::PermissionsExt;
+
+    use super::*;
+
+    // #910: a guide engine pointed at a scratch store must not remember that
+    // store in the developer's real `$XDG_DATA_HOME/kmp/known-stores.jsonl`,
+    // nor prune the plugin caches under the real `HOME` or `CODEX_HOME`.
+    #[test]
+    fn scratch_store_runs_keep_the_data_home_beside_the_store() {
+        let root = tempfile::tempdir().expect("root");
+        let engine = root.path().join("fake-kmp-mcp");
+        std::fs::write(
+            &engine,
+            "#!/bin/sh\nprintf '%s|%s|%s|%s\\n' \"$HOME\" \"$XDG_DATA_HOME\" \"${CODEX_HOME-unset}\" \"${XDG_CACHE_HOME-unset}\" >> \"$KMP_MCP_DATA_DIR/data-homes\"\n",
+        )
+        .expect("fake engine");
+        std::fs::set_permissions(&engine, std::fs::Permissions::from_mode(0o755))
+            .expect("executable");
+        let store = root.path().join("store");
+        std::fs::create_dir_all(&store).expect("store");
+        let engine = KmpBinaryGuideEngine::new(&engine).expect("engine");
+
+        engine
+            .import(&store, &root.path().join("bundle.jsonl"))
+            .expect("cli run");
+        engine.ingest(&[], Some(&store)).expect("MCP run");
+
+        let expected = format!(
+            "{}|{}|unset|unset",
+            store.join("home").display(),
+            store.join("xdg-data").display()
+        );
+        let seen = std::fs::read_to_string(store.join("data-homes")).expect("recorded");
+        assert_eq!(seen.lines().collect::<Vec<_>>(), [&expected, &expected]);
     }
 }

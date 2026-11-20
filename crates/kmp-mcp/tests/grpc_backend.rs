@@ -1,3 +1,5 @@
+#[path = "support/isolated_home.rs"]
+mod isolated_home;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -30,7 +32,8 @@ mod dependency_checks;
 async fn grpc_backend_maps_kernel_memory_service_responses_to_kmp_tools() {
     let recorded = RecordedMemoryRequests::default();
     let endpoint = spawn_fake_memory_server(recorded.clone()).await;
-    let server = KernelMcpServer::grpc(endpoint);
+    let server =
+        KernelMcpServer::grpc(endpoint).with_remote_state_home(&isolated_home::data_home());
 
     let wake = call_tool(
         &server,
@@ -204,7 +207,8 @@ async fn grpc_backend_maps_kernel_memory_service_responses_to_kmp_tools() {
 async fn grpc_backend_maps_temporal_tools_to_kernel_memory_service() {
     let recorded = RecordedMemoryRequests::default();
     let endpoint = spawn_fake_memory_server(recorded.clone()).await;
-    let server = KernelMcpServer::grpc(endpoint);
+    let server =
+        KernelMcpServer::grpc(endpoint).with_remote_state_home(&isolated_home::data_home());
 
     let forward = call_tool(
         &server,
@@ -309,7 +313,8 @@ async fn grpc_backend_maps_temporal_tools_to_kernel_memory_service() {
 async fn grpc_backend_maps_temporal_raw_refs_to_kernel_memory_service() {
     let recorded = RecordedMemoryRequests::default();
     let endpoint = spawn_fake_memory_server(recorded.clone()).await;
-    let server = KernelMcpServer::grpc(endpoint);
+    let server =
+        KernelMcpServer::grpc(endpoint).with_remote_state_home(&isolated_home::data_home());
 
     let forward = call_tool(
         &server,
@@ -347,7 +352,8 @@ async fn grpc_backend_maps_temporal_raw_refs_to_kernel_memory_service() {
 async fn grpc_backend_maps_kmp_ingest_to_kernel_memory_service() {
     let recorded = RecordedMemoryRequests::default();
     let endpoint = spawn_fake_memory_server(recorded.clone()).await;
-    let server = KernelMcpServer::grpc(endpoint);
+    let server =
+        KernelMcpServer::grpc(endpoint).with_remote_state_home(&isolated_home::data_home());
 
     let ingest = call_tool(
         &server,
@@ -479,7 +485,8 @@ async fn grpc_backend_maps_kmp_ingest_to_kernel_memory_service() {
 async fn grpc_backend_forwards_incremental_ingest_with_empty_dimensions() {
     let recorded = RecordedMemoryRequests::default();
     let endpoint = spawn_fake_memory_server(recorded.clone()).await;
-    let server = KernelMcpServer::grpc(endpoint);
+    let server =
+        KernelMcpServer::grpc(endpoint).with_remote_state_home(&isolated_home::data_home());
 
     let ingest = call_tool(
         &server,
@@ -524,7 +531,8 @@ async fn grpc_backend_forwards_incremental_ingest_with_empty_dimensions() {
 async fn grpc_backend_dry_run_ingest_reaches_the_kernel_with_writes_disabled() {
     let recorded = RecordedMemoryRequests::default();
     let endpoint = spawn_fake_memory_server(recorded.clone()).await;
-    let server = KernelMcpServer::grpc(endpoint);
+    let server =
+        KernelMcpServer::grpc(endpoint).with_remote_state_home(&isolated_home::data_home());
 
     let ingest = call_tool(
         &server,
@@ -575,7 +583,8 @@ async fn grpc_backend_connects_to_mutual_tls_kernel_memory_service() {
     let certs = TestTlsFiles::write();
     let endpoint =
         spawn_fake_memory_server_with_mutual_tls(RecordedMemoryRequests::default()).await;
-    let server = KernelMcpServer::grpc_with_tls(endpoint, certs.client_config());
+    let server = KernelMcpServer::grpc_with_tls(endpoint, certs.client_config())
+        .with_remote_state_home(&isolated_home::data_home());
 
     let inspect = call_tool(
         &server,
@@ -1387,3 +1396,48 @@ qdYqw8bDQbReT4w+psRqj/cT1buhRANCAARbE50GqAcOulovZQLg9fRjq1LTMvjC
 3mi/wb+E6QDWGw/nobEuShCwGt8UhaXv6x1iOzlwDt1pBPYiF9bXka0h
 -----END PRIVATE KEY-----
 "#;
+
+/// Parity with the embedded backend: a write switch of the wrong type is
+/// refused before the kernel is called, so no Ingest or Relabel reaches it.
+/// Over gRPC itself the hole cannot exist: `dry_run` is a proto `bool`.
+#[tokio::test]
+async fn grpc_backend_refuses_a_mistyped_write_switch_before_the_kernel() {
+    let recorded = RecordedMemoryRequests::default();
+    let endpoint = spawn_fake_memory_server(recorded.clone()).await;
+    let server = KernelMcpServer::grpc(endpoint);
+
+    let refused = call_tool(
+        &server,
+        1,
+        "kmp_write_memory",
+        json!({
+            "about": "project:qa-sandbox", "actor": "qa", "labels": {"topic": ["qa"]},
+            "memories": [{"id": "m", "kind": "observation", "summary": "QA test",
+                "evidence": "sandbox probe"}],
+            "options": {"dry_run": "true"}
+        }),
+    )
+    .await;
+    assert_eq!(refused["result"]["isError"], true, "{refused}");
+    let relabel = call_tool(
+        &server,
+        2,
+        "kmp_relabel",
+        json!({
+            "about": "project:qa-sandbox", "ref": "project:qa-sandbox:observation:a",
+            "actor": "qa", "observed_at": "2026-11-13T03:30:38Z",
+            "why": "It is a QA memory.", "add": {"topic": ["qa"]},
+            "options": {"dry_run": "true"}
+        }),
+    )
+    .await;
+    assert_eq!(relabel["result"]["isError"], true, "{relabel}");
+    assert!(
+        recorded.ingests().await.is_empty(),
+        "no Ingest reached the kernel"
+    );
+    assert!(
+        recorded.relabels.lock().await.is_empty(),
+        "no Relabel reached the kernel"
+    );
+}

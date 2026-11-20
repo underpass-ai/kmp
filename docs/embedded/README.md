@@ -27,10 +27,16 @@ codex plugin add kmp@underpass
 
 For Codex, ask the agent to run `kmp-setup`. Restart the host once after a
 setup or plugin update, because a running session keeps the MCP inventory it
-started with. Then run `kmp-guide` in Codex or `/kmp:guide` in Claude Code
-to synchronize the installed guides into the selected store. This explicit
-step writes memory; setup only installs the assets. A fresh store can report
-`GUIDE_UNAVAILABLE` until it has matching guides.
+started with. That is the whole installation: the first guide read on a fresh
+store seeds the installed guides from the assets that match the engine, and
+setup itself writes no memory. `kmp-guide` in Codex or `/kmp:guide` in Claude
+Code opens the human guide in ChronoLoom and refreshes the guides explicitly
+when a store needs it. A store with no matching assets anywhere reports
+`GUIDE_UNAVAILABLE`, naming where it looked and the explicit repair.
+
+To have memory to look at before writing any, run `kmp-mcp demo`: it writes a
+worked example into the store this directory resolves to, opens ChronoLoom on
+it and prints the questions to ask your agent.
 
 The plugin must be the single MCP owner. Do not combine it with standalone
 global `mcp_servers.kmp` or retired `mcp_servers.kernel-memory` wiring.

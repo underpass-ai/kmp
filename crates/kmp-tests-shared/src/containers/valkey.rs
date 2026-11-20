@@ -1,10 +1,5 @@
 use kmp_adapter_valkey::{ValkeyNodeDetailStore, ValkeySnapshotStore};
-use kmp_testkit::ensure_testcontainers_runtime;
-use testcontainers::{
-    GenericImage,
-    core::{IntoContainerPort, WaitFor},
-    runners::AsyncRunner,
-};
+use kmp_testkit::ensure_container_runtime;
 
 use crate::containers::ContainerEndpoint;
 use crate::error::BoxError;
@@ -15,22 +10,24 @@ const VALKEY_TAG: &str = "8.1.5-alpine";
 
 /// Typed Valkey container — owns lifecycle, exposes domain-typed stores.
 pub struct ValkeyContainer {
-    container: testcontainers::ContainerAsync<GenericImage>,
+    container: kmp_testkit::RunningContainer,
     endpoint: ContainerEndpoint,
 }
 
 impl ValkeyContainer {
     pub async fn start() -> Result<Self, BoxError> {
-        ensure_testcontainers_runtime()?;
+        ensure_container_runtime()?;
 
-        let container = GenericImage::new(VALKEY_IMAGE, VALKEY_TAG)
-            .with_exposed_port(VALKEY_INTERNAL_PORT.tcp())
-            .with_wait_for(WaitFor::message_on_stdout("Ready to accept connections"))
+        let container = kmp_testkit::ContainerSpec::new(VALKEY_IMAGE, VALKEY_TAG)
+            .with_exposed_port(VALKEY_INTERNAL_PORT)
+            .with_wait_for(kmp_testkit::WaitFor::message_on_stdout(
+                "Ready to accept connections",
+            ))
             .start()
             .await?;
 
-        let host = container.get_host().await?.to_string();
-        let port = container.get_host_port_ipv4(VALKEY_INTERNAL_PORT).await?;
+        let host = container.host().to_string();
+        let port = container.host_port_ipv4(VALKEY_INTERNAL_PORT)?;
         let endpoint = ContainerEndpoint::new(host, port);
 
         Ok(Self {
@@ -55,7 +52,7 @@ impl ValkeyContainer {
         )?)
     }
 
-    pub fn into_inner(self) -> testcontainers::ContainerAsync<GenericImage> {
+    pub fn into_inner(self) -> kmp_testkit::RunningContainer {
         self.container
     }
 }

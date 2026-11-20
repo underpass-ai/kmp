@@ -9,6 +9,150 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Fixed
+
+- The test suites and `kmp-release guide assets` no longer reach the
+  developer's own KMP home (#910). Every `kmp-mcp` a test spawns runs in a
+  throwaway home with `CODEX_HOME`, `CLAUDE_CONFIG_DIR`, `HERMES_HOME`,
+  `PI_CODING_AGENT_DIR`, `XDG_CACHE_HOME`, `XDG_STATE_HOME` and the store and
+  engine selectors removed, so `cargo test` no longer prunes the real Claude
+  Code and Codex plugin caches nor writes into `known-stores.jsonl`. The
+  guide engine that `kmp-release` runs gets its own `HOME` beside the store
+  it is pointed at. A guard test reruns the spawn shapes under a sentinel
+  developer home and fails if one byte of it changes.
+
+## [0.27.0] - 2026-11-19
+
+### Security
+
+- Unmaintained and yanked dependencies flagged by RustSec are gone from the
+  lockfile:
+  - `hyper` 1.12 drops the unmaintained `pin-utils`,
+    and `chacha20` 0.10.2 replaces a yanked release.
+  - `serde_yaml` (and its `unsafe-libyaml`) is replaced by `serde-saphyr`
+    2.2. The Hermes MCP config reader in `kmp-mcp` keeps the YAML 1.2 core
+    reading it had: only `true`/`false` are booleans, numbers with leading
+    zeros or underscores stay strings, `<<` is an ordinary key and a
+    repeated key keeps its last value.
+  - The Valkey adapter reads TLS PEM files with `rustls-pki-types` instead
+    of `rustls-pemfile`.
+  - `tonic` and `tonic-build` move to 0.13.1 (`tls-aws-lc`, matching the
+    aws-lc-rs provider the server installs); `prost` stays on 0.13.
+  - `neo4rs` moves to 0.9.0-rc.11, which drops `backoff`, `instant`,
+    `paste`, `rustls-pemfile`, `rustls-native-certs` 0.7 and
+    `chrono-tz-build`. Since 0.9 the driver no longer retries a failed
+    connection attempt, so the Neo4j adapter now retries a query whose
+    connection fails (doubling waits from 250 ms, capped at 8 s, for up to
+    60 s), as 0.8 did inside the driver; errors the server answers are not
+    retried.
+- The container integration suites no longer use `testcontainers`, whose
+  `astral-tokio-tar` is unmaintained with no fixed release. `kmp-testkit`
+  now starts the test containers through the `docker` CLI (or `podman` when
+  Docker is absent; `KMP_CONTAINER_CLI` overrides the choice), with the same
+  images, wait conditions, published ports, copied TLS material and removal
+  on drop.
+- `deny.toml` accepts the two remaining `chrono` / `chrono-tz` unmaintained
+  advisories (RUSTSEC-2026-0543, RUSTSEC-2026-0555): both come only from
+  `neo4rs`, and no `neo4rs` release drops `chrono` yet.
+
+## [0.26.2] - 2026-11-19
+
+### Security
+
+- `rusqlite` moves to 0.41.1, bringing the bundled SQLite of
+  `libsqlite3-sys` 0.39.1 (SQLite 3.54), which closes CVE-2026-119375
+  (RUSTSEC-2026-0459) in the embedded store: a crafted database and `-wal`
+  pair could return uninitialized page-cache memory.
+- `rustls-webpki` 0.103.17 and `webpki-roots` 1.0.12 close CVE-2026-111943
+  (RUSTSEC-2026-0381, RUSTSEC-2026-0382): distrusted emSign intermediates.
+- `h2` 0.4.20 closes RUSTSEC-2026-0258 (unbounded empty DATA frames).
+- `tokio` 1.54.1 and `rustix` 1.1.6 close the unsound advisories
+  RUSTSEC-2026-0386 and RUSTSEC-2026-0486.
+
+## [0.26.1] - 2026-11-17
+
+### Fixed
+
+- A write switch of the wrong type is refused instead of read as its
+  default. `kmp_write_memory` with `options.dry_run: "true"` (or `1`, or
+  `null`) used to commit the memory the caller meant only to preview. Now
+  `options.dry_run` and `options.strict` must be JSON booleans on every write
+  shape — `memories`, `search_summaries` and `relations` — and in
+  `kmp_relabel`; the refusal names the field (`INVALID_TYPE`) and nothing is
+  written. `options` itself must be an object. Every boolean the write tools
+  declare (`kmp_ingest`, `kmp_relabel`, `kmp_condense`, `kmp_curate` and the
+  writer) is checked by type before the tool runs, so `kmp_relabel`
+  `options.dry_run: "true"` no longer relabels and `kmp_curate`
+  `accepted[].reverse: "true"` is no longer read as `false`; `kmp_guide`
+  `fold` is checked the same way. Reads are unchanged.
+
+## [0.26.0] - 2026-11-08
+
+### Changed
+
+- A fresh store gets its guide on the first guide read. `kmp_guide`, and an
+  inspect of a guide node, seed both installed guides from the assets that
+  match the engine — the plugin root the launcher names in `KMP_PLUGIN_ROOT`,
+  the plugin a bundled engine lives in, or the Claude or Codex plugin cache
+  for this version — once per session, through the ordinary `kmp_ingest`
+  with the guide's own idempotency keys, and read again. Setup and update
+  still write no memory, and a shared gRPC kernel keeps the explicit sync.
+  `GUIDE_UNAVAILABLE` now names where the session looked in `searched`
+  before asking for `kmp-mcp guide sync`. Both launchers export
+  `KMP_PLUGIN_ROOT`. Installing KMP is install, setup and one restart; the
+  `/kmp:guide` step is for opening the human guide and for an explicit
+  refresh.
+- The public overview block, and the first screen of the repository README,
+  are written for someone who has never seen KMP: the problem, the local
+  binary, two questions to ask, and how to see it in two minutes. The
+  language section moved to `docs/embedded/languages.md`; the deep sections
+  follow the install, not precede it.
+- Every storefront opens with the same tagline, the workspace `description`
+  in `Cargo.toml`: the `kmp-mcp` crate, the Codex plugin interface and the
+  ChatGPT app submission now say it, and `scripts/release.sh preflight`
+  fails when any manifest drifts (`tagline sources`).
+- The crate publish chain waits until each published version is visible in
+  the crates.io index before publishing the crates that depend on it. The
+  0.25.0 publication failed because `cargo publish -p kmp-mcp` could not
+  resolve `kmp-domain 0.25.0` two minutes after it was uploaded, which left
+  crates.io at 0.24.0 and the MCP Registry waiting. A chain that stops
+  halfway is resumed by dispatching `publish-distribution.yml` on the tag
+  with `resume_crates` set to that version.
+- The repository's own memory, `.kmp/memory.jsonl`, is a bundle this engine
+  reads again (format 3): seventeen decisions, constraints and observations
+  behind KMP, each naming its source, authored in
+  `examples/kmp-project/requests.json`. The previous bundle was format 2,
+  which no shipped binary has read since 0.6.
+
+### Added
+
+- `kmp-mcp demo [--no-viewer] [--dry-run]` writes a worked example — a
+  checkout service, an incident, the decision that replaced an earlier one
+  and the measurement that verified it — under `example:kmp-demo` into the
+  store that resolves here, opens ChronoLoom on it and prints four questions
+  to ask the agent. It is idempotent, and the example, like the guides,
+  never enters a project's committed bundle.
+- `examples/`: real memories to load and ask about, each with the packets
+  that wrote it, its exported bundle and a README. `scripts/examples/refresh.sh`
+  regenerates every bundle, and the `example_bundles` test imports each one
+  into an empty store.
+- `scripts/release/storefronts.sh` compares GitHub Releases, crates.io, the
+  MCP Registry and the `marketplace` branch for one version and exits
+  non-zero when any of them lags; `storefronts.yml` runs it after every
+  published release, once a day and on request.
+- `docs/development/distribution-channels.md`: every channel KMP is listed
+  on, what it reads from the tree, how it updates, and the submissions that
+  are still done by hand, with the one blurb to use everywhere.
+
+### Security
+
+- `rustls` moves to 0.23.46, which closes GHSA-c8m5-c952-6cm4,
+  GHSA-h2v8-394m-p7vv, GHSA-w44r-93j7-qv28 and GHSA-vp88-798v-h67f in the
+  shipped engine.
+- `zip` moves to 9.4.2, which closes GHSA-m665-v7pm-7grj. Only the
+  `kmp-release` tool links it, and it only writes the MCPB archive, so no
+  published engine was exposed.
+
 ## [0.25.0] - 2026-10-04
 
 ### Changed
@@ -2642,7 +2786,11 @@ The initial agent schema that expands with use and persistent consultation profi
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.25.0...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.27.0...HEAD
+[0.27.0]: https://github.com/underpass-ai/kmp/compare/v0.26.2...v0.27.0
+[0.26.2]: https://github.com/underpass-ai/kmp/compare/v0.26.1...v0.26.2
+[0.26.1]: https://github.com/underpass-ai/kmp/compare/v0.26.0...v0.26.1
+[0.26.0]: https://github.com/underpass-ai/kmp/compare/v0.25.0...v0.26.0
 [0.25.0]: https://github.com/underpass-ai/kmp/compare/v0.24.0...v0.25.0
 [0.24.0]: https://github.com/underpass-ai/kmp/compare/v0.23.0...v0.24.0
 [0.23.0]: https://github.com/underpass-ai/kmp/compare/v0.22.0...v0.23.0

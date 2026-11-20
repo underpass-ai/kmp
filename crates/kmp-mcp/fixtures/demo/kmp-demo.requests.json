@@ -1,0 +1,368 @@
+[
+  {
+    "about": "example:kmp-demo",
+    "idempotency_key": "example:kmp-demo:retry-budget:v1",
+    "provenance": {
+      "source_agent": "kmp-demo",
+      "source_kind": "derived",
+      "correlation_id": "example:kmp-demo:v1",
+      "causation_id": "kmp-mcp demo",
+      "observed_at": "2026-09-20T12:00:00Z"
+    },
+    "memory": {
+      "dimensions": [
+        {
+          "id": "timeline",
+          "kind": "timeline",
+          "title": "Checkout retry history"
+        },
+        {
+          "id": "checkout-api",
+          "kind": "component",
+          "title": "checkout-api"
+        },
+        {
+          "id": "INC-2041",
+          "kind": "incident",
+          "title": "INC-2041 retry storm"
+        }
+      ],
+      "entries": [
+        {
+          "id": "example:kmp-demo:decision:retry-until-success",
+          "kind": "decision",
+          "text": "Checkout retries payment-provider calls until they succeed, to hide the provider's transient 5xx errors from customers.",
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "scope_id": "timeline",
+              "occurred_at": "2026-07-15T09:00:00Z",
+              "observed_at": "2026-07-15T09:00:00Z",
+              "sequence": 1
+            },
+            {
+              "dimension": "component",
+              "scope_id": "checkout-api",
+              "sequence": 1
+            }
+          ],
+          "metadata": {
+            "source": "kmp-demo",
+            "document": "ADR-009 Retry on transient provider errors"
+          }
+        },
+        {
+          "id": "example:kmp-demo:constraint:latency-budget",
+          "kind": "constraint",
+          "text": "Checkout must answer within 800 ms at p99. The payment provider's SLA takes up to 500 ms of that, so checkout-api's own work and its retries must fit in 300 ms.",
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "scope_id": "timeline",
+              "occurred_at": "2026-08-04T09:00:00Z",
+              "observed_at": "2026-08-04T09:00:00Z",
+              "sequence": 2
+            },
+            {
+              "dimension": "component",
+              "scope_id": "checkout-api",
+              "sequence": 2
+            }
+          ],
+          "metadata": {
+            "source": "kmp-demo",
+            "document": "Checkout SLO review"
+          }
+        },
+        {
+          "id": "example:kmp-demo:constraint:idempotent-payments",
+          "kind": "constraint",
+          "text": "Every payment call carries an idempotency key, so a retried call can never charge a customer twice.",
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "scope_id": "timeline",
+              "occurred_at": "2026-08-20T09:00:00Z",
+              "observed_at": "2026-08-20T09:00:00Z",
+              "sequence": 3
+            },
+            {
+              "dimension": "component",
+              "scope_id": "checkout-api",
+              "sequence": 3
+            }
+          ],
+          "metadata": {
+            "source": "kmp-demo",
+            "document": "Payment provider integration guide v3"
+          }
+        },
+        {
+          "id": "example:kmp-demo:observation:incident-2041",
+          "kind": "observation",
+          "text": "INC-2041: a provider slowdown turned checkout retries into a retry storm. Each customer request fanned out into up to nine provider calls, provider traffic tripled, and checkout p99 reached 1,400 ms.",
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "scope_id": "timeline",
+              "occurred_at": "2026-09-02T14:30:00Z",
+              "observed_at": "2026-09-02T14:30:00Z",
+              "sequence": 4
+            },
+            {
+              "dimension": "component",
+              "scope_id": "checkout-api",
+              "sequence": 4
+            },
+            {
+              "dimension": "incident",
+              "scope_id": "INC-2041",
+              "sequence": 4
+            }
+          ],
+          "metadata": {
+            "source": "kmp-demo",
+            "document": "INC-2041 postmortem"
+          }
+        },
+        {
+          "id": "example:kmp-demo:decision:retry-cap",
+          "kind": "decision",
+          "text": "Retries from checkout-api to the payment provider are capped at two, with jittered exponential backoff; a third failure returns a retryable error to the client.",
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "scope_id": "timeline",
+              "occurred_at": "2026-09-03T09:00:00Z",
+              "observed_at": "2026-09-03T09:00:00Z",
+              "sequence": 5
+            },
+            {
+              "dimension": "component",
+              "scope_id": "checkout-api",
+              "sequence": 5
+            },
+            {
+              "dimension": "incident",
+              "scope_id": "INC-2041",
+              "sequence": 5
+            }
+          ],
+          "metadata": {
+            "source": "kmp-demo",
+            "document": "ADR-014 Retry budget for provider calls"
+          }
+        },
+        {
+          "id": "example:kmp-demo:success_path:p99-recovered",
+          "kind": "success_path",
+          "text": "A week after the cap, checkout p99 fell from 1,400 ms to 620 ms and provider traffic returned to its August baseline.",
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "scope_id": "timeline",
+              "occurred_at": "2026-09-10T09:00:00Z",
+              "observed_at": "2026-09-10T09:00:00Z",
+              "sequence": 6
+            },
+            {
+              "dimension": "component",
+              "scope_id": "checkout-api",
+              "sequence": 6
+            },
+            {
+              "dimension": "incident",
+              "scope_id": "INC-2041",
+              "sequence": 6
+            }
+          ],
+          "metadata": {
+            "source": "kmp-demo",
+            "document": "Grafana checkout-latency dashboard"
+          }
+        },
+        {
+          "id": "example:kmp-demo:decision:circuit-breaker",
+          "kind": "decision",
+          "text": "A circuit breaker opens after five consecutive provider failures and stays open for 30 seconds; the retry cap stays in place underneath it.",
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "scope_id": "timeline",
+              "occurred_at": "2026-09-20T09:00:00Z",
+              "observed_at": "2026-09-20T09:00:00Z",
+              "sequence": 7
+            },
+            {
+              "dimension": "component",
+              "scope_id": "checkout-api",
+              "sequence": 7
+            }
+          ],
+          "metadata": {
+            "source": "kmp-demo",
+            "document": "ADR-015 Circuit breaker for provider calls"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "id": "evidence:example:kmp-demo:decision:retry-until-success",
+          "text": "ADR-009: \"retry until success so that a transient provider error never reaches a customer\".",
+          "source": "ADR-009 Retry on transient provider errors",
+          "time": "2026-07-15T09:00:00Z",
+          "supports": [
+            "example:kmp-demo:decision:retry-until-success"
+          ],
+          "metadata": {
+            "source": "kmp-demo"
+          }
+        },
+        {
+          "id": "evidence:example:kmp-demo:constraint:latency-budget",
+          "text": "SLO review: \"p99 800 ms end to end; provider SLA 500 ms; 300 ms remain for checkout-api\".",
+          "source": "Checkout SLO review, 2026-08-04",
+          "time": "2026-08-04T09:00:00Z",
+          "supports": [
+            "example:kmp-demo:constraint:latency-budget"
+          ],
+          "metadata": {
+            "source": "kmp-demo"
+          }
+        },
+        {
+          "id": "evidence:example:kmp-demo:constraint:idempotent-payments",
+          "text": "Integration guide v3 §4: \"a request repeated with the same idempotency key is acknowledged, never charged again\".",
+          "source": "Payment provider integration guide v3, section 4",
+          "time": "2026-08-20T09:00:00Z",
+          "supports": [
+            "example:kmp-demo:constraint:idempotent-payments"
+          ],
+          "metadata": {
+            "source": "kmp-demo"
+          }
+        },
+        {
+          "id": "evidence:example:kmp-demo:observation:incident-2041",
+          "text": "INC-2041 postmortem: \"retry-until-success fanned one request into nine provider calls; provider traffic 3x; p99 1,400 ms\".",
+          "source": "INC-2041 postmortem, 2026-09-02",
+          "time": "2026-09-02T14:30:00Z",
+          "supports": [
+            "example:kmp-demo:observation:incident-2041"
+          ],
+          "metadata": {
+            "source": "kmp-demo"
+          }
+        },
+        {
+          "id": "evidence:example:kmp-demo:decision:retry-cap",
+          "text": "ADR-014: \"cap retries at two with 50 ms and 100 ms jittered backoff; this decision supersedes ADR-009\".",
+          "source": "ADR-014 Retry budget for provider calls, 2026-09-03",
+          "time": "2026-09-03T09:00:00Z",
+          "supports": [
+            "example:kmp-demo:decision:retry-cap"
+          ],
+          "metadata": {
+            "source": "kmp-demo"
+          }
+        },
+        {
+          "id": "evidence:example:kmp-demo:success_path:p99-recovered",
+          "text": "Dashboard 2026-09-10: p99 620 ms; provider requests per checkout 1.1, the August baseline.",
+          "source": "Grafana checkout-latency dashboard, 2026-09-10",
+          "time": "2026-09-10T09:00:00Z",
+          "supports": [
+            "example:kmp-demo:success_path:p99-recovered"
+          ],
+          "metadata": {
+            "source": "kmp-demo"
+          }
+        },
+        {
+          "id": "evidence:example:kmp-demo:decision:circuit-breaker",
+          "text": "ADR-015: \"the breaker sits above the retry budget of ADR-014 and does not change it\".",
+          "source": "ADR-015 Circuit breaker for provider calls, 2026-09-20",
+          "time": "2026-09-20T09:00:00Z",
+          "supports": [
+            "example:kmp-demo:decision:circuit-breaker"
+          ],
+          "metadata": {
+            "source": "kmp-demo"
+          }
+        }
+      ],
+      "relations": [
+        {
+          "from": "example:kmp-demo:decision:retry-cap",
+          "to": "example:kmp-demo:observation:incident-2041",
+          "rel": "chosen_because",
+          "class": "motivational",
+          "confidence": "high",
+          "why": "ADR-014 names INC-2041 as the reason: unbounded retries multiplied provider traffic during a slowdown.",
+          "evidence": "ADR-014: \"INC-2041 showed that unbounded retries amplify a provider slowdown; cap them at two\".",
+          "sequence": 1
+        },
+        {
+          "from": "example:kmp-demo:decision:retry-cap",
+          "to": "example:kmp-demo:decision:retry-until-success",
+          "rel": "supersedes",
+          "class": "evidential",
+          "confidence": "high",
+          "why": "ADR-014 explicitly replaces ADR-009's retry-until-success policy from the day it was accepted.",
+          "evidence": "ADR-014: \"this decision supersedes ADR-009\".",
+          "sequence": 2
+        },
+        {
+          "from": "example:kmp-demo:observation:incident-2041",
+          "to": "example:kmp-demo:decision:retry-until-success",
+          "rel": "contradicts",
+          "class": "evidential",
+          "confidence": "high",
+          "why": "The postmortem shows the policy made the slowdown worse instead of hiding it.",
+          "evidence": "INC-2041 postmortem: \"retry-until-success fanned one request into nine provider calls\".",
+          "sequence": 3
+        },
+        {
+          "from": "example:kmp-demo:decision:retry-cap",
+          "to": "example:kmp-demo:constraint:latency-budget",
+          "rel": "satisfies_constraint",
+          "class": "constraint",
+          "confidence": "high",
+          "why": "Two retries with the stated backoff fit inside the 300 ms that checkout-api owns.",
+          "evidence": "ADR-014: \"two retries with 50 ms and 100 ms backoff stay within the 300 ms budget\".",
+          "sequence": 4
+        },
+        {
+          "from": "example:kmp-demo:decision:retry-cap",
+          "to": "example:kmp-demo:constraint:idempotent-payments",
+          "rel": "depends_on",
+          "class": "causal",
+          "confidence": "high",
+          "why": "A retry is only safe because the idempotency key makes a repeated call harmless.",
+          "evidence": "ADR-014: \"retries rely on the idempotency key required by the integration guide\".",
+          "sequence": 5
+        },
+        {
+          "from": "example:kmp-demo:decision:retry-cap",
+          "to": "example:kmp-demo:success_path:p99-recovered",
+          "rel": "verified_by",
+          "class": "evidential",
+          "confidence": "high",
+          "why": "The dashboard one week later shows the effect the decision predicted.",
+          "evidence": "Dashboard 2026-09-10: p99 620 ms, provider traffic back at the August baseline.",
+          "sequence": 6
+        },
+        {
+          "from": "example:kmp-demo:decision:circuit-breaker",
+          "to": "example:kmp-demo:decision:retry-cap",
+          "rel": "depends_on",
+          "class": "causal",
+          "confidence": "high",
+          "why": "The breaker counts failures that the capped retries already bound; it is layered on the cap, not a replacement.",
+          "evidence": "ADR-015: \"the breaker sits above the retry budget of ADR-014 and does not change it\".",
+          "sequence": 7
+        }
+      ]
+    }
+  }
+]

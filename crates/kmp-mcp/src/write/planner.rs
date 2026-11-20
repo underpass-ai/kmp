@@ -15,6 +15,7 @@ use super::relation_quality::*;
 use super::relations::*;
 use super::search_summary::decide_search_summary;
 use super::validated_arguments::*;
+use super::write_options::WriteOptions;
 use super::writer_label::*;
 
 const DEFAULT_CONFIDENCE: &str = "high";
@@ -110,20 +111,18 @@ pub(super) fn build_write_plan_with_local_refs(
         );
         Vec::new()
     });
-    let options = arguments.get("options").and_then(Value::as_object);
     // A tool called write_memory commits. Previewing was the default here,
     // so every caller that did not know to pass `dry_run: false` got
     // `isError: false` back and wrote nothing — the skill and the write
     // protocol doc both describe the opposite, and `accepted: false` is easy
-    // to miss in a tool result. Opt in to the preview, not out of it.
-    let dry_run = options
-        .and_then(|options| options.get("dry_run"))
-        .and_then(Value::as_bool)
-        .unwrap_or(false);
-    let strict = options
-        .and_then(|options| options.get("strict"))
-        .and_then(Value::as_bool)
-        .unwrap_or(true);
+    // to miss in a tool result. Opt in to the preview, not out of it. A
+    // switch of the wrong type is refused, never read as its default.
+    let WriteOptions { dry_run, strict } =
+        WriteOptions::from_arguments(arguments).unwrap_or_else(|error| {
+            failures.push(error.global());
+            WriteOptions::default()
+        });
+    let options = arguments.get("options").and_then(Value::as_object);
     let sequence = options
         .and_then(|options| options.get("sequence"))
         .and_then(Value::as_u64)

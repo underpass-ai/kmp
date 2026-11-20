@@ -6,6 +6,8 @@
 //! that proposes expansions gets the same lint as `kmp_write_memory`, and,
 //! since the kernel serves no judge, the same outcome as `kmp_write_memory`
 //! on a backend that cannot judge: nothing is stored and the report says why.
+#[path = "support/isolated_home.rs"]
+mod isolated_home;
 
 use kmp_application::SearchExpansionReport;
 use kmp_mcp::KernelMcpServer;
@@ -180,7 +182,8 @@ async fn the_wire_and_kmp_write_memory_read_a_proposal_alike_and_store_none_with
     let kernel = kernel().await;
 
     // kmp_write_memory through the same kernel: its backend cannot judge.
-    let server = KernelMcpServer::grpc(kernel.endpoint.clone());
+    let server = KernelMcpServer::grpc(kernel.endpoint.clone())
+        .with_remote_state_home(&isolated_home::data_home());
     let written = call(
         &server,
         "kmp_write_memory",
@@ -324,7 +327,8 @@ fn kmp_ingest(about: &str, key: &str, expansions: Option<&[&str]>) -> Value {
 #[tokio::test]
 async fn kmp_ingest_reports_what_the_wire_and_kmp_write_memory_report() {
     let kernel = kernel().await;
-    let remote = KernelMcpServer::grpc(kernel.endpoint.clone());
+    let remote = KernelMcpServer::grpc(kernel.endpoint.clone())
+        .with_remote_state_home(&isolated_home::data_home());
     let dir = tempfile::tempdir().expect("dir");
     let embedded = KernelMcpServer::embedded(dir.path()).expect("embedded");
 
