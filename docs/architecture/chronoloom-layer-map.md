@@ -136,9 +136,10 @@ crates/kmp-viewer/ui/
   loom-sync.js       KMP_APP.sync — the view-aggregate contract: open,
                      long-poll, applyAgentState, frameRefs, report, undo.
                      The #463 browser site, isolated and node-testable
-  loom-scene.js      KMP_APP.scene — Pixi renderer adapter: theme and
-                     palette, stage, lanes, atlas, weave, arcs, labels,
-                     navigator, tooltip
+  loom-scene.js      KMP_APP.scene — scene composition adapter over the
+                     Three.js renderer (loom-three.js): theme, layout,
+                     picking, tooltip, and the plain message shown when
+                     WebGL cannot start
   loom-gestures.js   KMP_APP.gestures — pointer, wheel, keyboard, navigator
                      drags
   loom.js            composition root: wires the namespaces and runs init()

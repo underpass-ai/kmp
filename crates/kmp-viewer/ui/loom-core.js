@@ -1,5 +1,5 @@
 /* KMP ChronoLoom — loom core.
-   Pure logic only: no DOM, no PIXI, no fetch. Time is the primary geometry;
+   Pure logic only: no DOM, no renderer, no fetch. Time is the primary geometry;
    everything here turns entries, coordinates and relations into positions,
    lanes, bins, clusters, prisms and axes — plain data in, plain data out.
    Loaded before loom.js; exposes a single global, KMP_LOOM. */
@@ -11,7 +11,6 @@ const KMP_LOOM = (() => {
      ingested and a validity interval; the loom lets the reader choose which
      one is the x-axis, and never invents a time an entry does not carry. */
 
-  const CLOCKS = ["occurred", "observed", "ingested", "validity"];
 
   const parseMs = (value) => (value ? Date.parse(value) : null);
 
@@ -119,44 +118,40 @@ const KMP_LOOM = (() => {
      that does not tell its values apart. Order is first-appearance. */
   function foldAggregates(items) {
     const folded = new Map();
+    // Kinds are stored text: a kind named `constructor` or `__proto__` must
+    // count like any other, so the sums live in Maps until the end.
+    const kinds = new Map();
     for (const item of items || []) {
       const key = `${item.dimension}\u0000${item.from}\u0000${item.to}`;
       let cell = folded.get(key);
       if (!cell) {
-        cell = { ...item, total: 0, by_kind: {} };
+        cell = { ...item, total: 0 };
         delete cell.scope_id;
         if (item.refs) cell.refs = [];
         folded.set(key, cell);
+        kinds.set(key, new Map());
       }
       cell.total += Number(item.total || 0);
+      const counts = kinds.get(key);
       for (const [kind, count] of Object.entries(item.by_kind || {})) {
-        cell.by_kind[kind] = (cell.by_kind[kind] || 0) + Number(count);
+        counts.set(kind, (counts.get(kind) || 0) + Number(count));
       }
       if (item.refs) {
         for (const ref of item.refs) if (!cell.refs.includes(ref)) cell.refs.push(ref);
       }
     }
+    for (const [key, cell] of folded) cell.by_kind = Object.fromEntries(kinds.get(key));
     return [...folded.values()];
   }
 
-  /* ---------------- extent, bins, clusters ---------------- */
-
-  function extent(models, clock) {
-    let t0 = null;
-    let t1 = null;
-    for (const model of models) {
-      const t = placedMs(model, clock);
-      if (t === null) continue;
-      if (t0 === null || t < t0) t0 = t;
-      if (t1 === null || t > t1) t1 = t;
-      if (clock === "validity" && model.clocks.validUntil !== null && model.clocks.validUntil > t1) {
-        t1 = model.clocks.validUntil;
-      }
-    }
-    if (t0 === null) return null;
-    if (t0 === t1) t1 = t0 + 1;
-    return { t0, t1 };
+  /* A lookup keyed by stored text. A kind, label or class is whatever an
+     agent wrote; on a plain object `constructor`, `toString` or `__proto__`
+     would find the prototype's member instead of a miss. */
+  function own(table, key) {
+    return table != null && Object.hasOwn(table, key) ? table[key] : undefined;
   }
+
+  /* ---------------- extent, bins, clusters ---------------- */
 
   /* The window a projection's own aggregates describe.
      Cluster endpoints are exact and preferred; bins are the coarse fallback.
@@ -188,6 +183,10 @@ const KMP_LOOM = (() => {
     const values = exact.length
       ? exact
       : endpoints(projection.bins).filter((e) => Number.isFinite(e.ms));
+    // A read keeps the newest entries of a large about; the server names
+    // the earliest one apart, so "All time" still reaches it.
+    const earliest = Date.parse(projection.source?.earliest);
+    if (values.length && Number.isFinite(earliest)) values.push({ ms: earliest, slack: 0 });
     if (!values.length) return null;
     const t0 = Math.min(...values.map((e) => e.ms));
     const t1 = Math.max(...values.map((e) => e.ms + e.slack));
@@ -470,67 +469,6 @@ const KMP_LOOM = (() => {
 
   /* ---------------- axis ---------------- */
 
-  const AXIS_STEPS = [
-    1e3, 5e3, 15e3, 30e3,
-    60e3, 5 * 60e3, 15 * 60e3, 30 * 60e3,
-    3600e3, 3 * 3600e3, 6 * 3600e3, 12 * 3600e3,
-    86400e3, 2 * 86400e3, 7 * 86400e3, 14 * 86400e3, 30 * 86400e3, 90 * 86400e3, 365 * 86400e3,
-  ];
-
-  function axisTicks(t0, t1, maxTicks) {
-    const span = Math.max(1, t1 - t0);
-    let step = AXIS_STEPS[AXIS_STEPS.length - 1];
-    for (const candidate of AXIS_STEPS) {
-      if (span / candidate <= maxTicks) {
-        step = candidate;
-        break;
-      }
-    }
-    const ticks = [];
-    for (let t = Math.ceil(t0 / step) * step; t <= t1; t += step) ticks.push(t);
-    return { step, ticks };
-  }
-
-  /* Axis ticks are a screen-space promise. A temporal lens is deliberately
-     non-linear, so choosing ticks in linear time and transforming them later
-     can collapse a dozen labels into one compressed margin. Sample stable
-     screen positions, invert through the lens, then snap each instant to the
-     nearest useful calendar step for its local screen interval. */
-  function screenAxisTicks(lens, width, spacing = 110) {
-    const count = Math.max(1, Math.floor(Math.max(1, width) / Math.max(40, spacing)));
-    const ratios = Array.from({ length: count + 1 }, (_, index) => index / count);
-    const raw = ratios.map((ratio) => lens.fromRatio(ratio));
-    const nearestStep = (span) => {
-      const target = Math.max(1, span);
-      return AXIS_STEPS.reduce((best, step) =>
-        Math.abs(Math.log(step / target)) < Math.abs(Math.log(best / target)) ? step : best
-      );
-    };
-    const ticks = raw.map((time, index) => {
-      const before = raw[Math.max(0, index - 1)];
-      const after = raw[Math.min(raw.length - 1, index + 1)];
-      const step = nearestStep(Math.max(1, (after - before) / (index > 0 && index < raw.length - 1 ? 2 : 1)));
-      if (index === 0 || index === raw.length - 1) {
-        return { ratio: ratios[index], time, step };
-      }
-      let snapped = Math.round(time / step) * step;
-      let ratio = lens.toRatio(snapped);
-      // A calendar snap is useful only while it still honours the
-      // screen-space placement promise. Otherwise the exact inverted instant
-      // is more honest than moving a label into its neighbour.
-      if (Math.abs(ratio - ratios[index]) > 0.08 / count) {
-        snapped = time;
-        ratio = ratios[index];
-      }
-      return {
-        ratio,
-        time: snapped,
-        step,
-      };
-    });
-    return { ticks };
-  }
-
   function tickLabel(ms, step) {
     const iso = new Date(ms).toISOString();
     if (step >= 86400e3) return iso.slice(5, 10);
@@ -599,19 +537,6 @@ const KMP_LOOM = (() => {
   /* ---------------- relations ----------------
      Classes carry meaning; color is never the only channel — each class has
      its own dash pattern and weight, and structural threads fade first. */
-
-  const CLASS_STYLE = {
-    causal: { dash: null, width: 2, alpha: 0.9, arrow: true },
-    evidential: { dash: [5, 4], width: 1.5, alpha: 0.8, arrow: true },
-    motivational: { dash: [1, 3], width: 1.5, alpha: 0.8, arrow: true },
-    procedural: { dash: [7, 2, 2, 2], width: 1.3, alpha: 0.7, arrow: true },
-    constraint: { dash: [2, 2], width: 1.8, alpha: 0.7, arrow: false },
-    structural: { dash: null, width: 0.7, alpha: 0.3, arrow: false },
-  };
-
-  function arcStyle(cls) {
-    return CLASS_STYLE[cls] || CLASS_STYLE.structural;
-  }
 
   /* Edges whose ends are both drawn entries; supersession and contradiction
      keep their distinct nature instead of melting into one problem color. */
@@ -710,20 +635,6 @@ const KMP_LOOM = (() => {
     );
   }
 
-  /* Adds one predicate: a second `in`/`notin` on the same key merges its
-     values; `exists`/`notexists` replace whatever stood on that key. */
-  function withSelector(selectors, next) {
-    const current = normalizeSelectors(selectors);
-    const [candidate] = normalizeSelectors([next]);
-    if (!candidate) return current;
-    const same = current.find((s) => s.key === candidate.key && s.op === candidate.op);
-    if (same && candidate.values.length) {
-      same.values = [...new Set([...same.values, ...candidate.values])].sort();
-      return current;
-    }
-    return [...current.filter((s) => s.key !== candidate.key || s.op !== candidate.op), candidate];
-  }
-
   /* ---------------- search ---------------- */
 
   function parseQuery(raw) {
@@ -764,7 +675,6 @@ const KMP_LOOM = (() => {
   }
 
   return {
-    CLOCKS,
     entryModel,
     fallbackMs,
     strictMs,
@@ -772,7 +682,7 @@ const KMP_LOOM = (() => {
     compareModels,
     buildLanes,
     foldAggregates,
-    extent,
+    own,
     projectionExtent,
     extentIncluding,
     maxMarksPerLane,
@@ -782,11 +692,8 @@ const KMP_LOOM = (() => {
     temporalLens,
     projectionAt,
     diffProjections,
-    axisTicks,
-    screenAxisTicks,
     tickLabel,
     axisLabels,
-    arcStyle,
     classifyEdges,
     prism,
     parseQuery,
@@ -796,6 +703,5 @@ const KMP_LOOM = (() => {
     normalizeSelectors,
     labelQuery,
     parseLabelQuery,
-    withSelector,
   };
 })();

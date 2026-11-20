@@ -47,9 +47,6 @@ KMP_APP.data = (() => {
     model.entries = [...model.byRef.values()].sort(KMP_LOOM.compareModels);
     model.total = projections.reduce((count, {projection}) => count + Number(projection.page?.total || 0), 0);
     model.lanes = lanesFromProjection(model.projection, model.entries);
-    model.laneIndex = new Map(
-      model.lanes.map((lane) => [lane.name, lane.index]),
-    );
     model.proofEdges = projections.flatMap(({ projection }) => projection.relations || []).map((edge) => ({
       ...edge,
       source: edge.from,
@@ -63,9 +60,6 @@ KMP_APP.data = (() => {
     model.contradictions = classified.contradictions;
     model.supersededRefs = new Set(
       classified.supersessions.map((edge) => edge.target),
-    );
-    model.contradictedRefs = new Set(
-      classified.contradictions.flatMap((edge) => [edge.source, edge.target]),
     );
   }
 
@@ -93,10 +87,21 @@ KMP_APP.data = (() => {
     return KMP_APP.layers?.load();
   }
 
+  /* Only the newest window's read is worth its cost: each one makes the
+     server read the whole about. A newer request aborts the older one,
+     which also takes it out of the server's queue. */
+  let projectionRead = null;
+  function supersedeProjectionRead() {
+    projectionRead?.abort();
+    projectionRead = typeof AbortController === "function" ? new AbortController() : null;
+    return projectionRead?.signal;
+  }
+
   async function loadProjection() {
     if (!model.about || !view.full) return;
     KMP_APP.layers?.invalidate();
     const generation = ++model.loadGeneration;
+    const signal = supersedeProjectionRead();
     const width = Math.max(1, KMP_APP.scene.canvas().clientWidth || 1);
     const msPerPx = (view.t1 - view.t0) / width;
     let lod =
@@ -112,6 +117,7 @@ KMP_APP.data = (() => {
         level,
         bins,
         KMP_LOOM.labelQuery(view.selectors),
+        signal,
       );
     try {
       let projection = await fetchAt(lod);
@@ -132,16 +138,30 @@ KMP_APP.data = (() => {
       }
       await applyProjection(projection, lod);
       if (generation !== model.loadGeneration) return;
-      if (projection.truncated) {
-        showError(
-          `projection is partial (${projection.page.returned}/${projection.page.total}); zoom into a smaller range for detail`,
-        );
-      } else {
-        showError("");
-      }
+      KMP_APP.dom.setNotice("partial", partialNotice(projection));
+      showError("");
     } catch (error) {
+      if (KMP_APP.api.aborted(error)) return;
       if (generation === model.loadGeneration) showError(error.message);
     }
+  }
+
+  const count = (value) => Number(value || 0).toLocaleString("en-US");
+
+  /* What a partial projection leaves out, said for as long as the window
+     shows it. A read takes the newest entries of an about up to the
+     window's end; a Memories page takes the first entries of the window. */
+  function partialNotice(projection) {
+    const source = projection.source;
+    if ((projection.missing || []).includes("visual_source_entries")) {
+      return source && source.total > source.read
+        ? `Showing the newest ${count(source.read)} of ${count(source.total)} memories up to this window's end; move the window earlier to see older ones`
+        : "This about holds more memories than one read takes; the oldest are left out of this window";
+    }
+    if (projection.page?.has_more) {
+      return `Showing ${count(projection.page.returned)} of ${count(projection.page.total)} memories in this window; zoom in to see the rest`;
+    }
+    return "";
   }
 
   /* A chip changed: the kernel filters, so the projection is asked again,
@@ -231,6 +251,7 @@ KMP_APP.data = (() => {
         "episode",
         128,
         KMP_LOOM.labelQuery(view.selectors),
+        supersedeProjectionRead(),
       );
       if (generation !== model.loadGeneration) return;
       const combined = KMP_APP.layers
@@ -284,6 +305,7 @@ KMP_APP.data = (() => {
         // range to share.
         view.full = null;
         view.windowStack = [];
+        KMP_APP.dom.setNotice("partial", "");
         applyProjection(
           {
             entries: [],
@@ -310,7 +332,7 @@ KMP_APP.data = (() => {
       sync.applying = previouslyApplying;
       if (announce && !previouslyApplying) await KMP_APP.sync.viewOpen();
     } catch (error) {
-      showError(error.message);
+      if (!KMP_APP.api.aborted(error)) showError(error.message);
     } finally {
       sync.applying = previouslyApplying;
     }
@@ -319,6 +341,7 @@ KMP_APP.data = (() => {
   return {
     lanesFromProjection,
     applyProjection,
+    partialNotice,
     refreshEntries,
     setSelectors,
     loadProjection,

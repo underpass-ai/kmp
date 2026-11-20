@@ -74,6 +74,14 @@ KMP_APP.scene = (() => {
     tip.style.left = `${Math.min(bounds.width - 280, Math.max(8, event.clientX - bounds.left + 12))}px`;
     tip.style.top = `${Math.max(8, event.clientY - bounds.top - 55)}px`;
   }
+  /* The renderer could not start. The stage says so in place of a blank
+     canvas; every scene call below already does nothing without one. */
+  function unavailable(reason) {
+    renderer = null;
+    $("scene-empty").hidden = true;
+    $("scene-unavailable-reason").textContent = reason ? `The browser said: ${reason}` : "";
+    $("scene-unavailable").hidden = false;
+  }
   async function setup() {
     renderer?.dispose();
     renderer = new KMP_APP.three.MemoryScene(
@@ -128,6 +136,7 @@ KMP_APP.scene = (() => {
   return {
     canvas,
     setup,
+    unavailable,
     wire,
     requestDraw,
     drawNavigator: () => KMP_APP.navigator.draw(),

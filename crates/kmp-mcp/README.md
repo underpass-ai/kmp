@@ -48,13 +48,15 @@ carry `structuredContent`. A host that validates structured output sets
 them).
 
 `embedded` is the one to start with: no server, no cluster, memory that
-survives the session on your own disk. It also brings its own
-[ChronoLoom visualizer](https://crates.io/crates/kmp-viewer) up at
-`http://127.0.0.1:7317/` over that same kernel — your memory as a graph,
-read-only and loopback only, no flag required. If another session owns 7317,
-this process binds a free per-session loopback port. The process prints a random
-one-session capability link; `kmp_view_open` and `kmp_view_get_state` return
-that same link when a host hides server output. The browser exchanges it for
+survives the session on your own disk. It also carries its own
+[ChronoLoom visualizer](https://crates.io/crates/kmp-viewer) over that same
+kernel — your memory as a graph, read-only and loopback only, no flag
+required. A session listens on no port until the viewer is asked for: the
+first `kmp_view_open` binds `http://127.0.0.1:7317/` (or a free per-session
+loopback port when another session owns 7317) and the viewer stays up for the
+rest of the session. The process prints a random one-session capability link
+when it binds; `kmp_view_open` returns that link, and `kmp_view_get_state`
+returns it once the viewer listens, when a host hides server output. The browser exchanges it for
 an HttpOnly cookie and removes the token from its URL. `KMP_VIEWER_ADDR` moves
 it to an explicit address; `off` declines it. `kmp_view_open` also reports
 `viewer_available`, so a semantic view can never masquerade as a browser the

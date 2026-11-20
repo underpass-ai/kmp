@@ -64,5 +64,5 @@ pub use visual_projection::{
     MAX_VISUAL_BINS, MAX_VISUAL_PAGE_ENTRIES, MAX_VISUAL_SOURCE_ENTRIES, TemporalAxisView,
     TemporalCoordinateView, VisualBin, VisualCluster, VisualEntry, VisualLevelOfDetail,
     VisualMetric, VisualProjectionPage, VisualProjectionQuery, VisualProjectionResult, VisualRange,
-    VisualRelation, build_visual_projection,
+    VisualRelation, VisualSource, build_visual_projection,
 };

@@ -58,9 +58,15 @@ KMP_APP.layers = (() => {
       bins: overviews.flatMap((probe) => KMP_LOOM.foldAggregates(probe.bins)),
     };
   }
+  /* The layer reads of a window nobody looks at any more are abandoned,
+     like the primary's, so a stop-and-go pan cannot stack them. */
+  let layerReads = null;
   async function load() {
     if (!view.full) return;
     const request = ++generation;
+    layerReads?.abort();
+    layerReads = typeof AbortController === "function" ? new AbortController() : null;
+    const signal = layerReads?.signal;
     const primary = model.about,
       clock = view.clock,
       from = view.t0,
@@ -79,6 +85,7 @@ KMP_APP.layers = (() => {
             model.currentLod,
             128,
             KMP_LOOM.labelQuery(view.selectors),
+            signal,
           );
           return { about, projection, lod: model.currentLod };
         } catch (error) {
@@ -108,6 +115,8 @@ KMP_APP.layers = (() => {
   }
   function invalidate() {
     generation++;
+    layerReads?.abort();
+    layerReads = null;
     model.layerProjections = [];
   }
   async function set(abouts) {

@@ -13,6 +13,8 @@ globalThis.KMP_APP = globalThis.KMP_APP || {};
 KMP_APP.dom = (() => {
   const $ = (id) => document.getElementById(id);
 
+  /* A one-off failure: it fades after a while, because nothing about the
+     page stays wrong once it has been said. */
   function showError(message) {
     $("error-slot").textContent = message || "";
     if (message) {
@@ -20,6 +22,18 @@ KMP_APP.dom = (() => {
       showError._timer = setTimeout(() => ($("error-slot").textContent = ""), 8000);
     }
   }
+
+  /* A state — no renderer, an empty store, a partial read, an ended
+     session — is said until that state changes, under its own key, so
+     clearing one never wipes another. */
+  const notices = new Map();
+  function setNotice(key, message) {
+    if (message) notices.set(key, message);
+    else notices.delete(key);
+    const slot = $("notice-slot");
+    if (slot) slot.textContent = [...notices.values()].join(" · ");
+  }
+  const notice = (key) => notices.get(key) || "";
 
   function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -31,7 +45,7 @@ KMP_APP.dom = (() => {
   const fmtMs = (ms) => new Date(ms).toISOString().slice(5, 16).replace("T", " ");
   const fmtMsFull = (ms) => new Date(ms).toISOString().slice(0, 19).replace("T", " ");
 
-  return { $, showError, el, fmtMs, fmtMsFull };
+  return { $, showError, setNotice, notice, el, fmtMs, fmtMsFull };
 })();
 
 KMP_APP.panels = (() => {
@@ -104,7 +118,7 @@ KMP_APP.panels = (() => {
     const DASH_CLASS = { evidential: "dashed", motivational: "dotted", constraint: "dashed", procedural: "dashed" };
     for (const [cls, count] of [...classes.entries()].sort((a, b) => b[1] - a[1])) {
       const item = el("li", "");
-      const dash = el("span", `legend-dash ${DASH_CLASS[cls] || ""}`);
+      const dash = el("span", `legend-dash ${KMP_LOOM.own(DASH_CLASS, cls) || ""}`);
       dash.style.borderTopColor = classColor(cls);
       item.append(dash, el("span", "", cls), el("span", "muted legend-count", String(count)));
       classList.append(item);
@@ -457,13 +471,10 @@ KMP_APP.panels = (() => {
         };
         if (KMP_LOOM.matchesQuery(query, fields)) view.searchHits.add(m.ref);
       }
-      /* A search that matches nothing is a result too. Saying so beats an
-         empty rail, which reads as "still working" or "nothing loaded". */
-      if (!view.searchHits.size) {
-        results.append(
-          el("li", "empty-hint", "No memory in this window matches that query.")
-        );
-      }
+      /* A search that matches nothing is a result too, and it says what
+         it looked at: the memories this window has loaded, never the whole
+         store. Grouped levels load none. */
+      if (!view.searchHits.size) results.append(el("li", "empty-hint", searchMissText()));
       if (view.searchHits.size > 50) {
         results.append(el("li", "empty-hint", `${view.searchHits.size} hits · showing 50`));
       }
@@ -480,6 +491,29 @@ KMP_APP.panels = (() => {
     }
     KMP_APP.scene.requestDraw();
     KMP_APP.sync.reportView();
+  }
+
+  function searchMissText() {
+    if (model.currentLod !== "moment") {
+      return "Search reads the memories drawn on screen, and this window shows them grouped. Zoom in until single memories appear, then search.";
+    }
+    const loaded = model.entries.length;
+    const more = model.total > loaded ? ` The window holds ${model.total}; zoom in to load the rest.` : "";
+    return `No memory among the ${loaded} loaded in this window matches.${more}`;
+  }
+
+  /* Enter frames the hits: the window closes around them, and the scene
+     already steps every other memory back while a search holds hits. */
+  function frameSearchHits() {
+    const times = [...view.searchHits]
+      .map((ref) => model.byRef.get(ref))
+      .map((entry) => (entry ? KMP_LOOM.strictMs(entry, view.clock) : null))
+      .filter((ms) => ms !== null && Number.isFinite(ms));
+    if (!times.length) return;
+    const lo = Math.min(...times);
+    const hi = Math.max(...times);
+    const pad = Math.max(60_000, (hi - lo) * 0.1);
+    KMP_APP.viewport.setWindow(lo - pad, hi + pad);
   }
 
   /* The search box as an operation, so the sync use case never touches an
@@ -564,6 +598,12 @@ KMP_APP.panels = (() => {
       searchTimer = setTimeout(runSearch, 120);
     });
     $("search").addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault?.();
+        runSearch();
+        frameSearchHits();
+        return;
+      }
       if (event.key === "Escape") {
         clearTimeout(searchTimer); searchTimer = null;
         $("search").value = "";

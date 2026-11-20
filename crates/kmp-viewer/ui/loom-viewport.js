@@ -37,8 +37,6 @@ KMP_APP.viewport = (() => {
   }
 
   const lens = () => axisLens;
-  const xOf = (t) => axisLens.toRatio(t) * scene().canvas().clientWidth;
-  const tOf = (x) => axisLens.fromRatio(x / Math.max(1, scene().canvas().clientWidth));
 
   function setClock(clock, reset, refresh = true) {
     const changed = view.clock !== clock;
@@ -118,5 +116,5 @@ KMP_APP.viewport = (() => {
     if (t < view.t0 || t > view.t1) setWindow(t - span / 2, t + span / 2);
   }
 
-  return { updateAxisLens, lens, xOf, tOf, setClock, setWindow, applyZoomRung, centerOn };
+  return { updateAxisLens, lens, setClock, setWindow, applyZoomRung, centerOn };
 })();
