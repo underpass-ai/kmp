@@ -194,8 +194,9 @@ async fn dimensional_context_survives_an_empty_historical_selection() {
         json!({"about":"project:wake-scope-missing"}),
     )
     .await;
-    assert_eq!(absent["isError"], true);
-    assert_eq!(absent["structuredContent"]["error"]["code"], "not_found");
+    // An about nothing was written to is the start of new work, not an error.
+    assert_eq!(absent["isError"], false, "{absent}");
+    assert!(absent["structuredContent"].get("proof").is_none());
 }
 
 #[tokio::test]

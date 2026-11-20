@@ -150,8 +150,9 @@ inventories Pi as a peer host with the same engine proof as Codex and Hermes.
 
 ### The guide arrives on its own
 
-Setup installs the assets without writing a store. The first guide read on a
-fresh embedded store — `kmp_guide`, or an inspect of a guide node — seeds both
+Setup installs the assets without writing a store. `kmp_guide` needs none of
+them: its cards ship inside the engine. The first read of a guide node on a
+fresh embedded store seeds both
 installed guides from the assets that match the engine: the plugin root the
 launcher names in `KMP_PLUGIN_ROOT`, the plugin a bundled engine lives in, or
 the Claude or Codex plugin cache for this version. It happens once per session,
@@ -260,11 +261,11 @@ The skill points at `tools/list` as the authority on the relation vocabulary,
 because that catalog is generated from the kernel's own writer spec and moves
 with the kernel. The skill teaches the shape; the schema carries the truth.
 
-`kmp_guide` starts with a brief capability map and a persistent agent identity
-with a random display name. Open one worked card by topic and consult its
-extended verb when needed. Context resets preserve identity; delivery records
-mean guidance was served, not learned. Agent metadata stays outside memory
-retrieval. The versioned lessons reach a fresh store on the first guide read;
+`kmp_guide` is a plain topic lookup served by the engine itself: one worked
+card per topic, with the meaning of each argument of the tools it teaches.
+Nothing is registered or recorded, and a refusal ends with one line naming the
+topic to read. The longer versioned lessons reach a fresh store on the first
+guide read;
 `/kmp:guide` refreshes them explicitly when needed. The separate `guide:kmp` is
 for people and opens visually in ChronoLoom.
 
@@ -309,8 +310,8 @@ there. It separates them:
 - **backend** — embedded, grpc or fixture. It flags `fixture` loudly: those
   responses look real and are canned;
 - **data directory** — which one wins under the resolution order
-  (`KMP_MCP_DATA_DIR` → the selection saved with `kmp-mcp config
-  memory-store` → project `.kernel/` → XDG fallback), and why;
+  (`KMP_MCP_DATA_DIR` → project `.kernel/` → the selection saved with
+  `kmp-mcp config memory-store` → XDG fallback), and why;
 - **tool surface** — a real `tools/list` over stdio, counting what answers;
 - **host registration** — three separate facts, never collapsed into one: the
   plugin is installed and enabled, the engine binary declares its tools when

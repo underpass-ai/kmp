@@ -28,7 +28,7 @@ pub(crate) fn relabel_schema() -> Value {
         "properties": {
             "about": string_schema("The about the memory belongs to."),
             "ref": string_schema("The memory to relabel: an entry ref inside this about, as a read returned it, byte for byte. Never the about anchor, an evidence id or a dimension id."),
-            "actor": string_schema("Human, agent, or component making the change."),
+            "actor": string_schema("Human, agent, or component making the change. Omitted: the MCP client name from initialize, or mcp-client."),
             "observed_at": string_schema("RFC3339 timestamp in UTC for the change's provenance. It is kept on the edge each added label makes and in the event log; it never becomes the memory's time. A stamp more than five minutes ahead of the kernel's clock is refused."),
             "source_kind": {
                 "type": "string",

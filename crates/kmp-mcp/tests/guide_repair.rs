@@ -79,7 +79,7 @@ fn absent_or_partial_guide_repairs_in_the_same_store_and_retries_idempotently() 
         "../../../plugins/kmp/guide/guide.requests.json"
     ))
     .expect("assets");
-    for case in ["absent", "human-only", "missing-card", "no-revision"] {
+    for case in ["absent", "human-only", "missing-card"] {
         let scratch = tempfile::tempdir().expect("scratch");
         let store = scratch.path().join("store");
         if case != "absent" {
@@ -104,62 +104,37 @@ fn absent_or_partial_guide_repairs_in_the_same_store_and_retries_idempotently() 
                     .expect("evidence")
                     .retain(|e| e["supports"] == json!(["guide:kmp-agent:overview"]));
                 seed["memory"]["relations"] = json!([]);
-                if case == "no-revision" {
-                    seed["memory"]["entries"][0]["metadata"]
-                        .as_object_mut()
-                        .expect("metadata")
-                        .remove("guide_revision");
-                }
             }
             assert_eq!(call(&store, "kmp_ingest", seed)["isError"], false);
         }
         let before = exported_events(&store, &scratch.path().join("before.jsonl"));
-        let opening = json!({"registration_key":"repair-agent","topic":"write"});
-        let missing = call(&store, "kmp_guide", opening.clone());
+        let opening = json!({"about":"guide:kmp-agent","ref":"guide:kmp-agent:card:write"});
+        let missing = call(&store, "kmp_inspect", opening.clone());
         assert_eq!(missing["isError"], true, "{case}: {missing}");
-        assert_eq!(
-            missing["structuredContent"]["error"]["code"],
-            if case == "no-revision" {
-                "conflict"
-            } else {
-                "not_found"
-            }
-        );
+        assert_eq!(missing["structuredContent"]["error"]["code"], "not_found");
         assert!(
-            missing["structuredContent"].get("help").is_none(),
+            !missing["content"][0]["text"]
+                .as_str()
+                .expect("text")
+                .contains("Help:"),
             "no recursive guide help"
         );
+        // The help pointer resolves on any store: the cards ship inside the
+        // engine, so the refused call is taught before any repair.
         let refused = call(
             &store,
             "kmp_time",
             json!({"move":"rewind","about":"project:repair","limit":"bad"}),
         );
-        let help = &refused["structuredContent"]["help"];
-        let actions = std::iter::once(help["guide"].clone())
-            .chain(
-                help["examples"]
-                    .as_array()
-                    .expect("examples")
-                    .iter()
-                    .cloned(),
-            )
-            .collect::<Vec<_>>();
-        for action in &actions {
-            let result = call(
-                &store,
-                action["tool"].as_str().expect("tool"),
-                action["arguments"].clone(),
-            );
-            assert_eq!(
-                result["structuredContent"]["feedback"][0]["code"],
-                "GUIDE_UNAVAILABLE"
-            );
-            assert_eq!(
-                result["structuredContent"]["feedback"][0]["ref"],
-                action["arguments"]["ref"]
-            );
-            assert!(result["structuredContent"].get("help").is_none());
-        }
+        let text = refused["content"][0]["text"].as_str().expect("text");
+        assert!(
+            text.ends_with(r#"Help: kmp_guide {"topic":"time"}"#),
+            "{text}"
+        );
+        assert!(refused["structuredContent"].get("help").is_none());
+        let card = call(&store, "kmp_guide", json!({"topic":"time"}));
+        assert_eq!(card["isError"], false, "{card}");
+        assert!(card["structuredContent"]["parameters"]["kmp_time"].is_array());
         assert_eq!(
             exported_events(&store, &scratch.path().join("read.jsonl")),
             before,
@@ -172,29 +147,13 @@ fn absent_or_partial_guide_repairs_in_the_same_store_and_retries_idempotently() 
             exported_events(&store, &scratch.path().join("retry.jsonl")),
             after
         );
-        let opened = call(&store, "kmp_guide", opening.clone());
-        let retry = call(&store, "kmp_guide", opening);
+        let opened = call(&store, "kmp_inspect", opening.clone());
+        let retry = call(&store, "kmp_inspect", opening);
         assert_eq!(opened["isError"], false, "{opened}");
         assert_eq!(
-            opened["structuredContent"]["agent"],
-            retry["structuredContent"]["agent"]
+            opened["structuredContent"]["object"],
+            retry["structuredContent"]["object"]
         );
-        assert_eq!(
-            opened["structuredContent"]["context_id"],
-            retry["structuredContent"]["context_id"]
-        );
-        for action in actions {
-            let result = call(
-                &store,
-                action["tool"].as_str().expect("tool"),
-                action["arguments"].clone(),
-            );
-            assert_eq!(result["isError"], false, "{result}");
-            assert_eq!(
-                result["structuredContent"]["object"]["ref"],
-                action["arguments"]["ref"]
-            );
-        }
     }
 }
 

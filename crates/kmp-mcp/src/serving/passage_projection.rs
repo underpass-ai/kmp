@@ -2,7 +2,7 @@
 use serde_json::{Value, json};
 
 use super::KernelMcpServer;
-use crate::guidance::ReadContinuation;
+use crate::continuation::ReadContinuation;
 
 impl KernelMcpServer {
     /// Opt in at the host boundary. The default native contract stays inline;

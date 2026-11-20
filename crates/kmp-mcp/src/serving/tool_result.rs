@@ -9,7 +9,7 @@ use serde_json::{Value, json};
 use crate::serving::ToolError;
 
 /// Pending delivery inside this selected packet, not history outside it or
-/// semantic completeness. Shared with optional guidance so both surfaces agree.
+/// semantic completeness.
 pub(crate) fn packet_is_partial(body: &Value) -> bool {
     body.pointer("/page/has_more") == Some(&Value::Bool(true))
         || body.pointer("/projection/page/has_more") == Some(&Value::Bool(true))
@@ -119,11 +119,10 @@ pub(crate) fn tool_error_result(tool: &str, arguments: &Value, error: &ToolError
     if !error.feedback.is_empty() {
         result["structuredContent"]["feedback"] = json!(error.feedback);
     }
-    if let Some(help) = super::tool_error_help::ToolErrorHelp::for_call(tool, arguments, error) {
-        // Text-only hosts must receive the same callable lessons. Do not copy
-        // guide bodies here or replace an existing repair/restart action.
-        result["content"][0]["text"] = json!(format!("{text}\nUsage help: {help}"));
-        result["structuredContent"]["help"] = help;
+    if let Some(help) = super::tool_error_help::ToolErrorHelp::line(tool, arguments, error) {
+        // One pointer line, never a guide body; repair and restart actions
+        // stay in `feedback`.
+        result["content"][0]["text"] = json!(format!("{text}\n{help}"));
     }
     result
 }

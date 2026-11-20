@@ -1,5 +1,5 @@
 //! Short actions execute the same native evidence selection and progress retry.
-#[path = "support/guidance_fixture.rs"]
+#[path = "support/route_fixture.rs"]
 mod fixture;
 use fixture::*;
 use kmp_mcp::KernelMcpServer;
@@ -9,8 +9,8 @@ fn request(tool: &str, args: Value) -> Value {
     json!({"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":tool,"arguments":args}})
 }
 
-async fn seed(server: &KernelMcpServer, context: &Value) -> Value {
-    let mut args = packet(context);
+async fn seed(server: &KernelMcpServer) -> Value {
+    let mut args = packet();
     args["memories"][0]["evidence"] =
         json!("Signed S1 — 原文: the route opens on Tuesday. ".repeat(90));
     let result = call(server, "kmp_write_memory", args).await;
@@ -22,15 +22,12 @@ async fn seed(server: &KernelMcpServer, context: &Value) -> Value {
 async fn inspect_short_actions_reconstruct_raw_proof_negotiate_budget_and_replay() {
     let dir = tempfile::tempdir().expect("store");
     let server = KernelMcpServer::embedded(dir.path()).expect("server");
-    let agent = open(&server, "short-inspection").await;
-    let node = seed(&server, &agent["context_id"]).await;
+    let node = seed(&server).await;
     let selection =
         json!({"about":ABOUT,"ref":node,"include":{"raw":true},"budget":{"max_bytes":100000}});
     let full = call(&server, "kmp_inspect", selection.clone()).await;
     assert_eq!(full["structuredContent"]["page"]["has_more"], false);
     let mut args = selection.clone();
-    args["context_id"] = agent["context_id"].clone();
-    args["purpose"] = json!("audit");
     args["budget"]["max_bytes"] = json!(512);
     let mut result = call(&server, "kmp_inspect", args).await;
     assert_eq!(result["structuredContent"]["page"]["returned"], 0);
@@ -61,7 +58,6 @@ async fn inspect_short_actions_reconstruct_raw_proof_negotiate_budget_and_replay
                 .expect("handle")
                 .starts_with("read_")
         );
-        assert_eq!(guidance(&result)["recommendation"]["action"], action);
         let resolved = server
             .resolve_read_request(request("kmp_inspect", action["arguments"].clone()))
             .expect("resolve");
@@ -69,8 +65,7 @@ async fn inspect_short_actions_reconstruct_raw_proof_negotiate_budget_and_replay
         assert_eq!(bound["about"], selection["about"]);
         assert_eq!(bound["ref"], selection["ref"]);
         assert_eq!(bound["include"], selection["include"]);
-        assert_eq!(bound["context_id"], agent["context_id"]);
-        assert_eq!(bound["purpose"], "audit");
+        assert!(bound.get("context_id").is_none());
         assert_eq!(bound["page"]["cursor"], body["page"]["next_cursor"]);
         let previous_returned = body["page"]["returned"].as_u64().expect("returned");
         result = call(&server, "kmp_inspect", action["arguments"].clone()).await;
@@ -102,9 +97,13 @@ async fn inspect_short_actions_reconstruct_raw_proof_negotiate_budget_and_replay
 async fn handles_survive_restart_but_reject_changed_evidence_mixed_arguments_and_wrong_tools() {
     let dir = tempfile::tempdir().expect("store");
     let server = KernelMcpServer::embedded(dir.path()).expect("server");
-    let agent = open(&server, "short-restart").await;
-    let node = seed(&server, &agent["context_id"]).await;
-    let first = call(&server, "kmp_inspect", json!({"about":ABOUT,"ref":node,"context_id":agent["context_id"],"budget":{"max_bytes":512}})).await;
+    let node = seed(&server).await;
+    let first = call(
+        &server,
+        "kmp_inspect",
+        json!({"about":ABOUT,"ref":node,"budget":{"max_bytes":512}}),
+    )
+    .await;
     let action = first["structuredContent"]["next_actions"][0].clone();
     let expected = server
         .resolve_read_request(request("kmp_inspect", action["arguments"].clone()))
@@ -132,7 +131,7 @@ async fn handles_survive_restart_but_reject_changed_evidence_mixed_arguments_and
         call(&server, "kmp_write_memory", action["arguments"].clone()).await["isError"],
         true
     );
-    let updated = call(&server, "kmp_write_memory", json!({"about":ABOUT,"context_id":agent["context_id"],"observed_at":"2026-09-09T11:00:00Z","idempotency_key":"changed-source","search_summaries":[{"ref":node,"summary_en":"The route opens on Tuesday according to S1."}]})).await;
+    let updated = call(&server, "kmp_write_memory", json!({"about":ABOUT,"actor":"route-reader","observed_at":"2026-09-09T11:00:00Z","idempotency_key":"changed-source","search_summaries":[{"ref":node,"summary_en":"The route opens on Tuesday according to S1."}]})).await;
     assert_eq!(updated["isError"], false, "{updated}");
     let stale = call(&server, "kmp_inspect", action["arguments"].clone()).await;
     assert_eq!(
@@ -140,9 +139,9 @@ async fn handles_survive_restart_but_reject_changed_evidence_mixed_arguments_and
         "{stale}"
     );
     let metadata =
-        rusqlite::Connection::open(dir.path().join("agent-users.sqlite3")).expect("metadata");
+        rusqlite::Connection::open(dir.path().join("continuations.sqlite3")).expect("metadata");
     metadata
-        .execute("UPDATE read_continuations SET expires_at=0", [])
+        .execute("UPDATE open_continuations SET expires_at=0", [])
         .expect("expire");
     let expired = call(&server, "kmp_inspect", action["arguments"].clone()).await;
     assert_eq!(
@@ -166,12 +165,24 @@ async fn handles_survive_restart_but_reject_changed_evidence_mixed_arguments_and
 async fn failed_retention_keeps_a_complete_executable_action() {
     let dir = tempfile::tempdir().expect("store");
     let server = KernelMcpServer::embedded(dir.path()).expect("server");
-    let agent = open(&server, "retention-failure").await;
-    let node = seed(&server, &agent["context_id"]).await;
+    let node = seed(&server).await;
+    // The first retained page creates the store; then refuse every insert.
+    let warm = call(
+        &server,
+        "kmp_inspect",
+        json!({"about":ABOUT,"ref":node,"budget":{"max_bytes":512}}),
+    )
+    .await;
+    assert_eq!(warm["isError"], false, "{warm}");
     let metadata =
-        rusqlite::Connection::open(dir.path().join("agent-users.sqlite3")).expect("metadata");
-    metadata.execute_batch("CREATE TRIGGER refuse_read BEFORE INSERT ON read_continuations BEGIN SELECT RAISE(ABORT,'test retention unavailable'); END;").expect("failure injection");
-    let result = call(&server, "kmp_inspect", json!({"about":ABOUT,"ref":node,"context_id":agent["context_id"],"budget":{"max_bytes":512}})).await;
+        rusqlite::Connection::open(dir.path().join("continuations.sqlite3")).expect("metadata");
+    metadata.execute_batch("DELETE FROM open_continuations; CREATE TRIGGER refuse_read BEFORE INSERT ON open_continuations BEGIN SELECT RAISE(ABORT,'test retention unavailable'); END;").expect("failure injection");
+    let result = call(
+        &server,
+        "kmp_inspect",
+        json!({"about":ABOUT,"ref":node,"budget":{"max_bytes":512}}),
+    )
+    .await;
     assert_eq!(result["isError"], false);
     let action = &result["structuredContent"]["next_actions"][0];
     assert_eq!(action["arguments"]["about"], ABOUT);

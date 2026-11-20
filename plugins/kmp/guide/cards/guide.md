@@ -1,7 +1,10 @@
-Start once with `kmp_guide {"registration_key":"unique-task-and-agent-key"}`. Save the returned agent and context ids.
+`kmp_guide {"topic":"write"}` returns one worked card and, in `parameters`,
+the meaning of each argument of the tools that topic teaches. `tools/list`
+carries only their types and constraints. Call it before a verb's first use;
+`kmp_guide {}` lists the topics. It is a lookup: nothing is recorded, and a
+refusal's `Help:` line names the topic to read.
 
-Resume with `{"context_id":"<returned context_id>"}`. Add `"topic":"write"` to open one worked card; add `"fold":true` to hide it. A card's `parameters` explains every argument of the tools it teaches: `tools/list` carries only their types and constraints.
-
-After losing context, use `{"agent_id":"<returned agent id>","context_key":"unique-reset-key"}` and save the new context id. Registration and reset keys identify logical operations: reuse them on retry.
-
-KMP records what it served, not what you understood. A random name is a display label; use the returned ids. Extended details are in the returned next action.
+The cards ship inside the engine. The longer guide (`guide:kmp-agent`) is
+memory in the store: a direct read of one of its nodes seeds it once from the
+plugin assets installed for this binary. Without matching assets that read
+answers `GUIDE_UNAVAILABLE` with the explicit `kmp-mcp guide sync` repair.
