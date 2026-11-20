@@ -95,6 +95,21 @@ impl CommitNativeBundle {
         &self,
         store: &EmbeddedKernelStore,
     ) -> Result<PendingBundleExport, PortError> {
+        self.try_begin_write(store).await?.ok_or_else(|| {
+            PortError::Conflict(format!(
+                "another commit-native memory write holds `{}`; retry after it completes",
+                self.data_dir.join(EXPORT_LOCK_FILE).display()
+            ))
+        })
+    }
+
+    /// `begin_write`, answering `None` while another writer holds the lock:
+    /// it holds it only while it commits and publishes, so a caller with a
+    /// runtime can wait its turn instead of refusing the write.
+    pub async fn try_begin_write(
+        &self,
+        store: &EmbeddedKernelStore,
+    ) -> Result<Option<PendingBundleExport>, PortError> {
         let pending_dir = self.data_dir.join(PENDING_EXPORT_DIR);
         fs::create_dir_all(&pending_dir).map_err(|error| {
             PortError::Unavailable(format!(
@@ -115,16 +130,16 @@ impl CommitNativeBundle {
                     lock_path.display()
                 ))
             })?;
-        publish_lock.try_lock().map_err(|error| match error {
-            std::fs::TryLockError::WouldBlock => PortError::Conflict(format!(
-                "another commit-native memory write holds `{}`; retry after it completes",
-                lock_path.display()
-            )),
-            std::fs::TryLockError::Error(error) => PortError::Unavailable(format!(
-                "could not lock commit-native export `{}`: {error}",
-                lock_path.display()
-            )),
-        })?;
+        match publish_lock.try_lock() {
+            Ok(()) => {}
+            Err(std::fs::TryLockError::WouldBlock) => return Ok(None),
+            Err(std::fs::TryLockError::Error(error)) => {
+                return Err(PortError::Unavailable(format!(
+                    "could not lock commit-native export `{}`: {error}",
+                    lock_path.display()
+                )));
+            }
+        }
 
         // A marker left by a write that stopped: this process holds the lock,
         // so no writer is still running, and the recovery that is provably
@@ -156,13 +171,13 @@ impl CommitNativeBundle {
             }
         };
         let marker = self.mark_pending(&pending_dir)?;
-        Ok(PendingBundleExport {
+        Ok(Some(PendingBundleExport {
             marker,
             publish_lock,
             canonical_before,
             live_before,
             tail: std::sync::Mutex::new(tail),
-        })
+        }))
     }
 
     /// The full check: the live store and the committed bundle hold the same
@@ -484,5 +499,20 @@ mod tests {
 
         assert!(matches!(error, PortError::Conflict(_)));
         assert!(pending_bundle_exports(&data_dir).is_empty());
+        assert!(
+            native
+                .try_begin_write(kernel.store())
+                .await
+                .expect("a held lock is not an error here")
+                .is_none(),
+            "a caller that can wait is told the lock is busy"
+        );
+        drop(competing_writer);
+        let pending = native
+            .try_begin_write(kernel.store())
+            .await
+            .expect("free lock")
+            .expect("the write begins once the lock is free");
+        pending.complete().expect("complete");
     }
 }

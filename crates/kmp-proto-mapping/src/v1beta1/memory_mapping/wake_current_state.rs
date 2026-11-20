@@ -60,9 +60,7 @@ pub(super) fn rendered_current_state(
                 entries.contains(node.node_id())
             }
         })
-        .partition(|node| {
-            !lifecycle.is_superseded(node.node_id()) && !lifecycle.is_expired(node.node_id())
-        });
+        .partition(|node| lifecycle.stands(node.node_id()));
     // The ref is how a reader follows a memory up; the title mostly repeats
     // the summary, so it is left out.
     let memory_line = |node: &&kmp_domain::BundleNode| {

@@ -136,7 +136,7 @@ pub(crate) fn enforce_inspect_output_budget(
         let mut retry = arguments.clone();
         let mut required = page_size(&render(1, &retry)).max(512);
         loop {
-            retry["budget"]["max_bytes"] = json!(required);
+            super::argument_slot::set_nested(&mut retry, "budget", "max_bytes", json!(required));
             let measured = page_size(&render(1, &retry));
             if measured <= required {
                 break;
@@ -148,7 +148,7 @@ pub(crate) fn enforce_inspect_output_budget(
         // retry over forcing every caller through one item per response.
         required = required.min(complete_bytes);
         let suggested = required.max(required_bytes.min(DEFAULT_MAX_BYTES));
-        retry["budget"]["max_bytes"] = json!(suggested);
+        super::argument_slot::set_nested(&mut retry, "budget", "max_bytes", json!(suggested));
         best["page"]["minimum_progress_bytes"] = json!(required);
         best["next_actions"] = json!([inspect_action(
             &retry,
@@ -446,7 +446,7 @@ fn materialize_inspect_page(mut page: Value, object: Value, items: Vec<InspectPa
 
 fn inspect_action(arguments: &Value, cursor: &str) -> Value {
     let mut next = arguments.clone();
-    next["page"]["cursor"] = json!(cursor);
+    super::argument_slot::set_nested(&mut next, "page", "cursor", json!(cursor));
     json!({"tool":"kmp_inspect","arguments":next})
 }
 

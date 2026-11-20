@@ -261,7 +261,7 @@ async fn tools_list_exposes_declared_kmp_tools() {
 }
 
 #[tokio::test]
-async fn former_kernel_names_are_accepted_but_not_advertised_except_retired_time_aliases() {
+async fn former_kernel_names_are_refused_as_unknown_tools() {
     let calls = [
         ("kernel_ingest", sample_ingest_arguments()),
         ("kernel_write_memory", sample_write_arguments(true)),
@@ -296,7 +296,13 @@ async fn former_kernel_names_are_accepted_but_not_advertised_except_retired_time
         }))
         .await;
 
-        assert_eq!(response["result"]["isError"], false, "alias {name}");
+        // The migration release is over: a name tools/list does not carry
+        // is not callable (E10 of the 1.0 review).
+        assert_eq!(response["result"]["isError"], true, "alias {name}");
+        assert_eq!(
+            response["result"]["structuredContent"]["error"]["code"], "unknown_tool",
+            "alias {name}"
+        );
     }
 
     // The former temporal aliases went with the per-move tools: they are
@@ -496,7 +502,7 @@ async fn kmp_ask_rejects_a_cursor_from_another_projection() {
 }
 
 #[tokio::test]
-async fn ingest_aliases_return_fixture_backed_structured_content() {
+async fn the_two_schemaless_ingest_aliases_are_refused() {
     for name in ["kernel_remember", "kernel_ingest_context"] {
         let response = handle(json!({
             "jsonrpc": "2.0",
@@ -509,10 +515,10 @@ async fn ingest_aliases_return_fixture_backed_structured_content() {
         }))
         .await;
 
-        assert_eq!(response["result"]["isError"], false);
+        assert_eq!(response["result"]["isError"], true, "{name}");
         assert_eq!(
-            response["result"]["structuredContent"]["memory"]["accepted"]["entries"],
-            2
+            response["result"]["structuredContent"]["error"]["code"], "unknown_tool",
+            "{name}"
         );
     }
 }
@@ -942,7 +948,7 @@ async fn invalid_ingest_arguments_return_tool_error() {
         response["result"]["content"][0]["text"]
             .as_str()
             .expect("tool error should include text")
-            .contains("missing required object argument `memory`")
+            .contains("missing required argument `memory`")
     );
 }
 
@@ -964,7 +970,7 @@ async fn unknown_tool_returns_tool_error() {
         response["result"]["content"][0]["text"]
             .as_str()
             .expect("tool error should include text")
-            .contains("unknown KMP tool")
+            .contains("is not a tool on this surface")
     );
 }
 
@@ -1233,6 +1239,12 @@ async fn handle_with(server: &KernelMcpServer, request: Value) -> Value {
 }
 
 async fn call_named_tool(server: &KernelMcpServer, id: u64, name: &str) -> Value {
+    // The smallest call each tool's schema accepts.
+    let arguments = match name {
+        "kmp_inspect" => json!({"about": "question:830ce83f", "ref": "claim:rachel-austin"}),
+        "kmp_ask" => json!({"about": "question:830ce83f", "question": "Where did Rachel move?"}),
+        _ => json!({}),
+    };
     handle_with(
         server,
         json!({
@@ -1241,7 +1253,7 @@ async fn call_named_tool(server: &KernelMcpServer, id: u64, name: &str) -> Value
             "method": "tools/call",
             "params": {
                 "name": name,
-                "arguments": {}
+                "arguments": arguments
             }
         }),
     )

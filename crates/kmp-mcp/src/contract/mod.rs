@@ -8,6 +8,10 @@ pub(crate) mod parameter_guide;
 mod parameter_guide_audit;
 pub(crate) mod registry;
 pub(crate) mod schema;
+pub(crate) mod schema_law;
+mod schema_law_audit;
+pub(crate) mod schema_violation;
+pub(crate) mod schema_wording;
 mod summaries_audit_surface;
 mod surface_audit;
 pub(crate) mod temporal_entry_field;
@@ -20,15 +24,12 @@ mod writer_audit;
 pub(crate) mod writer_memory_kinds;
 
 pub(crate) use handshake::{
-    CHRONOLOOM_APP_URI, MCP_APP_MIME, canonical_tool_name, initialize_result_with_apps,
-    resource_read_result, resources_list_result,
+    CHRONOLOOM_APP_URI, MCP_APP_MIME, initialize_result_with_apps, resource_read_result,
+    resources_list_result,
 };
 pub(crate) use registry::{
     advertised_input_schemas, advertised_tools_list, declared_tool_names, tools_list_result,
     tools_list_result_with_apps, without_output_schemas,
 };
 pub(crate) use time_move::{TIME_TOOL, TimeMove};
-pub(crate) use validator::{
-    reject_invalid_arguments, reject_invalid_write_arguments, reject_unknown_arguments,
-    validate_required_arguments,
-};
+pub(crate) use validator::{reject_invalid_arguments, validate_required_arguments};

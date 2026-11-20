@@ -226,6 +226,11 @@ impl AnswerRecallContext {
             .any(|selected_ref| self.lifecycle.is_expired(selected_ref))
         {
             CandidateTemporalState::Expired
+        } else if refs
+            .iter()
+            .any(|selected_ref| self.lifecycle.is_pending(selected_ref))
+        {
+            CandidateTemporalState::NotYetInForce
         } else {
             CandidateTemporalState::CurrentOrUnspecified
         }

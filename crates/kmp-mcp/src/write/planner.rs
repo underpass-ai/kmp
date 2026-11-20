@@ -84,6 +84,7 @@ pub(super) fn build_write_plan_with_local_refs(
         failures.push(error);
         None
     });
+    failures.extend(unreadable_clocks(arguments));
     let clocks = WriterCoordinate {
         occurred_at: optional_string(arguments.get("occurred_at")),
         observed_at: observed_at.as_deref(),

@@ -53,8 +53,15 @@ fn demo_writes_the_example_once_and_keeps_it_out_of_the_project_bundle() {
         "{dry}"
     );
     assert!(
-        !project.join(".kernel/FORMAT_VERSION").exists(),
-        "a dry run creates no store"
+        !project.join(".kernel").exists(),
+        "a dry run creates no store skeleton (N1)"
+    );
+    assert!(
+        !scratch
+            .path()
+            .join("home/.local/share/kmp/known-stores.jsonl")
+            .exists(),
+        "a dry run records nothing in the machine's index (N1)"
     );
 
     for _ in 0..2 {

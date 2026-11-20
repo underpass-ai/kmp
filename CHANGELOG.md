@@ -87,6 +87,65 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
   held memory (the telemetry salt, a write-ahead log, an indexed lexical
   index), is refused on open and by `doctor` instead of being restarted
   empty; the message names the way out.
+- **The published input schema is the law of every call.** Before any tool
+  reads its arguments, the server checks them against the schema it
+  publishes in `tools/list`: `type`, `enum`/`const`, `minimum`/`maximum`,
+  `minLength`/`maxLength`, `pattern`, `minItems`/`maxItems`/`uniqueItems`,
+  `required`, `additionalProperties`, `propertyNames`, `min`/`maxProperties`
+  and the `if`/`then`/`else`, `oneOf`/`anyOf`/`allOf`/`not` shapes. Before,
+  only unknown arguments, empty strings, repeats and booleans on writes were
+  checked there, and a mistyped guard was read as "absent" by its parser:
+  `label_policy: ["refuse"]` wrote, `expected_revision: "1"` skipped the
+  revision guard, a numeric `valid_until` committed with no bound,
+  `source_kind: ["human"]` was recorded as `agent`. Behaviour changes:
+  - such calls are now refused as `invalid_argument`, reads included (a read
+    switch given as `"true"` is refused too, no longer read as its default);
+  - every schema refusal carries one `feedback` item naming the `field`
+    (`SCHEMA_VIOLATION`, or `UNKNOWN_ARGUMENT`, with `allowed` for an enum).
+    Read refusals that used to carry tool codes such as `TIME_INVALID_MOVE`
+    or `READ_INVALID_FIELDS` for those cases now carry `SCHEMA_VIOLATION`;
+    `kmp_write_memory` keeps its planner's field codes when the planner
+    refuses the same packet;
+  - an integer written with a decimal point (`1.0`) is refused where an
+    integer is declared;
+  - `budget.max_bytes: 0` is refused (the schema minimum is 512) instead of
+    meaning the default;
+  - a refused call never takes effect: `kmp_view_apply_intent` could change
+    the view and then answer `invalid_argument`.
+- A call without `arguments` is checked as a call with `{}`.
+- Raw `kmp_ingest` closes `memory`, `dimensions[]`, `entries[]`,
+  `relations[]`, `evidence[]` and every coordinate to undeclared keys
+  (`additionalProperties: false`). A misspelled field such as `metdata` or
+  `valid_untill` is refused instead of silently dropped; each object keeps
+  its declared free-form `metadata` map.
+- **Clock arguments need a zone.** A timestamp with no zone
+  (`2026-11-10T09:30:00`, `2026-11-10`) is refused with a message saying a
+  zone or `Z` is required; before, it was accepted and read as UTC, so a
+  writer in CET who meant 08:30Z was stored at 09:30Z. An offset without a
+  colon (`+0100`) is refused too.
+- **A write that lost the race for its about is retried by the server.**
+  Several agents writing one about used to get `conflict` back for most
+  writes. The server now re-plans and commits such a write again, up to 12
+  attempts with a short jittered pause, and answers only when it commits or
+  every attempt lost. In a project store a write also waits up to 10 s for
+  another session's write to publish the committed bundle instead of being
+  refused at once (`unavailable` past the wait); 75 of 90 such writes were
+  refused before.
+- **New error code `retryable_conflict`** for that case (the store moved and
+  nothing was applied; replaying with the same idempotency key is safe).
+  `conflict` now means "do not replay unchanged" only: an idempotency key
+  already accepted with different content, a moved view, a guard that needs
+  a decision. The gRPC backend still reports both as `conflict`.
+- The former tool names `kernel_ingest`, `kernel_write_memory`,
+  `kernel_wake`, `kernel_ask`, `kernel_trace`, `kernel_inspect`,
+  `kernel_remember` and `kernel_ingest_context` are no longer callable; they
+  answer `unknown_tool`. Two of them skipped argument validation. The HTTP
+  gateway's alias table is gone with them.
+- `kmp_curate` refuses its internal modes (`write_proposals`,
+  `judge_expansions`, `prepare_apply`); only the four published modes are
+  callable.
+- The lexical sidecar index version moves to `lexical-index-5`: a sidecar
+  written before is rebuilt on the next ask.
 
 ### Added
 
@@ -245,6 +304,18 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
   guide engine that `kmp-release` runs gets its own `HOME` beside the store
   it is pointed at. A guard test reruns the spawn shapes under a sentinel
   developer home and fails if one byte of it changes.
+- A memory whose `valid_from` lies ahead no longer moves the about's
+  "now". The store's present is the latest `observed_at` or `ingested_at`
+  (an `occurred_at` only where a relation carries neither), never a
+  `valid_from`; an entry whose `valid_from` is still ahead is not yet in
+  force and is not served as current by `kmp_ask` or `kmp_wake`. Before, one
+  future `valid_from` served the memory in force as expired with `high`
+  confidence. Answers change where an about held such a memory.
+- A request that panics answers a JSON-RPC error (`-32603`) and the session
+  goes on; `"page": 1` on `kmp_time` or `kmp_inspect` used to end the stdio
+  server with exit 101.
+- `kmp-mcp demo --dry-run` writes nothing: it no longer creates the store
+  skeleton or records the store in the machine's index.
 
 ## [0.27.0] - 2026-11-19
 

@@ -39,14 +39,18 @@ the closed set under `_meta."kmp/errorCodes"` with what each one means.
 | --- | --- |
 | `invalid_argument` | fix the arguments — retrying unchanged cannot work |
 | `not_found` | the requested about or ref was not found; check the exact address and selected store before inferring absence |
-| `conflict` | inspect the message: retryable concurrency conflicts are safe to replay with the same key; a key accepted with different content must not be reused |
+| `conflict` | do not replay unchanged: a key accepted with different content must not be reused, and a moved view or a guard needs a decision; follow the message |
+| `retryable_conflict` | the store moved under the write and nothing was applied; the server already retried it, and replaying the same call with the same key is safe |
 | `unavailable` | the kernel was unreachable; the same call may work later |
 | `unknown_tool` | no such tool here |
 | `backend_error` | the kernel failed for a reason no argument can fix |
 
-An unknown argument is refused rather than dropped: every tool declares
-`additionalProperties: false` and the boundary enforces it, so a misspelling
-comes back naming the key instead of being answered from defaults.
+Every call is checked against the tool's published input schema before
+anything reads it: an unknown argument, a wrong JSON type, a value outside an
+`enum`, a number past its bounds or a missing required argument is refused as
+`invalid_argument` with a `feedback` item naming the `field` (`SCHEMA_VIOLATION`
+or `UNKNOWN_ARGUMENT`), never answered from defaults. Clock arguments need a
+zone: `Z` or an offset such as `+01:00`.
 
 Usage refusals also offer `structuredContent.help.guide` and `help.examples`:
 complete `{tool, arguments}` calls to the relevant verb and worked lessons.

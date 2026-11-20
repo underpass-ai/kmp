@@ -172,6 +172,7 @@ impl JsonFieldReader {
     }
 
     fn parse_timestamp(value: &str, path: &str) -> Result<Timestamp, String> {
+        crate::clock::require_rfc3339(value, path)?;
         value
             .parse::<Timestamp>()
             .map_err(|error| format!("argument `{path}` must be an RFC3339 timestamp: {error}"))

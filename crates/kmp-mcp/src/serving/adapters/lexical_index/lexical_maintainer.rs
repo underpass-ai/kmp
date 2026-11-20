@@ -17,7 +17,10 @@ use super::working_set::WorkingSet;
 /// one is emptied and built again, never read. Bump it whenever what a row,
 /// a node state or the selection reads changes; the golden test of the
 /// derivation fails until it is.
-pub(super) const INDEX_VERSION: &str = "lexical-index-4";
+/// `-5`: a relation's clock no longer counts `valid_from` (or a planned
+/// `occurred_at`) as the about's present (B4), so sidecars written before are
+/// rebuilt rather than read with the frontier they stored.
+pub(super) const INDEX_VERSION: &str = "lexical-index-5";
 
 /// Keeps the sidecar at the end of the store's log (DESIGN L6).
 ///

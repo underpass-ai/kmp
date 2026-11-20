@@ -1414,6 +1414,7 @@ dependencies = [
  "opentelemetry",
  "prost 0.13.5",
  "prost-types 0.13.5",
+ "regex",
  "reqwest 0.12.28",
  "rusqlite",
  "rustix",

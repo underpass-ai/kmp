@@ -5,10 +5,9 @@ use std::time::Instant;
 
 use serde_json::Value;
 
-use super::lexical_order::{LexicalOrder, is_tool_error};
+use super::write_retry;
 use crate::contract::{
-    advertised_input_schemas, canonical_tool_name, initialize_result_with_apps,
-    reject_invalid_arguments, reject_invalid_write_arguments, reject_unknown_arguments,
+    advertised_input_schemas, initialize_result_with_apps, reject_invalid_arguments,
     resource_read_result, resources_list_result, tools_list_result_with_apps,
 };
 use crate::serving::json_rpc::{jsonrpc_error, jsonrpc_result};
@@ -24,6 +23,30 @@ impl KernelMcpServer {
     /// One message of this process's own session (stdio).
     pub async fn handle_json_line(&self, line: &str) -> Option<String> {
         self.handle_json_line_in(line, &self.session).await
+    }
+
+    /// One message from a host, the way the stdio loop and the HTTP gateway
+    /// serve it: a request that panics is answered with a JSON-RPC error and
+    /// the session goes on (B2). The guard sits here, outside the server's
+    /// own calls back into `handle_json_line`.
+    pub async fn serve_json_line(&self, line: &str, session: &McpSession) -> Option<String> {
+        match super::panic_guard::PanicGuard::new(self.handle_json_line_in(line, session)).await {
+            Ok(response) => response,
+            Err(panic) => {
+                tracing::error!(panic = %panic, "a request panicked; the session continues");
+                let id = serde_json::from_str::<Value>(line)
+                    .ok()
+                    .and_then(|request| request.get("id").cloned())?;
+                Some(jsonrpc_error(
+                    id,
+                    -32603,
+                    &format!(
+                        "internal error: this request failed inside the server ({panic}); the \
+                         session continues and later calls are served"
+                    ),
+                ))
+            }
+        }
     }
 
     /// One message of `session`: what it negotiated decides the tool
@@ -111,7 +134,7 @@ impl KernelMcpServer {
     /// it does not terminate the stdio session or discard later requests.
     pub async fn handle_json_bytes(&self, line: &[u8]) -> Option<String> {
         match std::str::from_utf8(line) {
-            Ok(line) => self.handle_json_line(line).await,
+            Ok(line) => self.serve_json_line(line, &self.session).await,
             Err(error) => Some(jsonrpc_error(
                 Value::Null,
                 -32700,
@@ -132,8 +155,11 @@ impl KernelMcpServer {
         let Some(requested_name) = params.get("name").and_then(Value::as_str) else {
             return jsonrpc_error(id, -32602, "tools/call requires params.name");
         };
-        let name = canonical_tool_name(requested_name);
-        let arguments = params.get("arguments").unwrap_or(&Value::Null);
+        let name = requested_name;
+        // A call without `arguments` is a call with none: MCP lets a host
+        // omit them for a tool that requires nothing.
+        let no_arguments = Value::Object(serde_json::Map::new());
+        let arguments = params.get("arguments").unwrap_or(&no_arguments);
         let start = Instant::now();
         let origin = CallOrigin::read(arguments, session.client());
 
@@ -175,21 +201,20 @@ impl KernelMcpServer {
             );
         }
 
-        // Before anything reads them: the schemas declare
-        // `additionalProperties: false`, so an argument the tool does not have
-        // is refused here rather than dropped and answered anyway. Empty and
-        // repeated values are refused too (#850), but a tool that names the
-        // problem more precisely goes first: the writer's planner and the
-        // read projections run their own checks, and this one follows them as
-        // a backstop. Every other write is checked here, before it commits,
-        // and a declared boolean of another type is refused with it.
-        let lexical_first = LexicalOrder::of(name) == LexicalOrder::BeforeDispatch;
-        let checked = if lexical_first {
-            reject_invalid_write_arguments(name, arguments)
-        } else {
-            reject_unknown_arguments(name, arguments)
-        };
-        if let Err(error) = checked {
+        // Before anything reads them: the published input schema is the law
+        // of the call (#921, E1). A value it refuses — a mistyped guard, an
+        // out-of-range number, an argument the tool does not have, a name the
+        // surface does not declare — is refused here, so no parser ever reads
+        // it as "absent" and goes ahead, and nothing commits on it.
+        if let Err(error) = reject_invalid_arguments(name, arguments) {
+            let error = if name == "kmp_write_memory" {
+                // The planner reads the actor the session would supply.
+                let defaulted = super::default_actor::with_default_actor(name, arguments, session);
+                self.word_write_refusal(defaulted.as_ref().unwrap_or(arguments), error)
+                    .await
+            } else {
+                error
+            };
             record_call_error(
                 self.call_source(&origin, false),
                 self.backend_name(),
@@ -214,34 +239,21 @@ impl KernelMcpServer {
         };
         let arguments = resolved.as_ref().unwrap_or(arguments);
         let defaulted = super::default_actor::with_default_actor(name, arguments, session);
-        let reply_id = id.clone();
-        let result = self
-            .dispatch_memory_call(
-                id,
-                name,
-                defaulted.as_ref().unwrap_or(arguments),
-                start,
-                &origin,
-            )
+        let memory_arguments = defaulted.as_ref().unwrap_or(arguments);
+        let mut result = self
+            .dispatch_memory_call(id.clone(), name, memory_arguments, start, &origin)
             .await;
-        let result = self.shorten_read_actions(result);
-        if LexicalOrder::of(name) == LexicalOrder::AfterRead
-            && !is_tool_error(&result)
-            && let Err(error) = reject_invalid_arguments(name, arguments)
-        {
-            record_call_error(
-                self.call_source(&origin, false),
-                self.backend_name(),
-                self.grpc_tls_mode_name(),
-                name,
-                arguments,
-                ToolErrorKind::Validation,
-                &error.message,
-                &error.feedback,
-                start.elapsed(),
-            );
-            return jsonrpc_result(reply_id, tool_error_result(name, arguments, &error));
+        // A write that lost the race for its about applied nothing; it is
+        // planned and committed again against the revision that won (S1).
+        let mut attempt = 1;
+        while attempt < write_retry::ATTEMPTS && write_retry::lost_the_race(&result) {
+            tokio::time::sleep(write_retry::pause_before(attempt)).await;
+            attempt += 1;
+            result = self
+                .dispatch_memory_call(id.clone(), name, memory_arguments, start, &origin)
+                .await;
         }
+        let result = self.shorten_read_actions(result);
         self.project_read_passages(name, result)
     }
 

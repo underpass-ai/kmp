@@ -36,6 +36,10 @@ impl ToolError {
         Self::new(ToolErrorCode::Conflict, message)
     }
 
+    pub fn retryable_conflict(message: impl Into<String>) -> Self {
+        Self::new(ToolErrorCode::RetryableConflict, message)
+    }
+
     pub fn unavailable(message: impl Into<String>) -> Self {
         Self::new(ToolErrorCode::Unavailable, message)
     }
@@ -112,7 +116,7 @@ mod tests {
 
     #[test]
     fn every_code_is_enumerated_and_carries_guidance() {
-        assert_eq!(ToolErrorCode::ALL.len(), 6);
+        assert_eq!(ToolErrorCode::ALL.len(), 7);
         for code in ToolErrorCode::ALL {
             assert!(!code.as_str().is_empty());
             assert!(!code.guidance().is_empty(), "{code} has no guidance");

@@ -23,6 +23,8 @@ rusqlite = { version = "0.41.1", features = ["bundled"] }
 opentelemetry.workspace = true
 prost-types.workspace = true
 prost.workspace = true
+# The `pattern` keyword of the published input schemas (contract::schema_law).
+regex = "1.12.3"
 kmp-domain.workspace = true
 kmp-application.workspace = true
 kmp-embedded.workspace = true
