@@ -53,19 +53,6 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
 
 ### Changed
 
-- **Behaviour change:** a label coordinate with no time on the selected clock
-  now stands where its entry stands on that clock. Labels written without a
-  clock (raw `kmp_ingest`, the shipped `kmp-mcp demo` packet) were invisible
-  on `occurred` and `observed`: a label selector returned nothing and
-  ChronoLoom counted every such label `0/7`, so clicking one emptied the
-  scene. `kmp_time`, `kmp_trace`, `kmp_ask`'s temporal admission and the
-  ChronoLoom projection (`in_range`) now read such a label at its entry's
-  earliest instant on the clock, on the scan path and the cached index alike;
-  its coordinate appears in the entry's `coordinates`. A label dated on the
-  clock (a relabel, a later catalogue) keeps its own time and the as-of rule;
-  an entry with no position on the clock still gains none; validity is never
-  inherited. Memories written with `kmp_write_memory` are unaffected: their
-  label coordinates already carry the clocks.
 - The viewer address is no longer reachable until the viewer is requested.
   A stdio session starts with no listener; the first `kmp_view_open` binds
   `KMP_VIEWER_ADDR` (or `127.0.0.1:7317`, falling forward to a free loopback
@@ -320,6 +307,27 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
   server with exit 101.
 - `kmp-mcp demo --dry-run` writes nothing: it no longer creates the store
   skeleton or records the store in the machine's index.
+
+## [0.27.1] - 2026-11-20
+
+### Changed
+
+- **Behaviour change:** a label coordinate with no time on the selected clock
+  now stands where its entry stands on that clock. Labels written without a
+  clock (raw `kmp_ingest`, the shipped `kmp-mcp demo` packet) were invisible
+  on `occurred` and `observed`: a label selector returned nothing and
+  ChronoLoom counted every such label `0/7`, so clicking one emptied the
+  scene. `kmp_time`, `kmp_trace`, `kmp_ask`'s temporal admission and the
+  ChronoLoom projection (`in_range`) now read such a label at its entry's
+  earliest instant on the clock, on the scan path and the cached index alike;
+  its coordinate appears in the entry's `coordinates`. A label dated on the
+  clock (a relabel, a later catalogue) keeps its own time and the as-of rule;
+  an entry with no position on the clock still gains none; validity is never
+  inherited. Memories written with `kmp_write_memory` are unaffected: their
+  label coordinates already carry the clocks.
+
+### Fixed
+- Undated labels now inherit their entry's clock (#929).
 
 ## [0.27.0] - 2026-11-19
 
@@ -3086,7 +3094,8 @@ The initial agent schema that expands with use and persistent consultation profi
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.27.0...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.27.1...HEAD
+[0.27.1]: https://github.com/underpass-ai/kmp/compare/v0.27.0...v0.27.1
 [0.27.0]: https://github.com/underpass-ai/kmp/compare/v0.26.2...v0.27.0
 [0.26.2]: https://github.com/underpass-ai/kmp/compare/v0.26.1...v0.26.2
 [0.26.1]: https://github.com/underpass-ai/kmp/compare/v0.26.0...v0.26.1
