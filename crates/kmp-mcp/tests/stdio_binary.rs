@@ -1562,6 +1562,16 @@ fn cli_surface_version_export_import_and_errors() {
         .join(kmp_embedded::PENDING_EXPORT_DIR);
     std::fs::create_dir_all(&pending_dir).expect("pending dir");
     std::fs::write(pending_dir.join("crashed.pending"), b"pending").expect("pending marker");
+    // A writer that is still running holds the commit-native lock for the
+    // whole write, so a marker found while the lock is held may be its own.
+    let live_writer = std::fs::OpenOptions::new()
+        .create(true)
+        .truncate(false)
+        .read(true)
+        .write(true)
+        .open(project.path().join(".kernel/commit-native-bundle.lock"))
+        .expect("lock file");
+    live_writer.lock().expect("live writer lock");
     let guarded_export = Command::new(bin)
         .arg("export")
         .current_dir(&nested)
@@ -1574,6 +1584,7 @@ fn cli_surface_version_export_import_and_errors() {
         1,
         "a normal export cannot erase a marker that may belong to a live writer"
     );
+    live_writer.unlock().expect("live writer done");
     let repaired_export = Command::new(bin)
         .args(["export", "--repair-pending"])
         .current_dir(&nested)
@@ -1581,6 +1592,21 @@ fn cli_surface_version_export_import_and_errors() {
         .output()
         .expect("repair export runs");
     assert!(repaired_export.status.success());
+    assert!(kmp_embedded::pending_bundle_exports(&project.path().join(".kernel")).is_empty());
+    // With no writer left, a marker whose write the bundle already holds is
+    // cleared by the next open on its own (S9): no human step.
+    std::fs::write(pending_dir.join("crashed-again.pending"), b"pending").expect("marker");
+    let recovering_export = Command::new(bin)
+        .arg("export")
+        .current_dir(&nested)
+        .env_remove("KMP_MCP_DATA_DIR")
+        .output()
+        .expect("recovering export runs");
+    assert!(
+        recovering_export.status.success(),
+        "{}",
+        String::from_utf8_lossy(&recovering_export.stderr)
+    );
     assert!(kmp_embedded::pending_bundle_exports(&project.path().join(".kernel")).is_empty());
     let unrelated_export = project.path().join("unrelated.jsonl");
     let refused_repair = Command::new(bin)

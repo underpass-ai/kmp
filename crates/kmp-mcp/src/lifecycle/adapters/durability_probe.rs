@@ -30,9 +30,13 @@ pub(crate) fn committed_bundle_finding(resolved: &ResolvedDataDir) -> Option<Lif
         )
         .with_detail(format!("bundle: {}", bundle.display()))
         .with_detail(
-            "the store may contain a write whose process stopped before export completed; stop \
-             other KMP sessions, run `kmp-mcp export`, inspect the diff, then run `kmp-mcp \
-             export --repair-pending` and commit it",
+            "the store may contain a write whose process stopped before export completed; the \
+             next KMP session publishes it on open when the committed bundle is a prefix of the \
+             store and no other session is writing",
+        )
+        .with_detail(
+            "otherwise stop other KMP sessions, run `kmp-mcp export`, inspect the diff, then run \
+             `kmp-mcp export --repair-pending` and commit it",
         );
         for marker in pending {
             finding = finding.with_detail(format!("pending: {}", marker.display()));
@@ -76,7 +80,10 @@ pub(crate) fn committed_bundle_finding(resolved: &ResolvedDataDir) -> Option<Lif
                     "the committed memory does not verify",
                 )
                 .with_detail(format!("{}: {error}", bundle.display()))
-                .with_detail("do not restore it; regenerate with `kmp-mcp export` first"),
+                .with_detail(
+                    "do not restore it; if it is not a newer KMP's bundle, regenerate it with \
+                     `kmp-mcp export --overwrite-committed`",
+                ),
             );
         }
     };
@@ -125,65 +132,98 @@ pub(crate) fn committed_bundle_finding(resolved: &ResolvedDataDir) -> Option<Lif
                 );
             }
         };
-        let live_header = match kmp_embedded::verify_bundle(&live) {
-            Ok(header) => header,
+        if let Err(error) = kmp_embedded::verify_bundle(&live) {
+            return Some(
+                LifecycleFinding::new(
+                    DiagnosticSeverity::Fail,
+                    "the live memory export does not verify",
+                )
+                .with_detail(error.to_string()),
+            );
+        }
+        let relation = match kmp_embedded::compare_bundle_histories(&live, &authored_text) {
+            Ok(relation) => relation,
             Err(error) => {
                 return Some(
                     LifecycleFinding::new(
                         DiagnosticSeverity::Fail,
-                        "the live memory export does not verify",
+                        "the live store and committed memory cannot be compared",
                     )
                     .with_detail(error.to_string()),
                 );
             }
         };
-        if let Err(error) =
-            kmp_embedded::merge_bundles(&authored_text, &live, "doctor-history-audit")
-        {
-            return Some(
-                LifecycleFinding::new(
-                    DiagnosticSeverity::Fail,
-                    "the live store and committed memory are divergent histories",
-                )
-                .with_detail(error.to_string())
-                .with_detail(
-                    "reconcile them explicitly; do not restore an archived machine history",
-                ),
-            );
-        }
-        if authored_header.event_count != live_header.event_count
-            || authored_header.content_digest != live_header.content_digest
-        {
-            // The merge above already proved these histories are compatible,
-            // so this is a store running ahead of its last checkpoint — the
-            // ordinary state after any write, and not a reason to call the
-            // installation unusable. Divergence is the failure, and it has
-            // already returned.
-            let behind = live_header
-                .event_count
-                .saturating_sub(authored_header.event_count);
-            let mut finding = LifecycleFinding::new(
-                DiagnosticSeverity::Warn,
-                "the committed memory is behind the live store",
-            )
-            .with_detail(format!(
-                "live events: {}; committed events: {}",
-                live_header.event_count, authored_header.event_count
-            ));
-            if behind > 0 {
-                finding = finding.with_detail(format!(
-                    "{behind} {} not yet checkpointed",
-                    if behind == 1 {
-                        "write is"
-                    } else {
-                        "writes are"
-                    }
-                ));
+        match relation {
+            kmp_embedded::HistoryRelation::Equal { .. } => {}
+            kmp_embedded::HistoryRelation::Diverged { .. } => {
+                return Some(
+                    LifecycleFinding::new(
+                        DiagnosticSeverity::Fail,
+                        "the live store and committed memory are divergent histories",
+                    )
+                    .with_detail(kmp_embedded::diverged_advice(
+                        &bundle,
+                        resolved.path(),
+                        &relation,
+                    )),
+                );
             }
-            return Some(
-                finding
+            // A pull or a clone brought a teammate's memory; the store has
+            // not seen it yet. Exporting now would have dropped it, so the
+            // advice is the catch-up that open performs, never `export`.
+            kmp_embedded::HistoryRelation::BundleAhead {
+                store_events,
+                bundle_events,
+            } => {
+                return Some(
+                    LifecycleFinding::new(
+                        DiagnosticSeverity::Warn,
+                        "the committed memory is ahead of the live store",
+                    )
+                    .with_detail(format!(
+                        "committed events: {bundle_events}; live events: {store_events}"
+                    ))
+                    .with_detail(format!(
+                        "{} committed {} not in the live store yet, usually after a pull",
+                        bundle_events - store_events,
+                        if bundle_events - store_events == 1 {
+                            "event is"
+                        } else {
+                            "events are"
+                        }
+                    ))
+                    .with_detail(
+                        "the next KMP session catches the store up from the bundle on open; \
+                         nothing to run",
+                    ),
+                );
+            }
+            // The ordinary state after a write whose checkpoint has not been
+            // committed: compatible, and not a reason to call it unusable.
+            kmp_embedded::HistoryRelation::StoreAhead {
+                store_events,
+                bundle_events,
+            } => {
+                let behind = store_events - bundle_events;
+                return Some(
+                    LifecycleFinding::new(
+                        DiagnosticSeverity::Warn,
+                        "the committed memory is behind the live store",
+                    )
+                    .with_detail(format!(
+                        "live events: {store_events}; committed events: {bundle_events}"
+                    ))
+                    .with_detail(format!(
+                        "{behind} {} not yet checkpointed",
+                        if behind == 1 {
+                            "write is"
+                        } else {
+                            "writes are"
+                        }
+                    ))
                     .with_detail("run `kmp-mcp export` to checkpoint them, then commit the bundle"),
-            );
+                );
+            }
         }
         if contains_shipped_guides {
             return Some(
@@ -205,6 +245,25 @@ pub(crate) fn committed_bundle_finding(resolved: &ResolvedDataDir) -> Option<Lif
                 ),
             );
         }
+    }
+    if store.is_none() && authored_header.event_count > 0 {
+        return Some(
+            LifecycleFinding::new(
+                DiagnosticSeverity::Ok,
+                format!(
+                    "snapshot {} holds {} committed {}; no live store yet",
+                    authored_header.snapshot_id,
+                    authored_header.event_count,
+                    if authored_header.event_count == 1 {
+                        "event"
+                    } else {
+                        "events"
+                    }
+                ),
+            )
+            .with_detail(format!("bundle: {}", bundle.display()))
+            .with_detail("the next KMP session builds the store from this bundle on open"),
+        );
     }
     // A store file touched more recently than its bundle used to be a failure
     // on its own. It is not evidence: syncing the guide or merely opening the
