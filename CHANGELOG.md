@@ -110,8 +110,12 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
     integer is declared;
   - `budget.max_bytes: 0` is refused (the schema minimum is 512) instead of
     meaning the default;
+  - an explicit `null` is refused where the schema does not allow `null`;
   - a refused call never takes effect: `kmp_view_apply_intent` could change
-    the view and then answer `invalid_argument`.
+    the view and then answer `invalid_argument`;
+  - `kmp_write_memory` refuses an empty `occurred_at`, `valid_from` or
+    `valid_until` and a `rank` past 4294967295, which the schema admits but
+    the writer used to drop.
 - A call without `arguments` is checked as a call with `{}`.
 - Raw `kmp_ingest` closes `memory`, `dimensions[]`, `entries[]`,
   `relations[]`, `evidence[]` and every coordinate to undeclared keys

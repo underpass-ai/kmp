@@ -76,7 +76,7 @@ fn baseline(tool: &str, n: usize) -> Option<Value> {
             "expect": {"absent": true}}),
         "kmp_summaries_audit" => json!({"about": "proj:a"}),
         "kmp_curate" => json!({"mode": "review", "about": "proj:a"}),
-        "kmp_guide" => json!({"registration_key": format!("rk-{n}")}),
+        "kmp_guide" => json!({"topic": "write"}),
         "kmp_view_open" => json!({"about": "proj:a"}),
         "kmp_view_get_state" => json!({}),
         "kmp_view_apply_intent" => {
