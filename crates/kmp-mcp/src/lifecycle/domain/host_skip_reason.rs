@@ -3,15 +3,29 @@ use super::host_runtime_status::HostRuntimeStatus;
 
 /// Why auto-detection left a host alone.
 ///
-/// Only a host whose MCP connection comes from a package KMP cannot install
-/// (Pi's `pi-runtime`) is ever skipped, and only when that package is not a
-/// usable registration. Each reason names what the operator can do, and never
+/// A host whose MCP connection comes from a package KMP cannot install
+/// (Pi's `pi-runtime`) is skipped when that package is not a usable
+/// registration; any host is skipped when its inventory cannot be read. Each reason names what the operator can do, and never
 /// echoes the host's own configuration back.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum HostSkipReason {
-    PackageMissing { host: Host, package: &'static str },
-    ExtensionExcluded { host: Host, package: &'static str },
-    SettingsUnreadable { host: Host },
+    PackageMissing {
+        host: Host,
+        package: &'static str,
+    },
+    ExtensionExcluded {
+        host: Host,
+        package: &'static str,
+    },
+    SettingsUnreadable {
+        host: Host,
+    },
+    /// The host's plugin manager could not be read at all. Only that host
+    /// is left alone; the others converge (S11).
+    InventoryFailed {
+        host: Host,
+        detail: String,
+    },
 }
 
 impl HostSkipReason {
@@ -33,7 +47,8 @@ impl HostSkipReason {
         match self {
             Self::PackageMissing { host, .. }
             | Self::ExtensionExcluded { host, .. }
-            | Self::SettingsUnreadable { host } => *host,
+            | Self::SettingsUnreadable { host }
+            | Self::InventoryFailed { host, .. } => *host,
         }
     }
 
@@ -46,6 +61,9 @@ impl HostSkipReason {
                 format!("{package} registered but its KMP extension is excluded")
             }
             Self::SettingsUnreadable { host } => format!("{host} settings.json unreadable"),
+            Self::InventoryFailed { host, detail } => {
+                format!("{host} could not be inspected and was left alone: {detail}")
+            }
         }
     }
 }

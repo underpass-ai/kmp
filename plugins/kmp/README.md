@@ -114,7 +114,10 @@ kmp-mcp setup --hermes
 
 That runs `hermes mcp add kmp --command kmp-mcp` (answering its one
 tool-enable prompt non-interactively) and copies the skill directories where
-Hermes scans for them. Finish with a Hermes restart so the MCP tools load —
+Hermes scans for them. The skills come from the KMP plugin tree of the same
+release: the Claude Code or Codex plugin cache, or `KMP_PLUGIN_ROOT`. With no
+tree on the machine, setup fails and says where it looked, so install the
+Claude Code or Codex plugin first. Finish with a Hermes restart so the MCP tools load —
 the same one-restart rule as Codex and Claude Code. `kmp-mcp doctor`
 inventories Hermes as a peer host: registration owner, skills present and
 the engine proof from `PATH`.

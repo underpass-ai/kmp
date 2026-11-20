@@ -44,6 +44,10 @@ impl StoreCatalog for FilesystemStoreCatalog {
         path.join("FORMAT_VERSION").is_file()
     }
 
+    fn exists(&self, path: &Path) -> bool {
+        path.exists()
+    }
+
     fn store_facts(&self, path: &Path) -> StoreFacts {
         StoreFacts {
             storage: storage(path),

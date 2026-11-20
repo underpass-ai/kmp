@@ -69,6 +69,14 @@ impl Piece {
     /// name carries the store it came from, so two rescues in one run do not
     /// overwrite each other.
     pub fn rescue_path(&self, workspace: &Path) -> Option<PathBuf> {
+        self.rescue_candidate(workspace, 1)
+    }
+
+    /// The `attempt`-th name for this store's rescue: the plain name first,
+    /// then the same name numbered from 2. A rescue is never written over —
+    /// an earlier uninstall's copy may be the only one left (B3) — so the
+    /// next free number is taken instead.
+    pub fn rescue_candidate(&self, workspace: &Path, attempt: u32) -> Option<PathBuf> {
         if self.kind != PieceKind::Store {
             return None;
         }
@@ -79,8 +87,13 @@ impl Piece {
         // earlier one.
         let digest = Sha256::digest(self.path.to_string_lossy().as_bytes());
         let path_id = format!("{digest:x}");
+        let number = if attempt > 1 {
+            format!("-{attempt}")
+        } else {
+            String::new()
+        };
         Some(workspace.join(format!(
-            "kmp-memory-{}-{}.jsonl",
+            "kmp-memory-{}-{}{number}.jsonl",
             store_label(&self.path),
             &path_id[..12]
         )))
@@ -138,6 +151,20 @@ mod tests {
             .expect("rescue file name");
         assert!(name.starts_with("kmp-memory-project-"), "{name}");
         assert!(name.ends_with(".jsonl"), "{name}");
+    }
+
+    #[test]
+    fn later_rescue_names_are_numbered_beside_the_first() {
+        let store = store_piece(Path::new("/checkout/project/.kernel"));
+        let workspace = Path::new("/checkout/project");
+        let first = store.rescue_candidate(workspace, 1).expect("first");
+        let second = store.rescue_candidate(workspace, 2).expect("second");
+        assert_eq!(store.rescue_path(workspace), Some(first.clone()));
+        let first = first.to_string_lossy().to_string();
+        assert_eq!(
+            second.to_string_lossy(),
+            first.replace(".jsonl", "-2.jsonl")
+        );
     }
 
     #[test]

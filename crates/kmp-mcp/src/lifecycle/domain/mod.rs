@@ -18,6 +18,7 @@ pub mod host_connection_verification;
 pub mod host_convergence;
 pub mod host_engine_proof;
 pub mod host_installation;
+pub mod host_inventory;
 pub mod host_runtime_status;
 pub mod host_skip_reason;
 pub mod lexical_bridge_artifact;

@@ -134,4 +134,27 @@ mod tests {
 
         assert!(pruning.is_empty(), "housekeeping never fails an update");
     }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_version_a_live_session_marks_in_use_is_kept() {
+        // S5: a start collects superseded versions because no session should
+        // still read them. One that a live Claude Code session marks is kept.
+        let base = tempfile::tempdir().expect("temp");
+        let versions = cache_with(base.path(), &["0.4.0", "0.5.0", "0.6.0", "0.6.1"]);
+        let markers = versions.join("0.4.0/.in_use");
+        std::fs::create_dir_all(&markers).expect("marker dir");
+        std::fs::write(
+            markers.join(std::os::unix::process::parent_id().to_string()),
+            b"{}",
+        )
+        .expect("live marker");
+        let installed = PluginRoot::new(versions.join("0.6.1")).expect("installed root");
+        let release = ReleaseVersion::parse("0.6.1").expect("release");
+
+        let pruning = PrunePluginCache::new(&FilesystemPluginCache).execute(&installed, &release);
+
+        assert_eq!(names(&versions), ["0.4.0", "0.6.0", "0.6.1"]);
+        assert_eq!(pruning.kept().len(), 1, "{pruning:?}");
+    }
 }

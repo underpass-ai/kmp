@@ -20,17 +20,14 @@ impl<'a> ForgetStore<'a> {
     }
 
     pub fn execute(&self, path: &Path) -> Result<(), LifecycleError> {
-        let Some(known) = self.index.remembered() else {
-            return Ok(());
-        };
-        let retained: Vec<_> = known
-            .into_iter()
-            .filter(|known| known != path && self.catalog.is_store(known))
-            .collect();
-        if retained.is_empty() {
-            return self.index.erase();
-        }
-        self.index.replace(&retained)
+        self.index.update(&mut |known| {
+            Some(
+                known?
+                    .into_iter()
+                    .filter(|known| known != path && self.catalog.is_store(known))
+                    .collect(),
+            )
+        })
     }
 }
 
