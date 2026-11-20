@@ -51,6 +51,22 @@ pub(super) async fn run(args: &[&str]) -> i32 {
         }
     };
 
+    // A project store is caught up with its committed bundle first, as any
+    // session would on open: importing into a fresh clone's empty store
+    // would otherwise turn the bundle it has not read yet into a divergence.
+    if let Some(bundle) = kmp_embedded::CommitNativeBundle::for_resolved_excluding_abouts(
+        &resolved,
+        kmp_mcp::local_abouts(),
+    ) && let Err(error) = bundle.reconcile_on_open(kernel.store())
+    {
+        eprintln!(
+            "kmp-mcp: import refused; nothing was written. This store could not be compared \
+             with `{}`: {error}",
+            bundle.path().display()
+        );
+        return 2;
+    }
+
     let pulse = kmp_mcp::pulse::Pulse::start("bringing those abouts in…");
     let imported = kernel
         .store()

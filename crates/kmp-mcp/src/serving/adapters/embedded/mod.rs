@@ -1,5 +1,6 @@
 mod ask_tool;
 mod commit_native_write_guard;
+mod committed_history_notice;
 mod condense_tool;
 mod curate_tool;
 mod frozen_recall_reads;
@@ -16,6 +17,7 @@ mod visual_projection_tool;
 mod wake_tool;
 
 pub(super) use ask_tool::EmbeddedAskTool;
+pub(super) use committed_history_notice::CommittedHistoryNotice;
 pub(super) use condense_tool::EmbeddedCondenseTool;
 pub(super) use curate_tool::EmbeddedCurateTool;
 pub(super) use frozen_recall_reads::FrozenRecallReads;

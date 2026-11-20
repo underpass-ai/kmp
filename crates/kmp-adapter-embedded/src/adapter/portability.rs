@@ -357,7 +357,7 @@ fn abouts(events: &[ContextUpdatedEvent]) -> Vec<String> {
         .collect()
 }
 
-fn filter_events_excluding_abouts(
+pub(super) fn filter_events_excluding_abouts(
     events: Vec<ContextUpdatedEvent>,
     excluded_abouts: &[String],
 ) -> Vec<ContextUpdatedEvent> {

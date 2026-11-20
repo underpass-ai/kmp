@@ -38,13 +38,34 @@ git diff -- .kmp/memory.jsonl
 
 Never export the whole shared store into a repository bundle.
 
-If doctor reports a pending export after an interrupted commit, first stop all
-writers, run the normal export and inspect its diff. Only then acknowledge the
-recovery:
+A write killed between its SQLite commit and its bundle publish leaves a
+pending marker. The next session that opens the project store (or a full
+`kmp-mcp export`) publishes the store and clears the marker on its own when no
+other session holds the commit-native lock and the committed bundle is an
+exact prefix of the store. If doctor still reports a pending export, the
+bundle is not such a prefix: first stop all writers, run the normal export and
+inspect its diff. Only then acknowledge the recovery:
 
 ```bash
 kmp-mcp export --repair-pending
 ```
+
+After a `git pull` or a fresh clone the committed bundle can be ahead of the
+store. Opening the store appends the bundle's tail in the bundle's order;
+there is nothing to run. When the two are different histories, nothing is
+changed: reads carry a notice and writes are refused. Keep the committed
+history by moving `.kernel/` aside and reopening (the store is rebuilt from
+the bundle; an about only your store wrote comes back with `kmp-mcp import
+--from <moved store> --about <about>` followed by `kmp-mcp export`, while what
+you added to an about the bundle also changed cannot be merged and has to be
+written again), or keep the store's history with
+`kmp-mcp export --overwrite-committed`. `export` refuses to replace a
+committed bundle whose events it would not keep unless that flag is given.
+
+A store directory whose `store/kernel.sqlite3` is missing or empty, beside a
+telemetry salt, a write-ahead log or an indexed lexical index, is refused
+instead of being restarted empty. Restore the database file, or move the
+directory aside; a project store is then rebuilt from its bundle.
 
 For a recovery point before a risky operation:
 

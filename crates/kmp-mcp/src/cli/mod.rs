@@ -2,6 +2,7 @@ use kmp_mcp::lifecycle::LifecycleAction;
 
 pub(crate) mod serve;
 
+mod committed_export_guard;
 mod config;
 mod consolidation_verb;
 mod context_verb;
@@ -179,7 +180,9 @@ fn subcommand_usage(command: &str) -> &'static str {
             "kmp-mcp uninstall [--store <absolute-path> | --engine <absolute-path>] [--apply] \
              [--purge] [--keep-memory]"
         }
-        "export" => "kmp-mcp export [file] [--about <about>]... [--repair-pending]",
+        "export" => {
+            "kmp-mcp export [file] [--about <about>]... [--repair-pending] [--overwrite-committed]"
+        }
         "import" => {
             "kmp-mcp import [file] | import --from <store-dir|bundle-file> --about <about>..."
         }
@@ -243,6 +246,12 @@ fn print_subcommand_help(command: &str) {
         println!(
             "\n--about matches an opaque about exactly and may be repeated. Filtered bundles \
              preserve aggregate revisions and use bundle-local event positions starting at 1."
+        );
+        println!(
+            "\nWith no file, export writes the project's committed `.kmp/memory.jsonl`. A full \
+             export first catches the store up with a committed file a pull brought ahead, and \
+             export refuses to replace a committed file whose events it would not keep; \
+             --overwrite-committed replaces it anyway."
         );
     }
 }
