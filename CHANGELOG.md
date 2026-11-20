@@ -9,6 +9,22 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Changed
+
+- **Behaviour change:** a label coordinate with no time on the selected clock
+  now stands where its entry stands on that clock. Labels written without a
+  clock (raw `kmp_ingest`, the shipped `kmp-mcp demo` packet) were invisible
+  on `occurred` and `observed`: a label selector returned nothing and
+  ChronoLoom counted every such label `0/7`, so clicking one emptied the
+  scene. `kmp_time`, `kmp_trace`, `kmp_ask`'s temporal admission and the
+  ChronoLoom projection (`in_range`) now read such a label at its entry's
+  earliest instant on the clock, on the scan path and the cached index alike;
+  its coordinate appears in the entry's `coordinates`. A label dated on the
+  clock (a relabel, a later catalogue) keeps its own time and the as-of rule;
+  an entry with no position on the clock still gains none; validity is never
+  inherited. Memories written with `kmp_write_memory` are unaffected: their
+  label coordinates already carry the clocks.
+
 ## [0.27.0] - 2026-11-19
 
 ### Security

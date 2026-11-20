@@ -62,20 +62,30 @@ impl TemporalAxisKey {
         coordinate: &TemporalCoordinate,
         requested_axis: TemporalAxis,
     ) -> Vec<Self> {
+        Self::from_entry_coordinate(ref_id, coordinate, requested_axis, None)
+    }
+
+    /// The keys of one coordinate of an entry whose own position on the
+    /// requested clock is `entry_time`. A coordinate with no time on that
+    /// clock — a label catalogued without one — stands where its entry
+    /// stands, so a label selector on that clock finds the entry it labels.
+    /// A coordinate dated on the clock keeps its own time, which is what
+    /// keeps a later label out of an earlier as-of read. Validity is an
+    /// interval each coordinate states for itself, not a position, and is
+    /// never inherited.
+    pub(super) fn from_entry_coordinate(
+        ref_id: &str,
+        coordinate: &TemporalCoordinate,
+        requested_axis: TemporalAxis,
+        entry_time: Option<&Self>,
+    ) -> Vec<Self> {
         let mut keys = Vec::new();
-        let selected_time = match requested_axis {
-            TemporalAxis::Default => coordinate
-                .occurred_at()
-                .or(coordinate.valid_from())
-                .or(coordinate.observed_at())
-                .or(coordinate.ingested_at()),
-            TemporalAxis::Occurred => coordinate.occurred_at(),
-            TemporalAxis::Observed => coordinate.observed_at(),
-            TemporalAxis::Ingested => coordinate.ingested_at(),
-            TemporalAxis::Validity => coordinate.valid_from().or(coordinate.valid_until()),
-        };
-        if let Some(value) = selected_time {
-            keys.push(Self::time(value));
+        match selected_time(coordinate, requested_axis) {
+            Some(value) => keys.push(Self::time(value)),
+            None if requested_axis != TemporalAxis::Validity => {
+                keys.extend(entry_time.cloned());
+            }
+            None => {}
         }
         if let Some(value) = coordinate.sequence() {
             keys.push(Self::sequence(value));
@@ -89,6 +99,35 @@ impl TemporalAxisKey {
 
         keys
     }
+}
+
+/// The time a coordinate holds on the requested clock, if any.
+fn selected_time(coordinate: &TemporalCoordinate, requested_axis: TemporalAxis) -> Option<&str> {
+    match requested_axis {
+        TemporalAxis::Default => coordinate
+            .occurred_at()
+            .or(coordinate.valid_from())
+            .or(coordinate.observed_at())
+            .or(coordinate.ingested_at()),
+        TemporalAxis::Occurred => coordinate.occurred_at(),
+        TemporalAxis::Observed => coordinate.observed_at(),
+        TemporalAxis::Ingested => coordinate.ingested_at(),
+        TemporalAxis::Validity => coordinate.valid_from().or(coordinate.valid_until()),
+    }
+}
+
+/// An entry's own position on the requested clock: the earliest time any of
+/// its coordinates holds there. `None` when no coordinate is dated on it,
+/// and an entry with no position on a clock gains none by inheritance.
+pub(super) fn entry_time_key<'c>(
+    coordinates: impl IntoIterator<Item = &'c TemporalCoordinate>,
+    requested_axis: TemporalAxis,
+) -> Option<TemporalAxisKey> {
+    coordinates
+        .into_iter()
+        .filter_map(|coordinate| selected_time(coordinate, requested_axis))
+        .map(TemporalAxisKey::time)
+        .min()
 }
 
 impl PartialOrd for TemporalAxisKey {

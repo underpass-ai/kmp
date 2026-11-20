@@ -117,10 +117,10 @@ impl<'a, R: TraceSnapshotReader> TraceTemporalAdmission<'a, R> {
         if !self.load_coordinates(id)? {
             return Ok(false);
         }
-        let coordinates = self.coordinates[id]
-            .iter()
-            .filter(|c| self.window().admits_coordinate(c))
-            .collect::<Vec<_>>();
+        // Field borrows, not `self.window()`: the routing counters below
+        // change while these coordinates are still read.
+        let window = TemporalReadWindow::new(self.temporal, self.resolved_as_of.as_deref());
+        let coordinates = window.admitted_coordinates(&self.coordinates[id]);
         let labels = EntryLabels::from_coordinates(
             coordinates.iter().map(|c| (c.dimension(), c.scope_id())),
         );
@@ -163,9 +163,9 @@ impl<'a, R: TraceSnapshotReader> TraceTemporalAdmission<'a, R> {
             return Ok(None);
         }
         Ok(Some(EntryLabels::from_coordinates(
-            self.coordinates[id]
-                .iter()
-                .filter(|c| self.window().admits_coordinate(c))
+            self.window()
+                .admitted_coordinates(&self.coordinates[id])
+                .into_iter()
                 .map(|c| (c.dimension(), c.scope_id())),
         )))
     }
@@ -178,9 +178,9 @@ impl<'a, R: TraceSnapshotReader> TraceTemporalAdmission<'a, R> {
             return Ok(None);
         }
         Ok(Some(
-            self.coordinates[id]
-                .iter()
-                .filter(|c| self.window().admits_coordinate(c))
+            self.window()
+                .admitted_coordinates(&self.coordinates[id])
+                .into_iter()
                 .cloned()
                 .collect(),
         ))

@@ -19,7 +19,7 @@ pub use model::{
     directed_relationship_path, label_resemblances, labels_by_entry, normalized_label_token,
     relate, rfc3339_from_epoch_seconds, temporal_instant_nanos, temporal_instant_rfc3339,
 };
-pub use model::{TemporalReadWindow, temporal_clock_instant};
+pub use model::{TemporalReadWindow, entry_clock_instant, temporal_clock_instant};
 pub use model::{
     TraceDimensionPolicy, TraceMaterialResult, TraceMaterialSelection, TraceProofRequirement,
     TraceRoutingStats, select_trace_material,
