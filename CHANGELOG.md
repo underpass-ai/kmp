@@ -9,6 +9,18 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Fixed
+
+- The test suites and `kmp-release guide assets` no longer reach the
+  developer's own KMP home (#910). Every `kmp-mcp` a test spawns runs in a
+  throwaway home with `CODEX_HOME`, `CLAUDE_CONFIG_DIR`, `HERMES_HOME`,
+  `PI_CODING_AGENT_DIR`, `XDG_CACHE_HOME`, `XDG_STATE_HOME` and the store and
+  engine selectors removed, so `cargo test` no longer prunes the real Claude
+  Code and Codex plugin caches nor writes into `known-stores.jsonl`. The
+  guide engine that `kmp-release` runs gets its own `HOME` beside the store
+  it is pointed at. A guard test reruns the spawn shapes under a sentinel
+  developer home and fails if one byte of it changes.
+
 ## [0.27.0] - 2026-11-19
 
 ### Security

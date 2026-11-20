@@ -6,7 +6,6 @@ mod isolated_home;
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -99,7 +98,7 @@ exit 1
         fs::write(&checksum_path, format!("{checksum}  kmp-mcp\n")).expect("checksum");
         let curl_log = self.root.path().join("curl.log");
         let path = format!("{}:/usr/bin:/bin", tools.display());
-        let output = Command::new(&bootstrap)
+        let output = isolated_home::command(&bootstrap)
             .args(["setup", "--claude", "--dry-run"])
             .env("HOME", &home)
             .env("PATH", path)
@@ -215,7 +214,7 @@ exit 1
         let checksum_path = case.join("engine.sha256");
         fs::write(&checksum_path, format!("{checksum}  kmp-mcp\n")).expect("checksum");
         let curl_log = case.join("curl.log");
-        let output = Command::new(plugin.join("scripts/kmp-update.sh"))
+        let output = isolated_home::command(plugin.join("scripts/kmp-update.sh"))
             .args([
                 "--claude",
                 "--dry-run",
