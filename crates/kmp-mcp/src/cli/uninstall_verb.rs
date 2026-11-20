@@ -164,18 +164,34 @@ pub(super) async fn run_uninstall_command(args: &[&str]) -> i32 {
     // store first; a later export failure therefore leaves the installation
     // intact instead of producing a half-uninstall.
     if !purge {
+        // A copy written inside something this run removes is deleted with
+        // it (B3): refuse before anything is written or removed.
+        let saves_a_store = pieces
+            .iter()
+            .any(|piece| piece.kind == kmp_mcp::lifecycle::PieceKind::Store);
+        if let Some(piece) = removed_piece_holding(&pieces, &workspace).filter(|_| saves_a_store) {
+            println!(
+                "kept     {}\n         the saved copy would be written into {}, which this \
+                 removes; run the command from another directory",
+                piece.path.display(),
+                workspace.display()
+            );
+            println!("\nNothing was removed.");
+            return 1;
+        }
         for piece in pieces
             .iter()
             .filter(|piece| piece.kind == kmp_mcp::lifecycle::PieceKind::Store)
         {
-            let destination = piece
-                .rescue_path(&workspace)
-                .expect("a store always has a rescue path");
-            match save_store(&piece.path, &destination).await {
-                Ok(events) => println!(
-                    "saved    {} — {events} {}",
+            match save_store(piece, &workspace).await {
+                Ok(Some((destination, events))) => println!(
+                    "saved    {} — {events} {}, read back and verified",
                     destination.display(),
                     if events == 1 { "event" } else { "events" }
+                ),
+                Ok(None) => println!(
+                    "empty    {} — 0 events, nothing to save",
+                    piece.path.display()
                 ),
                 Err(reason) => {
                     println!(
@@ -282,16 +298,40 @@ fn held_if_a_host_is_reading_it(
     }
 }
 
-/// Records that this data directory exists, so `info` can list it from any
-/// other directory later. A project `.kernel` can be anywhere on disk, and
-/// nothing that ships could find one you were not standing next to.
+/// The piece this run would remove that holds `workspace`, if any.
 ///
-/// Machine state about this user's filesystem: local only, never in a bundle,
-/// and pruned on read when the path is gone.
+/// Paths are compared as the filesystem resolves them, so a store reached
+/// through a symlink or a relative spelling is still recognised.
+fn removed_piece_holding<'a>(
+    pieces: &'a [kmp_mcp::lifecycle::Piece],
+    workspace: &std::path::Path,
+) -> Option<&'a kmp_mcp::lifecycle::Piece> {
+    let resolve =
+        |path: &std::path::Path| std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf());
+    let workspace = resolve(workspace);
+    pieces
+        .iter()
+        .filter(|piece| piece.refusal().is_none())
+        .find(|piece| workspace.starts_with(resolve(&piece.path)))
+}
+
+/// Hands one store's memory back as a bundle in `workspace`, before the
+/// store goes.
+///
+/// The copy is published under a name nothing else holds — an earlier
+/// uninstall's copy may be the only one left of that memory, so it is never
+/// written over (B3) — then read back from disk and verified: the bundle's
+/// digest must hold and it must carry exactly the events the store exported.
+/// A store with no events has nothing to hand back and leaves no file; an
+/// empty copy beside a real one is how the real one used to be lost.
+///
+/// Returns where the copy is and how many events it holds, or `None` for an
+/// empty store.
 pub(super) async fn save_store(
-    store: &std::path::Path,
-    destination: &std::path::Path,
-) -> Result<u64, String> {
+    piece: &kmp_mcp::lifecycle::Piece,
+    workspace: &std::path::Path,
+) -> Result<Option<(PathBuf, u64)>, String> {
+    let store = piece.path.as_path();
     let engine = kmp_embedded::default_engine_for_data_dir(store);
     let kernel = kmp_embedded::EmbeddedKernel::open_with_engine(store, engine)
         .map_err(|error| error.to_string())?;
@@ -300,17 +340,41 @@ pub(super) async fn save_store(
         .export_bundle()
         .await
         .map_err(|error| error.to_string())?;
-    let events = bundle
-        .lines()
-        .next()
-        .and_then(|header| serde_json::from_str::<serde_json::Value>(header).ok())
-        .and_then(|header| {
-            header
-                .get("event_count")
-                .and_then(serde_json::Value::as_u64)
-        })
-        .unwrap_or_default();
-    std::fs::write(destination, bundle)
-        .map_err(|error| format!("could not write `{}`: {error}", destination.display()))?;
-    Ok(events)
+    let exported = kmp_embedded::verify_bundle(&bundle)
+        .map_err(|error| format!("the export does not verify: {error}"))?;
+    if exported.event_count == 0 {
+        return Ok(None);
+    }
+    let mut attempt = 1;
+    let destination = loop {
+        let candidate = piece
+            .rescue_candidate(workspace, attempt)
+            .ok_or_else(|| "a store always has a rescue path".to_string())?;
+        if kmp_embedded::write_bundle_if_absent(&candidate, &bundle)
+            .map_err(|error| format!("could not write `{}`: {error}", candidate.display()))?
+        {
+            break candidate;
+        }
+        attempt += 1;
+    };
+    let written = std::fs::read_to_string(&destination)
+        .map_err(|error| format!("could not read back `{}`: {error}", destination.display()))?;
+    let verified = kmp_embedded::verify_bundle(&written).map_err(|error| {
+        format!(
+            "the copy at `{}` does not verify: {error}",
+            destination.display()
+        )
+    })?;
+    if written != bundle
+        || verified.event_count != exported.event_count
+        || verified.content_digest != exported.content_digest
+    {
+        return Err(format!(
+            "the copy at `{}` holds {} events, but the store exported {}",
+            destination.display(),
+            verified.event_count,
+            exported.event_count
+        ));
+    }
+    Ok(Some((destination, verified.event_count)))
 }

@@ -21,19 +21,25 @@ impl<'a> DiagnoseLifecycle<'a> {
     }
 
     pub fn execute(&self) -> LifecycleDiagnosis {
-        let installed = match self.hosts.inventory() {
-            Ok(installed) => installed,
-            Err(error) => {
-                return LifecycleDiagnosis::from_findings(vec![
-                    LifecycleFinding::new(
-                        DiagnosticSeverity::Fail,
-                        "native plugin inventory failed",
-                    )
-                    .with_detail(error.to_string()),
-                ]);
-            }
-        };
-        let mut findings = Vec::new();
+        let inventory = self.hosts.inventory();
+        let installed = inventory.installed();
+        // A host whose plugin manager could not be read is reported against
+        // that host alone; every other host is still diagnosed (S11).
+        let mut findings: Vec<LifecycleFinding> = inventory
+            .unreadable()
+            .iter()
+            .map(|(host, reason)| {
+                LifecycleFinding::new(
+                    DiagnosticSeverity::Fail,
+                    format!("{host}: plugin inventory failed"),
+                )
+                .with_detail(reason.clone())
+                .with_detail("the other hosts were diagnosed without it")
+            })
+            .collect();
+        if installed.is_empty() && !findings.is_empty() {
+            return LifecycleDiagnosis::from_findings(findings);
+        }
         if installed.is_empty() {
             let available = self.hosts.available_hosts();
             let detail = if available.is_empty() {
@@ -59,7 +65,7 @@ impl<'a> DiagnoseLifecycle<'a> {
         }
 
         let target = ReleaseVersion::current();
-        for installation in &installed {
+        for installation in installed {
             findings.extend(self.diagnose_host(installation, &target));
         }
         // The same trees the convergence compares: a Hermes home is never a
@@ -92,6 +98,13 @@ impl<'a> DiagnoseLifecycle<'a> {
         }
 
         let mut findings = Vec::new();
+        if let Some(newer) = self.newer_installation(installation, target) {
+            // An older engine cannot judge a newer tool surface, and telling
+            // a healthy host to converge backwards is the one wrong answer.
+            findings.push(newer);
+            findings.push(self.registration_finding(host));
+            return findings;
+        }
         match installation.require_release(target) {
             Ok(()) => findings.push(LifecycleFinding::new(
                 DiagnosticSeverity::Ok,
@@ -108,6 +121,20 @@ impl<'a> DiagnoseLifecycle<'a> {
                 .with_detail(error.to_string())
                 .with_detail("run `kmp-mcp update` to converge every installed host"),
             ),
+        }
+
+        if let Err(error) = self.hosts.verify_on_disk(installation, target) {
+            // A plugin manager's entry with nothing behind it is broken; a
+            // host without one that lacks skills still serves memory.
+            let severity = if host.installs_plugin_tree() {
+                DiagnosticSeverity::Fail
+            } else {
+                DiagnosticSeverity::Warn
+            };
+            findings.push(
+                LifecycleFinding::new(severity, format!("{host}: installation incomplete on disk"))
+                    .with_detail(error.to_string()),
+            );
         }
 
         match self
@@ -142,6 +169,49 @@ impl<'a> DiagnoseLifecycle<'a> {
             ),
         }
 
+        findings.push(self.registration_finding(host));
+        findings
+    }
+
+    /// The warning for an installation newer than this engine whose own
+    /// engine reports that same newer release: the host agrees with itself,
+    /// and it is this doctor that is behind (S10). None when the plugin is
+    /// not newer, or when its engine says something else — that is still a
+    /// mismatch to fail on.
+    fn newer_installation(
+        &self,
+        installation: &HostInstallation,
+        target: &ReleaseVersion,
+    ) -> Option<LifecycleFinding> {
+        let installed = installation.version();
+        if !installed.is_newer_than(target) {
+            return None;
+        }
+        let engine = self.hosts.runtime_engine(installation).ok()?;
+        let reported = self.engines.reported_version(&engine).ok()?;
+        if !reported.represents_same_release(installed) {
+            return None;
+        }
+        Some(
+            LifecycleFinding::new(
+                DiagnosticSeverity::Warn,
+                format!(
+                    "{}: KMP {installed} is installed; this doctor is the older {target}",
+                    installation.host()
+                ),
+            )
+            .with_detail(format!(
+                "the plugin and its engine agree on {installed}; this older engine cannot judge \
+                 their tools"
+            ))
+            .with_detail(format!(
+                "run the installed engine's own diagnosis: `{} doctor`",
+                engine.as_path().display()
+            )),
+        )
+    }
+
+    fn registration_finding(&self, host: crate::lifecycle::domain::host::Host) -> LifecycleFinding {
         match self.hosts.runtime_status(host) {
             Ok(status) => {
                 let verification = status.verification();
@@ -161,17 +231,14 @@ impl<'a> DiagnoseLifecycle<'a> {
                          connection, and check the selected memory with `kmp-mcp config`",
                     );
                 }
-                findings.push(finding);
+                finding
             }
-            Err(error) => findings.push(
-                LifecycleFinding::new(
-                    DiagnosticSeverity::Fail,
-                    format!("{host}: effective MCP registration could not be checked"),
-                )
-                .with_detail(error.to_string()),
-            ),
+            Err(error) => LifecycleFinding::new(
+                DiagnosticSeverity::Fail,
+                format!("{host}: effective MCP registration could not be checked"),
+            )
+            .with_detail(error.to_string()),
         }
-        findings
     }
 
     fn diagnose_parity(&self, installations: &[&HostInstallation]) -> LifecycleFinding {

@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use crate::lifecycle::adapters::native_release_readers::NativeReleaseReaders;
 use crate::lifecycle::domain::lifecycle_error::LifecycleError;
 use crate::lifecycle::domain::plugin_root::PluginRoot;
 use crate::lifecycle::domain::release_version::ReleaseVersion;
@@ -54,6 +55,14 @@ impl PluginCache for FilesystemPluginCache {
         // never a path a `..` could have built.
         if target == installed.as_path() || target.parent() != Some(versions.as_path()) {
             return Err(LifecycleError::UnsafePath(target));
+        }
+        // A start collects superseded versions because no session should
+        // still be reading them; one that is, keeps its version (S5).
+        if let Some(pid) = NativeReleaseReaders.reader_of(&target) {
+            return Err(LifecycleError::Io {
+                path: target,
+                detail: format!("still in use by process {pid}"),
+            });
         }
         std::fs::remove_dir_all(&target).map_err(|error| LifecycleError::Io {
             path: target,

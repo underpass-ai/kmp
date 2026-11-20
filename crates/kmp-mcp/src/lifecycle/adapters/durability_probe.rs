@@ -110,9 +110,10 @@ pub(crate) fn committed_bundle_finding(resolved: &ResolvedDataDir) -> Option<Lif
         // holds the shipped guide, which setup syncs on its own. Filter both
         // sides before comparison: older commit-native writers could publish
         // those release-owned events into the project bundle.
-        let live = kmp_embedded::EmbeddedKernelStore::open(resolved.path()).and_then(|store| {
-            store.export_bundle_excluding_abouts_blocking(&guide::abouts_owned())
-        });
+        let live =
+            kmp_embedded::EmbeddedKernelStore::open_read_only(resolved.path()).and_then(|store| {
+                store.export_bundle_excluding_abouts_blocking(&guide::abouts_owned())
+            });
         let live = match live {
             Ok(live) => live,
             Err(error) => {

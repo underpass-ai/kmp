@@ -291,6 +291,81 @@ fn selective_uninstall_refuses_one_live_store_and_preserves_the_other_host() {
     second.stop();
 }
 
+/// B3: the copy uninstall saves is never written over by a later uninstall,
+/// never written inside the store it removes, and an empty store leaves no
+/// copy beside a real one.
+#[test]
+fn uninstall_rescues_are_never_overwritten_nor_written_into_the_removed_store() {
+    let root = tempfile::tempdir().expect("test root");
+    let home = root.path().join("home");
+    let workspace = root.path().join("workspace");
+    let store = root.path().join("memory");
+    std::fs::create_dir_all(&home).expect("home");
+    std::fs::create_dir_all(&workspace).expect("workspace");
+    let bin = env!("CARGO_BIN_EXE_kmp-mcp");
+    let kmp = |cwd: &std::path::Path, args: &[&str]| {
+        Command::new(bin)
+            .args(args)
+            .current_dir(cwd)
+            .env("HOME", &home)
+            .env("XDG_DATA_HOME", home.join(".local/share"))
+            .env("XDG_CONFIG_HOME", home.join(".config"))
+            .env_remove("CODEX_HOME")
+            .env_remove("XDG_CACHE_HOME")
+            .env("KMP_MCP_DATA_DIR", &store)
+            .env("KMP_VIEWER_ADDR", "off")
+            .output()
+            .expect("kmp-mcp runs")
+    };
+    let rescues = || {
+        let mut found = std::fs::read_dir(&workspace)
+            .expect("workspace listing")
+            .flatten()
+            .map(|entry| entry.path())
+            .filter(|path| {
+                path.extension()
+                    .is_some_and(|extension| extension == "jsonl")
+            })
+            .collect::<Vec<_>>();
+        found.sort();
+        found
+    };
+    let store_arg = store.to_str().expect("utf-8 path");
+
+    assert!(kmp(&workspace, &["demo", "--no-viewer"]).status.success());
+    let first = kmp(&workspace, &["uninstall", "--store", store_arg, "--apply"]);
+    assert!(first.status.success(), "{first:?}");
+    let saved = rescues();
+    assert_eq!(saved.len(), 1, "{saved:?}");
+    let first_path = saved[0].clone();
+    let first_copy = std::fs::read(&first_path).expect("first copy");
+
+    // The same path holds memory again and is uninstalled again: the first
+    // copy stays byte for byte, the second gets its own name.
+    assert!(kmp(&workspace, &["demo", "--no-viewer"]).status.success());
+    let second = kmp(&workspace, &["uninstall", "--store", store_arg, "--apply"]);
+    assert!(second.status.success(), "{second:?}");
+    let saved = rescues();
+    assert_eq!(saved.len(), 2, "{saved:?}");
+    assert_eq!(std::fs::read(&first_path).expect("first copy"), first_copy);
+    assert!(
+        saved
+            .iter()
+            .any(|path| path.to_string_lossy().ends_with("-2.jsonl")),
+        "{saved:?}"
+    );
+
+    // Run from inside the store, the copy would go with it: refused, and
+    // nothing is removed.
+    assert!(kmp(&workspace, &["demo", "--no-viewer"]).status.success());
+    let inside = kmp(&store, &["uninstall", "--store", store_arg, "--apply"]);
+    assert_eq!(inside.status.code(), Some(1), "{inside:?}");
+    let report = String::from_utf8_lossy(&inside.stdout);
+    assert!(report.contains("Nothing was removed"), "{report}");
+    assert!(store.join("FORMAT_VERSION").is_file());
+    assert_eq!(rescues().len(), 2);
+}
+
 #[test]
 fn selective_uninstall_rejects_ambiguous_scope_without_mutating_any_store() {
     let root = tempfile::tempdir().expect("test root");

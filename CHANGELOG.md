@@ -9,6 +9,58 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Fixed
+
+- `uninstall` no longer destroys the memory copy it promised to keep. The
+  copy is never written over: a second uninstall of the same path saves
+  under a numbered name beside the first. It is read back and verified
+  (digest and event count) before anything is removed. An uninstall run from
+  inside a directory it would remove is refused before anything is written
+  or removed. A store with no events leaves no copy and prints `empty`.
+- A `setup` that fails, and `doctor`, no longer delete plugin versions from
+  the Claude Code and Codex caches. The engine proof they run now uses a
+  throwaway home, so it also stops adding a scratch store to
+  `known-stores.jsonl` and taking a lease in the real data home. A serve
+  start still collects the versions an earlier update superseded, but keeps
+  one that a live session marks `.in_use` (Claude Code) or that a running
+  process executes from or was launched from (`KMP_PLUGIN_ROOT`, Linux).
+- `doctor` no longer writes to the store. It reads the live memory through
+  the read-only opener, so it no longer re-stamps `FORMAT_VERSION`, runs
+  card adoption or creates a missing database. SQLite may still create empty
+  `-wal`/`-shm` files beside the database.
+- `doctor` opens the database read-only and runs SQLite's `quick_check`
+  before it calls the memory usable. A database replaced by other bytes or
+  cut short is now a FAIL in a new `Database` section, not "Usable".
+- `doctor` run by an engine older than the installed plugin no longer calls
+  a healthy host "Not usable" or advises `kmp-mcp update`. When the plugin
+  and its engine report the same newer release, it warns that this doctor
+  is older and names the installed engine's own `doctor`.
+- Hermes on PATH with no MCP server configured no longer breaks `setup`,
+  `update` and `doctor`. Empty or null output means KMP is not registered
+  there. A host whose inventory cannot be read is reported for that host
+  alone: `doctor` fails that host and still diagnoses the others, and a
+  `setup` or `update` that names no host skips it with the reason. Naming
+  it explicitly still fails.
+- `setup` says "completed" only after the result is on disk. A Claude Code
+  or Codex plugin whose directory holds no manifest is reinstalled rather
+  than kept as "unchanged", and fails if it is still empty. Hermes and Pi
+  must hold every `kmp-*` skill of the plugin tree. That tree is now also
+  found in the Claude Code and Codex caches of the release, and through
+  `KMP_PLUGIN_ROOT`, not only beside a development build. With no tree on
+  the machine, `setup --hermes` and `setup --pi` fail and say where they
+  looked. `doctor` reports both cases.
+- A stale plugin's bootstrap script no longer downgrades the shared engine.
+  When the installed `kmp-mcp` is newer than the plugin's release, the
+  script runs that engine for its own release and downloads nothing.
+- Stores opened at the same moment no longer go missing from
+  `known-stores.jsonl`. Rewrites of the note take a lock
+  (`store-leases/known-stores.lock`, removed with the lease directory by a
+  full `uninstall`), and a note that cannot be read is never rewritten from
+  nothing.
+- `scripts/install/install.sh` ends with `kmp-mcp setup` and `kmp-mcp
+  doctor` instead of the retired standalone wiring (`claude mcp add kmp`,
+  `[mcp_servers.kmp]`).
+
 ## [0.27.0] - 2026-11-19
 
 ### Security

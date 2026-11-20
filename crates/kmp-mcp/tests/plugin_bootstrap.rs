@@ -361,3 +361,69 @@ exit 1
 fn clean_source_marketplace_install_bootstraps_a_verified_rust_engine() {
     PluginBootstrapHarness::new().execute();
 }
+
+/// N7: a stale plugin's bootstrap never installs its older release over a
+/// newer shared engine; it runs that engine for its own release instead.
+#[test]
+fn a_stale_plugin_never_downgrades_a_newer_shared_engine() {
+    let root = tempfile::tempdir().expect("isolated bootstrap root");
+    let repository = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let plugin = root.path().join("plugin");
+    let install = root.path().join("install");
+    let tools = root.path().join("tools");
+    for directory in [
+        plugin.join("scripts"),
+        plugin.join(".codex-plugin"),
+        install.clone(),
+        tools.clone(),
+    ] {
+        fs::create_dir_all(directory).expect("directory");
+    }
+    fs::write(
+        plugin.join(".codex-plugin/plugin.json"),
+        r#"{"name":"kmp","version":"0.0.1"}"#,
+    )
+    .expect("stale manifest");
+    let bootstrap = plugin.join("scripts/kmp-install-binary.sh");
+    fs::copy(
+        repository.join("plugins/kmp/scripts/kmp-install-binary.sh"),
+        &bootstrap,
+    )
+    .expect("bootstrap adapter");
+    let executable = |path: &Path, body: &str| {
+        fs::write(path, body).expect("script");
+        fs::set_permissions(path, fs::Permissions::from_mode(0o755)).expect("executable");
+    };
+    let ran = root.path().join("ran.log");
+    let curl_log = root.path().join("curl.log");
+    let engine = format!(
+        "#!/bin/sh\nif [ \"$1\" = --version ]; then echo 'kmp-mcp 999.0.0 (store format 4 (sqlite))'; exit 0; fi\necho \"$*\" >> {}\n",
+        ran.display()
+    );
+    executable(&install.join("kmp-mcp"), &engine);
+    executable(
+        &tools.join("curl"),
+        &format!("#!/bin/sh\necho \"$*\" >> {}\nexit 1\n", curl_log.display()),
+    );
+
+    let output = Command::new(&bootstrap)
+        .args(["setup", "--claude", "--dry-run"])
+        .env("HOME", root.path().join("home"))
+        .env_remove("KMP_MCP_BIN")
+        .env("PATH", format!("{}:/usr/bin:/bin", tools.display()))
+        .env("KMP_INSTALL_DIR", &install)
+        .output()
+        .expect("bootstrap runs");
+
+    assert!(output.status.success(), "{output:?}");
+    assert!(!curl_log.exists(), "nothing is downloaded");
+    assert_eq!(
+        fs::read_to_string(install.join("kmp-mcp")).expect("engine"),
+        engine
+    );
+    assert_eq!(
+        fs::read_to_string(&ran).expect("the newer engine ran"),
+        "setup --claude --dry-run\n",
+        "it sets up its own release, not the stale plugin's"
+    );
+}

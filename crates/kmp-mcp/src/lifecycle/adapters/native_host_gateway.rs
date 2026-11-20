@@ -6,11 +6,13 @@ use crate::lifecycle::adapters::mappers::codex_installation_mapper::CodexInstall
 use crate::lifecycle::adapters::mappers::codex_runtime_status_mapper::CodexRuntimeStatusMapper;
 use crate::lifecycle::adapters::mappers::hermes_runtime_status_mapper::HermesRuntimeStatusMapper;
 use crate::lifecycle::adapters::pi_host_adapter::PiHostAdapter;
+use crate::lifecycle::adapters::plugin_tree_locator::PluginTreeLocator;
 use crate::lifecycle::domain::engine_executable::EngineExecutable;
 use crate::lifecycle::domain::engine_install_dir::EngineInstallDir;
 use crate::lifecycle::domain::hermes_skill_dir::HermesSkillDir;
 use crate::lifecycle::domain::host::Host;
 use crate::lifecycle::domain::host_installation::HostInstallation;
+use crate::lifecycle::domain::host_inventory::HostInventory;
 use crate::lifecycle::domain::host_runtime_status::HostRuntimeStatus;
 use crate::lifecycle::domain::lifecycle_error::LifecycleError;
 use crate::lifecycle::domain::marketplace_source::MarketplaceSource;
@@ -182,7 +184,7 @@ impl<'a> NativeHostGateway<'a> {
     /// target, never the version of the binary performing the update (#868).
     fn refresh_hermes(&self, target: &ReleaseVersion) -> Result<HostInstallation, LifecycleError> {
         self.hermes()?
-            .refresh(target, Self::plugin_root().as_deref())
+            .refresh(target, Self::plugin_root(target).as_deref())
     }
 
     fn provision_claude(&self) -> Result<HostInstallation, LifecycleError> {
@@ -243,19 +245,49 @@ impl<'a> NativeHostGateway<'a> {
         target: &ReleaseVersion,
     ) -> Result<HostInstallation, LifecycleError> {
         self.hermes()?
-            .provision(target, Self::plugin_root().as_deref())
+            .provision(target, Self::plugin_root(target).as_deref())
     }
 
-    /// The plugin tree skills mirror from. A development checkout carries
-    /// one beside this binary; a machine without it converges the MCP
-    /// registration alone.
-    fn plugin_root() -> Option<std::path::PathBuf> {
-        let mut path = std::env::current_exe().ok()?;
-        for _ in 0..4 {
-            path = path.parent()?.to_path_buf();
+    /// The plugin tree skills mirror from, for `target`. Without one the
+    /// registration still converges, and the disk check then refuses to
+    /// call the host installed.
+    fn plugin_root(target: &ReleaseVersion) -> Option<std::path::PathBuf> {
+        PluginTreeLocator::from_environment(target).locate()
+    }
+
+    /// Every native skill the plugin tree for `target` carries is
+    /// discoverable under `home/skills`.
+    fn verify_skills(
+        host: Host,
+        home: &std::path::Path,
+        target: &ReleaseVersion,
+    ) -> Result<(), LifecycleError> {
+        let locator = PluginTreeLocator::from_environment(target);
+        let Some(tree) = locator.locate() else {
+            return Err(LifecycleError::HostNotInstalled(format!(
+                "{host} is registered, but no KMP {target} plugin tree was found to install the \
+                 kmp-* skills from (looked in: {}); install the Claude Code or Codex plugin \
+                 first, or run the plugin's own setup, then run this again",
+                locator
+                    .candidates()
+                    .iter()
+                    .map(|candidate| candidate.display().to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )));
+        };
+        let missing = PluginTreeLocator::skills_in(&tree)
+            .into_iter()
+            .filter(|name| !home.join("skills").join(name).join("SKILL.md").is_file())
+            .collect::<Vec<_>>();
+        if missing.is_empty() {
+            return Ok(());
         }
-        let candidate = path.join("plugins/kmp");
-        candidate.is_dir().then_some(candidate)
+        Err(LifecycleError::HostNotInstalled(format!(
+            "{host} is missing skills under {}: {}",
+            home.join("skills").display(),
+            missing.join(", ")
+        )))
     }
 }
 
@@ -267,12 +299,40 @@ impl HostGateway for NativeHostGateway<'_> {
             .collect()
     }
 
-    fn inventory(&self) -> Result<Vec<HostInstallation>, LifecycleError> {
+    fn inventory(&self) -> HostInventory {
         let mut installed = Vec::new();
+        let mut unreadable = Vec::new();
         for host in Host::CONVERGENCE_ORDER {
-            installed.extend(self.inventory_host(host)?);
+            match self.inventory_host(host) {
+                Ok(found) => installed.extend(found),
+                Err(error) => unreadable.push((host, error.to_string())),
+            }
         }
-        Ok(installed)
+        HostInventory::new(installed, unreadable)
+    }
+
+    fn verify_on_disk(
+        &self,
+        installation: &HostInstallation,
+        target: &ReleaseVersion,
+    ) -> Result<(), LifecycleError> {
+        let host = installation.host();
+        let root = installation.root().as_path();
+        let manifest = match host {
+            Host::Claude => ".claude-plugin/plugin.json",
+            Host::Codex => ".codex-plugin/plugin.json",
+            Host::Hermes | Host::Pi => return Self::verify_skills(host, root, target),
+        };
+        if root.join(manifest).is_file() {
+            return Ok(());
+        }
+        Err(LifecycleError::HostNotInstalled(format!(
+            "{host} lists kmp@underpass at {}, but that directory holds no {manifest}; \
+             remove the plugin with the host (`{} plugin uninstall kmp@underpass`) and run setup \
+             again",
+            root.display(),
+            host.executable()
+        )))
     }
 
     fn runtime_status(&self, host: Host) -> Result<HostRuntimeStatus, LifecycleError> {
@@ -345,7 +405,7 @@ impl HostGateway for NativeHostGateway<'_> {
             Host::Hermes => self.provision_hermes(target)?,
             Host::Pi => self
                 .pi()?
-                .provision(target, Self::plugin_root().as_deref())?,
+                .provision(target, Self::plugin_root(target).as_deref())?,
         };
         installation.require_release(target)?;
         Ok(installation)
@@ -367,7 +427,9 @@ impl HostGateway for NativeHostGateway<'_> {
             Host::Claude => self.refresh_claude()?,
             Host::Codex => self.refresh_codex()?,
             Host::Hermes => self.refresh_hermes(target)?,
-            Host::Pi => self.pi()?.refresh(target, Self::plugin_root().as_deref())?,
+            Host::Pi => self
+                .pi()?
+                .refresh(target, Self::plugin_root(target).as_deref())?,
         };
         installation.require_release(target)?;
         Ok(installation)
