@@ -102,7 +102,8 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
 - Dead ChronoLoom code: unused `KMP_LOOM` exports (`extent`, `axisTicks`,
   `screenAxisTicks`, `arcStyle`, `withSelector`, `CLOCKS`), unused state and
   viewport helpers, the hidden **Fit** button and CSS that matched nothing.
-- The viewer's `/api/graph` and `/api/timeline` routes, which no page called
+- **Breaking (`kmp-viewer` crate API):** the viewer's `/api/graph` and
+  `/api/timeline` routes, which no page called
   (one answered 80 MB on a 20,000-entry about), with the public
   `kmp_viewer::views::{graph_view, GraphView, timeline_view, TimelineView}`
   they used.
