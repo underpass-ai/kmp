@@ -32,11 +32,20 @@ impl HermesRuntimeStatusMapper {
     }
 
     pub fn map(config_yaml: &str) -> Result<HostRuntimeStatus, LifecycleError> {
+        // A Hermes with no MCP server configured prints nothing (or a YAML
+        // null): KMP is simply not registered there. That is an answer, not
+        // a broken host, and reading it as one stopped every host (S11).
+        if config_yaml.trim().is_empty() {
+            return Ok(HostRuntimeStatus::Missing);
+        }
         let body = Self::parse(config_yaml).map_err(|error| {
             LifecycleError::InvalidHostResponse(format!(
                 "Hermes returned invalid MCP config YAML: {error}"
             ))
         })?;
+        if body.is_null() {
+            return Ok(HostRuntimeStatus::Missing);
+        }
         let servers = body.as_object().ok_or_else(|| {
             LifecycleError::InvalidHostResponse(
                 "Hermes MCP config is not a mapping of server names".to_string(),
@@ -60,6 +69,17 @@ impl HermesRuntimeStatusMapper {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_hermes_with_no_servers_configured_has_kmp_missing_not_broken() {
+        for empty in ["", "\n", "null\n", "~\n"] {
+            assert_eq!(
+                HermesRuntimeStatusMapper::map(empty).expect("an answer"),
+                HostRuntimeStatus::Missing,
+                "{empty:?}"
+            );
+        }
+    }
 
     #[test]
     fn a_registered_enabled_server_is_a_usable_registration() {
@@ -104,8 +124,8 @@ mod tests {
     }
 
     #[test]
-    fn empty_output_is_not_a_mapping_of_servers() {
-        let error = HermesRuntimeStatusMapper::map("").expect_err("empty output");
+    fn a_scalar_is_still_not_a_mapping_of_servers() {
+        let error = HermesRuntimeStatusMapper::map("no servers\n").expect_err("scalar output");
         assert!(error.to_string().contains("not a mapping"));
     }
 

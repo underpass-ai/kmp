@@ -17,9 +17,17 @@ pub trait StoreIndex: Send + Sync {
     /// `None` when no note has ever been written on this machine.
     fn remembered(&self) -> Option<Vec<PathBuf>>;
 
-    /// Rewrite the note to name exactly these paths.
-    fn replace(&self, paths: &[PathBuf]) -> Result<(), LifecycleError>;
-
-    /// Remove the note entirely; an empty note is not worth keeping.
-    fn erase(&self) -> Result<(), LifecycleError>;
+    /// Rewrite the note from what it names now, as one step no other
+    /// process can interleave with. Stores opened at the same moment each
+    /// read the note, added their own path and wrote it back, and every
+    /// writer but the last was lost (N8).
+    ///
+    /// `edit` receives the paths named now (`None` when no note exists) and
+    /// returns the paths to name, or `None` to leave the note as it is. An
+    /// empty list removes the note; an empty note is not worth keeping. A
+    /// note that exists but cannot be read is never rewritten.
+    fn update(
+        &self,
+        edit: &mut dyn FnMut(Option<Vec<PathBuf>>) -> Option<Vec<PathBuf>>,
+    ) -> Result<(), LifecycleError>;
 }

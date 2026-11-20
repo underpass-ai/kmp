@@ -17,6 +17,7 @@ use super::engines_probe::engines_findings;
 use super::search_summary_probe::search_summary_finding;
 use super::startup_log_probe::startup_history;
 use super::store_config_probe::store_config_findings;
+use super::store_readability_probe::store_readability_finding;
 use super::telemetry_probe::telemetry_finding;
 use super::viewer_probe::viewer_finding;
 
@@ -72,6 +73,13 @@ pub(crate) fn observe_doctor(lifecycle: Vec<LifecycleFinding>) -> DoctorObservat
     let (data_dir, resolved) = data_dir_finding();
     let data_dir_level = data_dir.severity();
     sections.push(ReportSection::single("Memory", data_dir));
+    let readable = resolved.as_ref().and_then(store_readability_finding);
+    let readable_level = readable
+        .as_ref()
+        .map_or(DiagnosticSeverity::Ok, |finding| finding.severity());
+    if let Some(readable) = readable {
+        sections.push(ReportSection::single("Database", readable));
+    }
     let durability = resolved.as_ref().and_then(committed_bundle_finding);
     let durability_level = durability
         .as_ref()
@@ -141,6 +149,7 @@ pub(crate) fn observe_doctor(lifecycle: Vec<LifecycleFinding>) -> DoctorObservat
 
     let worst = worst_severity([
         data_dir_level,
+        readable_level,
         durability_level,
         store_config_level,
         surface_level,

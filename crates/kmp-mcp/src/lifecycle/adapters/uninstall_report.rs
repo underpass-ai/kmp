@@ -55,7 +55,9 @@ pub fn uninstall_report(
                 if purge {
                     String::new()
                 } else {
-                    rescue.display().to_string()
+                    // The apply never writes over an earlier copy: a taken
+                    // name gets the next number, and an empty store none.
+                    format!("{} (or the next free -N name)", rescue.display())
                 }
             );
         }

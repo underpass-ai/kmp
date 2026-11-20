@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use std::path::PathBuf;
 use std::sync::Mutex;
 
@@ -17,6 +18,7 @@ pub struct FakeEngineStore {
     divergent_trees: bool,
     rejected_stage: bool,
     staged: Mutex<usize>,
+    reported: Option<ReleaseVersion>,
 }
 
 impl FakeEngineStore {
@@ -27,6 +29,7 @@ impl FakeEngineStore {
             divergent_trees: false,
             rejected_stage: false,
             staged: Mutex::new(0),
+            reported: None,
         }
     }
 
@@ -37,7 +40,14 @@ impl FakeEngineStore {
             divergent_trees: false,
             rejected_stage: false,
             staged: Mutex::new(0),
+            reported: None,
         }
+    }
+
+    /// Makes every executable's `--version` report this release.
+    pub fn reporting_version(mut self, version: ReleaseVersion) -> Self {
+        self.reported = Some(version);
+        self
     }
 
     pub fn with_divergent_trees(mut self) -> Self {
@@ -98,6 +108,16 @@ impl EngineStore for FakeEngineStore {
             target.clone(),
             kmp_mcp::tool_names(),
         ))
+    }
+
+    fn reported_version(
+        &self,
+        _executable: &EngineExecutable,
+    ) -> Result<ReleaseVersion, LifecycleError> {
+        Ok(self
+            .reported
+            .clone()
+            .unwrap_or_else(ReleaseVersion::current))
     }
 
     fn prove(

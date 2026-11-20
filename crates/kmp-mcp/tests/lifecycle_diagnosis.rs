@@ -8,7 +8,6 @@
 
 // The shared fakes serve setup, update and diagnosis; this binary only needs
 // the part of them a read-only diagnosis touches.
-#[allow(dead_code)]
 #[path = "lifecycle_support/fake_engine_store.rs"]
 mod fake_engine_store;
 #[path = "lifecycle_support/fake_host_gateway.rs"]
@@ -239,4 +238,80 @@ fn pi_is_diagnosed_as_a_peer_whose_registration_is_unverified() {
             .any(|finding| finding.headline().contains("plugin trees differ")),
         "a Pi agent home is not a plugin tree"
     );
+}
+
+/// S10: a host whose plugin and engine agree on a release newer than this
+/// doctor is warned about, never failed, and never told to converge back.
+#[test]
+fn an_older_doctor_warns_about_a_newer_consistent_install_instead_of_failing_it() {
+    let newer = ReleaseVersion::parse("9.9.9").expect("release");
+    let hosts = FakeHostGateway::with_installations(vec![HostInstallation::discovered(
+        Host::Claude,
+        newer.clone(),
+        PluginRoot::new("/tmp/claude").expect("plugin root"),
+        true,
+    )])
+    .reporting(HostRuntimeStatus::Connected);
+    let engines = FakeEngineStore::empty().reporting_version(newer);
+
+    let findings = DiagnoseLifecycle::new(&hosts, &engines)
+        .execute()
+        .findings()
+        .to_vec();
+
+    assert!(
+        findings
+            .iter()
+            .all(|finding| finding.severity() != DiagnosticSeverity::Fail),
+        "{findings:?}"
+    );
+    let warning = findings
+        .iter()
+        .find(|finding| finding.headline().contains("this doctor is the older"))
+        .expect("the reader is told this doctor is behind");
+    assert_eq!(warning.severity(), DiagnosticSeverity::Warn);
+    assert!(says(warning, "doctor`"), "{warning:?}");
+    assert!(
+        !findings
+            .iter()
+            .any(|finding| says(finding, "kmp-mcp update")),
+        "{findings:?}"
+    );
+}
+
+/// S11: one host whose inventory cannot be read fails for that host; the
+/// others are still diagnosed.
+#[test]
+fn an_unreadable_host_inventory_is_that_hosts_failure_alone() {
+    let hosts = FakeHostGateway::with_installations(vec![installed(Host::Claude, "/tmp/claude")])
+        .reporting(HostRuntimeStatus::Connected)
+        .with_unreadable_inventory(Host::Hermes, "Hermes MCP config is not a mapping");
+    let engines = FakeEngineStore::empty();
+
+    let findings = DiagnoseLifecycle::new(&hosts, &engines)
+        .execute()
+        .findings()
+        .to_vec();
+
+    let hermes = one(&findings, "hermes: plugin inventory failed");
+    assert_eq!(hermes.severity(), DiagnosticSeverity::Fail);
+    let claude = one(&findings, "claude: live MCP connection verified");
+    assert_eq!(claude.severity(), DiagnosticSeverity::Ok);
+}
+
+/// S13: a plugin the host lists with nothing behind it is a failure.
+#[test]
+fn a_hollow_plugin_directory_fails_the_diagnosis() {
+    let hosts = FakeHostGateway::with_installations(vec![installed(Host::Claude, "/tmp/claude")])
+        .reporting(HostRuntimeStatus::Connected)
+        .with_hollow(Host::Claude);
+    let engines = FakeEngineStore::empty();
+
+    let findings = DiagnoseLifecycle::new(&hosts, &engines)
+        .execute()
+        .findings()
+        .to_vec();
+
+    let hollow = one(&findings, "claude: installation incomplete on disk");
+    assert_eq!(hollow.severity(), DiagnosticSeverity::Fail);
 }

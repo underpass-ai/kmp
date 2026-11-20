@@ -19,28 +19,29 @@ impl<'a> RememberStore<'a> {
     }
 
     pub fn execute(&self, path: &Path) {
-        let known = self.index.remembered().unwrap_or_default();
-
-        // Pruned here as well as on read. A path can disappear at any time —
-        // a repository deleted, a temporary directory reclaimed — and an
-        // index that only ever grows becomes a log of everywhere memory has
-        // ever been, which is not what it is for and is not something to
-        // keep about someone.
-        let live: Vec<_> = known
-            .iter()
-            .filter(|known| self.catalog.is_store(known))
-            .cloned()
-            .collect();
-
-        if live.len() == known.len() && live.iter().any(|known| known == path) {
-            return;
-        }
-
-        let mut lines = live;
-        if !lines.iter().any(|known| known == path) {
-            lines.push(path.to_path_buf());
-        }
-        let _ = self.index.replace(&lines);
+        let _ = self.index.update(&mut |known| {
+            let known = known.unwrap_or_default();
+            // Pruned here as well as on read. A path can disappear at any
+            // time — a repository deleted, a temporary directory reclaimed —
+            // and an index that only ever grows becomes a log of everywhere
+            // memory has ever been, which is not what it is for and is not
+            // something to keep about someone. Only what is gone is pruned:
+            // a store another process is creating right now has its
+            // directory before its stamp, and pruning it lost that store
+            // from the note (N8).
+            let mut live: Vec<_> = known
+                .iter()
+                .filter(|known| self.catalog.is_store(known) || self.catalog.exists(known))
+                .cloned()
+                .collect();
+            if live.len() == known.len() && live.iter().any(|known| known == path) {
+                return None;
+            }
+            if !live.iter().any(|known| known == path) {
+                live.push(path.to_path_buf());
+            }
+            Some(live)
+        });
     }
 }
 
@@ -105,6 +106,28 @@ mod tests {
             index.remembered().unwrap_or_default(),
             vec![kept],
             "the dead path should be gone"
+        );
+    }
+
+    #[test]
+    fn a_store_another_process_is_still_creating_is_not_pruned() {
+        // N8: its directory exists before its FORMAT_VERSION does.
+        let base = tempfile::tempdir().expect("temp");
+        let data_home = base.path().join("data");
+        let creating = base.path().join("creating/.kernel");
+        let opened = base.path().join("opened/.kernel");
+        std::fs::create_dir_all(&creating).expect("skeleton without a stamp");
+        store_at(&opened, "4", "sqlite3");
+
+        let catalog = FilesystemStoreCatalog::new(&data_home);
+        let index = JsonlStoreIndex::new(&data_home);
+        let remember = RememberStore::new(&catalog, &index);
+        remember.execute(&creating);
+        remember.execute(&opened);
+
+        assert_eq!(
+            index.remembered().unwrap_or_default(),
+            vec![creating, opened]
         );
     }
 }

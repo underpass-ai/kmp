@@ -8,6 +8,7 @@ use std::sync::Mutex;
 use kmp_mcp::lifecycle::domain::engine_executable::EngineExecutable;
 use kmp_mcp::lifecycle::domain::host::Host;
 use kmp_mcp::lifecycle::domain::host_installation::HostInstallation;
+use kmp_mcp::lifecycle::domain::host_inventory::HostInventory;
 use kmp_mcp::lifecycle::domain::host_runtime_status::HostRuntimeStatus;
 use kmp_mcp::lifecycle::domain::lifecycle_error::LifecycleError;
 use kmp_mcp::lifecycle::domain::release_version::ReleaseVersion;
@@ -21,6 +22,8 @@ pub struct FakeHostGateway {
     runtime_status: Option<HostRuntimeStatus>,
     host_statuses: Vec<(Host, HostRuntimeStatus)>,
     hosts_on_path: Option<Vec<Host>>,
+    unreadable: Vec<(Host, String)>,
+    hollow: Vec<Host>,
 }
 
 impl FakeHostGateway {
@@ -33,7 +36,23 @@ impl FakeHostGateway {
             runtime_status: None,
             host_statuses: Vec::new(),
             hosts_on_path: None,
+            unreadable: Vec::new(),
+            hollow: Vec::new(),
         }
+    }
+
+    /// Makes one host's plugin manager unreadable, the way a Hermes with an
+    /// unexpected config answer is.
+    pub fn with_unreadable_inventory(mut self, host: Host, reason: &str) -> Self {
+        self.unreadable.push((host, reason.to_string()));
+        self
+    }
+
+    /// Makes one host's installation fail the disk check: a registry entry
+    /// with nothing behind it, or a registration with no skills.
+    pub fn with_hollow(mut self, host: Host) -> Self {
+        self.hollow.push(host);
+        self
     }
 
     /// Simulates a machine where only these host executables resolve. Tests
@@ -136,8 +155,22 @@ impl HostGateway for FakeHostGateway {
         }
     }
 
-    fn inventory(&self) -> Result<Vec<HostInstallation>, LifecycleError> {
-        Ok(self.installed.clone())
+    fn inventory(&self) -> HostInventory {
+        HostInventory::new(self.installed.clone(), self.unreadable.clone())
+    }
+
+    fn verify_on_disk(
+        &self,
+        installation: &HostInstallation,
+        _target: &ReleaseVersion,
+    ) -> Result<(), LifecycleError> {
+        if self.hollow.contains(&installation.host()) {
+            return Err(LifecycleError::HostNotInstalled(format!(
+                "{} installation is hollow",
+                installation.host()
+            )));
+        }
+        Ok(())
     }
 
     fn runtime_status(&self, host: Host) -> Result<HostRuntimeStatus, LifecycleError> {
