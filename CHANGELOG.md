@@ -25,6 +25,9 @@ Detailed notes from the early release cycle remain available in the
 
 ### Removed
 
+- Dead ChronoLoom code: unused `KMP_LOOM` exports (`extent`, `axisTicks`,
+  `screenAxisTicks`, `arcStyle`, `withSelector`, `CLOCKS`), unused state and
+  viewport helpers, the hidden **Fit** button and CSS that matched nothing.
 - The viewer's `/api/graph` and `/api/timeline` routes, which no page called
   (one answered 80 MB on a 20,000-entry about), with the public
   `kmp_viewer::views::{graph_view, GraphView, timeline_view, TimelineView}`
@@ -66,6 +69,28 @@ Detailed notes from the early release cycle remain available in the
   own keys.
 - `/api/projection` sends the placeholder snapshot hash as `null`, like the
   other viewer answers.
+- ChronoLoom without WebGL no longer hangs on "Joining the view…": the stage
+  says the 3D scene cannot start, and layers, labels, search, the time window
+  and memory detail load and work.
+- ChronoLoom keeps a state message (no renderer, an empty store, a partial
+  read, a lost connection) in the status bar until the state changes; only
+  one-off errors fade. A tab whose session ended (any `401`) stops polling and
+  says to open the new link.
+- Above 65,536 entries per about the oldest entries are reachable again: a
+  visual projection reports its source (`source.total`, `source.read`,
+  `source.earliest`, also when the read left the earliest entry out), "All
+  time" spans it, and the status bar says "Showing the newest 65,536 of N"
+  for as long as a window is cut.
+- ChronoLoom's window shortcuts ignore Ctrl, Alt and Meta combinations and
+  keys inside an open dialog, so Ctrl+F, Ctrl+plus/minus and Alt+left no
+  longer move the time window.
+- ChronoLoom's search says it reads the memories the window has loaded (and
+  that grouped levels load none), and Enter frames its hits as the README
+  promised.
+- The ChronoLoom header shows which store the viewer serves.
+- `THIRD_PARTY_NOTICES.md` lists the vendored three.js 0.180.0 (it named
+  pixi.js 8.19.0, which no longer ships) and carries the MIT license text,
+  which the MCPB package ships with it.
 
 ## [0.27.0] - 2026-11-19
 

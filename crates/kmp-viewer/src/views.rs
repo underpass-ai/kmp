@@ -290,6 +290,7 @@ pub fn visual_projection_view(result: VisualProjectionResult) -> serde_json::Val
 fn readable_projection(mut result: VisualProjectionResult) -> VisualProjectionResult {
     result.range.from = readable_time(&result.range.from);
     result.range.to = readable_time(&result.range.to);
+    result.source.earliest = result.source.earliest.as_deref().map(readable_time);
     for bin in &mut result.bins {
         bin.from = readable_time(&bin.from);
         bin.to = readable_time(&bin.to);

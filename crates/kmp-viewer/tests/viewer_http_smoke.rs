@@ -292,6 +292,22 @@ async fn every_viewer_route_serves_the_ingested_memory() {
                 .is_some_and(|why| why.contains("in-process viewer"))),
         "typed relation with its why survives to the wire, got {projection}"
     );
+    // The source a projection read from, past its own range: a window that
+    // starts after the first decision still names it as the earliest.
+    let (status, later) = get(
+        port,
+        &format!(
+            "/api/projection?about={}&axis=occurred&from={}&to={}&lod=episode",
+            urlencode(ABOUT),
+            urlencode("2026-07-02T00:00:00Z"),
+            urlencode("2026-07-03T00:00:00Z")
+        ),
+    )
+    .await;
+    assert_eq!(status, 200, "{later}");
+    assert_eq!(later["source"]["total"], 2, "{later}");
+    assert_eq!(later["source"]["read"], 2, "{later}");
+    assert_eq!(later["source"]["earliest"], "2026-07-01T10:00:00Z", "{later}");
     // A placeholder snapshot hash is no hash; it travels as null.
     assert!(projection["content_hash"].is_null() || projection["content_hash"] != "pending");
     let (status, error) = get(
