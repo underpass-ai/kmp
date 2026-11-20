@@ -197,9 +197,17 @@ impl TemporalAdmission {
             .collect()
     }
 
-    pub(super) fn admits_coordinate(&self, coordinate: &TemporalCoordinate) -> bool {
+    /// The coordinates of one entry inside the selection; a label with no
+    /// time on the clock stands where its entry stands.
+    pub(super) fn admitted_coordinates(
+        &self,
+        entry: &[TemporalCoordinate],
+    ) -> Vec<TemporalCoordinate> {
         kmp_domain::TemporalReadWindow::new(&self.selection, self.resolved_as_of.as_deref())
-            .admits_coordinate(coordinate)
+            .admitted_coordinates(entry)
+            .into_iter()
+            .cloned()
+            .collect()
     }
 
     /// Whether a node stands in time outside the selection: an entry with a

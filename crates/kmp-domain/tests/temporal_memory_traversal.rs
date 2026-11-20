@@ -140,27 +140,38 @@ fn except_dimension_removes_dimension_coordinates_from_output() {
     }));
 }
 
+/// A time cursor never compares against a sequence: the sequence-only
+/// `benchmark_record` label stands at its entry's own time (15:05) on the
+/// clock (V-01), not at its sequence 7.
 #[test]
-fn time_cursor_does_not_compare_against_sequence_only_positions() {
+fn time_cursor_places_a_sequence_only_label_at_its_entry_time() {
     let bundle = sample_bundle();
-    let result = TemporalMemoryTraversal::traverse(
-        &bundle,
-        &TemporalTraversalRequest::new(
-            TemporalDirection::Forward,
-            TemporalCursor::time("2026-04-12T15:10:00Z").expect("cursor should be valid"),
+    let forward = |at: &str| {
+        TemporalMemoryTraversal::traverse(
+            &bundle,
+            &TemporalTraversalRequest::new(
+                TemporalDirection::Forward,
+                TemporalCursor::time(at).expect("cursor should be valid"),
+            )
+            .with_dimensions(DimensionSelection::only(["benchmark_record"]))
+            .with_limit_entries(5)
+            .expect("limit should be valid"),
         )
-        .with_dimensions(DimensionSelection::only(["benchmark_record"]))
-        .with_limit_entries(5)
-        .expect("limit should be valid"),
-    )
-    .expect("forward should succeed");
+        .expect("forward should succeed")
+    };
 
-    assert!(result.entries().is_empty());
-    assert_eq!(result.missing(), ["temporal_positions".to_string()]);
-    assert_eq!(
-        result.missing_dimensions(),
-        ["benchmark_record".to_string()]
-    );
+    let after = forward("2026-04-12T15:10:00Z");
+    assert!(after.entries().is_empty());
+    assert!(after.missing().is_empty(), "{:?}", after.missing());
+
+    let before = forward("2026-04-12T15:01:00Z");
+    let refs = before
+        .entries()
+        .iter()
+        .map(|entry| entry.ref_id())
+        .collect::<Vec<_>>();
+    assert_eq!(refs, ["claim:rachel-austin"]);
+    assert!(before.missing_dimensions().is_empty());
 }
 
 #[test]

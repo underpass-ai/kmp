@@ -166,16 +166,20 @@ fn admitted_other_lanes_multivalues_and_keys_remain_distinct() {
     assert_eq!(labels(&all).len(), 3);
 }
 
+/// A label with no time on the selected clock stands where its entry stands
+/// on that clock (V-01, owner decision of 20 Nov 2026). It never borrows the
+/// time the label itself carries on another clock: a label dated after the
+/// cut on `occurred` still stands at the entry's `observed` position.
 #[test]
-fn an_explicit_clock_does_not_borrow_a_label_from_another_clock() {
-    let mut missing = membership("fact", "env", "prod", None);
+fn an_undated_label_stands_at_its_entry_and_never_borrows_another_clock() {
+    let undated = membership("fact", "env", "prod", None);
     // Sequence is present but is not an observation instant.
-    assert!(missing.explanation().sequence().is_some());
+    assert!(undated.explanation().sequence().is_some());
     let data = bundle(vec![
         membership("fact", "task", "register", Some(EARLY)),
-        missing.clone(),
+        undated.clone(),
     ]);
-    assert!(
+    assert_eq!(
         read(
             &data,
             TemporalDirection::Goto,
@@ -184,19 +188,34 @@ fn an_explicit_clock_does_not_borrow_a_label_from_another_clock() {
             selector("env", LabelSelectorOperator::Exists, &[])
         )
         .entries()
-        .is_empty()
+        .len(),
+        1,
+        "the undated label stands where its entry stands on observed"
     );
-    missing = BundleRelationship::new(
-        missing.source_node_id(),
-        missing.target_node_id(),
+    assert!(
+        read(
+            &data,
+            TemporalDirection::Goto,
+            "2026-09-01T09:00:00Z",
+            TemporalAxis::Observed,
+            selector("env", LabelSelectorOperator::Exists, &[])
+        )
+        .entries()
+        .is_empty(),
+        "before the entry is placed, neither it nor its label stands"
+    );
+
+    let dated_elsewhere = BundleRelationship::new(
+        undated.source_node_id(),
+        undated.target_node_id(),
         "contains_entry",
-        missing.explanation().clone().with_occurred_at(EARLY),
+        undated.explanation().clone().with_occurred_at(LATE),
     );
     let data = bundle(vec![
         membership("fact", "task", "register", Some(EARLY)),
-        missing,
+        dated_elsewhere,
     ]);
-    assert!(
+    assert_eq!(
         read(
             &data,
             TemporalDirection::Goto,
@@ -205,9 +224,11 @@ fn an_explicit_clock_does_not_borrow_a_label_from_another_clock() {
             selector("env", LabelSelectorOperator::In, &["prod"])
         )
         .entries()
-        .is_empty()
+        .len(),
+        1,
+        "the label's later occurred time is not read on the observed clock"
     );
-    assert_eq!(
+    assert!(
         read(
             &data,
             TemporalDirection::Goto,
@@ -216,8 +237,8 @@ fn an_explicit_clock_does_not_borrow_a_label_from_another_clock() {
             selector("env", LabelSelectorOperator::In, &["prod"])
         )
         .entries()
-        .len(),
-        1
+        .is_empty(),
+        "the default clock reads the label's own occurred time, after the cut"
     );
 }
 

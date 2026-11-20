@@ -76,12 +76,8 @@ impl<'a> TemporalReadWindow<'a> {
                         compare_temporal_instants(at, until) == Some(Ordering::Less)
                     });
                 }
-                temporal_clock_instant(coordinate, axis).is_some_and(|(instant, _)| {
-                    matches!(
-                        compare_temporal_instants(instant, at),
-                        Some(Ordering::Less | Ordering::Equal)
-                    )
-                })
+                temporal_clock_instant(coordinate, axis)
+                    .is_some_and(|(instant, _)| self.admits_instant(instant))
             }
             TemporalSelection::Within { interval, .. } => {
                 if axis == TemporalAxis::Validity {
@@ -91,8 +87,54 @@ impl<'a> TemporalReadWindow<'a> {
                     return interval.overlaps(coordinate.valid_from(), coordinate.valid_until());
                 }
                 temporal_clock_instant(coordinate, axis)
-                    .is_some_and(|(instant, _)| interval.contains(instant))
+                    .is_some_and(|(instant, _)| self.admits_instant(instant))
             }
+        }
+    }
+
+    /// The coordinates of one entry this window admits. A coordinate with
+    /// no instant on the selected clock — a label catalogued without one —
+    /// stands where its entry stands: it is read at the entry's earliest
+    /// instant on that clock, so a label selector finds the entry it labels
+    /// on every clock the entry is placed on. A coordinate dated on the
+    /// clock keeps its own instant, and an entry with no instant on the clock
+    /// gains none. Validity is an interval each coordinate states for itself
+    /// and is never inherited.
+    pub fn admitted_coordinates<'c>(
+        &self,
+        entry: &'c [TemporalCoordinate],
+    ) -> Vec<&'c TemporalCoordinate> {
+        let axis = self.selection.axis().unwrap_or_default();
+        if axis == TemporalAxis::Validity || self.is_frontier() {
+            return entry
+                .iter()
+                .filter(|coordinate| self.admits_coordinate(coordinate))
+                .collect();
+        }
+        let inherited = entry_clock_instant(entry, axis);
+        entry
+            .iter()
+            .filter(
+                |coordinate| match temporal_clock_instant(coordinate, axis) {
+                    Some(_) => self.admits_coordinate(coordinate),
+                    None => inherited.is_some_and(|instant| self.admits_instant(instant)),
+                },
+            )
+            .collect()
+    }
+
+    /// Whether an instant on the selected (non-validity) clock is inside
+    /// this window.
+    fn admits_instant(&self, instant: &str) -> bool {
+        match self.selection {
+            TemporalSelection::Frontier => true,
+            TemporalSelection::AsOf { .. } => self.resolved_as_of.is_some_and(|at| {
+                matches!(
+                    compare_temporal_instants(instant, at),
+                    Some(Ordering::Less | Ordering::Equal)
+                )
+            }),
+            TemporalSelection::Within { interval, .. } => interval.contains(instant),
         }
     }
 
@@ -142,6 +184,20 @@ impl<'a> TemporalReadWindow<'a> {
             _ => true,
         }
     }
+}
+
+/// An entry's own position on a clock: the earliest instant any of its
+/// coordinates holds there, `None` when none is dated on it.
+pub fn entry_clock_instant<'c>(
+    coordinates: impl IntoIterator<Item = &'c TemporalCoordinate>,
+    axis: TemporalAxis,
+) -> Option<&'c str> {
+    coordinates
+        .into_iter()
+        .filter_map(|coordinate| temporal_clock_instant(coordinate, axis))
+        .filter_map(|(instant, _)| Some((temporal_instant_nanos(instant)?, instant)))
+        .min_by_key(|(nanos, _)| *nanos)
+        .map(|(_, instant)| instant)
 }
 
 /// Explicit clocks never fall back. Default retains the existing precedence.

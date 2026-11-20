@@ -48,8 +48,7 @@ pub(super) fn select(
             if seeds.contains(id) || !members.contains(id) {
                 return None;
             }
-            let mut entry_coordinates = coordinates.get(id)?.clone();
-            entry_coordinates.retain(|coordinate| admission.admits_coordinate(coordinate));
+            let mut entry_coordinates = admission.admitted_coordinates(coordinates.get(id)?);
             entry_coordinates.sort_by(compare_temporal_coordinates);
             entry_coordinates.dedup();
             Some(TemporalEntry {

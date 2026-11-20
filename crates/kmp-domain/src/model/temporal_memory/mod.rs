@@ -12,6 +12,8 @@ pub use entry_selection::TemporalEntrySelection;
 pub use request::TemporalTraversalRequest;
 mod select;
 pub use select::compare_temporal_coordinates;
+#[cfg(test)]
+mod undated_label_tests;
 
 pub use axis_key::{
     compare_temporal_instants, rfc3339_from_epoch_seconds, temporal_instant_nanos,

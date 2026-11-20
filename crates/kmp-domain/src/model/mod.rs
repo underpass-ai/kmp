@@ -53,7 +53,7 @@ pub use trace_search_result::TraceSearchResult;
 pub use trace_search_stop::TraceSearchStop;
 
 mod temporal_read_window;
-pub use temporal_read_window::{TemporalReadWindow, temporal_clock_instant};
+pub use temporal_read_window::{TemporalReadWindow, entry_clock_instant, temporal_clock_instant};
 
 mod trace_read_budget;
 mod trace_relation_step;

@@ -7,6 +7,7 @@ use crate::{
 
 use super::TemporalTraversalResult;
 use super::axis_key::{TemporalAxisKey, TemporalKeyKind};
+use super::extract::{entry_coordinates, entry_time_keys};
 
 impl TemporalTraversalResult {
     /// Keep label assertions inside the proof's clock boundary before applying
@@ -32,25 +33,16 @@ impl TemporalTraversalResult {
         let Some((end, inclusive)) = boundary else {
             return Ok(labels_by_entry(bundle));
         };
+        let coordinates = entry_coordinates(bundle)?;
+        let entry_times = entry_time_keys(&coordinates, self.axis());
         let mut memberships = BTreeMap::<String, Vec<(String, String)>>::new();
-        for edge in bundle
-            .relationships()
-            .iter()
-            .filter(|edge| edge.relationship_type() == "contains_entry")
-        {
-            let Some(coordinate) =
-                TemporalCoordinate::from_relation_explanation(edge.explanation())?
-            else {
-                continue;
-            };
-            if admits(&coordinate, self.axis(), &end, inclusive) {
-                memberships
-                    .entry(edge.target_node_id().to_string())
-                    .or_default()
-                    .push((
-                        coordinate.dimension().to_string(),
-                        coordinate.scope_id().to_string(),
-                    ));
+        for (ref_id, coordinate) in &coordinates {
+            let entry_time = entry_times.get(ref_id);
+            if admits(coordinate, self.axis(), entry_time, &end, inclusive) {
+                memberships.entry(ref_id.clone()).or_default().push((
+                    coordinate.dimension().to_string(),
+                    coordinate.scope_id().to_string(),
+                ));
             }
         }
         Ok(memberships
@@ -69,9 +61,12 @@ impl TemporalTraversalResult {
     }
 }
 
+/// Whether a label stands on its entry at the proof's boundary. A label
+/// with no time on the clock stands where its entry stands (`entry_time`).
 fn admits(
     coordinate: &TemporalCoordinate,
     axis: TemporalAxis,
+    entry_time: Option<&TemporalAxisKey>,
     end: &TemporalAxisKey,
     inclusive: bool,
 ) -> bool {
@@ -89,7 +84,7 @@ fn admits(
                     .valid_until()
                     .is_none_or(|until| TemporalAxisKey::time(until) > *end));
     }
-    TemporalAxisKey::from_coordinate("", coordinate, axis)
+    TemporalAxisKey::from_entry_coordinate("", coordinate, axis, entry_time)
         .into_iter()
         .filter(|key| key.axis() == TemporalKeyKind::Time)
         .any(|key| key < *end || (inclusive && key == *end))
