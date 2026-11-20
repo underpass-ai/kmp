@@ -267,7 +267,8 @@ impl<'a> NativeHostGateway<'a> {
             return Err(LifecycleError::HostNotInstalled(format!(
                 "{host} is registered, but no KMP {target} plugin tree was found to install the \
                  kmp-* skills from (looked in: {}); install the Claude Code or Codex plugin \
-                 first, or run the plugin's own setup, then run this again",
+                 first, or point KMP_PLUGIN_ROOT at a KMP plugin tree of this release, then run \
+                 this again",
                 locator
                     .candidates()
                     .iter()

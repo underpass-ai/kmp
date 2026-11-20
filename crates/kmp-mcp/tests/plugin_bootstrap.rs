@@ -406,7 +406,7 @@ fn a_stale_plugin_never_downgrades_a_newer_shared_engine() {
         &format!("#!/bin/sh\necho \"$*\" >> {}\nexit 1\n", curl_log.display()),
     );
 
-    let output = Command::new(&bootstrap)
+    let output = std::process::Command::new(&bootstrap)
         .args(["setup", "--claude", "--dry-run"])
         .env("HOME", root.path().join("home"))
         .env_remove("KMP_MCP_BIN")

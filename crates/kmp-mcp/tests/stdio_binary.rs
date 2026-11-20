@@ -304,7 +304,7 @@ fn uninstall_rescues_are_never_overwritten_nor_written_into_the_removed_store() 
     std::fs::create_dir_all(&workspace).expect("workspace");
     let bin = env!("CARGO_BIN_EXE_kmp-mcp");
     let kmp = |cwd: &std::path::Path, args: &[&str]| {
-        Command::new(bin)
+        std::process::Command::new(bin)
             .args(args)
             .current_dir(cwd)
             .env("HOME", &home)
