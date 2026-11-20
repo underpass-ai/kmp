@@ -67,6 +67,47 @@ already_published() {
   [[ "${body}" == *"\"num\":\"${version}\""* ]]
 }
 
+# The path of a crate in the sparse index: 1/a, 2/ab, 3/a/abc, ab/cd/name.
+index_path() {
+  local crate="$1"
+  case "${#crate}" in
+    1) echo "1/${crate}" ;;
+    2) echo "2/${crate}" ;;
+    3) echo "3/${crate:0:1}/${crate}" ;;
+    *) echo "${crate:0:2}/${crate:2:2}/${crate}" ;;
+  esac
+}
+
+# Whether `cargo` would resolve this version right now. The API answers as
+# soon as the upload is accepted; the index cargo reads lags it by a few
+# minutes, and a dependent published in that window fails with "candidate
+# versions found which didn't match" — which is how 0.25.0 left kmp-mcp off
+# the registry while every crate beneath it was there.
+visible_in_index() {
+  local crate="$1" version="$2"
+  curl -sS -H "User-Agent: ${USER_AGENT}" \
+    "https://index.crates.io/$(index_path "${crate}")" 2>/dev/null \
+    | grep -q "\"vers\":\"${version}\""
+}
+
+# Block until the index serves `version`, so the next crate in the chain can
+# depend on it. Bounded like the rate-limit wait: an index that never catches
+# up is a registry problem to report, not a loop to live in.
+await_index() {
+  local crate="$1" version="$2" waited=0 delay=10
+  until visible_in_index "${crate}" "${version}"; do
+    if (( waited >= PUBLISH_MAX_WAIT_SECS )); then
+      echo "::error::${crate} ${version} was accepted but did not reach the index in ${waited}s" >&2
+      return 1
+    fi
+    echo "waiting for ${crate} ${version} to reach the crates.io index (${waited}s)"
+    sleep "${delay}"
+    waited=$(( waited + delay ))
+    delay=$(( delay < 60 ? delay * 2 : 60 ))
+  done
+  echo "${crate} ${version} is in the index"
+}
+
 publish_one() {
   local crate="$1" version="$2" waited=0 delay=60 output status
 
@@ -108,11 +149,14 @@ for crate in "${CRATES[@]}"; do
   version="$(version_of "${crate}")"
   if already_published "${crate}" "${version}"; then
     echo "skip ${crate} ${version}: already on crates.io"
-    continue
+  else
+    echo "::group::cargo publish -p ${crate} (${version})"
+    publish_one "${crate}" "${version}"
+    echo "::endgroup::"
   fi
-  echo "::group::cargo publish -p ${crate} (${version})"
-  publish_one "${crate}" "${version}"
-  echo "::endgroup::"
+  # Even a crate that was already there is waited for: a resumed run may
+  # start seconds after the upload that stopped the previous one.
+  await_index "${crate}" "${version}"
 done
 
 echo "crate publication complete"

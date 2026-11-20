@@ -4,12 +4,7 @@ use std::time::Duration;
 
 use async_nats::{Client, ConnectOptions};
 use kmp_adapter_nats::NatsClientTlsConfig;
-use kmp_testkit::ensure_testcontainers_runtime;
-use testcontainers::{
-    GenericImage, ImageExt,
-    core::{IntoContainerPort, WaitFor},
-    runners::AsyncRunner,
-};
+use kmp_testkit::ensure_container_runtime;
 use tokio::time::{sleep, timeout};
 
 use crate::debug::{debug_log, debug_log_value};
@@ -25,9 +20,9 @@ const CONNECT_TIMEOUT: Duration = Duration::from_secs(20);
 
 pub async fn start_nats_tls_container(
     tls_material: &TlsMaterial,
-) -> Result<testcontainers::ContainerAsync<GenericImage>, Box<dyn Error + Send + Sync>> {
+) -> Result<kmp_testkit::RunningContainer, Box<dyn Error + Send + Sync>> {
     debug_log("starting tls nats container");
-    ensure_testcontainers_runtime()?;
+    ensure_container_runtime()?;
     fs::write(
         tls_material.dir().join("nats.conf"),
         r#"listen: 0.0.0.0:4222
@@ -42,14 +37,14 @@ tls {
 "#,
     )?;
 
-    Ok(GenericImage::new(NATS_IMAGE, NATS_TAG)
+    kmp_testkit::ContainerSpec::new(NATS_IMAGE, NATS_TAG)
         .with_entrypoint("nats-server")
-        .with_exposed_port(NATS_INTERNAL_PORT.tcp())
-        .with_wait_for(WaitFor::seconds(NATS_STARTUP_WAIT.as_secs()))
+        .with_exposed_port(NATS_INTERNAL_PORT)
+        .with_wait_for(kmp_testkit::WaitFor::seconds(NATS_STARTUP_WAIT.as_secs()))
         .with_copy_to("/tls", tls_material.dir())
         .with_cmd(vec!["-js", "-c", "/tls/nats.conf"])
         .start()
-        .await?)
+        .await
 }
 
 pub async fn connect_with_tls_retry(

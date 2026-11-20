@@ -1,4 +1,3 @@
-use kmp_mcp::guide;
 use kmp_mcp::summaries::{AuditScope, SummaryAudit};
 
 use super::pending_summary::PendingSummary;
@@ -47,7 +46,7 @@ pub(super) async fn run_summaries_command(args: &[&str]) -> i32 {
         }
     };
     let bundle = kmp_embedded::EmbeddedKernelStore::open(resolved.path())
-        .and_then(|store| store.export_bundle_excluding_abouts_blocking(&guide::abouts_owned()));
+        .and_then(|store| store.export_bundle_excluding_abouts_blocking(&kmp_mcp::local_abouts()));
     let bundle = match bundle {
         Ok(bundle) => bundle,
         Err(error) => {

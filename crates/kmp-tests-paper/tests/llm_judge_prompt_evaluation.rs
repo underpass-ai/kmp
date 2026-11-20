@@ -329,7 +329,7 @@ fn parse_provider(s: &str) -> LlmProvider {
     }
 }
 
-fn yaml_str(cfg: &serde_yaml::Value, field: &str, context: &str) -> String {
+fn yaml_str(cfg: &serde_json::Value, field: &str, context: &str) -> String {
     cfg[field]
         .as_str()
         .unwrap_or_else(|| panic!("{context}: missing required field '{field}' in YAML"))
@@ -337,9 +337,9 @@ fn yaml_str(cfg: &serde_yaml::Value, field: &str, context: &str) -> String {
 }
 
 fn build_llm_config(
-    matrix: &serde_yaml::Value,
-    agent_cfg: &serde_yaml::Value,
-    judge_cfg: &serde_yaml::Value,
+    matrix: &serde_json::Value,
+    agent_cfg: &serde_json::Value,
+    judge_cfg: &serde_json::Value,
 ) -> LlmEvaluatorConfig {
     let tls = agent_cfg["tls"].as_bool().unwrap_or(false);
     let tls_section = &matrix["tls"];
@@ -426,9 +426,9 @@ struct PrecheckResult {
     errors: Vec<String>,
 }
 
-fn precheck_tls(matrix: &serde_yaml::Value, ok: &mut Vec<String>, errors: &mut Vec<String>) {
+fn precheck_tls(matrix: &serde_json::Value, ok: &mut Vec<String>, errors: &mut Vec<String>) {
     let any_tls_agent = matrix["agents"]
-        .as_mapping()
+        .as_object()
         .map(|a| a.values().any(|c| c["tls"].as_bool().unwrap_or(false)))
         .unwrap_or(false);
     if any_tls_agent {
@@ -449,15 +449,15 @@ fn precheck_tls(matrix: &serde_yaml::Value, ok: &mut Vec<String>, errors: &mut V
     }
 }
 
-fn load_matrix(matrix_path: &str) -> Result<serde_yaml::Value, String> {
+fn load_matrix(matrix_path: &str) -> Result<serde_json::Value, String> {
     let content = std::fs::read_to_string(matrix_path)
         .map_err(|e| format!("evaluation-matrix.yaml not found: {e}"))?;
-    serde_yaml::from_str::<serde_yaml::Value>(&content)
+    serde_saphyr::from_str::<serde_json::Value>(&content)
         .map_err(|e| format!("evaluation-matrix.yaml parse error: {e}"))
 }
 
 fn validate_matrix(
-    matrix: &serde_yaml::Value,
+    matrix: &serde_json::Value,
     resources: &str,
     filter_models: &[String],
     filter_judges: &[String],
@@ -476,15 +476,15 @@ fn filter_allows(name: &str, filter: &[String]) -> bool {
     filter.is_empty() || filter.contains(&name.to_string())
 }
 
-fn yaml_endpoint(cfg: &serde_yaml::Value) -> Option<&str> {
+fn yaml_endpoint(cfg: &serde_json::Value) -> Option<&str> {
     cfg["endpoint"].as_str()
 }
 
-fn yaml_model(cfg: &serde_yaml::Value) -> Option<&str> {
+fn yaml_model(cfg: &serde_json::Value) -> Option<&str> {
     cfg["model"].as_str()
 }
 
-fn yaml_provider(cfg: &serde_yaml::Value) -> Option<&str> {
+fn yaml_provider(cfg: &serde_json::Value) -> Option<&str> {
     cfg["provider"].as_str()
 }
 
@@ -517,7 +517,7 @@ fn check_endpoint_reachable(
 fn precheck_named_service(
     kind: &str,
     name: &str,
-    cfg: &serde_yaml::Value,
+    cfg: &serde_json::Value,
     valid_providers: &[&str],
     ok: &mut Vec<String>,
     errors: &mut Vec<String>,
@@ -556,8 +556,8 @@ fn precheck_named_service(
 
 fn precheck_agent_tls_paths(
     name: &str,
-    matrix: &serde_yaml::Value,
-    cfg: &serde_yaml::Value,
+    matrix: &serde_json::Value,
+    cfg: &serde_json::Value,
     ok: &mut Vec<String>,
     errors: &mut Vec<String>,
 ) {
@@ -597,8 +597,8 @@ fn precheck_agent_tls_paths(
 
 fn precheck_agent_entry(
     name: &str,
-    cfg: &serde_yaml::Value,
-    matrix: &serde_yaml::Value,
+    cfg: &serde_json::Value,
+    matrix: &serde_json::Value,
     valid_providers: &[&str],
     ok: &mut Vec<String>,
     errors: &mut Vec<String>,
@@ -609,7 +609,7 @@ fn precheck_agent_entry(
 
 fn precheck_judge_entry(
     name: &str,
-    cfg: &serde_yaml::Value,
+    cfg: &serde_json::Value,
     valid_providers: &[&str],
     ok: &mut Vec<String>,
     errors: &mut Vec<String>,
@@ -618,16 +618,16 @@ fn precheck_judge_entry(
 }
 
 fn precheck_agents(
-    matrix: &serde_yaml::Value,
+    matrix: &serde_json::Value,
     filter_models: &[String],
     valid_providers: &[&str],
     ok: &mut Vec<String>,
     errors: &mut Vec<String>,
 ) {
-    if let Some(agents) = matrix["agents"].as_mapping() {
+    if let Some(agents) = matrix["agents"].as_object() {
         ok.push(format!("{} agents configured", agents.len()));
         for (key, cfg) in agents {
-            let name = key.as_str().unwrap_or("?");
+            let name = key.as_str();
             if !filter_allows(name, filter_models) {
                 ok.push(format!("agent '{name}': skipped (filtered)"));
                 continue;
@@ -640,16 +640,16 @@ fn precheck_agents(
 }
 
 fn precheck_judges(
-    matrix: &serde_yaml::Value,
+    matrix: &serde_json::Value,
     filter_judges: &[String],
     valid_providers: &[&str],
     ok: &mut Vec<String>,
     errors: &mut Vec<String>,
 ) {
-    if let Some(judges) = matrix["judges"].as_mapping() {
+    if let Some(judges) = matrix["judges"].as_object() {
         ok.push(format!("{} judges configured", judges.len()));
         for (key, cfg) in judges {
-            let name = key.as_str().unwrap_or("?");
+            let name = key.as_str();
             if !filter_allows(name, filter_judges) {
                 ok.push(format!("judge '{name}': skipped (filtered)"));
                 continue;
@@ -662,14 +662,14 @@ fn precheck_judges(
 }
 
 fn precheck_prompts(
-    matrix: &serde_yaml::Value,
+    matrix: &serde_json::Value,
     resources: &str,
     ok: &mut Vec<String>,
     errors: &mut Vec<String>,
 ) {
-    if let Some(prompts) = matrix["prompts"].as_mapping() {
+    if let Some(prompts) = matrix["prompts"].as_object() {
         for (key, val) in prompts {
-            let name = key.as_str().unwrap_or("?");
+            let name = key.as_str();
             if let Some(path) = val.as_str() {
                 let full_path = format!("{resources}/{path}");
                 if std::path::Path::new(&full_path).exists() {
@@ -1047,7 +1047,7 @@ fn log_precheck_result(precheck: &PrecheckResult) {
     eprintln!();
 }
 
-fn build_judge_cal_config(judge_cfg: &serde_yaml::Value) -> LlmEvaluatorConfig {
+fn build_judge_cal_config(judge_cfg: &serde_json::Value) -> LlmEvaluatorConfig {
     let endpoint = yaml_str(judge_cfg, "endpoint", "judge");
     let model = yaml_str(judge_cfg, "model", "judge");
     let provider = parse_provider(&yaml_str(judge_cfg, "provider", "judge"));
@@ -1078,8 +1078,8 @@ fn build_judge_cal_config(judge_cfg: &serde_yaml::Value) -> LlmEvaluatorConfig {
 }
 
 fn build_agent_cal_config(
-    agent_cfg: &serde_yaml::Value,
-    tls_section: &serde_yaml::Value,
+    agent_cfg: &serde_json::Value,
+    tls_section: &serde_json::Value,
 ) -> LlmEvaluatorConfig {
     let tls = agent_cfg["tls"].as_bool().unwrap_or(false);
     let tls_cert_path = if tls {
@@ -1143,7 +1143,7 @@ fn log_calibration_cases(
 }
 
 fn build_scale_entries(
-    matrix: &serde_yaml::Value,
+    matrix: &serde_json::Value,
 ) -> Vec<(&'static str, fn(Domain) -> GraphSeedConfig)> {
     type ScaleEntry = (&'static str, fn(Domain) -> GraphSeedConfig);
     let all_scales: Vec<ScaleEntry> = vec![
@@ -1152,12 +1152,8 @@ fn build_scale_entries(
         ("stress", |d| GraphSeedConfig::stress(d)),
     ];
     let yaml_scales: Vec<String> = matrix["scales"]
-        .as_mapping()
-        .map(|m| {
-            m.keys()
-                .filter_map(|k| k.as_str().map(String::from))
-                .collect()
-        })
+        .as_object()
+        .map(|m| m.keys().cloned().collect())
         .unwrap_or_default();
     if yaml_scales.is_empty() {
         all_scales
@@ -1198,7 +1194,7 @@ struct CaptureJob {
 }
 
 fn capture_jobs(
-    matrix: &serde_yaml::Value,
+    matrix: &serde_json::Value,
     filter_scales: &[String],
     filter_noise: &[String],
 ) -> Vec<CaptureJob> {
@@ -1393,14 +1389,14 @@ async fn execute_capture_job(
 
 async fn run_judge_calibrations(
     run: &mut RunDir,
-    matrix: &serde_yaml::Value,
+    matrix: &serde_json::Value,
     filter_judges: &[String],
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
-    let judges = matrix["judges"].as_mapping().expect("judges mapping");
+    let judges = matrix["judges"].as_object().expect("judges mapping");
     let default_prompt = PromptConfig::load(None)?;
 
     for (judge_key, judge_cfg) in judges {
-        let judge_name = judge_key.as_str().expect("judge key");
+        let judge_name = judge_key.as_str();
         if !filter_allows(judge_name, filter_judges) {
             continue;
         }
@@ -1427,14 +1423,14 @@ async fn run_judge_calibrations(
 
 async fn run_agent_calibrations(
     run: &mut RunDir,
-    matrix: &serde_yaml::Value,
+    matrix: &serde_json::Value,
     filter_models: &[String],
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
-    let agents_map = matrix["agents"].as_mapping().expect("agents mapping");
+    let agents_map = matrix["agents"].as_object().expect("agents mapping");
     let tls_section = &matrix["tls"];
 
     for (agent_key, agent_cfg) in agents_map {
-        let agent_name = agent_key.as_str().expect("agent key");
+        let agent_name = agent_key.as_str();
         if !filter_allows(agent_name, filter_models) {
             continue;
         }
@@ -1461,7 +1457,7 @@ async fn run_agent_calibrations(
 
 async fn run_capture_phase(
     run: &mut RunDir,
-    matrix: &serde_yaml::Value,
+    matrix: &serde_json::Value,
     filter_scales: &[String],
     filter_noise: &[String],
 ) -> Result<(Vec<CapturedVariant>, f64), Box<dyn Error + Send + Sync>> {
@@ -1490,34 +1486,34 @@ struct EvaluationJob {
     judge_name: String,
     prompt_name: String,
     prompts_cfg: PromptConfig,
-    agent_cfg: serde_yaml::Value,
-    judge_cfg: serde_yaml::Value,
+    agent_cfg: serde_json::Value,
+    judge_cfg: serde_json::Value,
 }
 
 fn evaluation_jobs(
-    matrix: &serde_yaml::Value,
+    matrix: &serde_json::Value,
     resources: &str,
     filter_models: &[String],
     filter_judges: &[String],
     filter_prompts: &[String],
 ) -> Result<Vec<EvaluationJob>, Box<dyn Error + Send + Sync>> {
-    let agents = matrix["agents"].as_mapping().expect("agents mapping");
-    let judges = matrix["judges"].as_mapping().expect("judges mapping");
-    let prompts = matrix["prompts"].as_mapping().expect("prompts mapping");
+    let agents = matrix["agents"].as_object().expect("agents mapping");
+    let judges = matrix["judges"].as_object().expect("judges mapping");
+    let prompts = matrix["prompts"].as_object().expect("prompts mapping");
 
     let mut jobs = Vec::new();
     for (agent_key, agent_cfg) in agents {
-        let agent_name = agent_key.as_str().expect("agent key");
+        let agent_name = agent_key.as_str();
         if !filter_allows(agent_name, filter_models) {
             continue;
         }
         for (judge_key, judge_cfg) in judges {
-            let judge_name = judge_key.as_str().expect("judge key");
+            let judge_name = judge_key.as_str();
             if !filter_allows(judge_name, filter_judges) || agent_name == judge_name {
                 continue;
             }
             for (prompt_key, prompt_val) in prompts {
-                let prompt_name = prompt_key.as_str().expect("prompt key");
+                let prompt_name = prompt_key.as_str();
                 if !filter_allows(prompt_name, filter_prompts) {
                     continue;
                 }
@@ -1584,7 +1580,7 @@ fn build_success_eval_result(
 
 async fn evaluate_job(
     run: &mut RunDir,
-    matrix: &serde_yaml::Value,
+    matrix: &serde_json::Value,
     captured: &[CapturedVariant],
     job: &EvaluationJob,
 ) -> Result<Vec<EvalResult>, Box<dyn Error + Send + Sync>> {
@@ -1640,7 +1636,7 @@ async fn evaluate_job(
 
 async fn run_evaluation_phase(
     run: &mut RunDir,
-    matrix: &serde_yaml::Value,
+    matrix: &serde_json::Value,
     resources: &str,
     captured: &[CapturedVariant],
     filter_models: &[String],
@@ -1687,7 +1683,8 @@ async fn run_judge_prompt_evaluation() -> Result<(), Box<dyn Error + Send + Sync
     let mut run = RunDir::create()?;
     let boot_start = Instant::now();
 
-    let matrix: serde_yaml::Value = serde_yaml::from_str(&std::fs::read_to_string(&matrix_path)?)?;
+    let matrix: serde_json::Value =
+        serde_saphyr::from_str(&std::fs::read_to_string(&matrix_path)?)?;
     run.log(&format!("[CONFIG] matrix={matrix_path}"));
 
     let filter_models = env_filter("FILTER_MODELS");

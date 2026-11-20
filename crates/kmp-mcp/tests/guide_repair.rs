@@ -8,12 +8,20 @@ fn plugin_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../plugins/kmp")
 }
 
+/// The explicit repair is what this file proves, so the server must find no
+/// installed assets on its own: no launcher variable, and a HOME that holds
+/// no host plugin cache — the developer's real one must not seed a test store.
 fn command(store: &Path) -> Command {
     let mut command = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"));
     command
+        .env_remove("KMP_PLUGIN_ROOT")
+        .env_remove("CODEX_HOME")
+        .env("HOME", store.join("home"))
+        .env("USERPROFILE", store.join("home"))
         .env("KMP_MCP_BACKEND", "embedded")
         .env("KMP_MCP_DATA_DIR", store)
         .env("XDG_CONFIG_HOME", store.join("config"))
+        .env("XDG_DATA_HOME", store.join("home/.local/share"))
         .env("KMP_VIEWER_ADDR", "off");
     command
 }

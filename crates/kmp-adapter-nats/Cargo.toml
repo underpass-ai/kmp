@@ -25,7 +25,6 @@ tracing.workspace = true
 
 [dev-dependencies]
 kmp-testkit.workspace = true
-testcontainers = "0.28.0"
 tokio.workspace = true
 tokio-rustls = "0.26.4"
 

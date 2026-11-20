@@ -5,6 +5,7 @@ pub(crate) mod serve;
 mod config;
 mod consolidation_verb;
 mod context_verb;
+mod demo_verb;
 mod document;
 mod guide_verb;
 mod import_from;
@@ -20,6 +21,7 @@ mod uninstall_verb;
 mod viewer_verb;
 
 use config::run_config_command;
+use demo_verb::run_demo_command;
 use document::run_document_command;
 use guide_verb::run_guide_command;
 use lifecycle_verbs::run_lifecycle_command;
@@ -44,6 +46,7 @@ pub(crate) async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
         "summaries" => return run_summaries_command(args).await,
         "config" => run_config_command(args),
         "context" => context_verb::run(args),
+        "demo" => return run_demo_command(args).await,
         "memories" => memories_verb::run(args),
         "guide" => return run_guide_command(args).await,
         "plugin" => return run_plugin_command(args).await,
@@ -85,6 +88,7 @@ pub(crate) async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
                  `snapshot create|list|verify|read|merge ...` / \
                  `summaries pending [<about>…] [--json]` / \
                  `config [memory-routing <mode> | memory-store <absolute-path>]` / \
+                 `demo [--no-viewer] [--dry-run]` / \
                  `memories [--json] | memories register <absolute-path>` / \
                  `guide sync --plugin-root DIR [--dry-run]` / \
                  `plugin resolve-engine|notice --plugin-root DIR ...` / \
@@ -106,6 +110,7 @@ fn is_cli_subcommand(command: &str) -> bool {
         "info"
             | "doctor"
             | "config"
+            | "demo"
             | "document"
             | "context"
             | "guide"
@@ -153,6 +158,7 @@ fn subcommand_usage(command: &str) -> &'static str {
             "kmp-mcp config [memory-routing <on-request|always> | memory-store <absolute-path> \
              | memory-store --clear]"
         }
+        "demo" => "kmp-mcp demo [--no-viewer] [--dry-run]",
         "document" => "kmp-mcp document <about> [--out FILE]",
         "memories" => "kmp-mcp memories [--json] | kmp-mcp memories register <absolute-path>",
         "context" => "kmp-mcp context project|expand [FILE|-]",
@@ -195,6 +201,17 @@ fn print_subcommand_help(command: &str) {
     if command == "context" {
         println!(
             "\nProject {{groups:[{{id,packets,reads,spans?}}],max_bytes?}} to lossless context JSON.\nExpand reconstructs admitted groups. FILE defaults to stdin; stdout is JSON.\nPackets may carry native response-local tables. Spans name an explicit returned\nsource ref, its SHA-256 text fingerprint and a complete quote range in UTF-8 bytes.\nNo store, model, source fetch or read action is executed."
+        );
+    }
+    if command == "demo" {
+        println!(
+            "\nWrites a worked example — one checkout service, an incident, the decision that \
+             replaced an earlier one and the measurement that verified it — into the store \
+             kmp-mcp resolves here, under the about `example:kmp-demo`, then opens ChronoLoom \
+             on it and prints questions to ask your agent. Idempotent: a store that already \
+             holds the example gets nothing new. The example never enters a project's \
+             committed .kmp/memory.jsonl. --no-viewer writes and exits; --dry-run only says \
+             where it would write."
         );
     }
     if command == "memories" {
@@ -242,6 +259,7 @@ kmp-mcp config                  Show the agent policy and the user memory select
 kmp-mcp config memory-routing <on-request|always>\n  \
 kmp-mcp config memory-store <absolute-path>|--clear\n  \
                                 Select the user memory persistently, or stop selecting one\n  \
+kmp-mcp demo [--no-viewer]      Write a worked example into this store and open ChronoLoom on it\n  \
 kmp-mcp memories [--json]       Every store on this machine, its reach and its abouts\n  \
 kmp-mcp memories register <absolute-path>\n  \
                                 Remember an existing store no command has opened here\n  \

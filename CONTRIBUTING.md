@@ -48,7 +48,11 @@ The overview block in `plugins/kmp/README.md` is canonical; synchronize it
 with `cargo run --locked --quiet -p kmp-release -- readme sync`. For installed
 guide changes, follow the source, generation and behavioral checks in the
 [agent surface procedure](docs/development/agent-surface.md). Do not hand-edit
-generated guides or add editorial CI gates.
+generated guides or add editorial CI gates. An example under `examples/`, or
+the repository's own `.kmp/memory.jsonl`, is edited through its
+`requests.json` and regenerated with `bash scripts/examples/refresh.sh`;
+`cargo test --locked -p kmp-mcp --test example_bundles` imports every shipped
+bundle.
 
 For Rust changes, start with:
 

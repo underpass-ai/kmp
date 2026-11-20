@@ -59,7 +59,7 @@ impl<'a> HermesHostAdapter<'a> {
     }
 
     fn command_from(config_yaml: &str) -> Option<PathBuf> {
-        let body: serde_yaml::Value = serde_yaml::from_str(config_yaml).ok()?;
+        let body = HermesRuntimeStatusMapper::parse(config_yaml).ok()?;
         let command = body.get("kmp")?.get("command")?.as_str()?;
         Some(PathBuf::from(command))
     }

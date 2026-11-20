@@ -64,7 +64,13 @@ fn rust_mcpb_packaging_is_complete_deterministic_and_stampable() {
     let reader = std::fs::File::open(&archive).expect("MCPB opens");
     let mut zip = zip::ZipArchive::new(reader).expect("valid zip");
     let mut names = (0..zip.len())
-        .map(|index| zip.by_index(index).expect("entry").name().to_string())
+        .map(|index| {
+            zip.by_index(index)
+                .expect("entry")
+                .name()
+                .expect("utf-8 name")
+                .to_string()
+        })
         .collect::<Vec<_>>();
     names.sort();
     assert_eq!(names.len(), 11);

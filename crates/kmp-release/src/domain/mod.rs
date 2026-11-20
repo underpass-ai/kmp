@@ -22,6 +22,7 @@ pub mod release_readiness;
 pub mod release_version;
 pub mod repository_root;
 pub mod source_commit;
+pub mod tagline_source;
 pub mod version_preparation;
 pub mod version_source;
 pub mod workflow_run_id;

@@ -3,13 +3,8 @@ use std::fs;
 use std::path::Path;
 use std::time::Duration;
 
-use kmp_testkit::ensure_testcontainers_runtime;
+use kmp_testkit::ensure_container_runtime;
 use neo4rs::{ConfigBuilder, Graph, query};
-use testcontainers::{
-    GenericImage, ImageExt,
-    core::{IntoContainerPort, WaitFor, logs::LogFrame},
-    runners::AsyncRunner,
-};
 use tokio::time::{sleep, timeout};
 
 use crate::containers::NEO4J_PASSWORD;
@@ -26,13 +21,13 @@ const CONNECT_TIMEOUT: Duration = Duration::from_secs(20);
 
 pub async fn start_neo4j_tls_container(
     tls_material: &TlsMaterial,
-) -> Result<testcontainers::ContainerAsync<GenericImage>, Box<dyn Error + Send + Sync>> {
-    ensure_testcontainers_runtime()?;
+) -> Result<kmp_testkit::RunningContainer, Box<dyn Error + Send + Sync>> {
+    ensure_container_runtime()?;
     let ssl_dir = prepare_neo4j_ssl_directory(tls_material)?;
 
-    let image = GenericImage::new(NEO4J_IMAGE, NEO4J_TAG)
-        .with_exposed_port(NEO4J_INTERNAL_PORT.tcp())
-        .with_wait_for(WaitFor::seconds(NEO4J_STARTUP_WAIT.as_secs()))
+    let image = kmp_testkit::ContainerSpec::new(NEO4J_IMAGE, NEO4J_TAG)
+        .with_exposed_port(NEO4J_INTERNAL_PORT)
+        .with_wait_for(kmp_testkit::WaitFor::seconds(NEO4J_STARTUP_WAIT.as_secs()))
         .with_env_var("NEO4J_AUTH", format!("neo4j/{NEO4J_PASSWORD}"))
         .with_env_var("NEO4J_server_bolt_tls__level", "REQUIRED")
         .with_env_var("NEO4J_dbms_ssl_policy_bolt_enabled", "true")
@@ -46,17 +41,12 @@ pub async fn start_neo4j_tls_container(
         .with_copy_to("/ssl", ssl_dir);
 
     let image = if debug_enabled() {
-        image.with_log_consumer(|frame: &LogFrame| {
-            eprintln!(
-                "[neo4j-tls] {}",
-                String::from_utf8_lossy(frame.bytes()).trim_end()
-            );
-        })
+        image.with_log_prefix("neo4j-tls")
     } else {
         image
     };
 
-    Ok(image.start().await?)
+    image.start().await
 }
 
 pub async fn clear_neo4j_tls(
@@ -99,7 +89,7 @@ async fn connect_with_retry_inner(
     let mut last_error: Option<Box<dyn Error + Send + Sync>> = None;
 
     for _ in 0..NEO4J_CONNECT_RETRY_ATTEMPTS {
-        match connect_tls_graph(&uri, &user, &password, ca_path).await {
+        match ready_graph(connect_tls_graph(&uri, &user, &password, ca_path).await).await {
             Ok(graph) => return Ok(graph),
             Err(error) => {
                 last_error = Some(error);
@@ -125,9 +115,7 @@ async fn connect_tls_graph(
         .with_client_certificate(ca_path)
         .build()?;
 
-    Graph::connect(config)
-        .await
-        .map_err(|error| Box::new(error) as Box<dyn Error + Send + Sync>)
+    Graph::connect(config).map_err(|error| Box::new(error) as Box<dyn Error + Send + Sync>)
 }
 
 fn prepare_neo4j_ssl_directory(
@@ -180,4 +168,14 @@ fn set_file_permissions(path: &Path) -> Result<(), Box<dyn Error + Send + Sync>>
 #[cfg(not(unix))]
 fn set_file_permissions(_path: &Path) -> Result<(), Box<dyn Error + Send + Sync>> {
     Ok(())
+}
+
+/// The driver opens connections lazily and, since neo4rs 0.9, does not retry
+/// a failed connection, so readiness is proven with a real round trip.
+async fn ready_graph(
+    graph: Result<Graph, Box<dyn Error + Send + Sync>>,
+) -> Result<Graph, Box<dyn Error + Send + Sync>> {
+    let graph = graph?;
+    graph.run(query("RETURN 1")).await?;
+    Ok(graph)
 }

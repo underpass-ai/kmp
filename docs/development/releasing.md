@@ -184,8 +184,38 @@ parity before the branch can move.
   already carried.
 
 [`scripts/ci/publish-crates.sh`](../../scripts/ci/publish-crates.sh) owns the
-crate publication order and skips versions already present. If a publication
-fails halfway, rerun it; never move a tag.
+crate publication order, skips versions already present, and waits until each
+published version is visible in the crates.io index before publishing the
+crates that depend on it: the API accepts an upload minutes before the index
+cargo resolves against serves it, and a dependent published in that window
+fails with "candidate versions found which didn't match" — which is how 0.25.0
+left `kmp-mcp` off the registry while every crate beneath it was there. If a
+publication still fails halfway, resume it from the tag: dispatch
+`publish-distribution.yml` on `vX.Y.Z` with `resume_crates` set to `X.Y.Z`.
+Never move a tag.
+
+## After publishing: every storefront
+
+A release reaches four storefronts, each published by a different job:
+
+| Storefront | Published by | Lags when |
+|:--|:--|:--|
+| GitHub release and its 22 assets | `release.yml` promote | the candidate was not promoted |
+| crates.io `kmp-mcp` | `publish-distribution.yml` publish-crates | the chain stopped halfway |
+| MCP Registry `io.github.underpass-ai/kmp` | `mcp-registry.yml` publish | crates.io lagged, or `MCP_REGISTRY_PUBLISH` was off |
+| `marketplace` branch | `release.sh publish` | the branch advance was interrupted |
+
+```bash
+bash scripts/release/storefronts.sh X.Y.Z
+```
+
+prints one line per storefront and exits non-zero when any of them lags. It
+is read-only. `storefronts.yml` runs it after every published release, once a
+day and on request, so a quiet failure turns a workflow red instead of waiting
+for an install to find it. The crates.io lag is resumed as above; the
+Registry is published by dispatching `mcp-registry.yml` on the tag once the
+crate is there; the branch is advanced by `release.sh publish`, which does not
+re-tag a version that is already tagged.
 
 Contract files vendored inside publishable crates must match `api/`:
 

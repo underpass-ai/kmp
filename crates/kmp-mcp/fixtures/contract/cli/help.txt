@@ -15,6 +15,7 @@ Usage:
   kmp-mcp config memory-routing <on-request|always>
   kmp-mcp config memory-store <absolute-path>|--clear
   Select the user memory persistently, or stop selecting one
+  kmp-mcp demo [--no-viewer]      Write a worked example into this store and open ChronoLoom on it
   kmp-mcp memories [--json]       Every store on this machine, its reach and its abouts
   kmp-mcp memories register <absolute-path>
   Remember an existing store no command has opened here

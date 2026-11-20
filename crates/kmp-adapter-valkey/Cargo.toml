@@ -17,7 +17,6 @@ container-tests = []
 kmp-domain.workspace = true
 kmp-ports.workspace = true
 rustls-native-certs = "0.8.3"
-rustls-pemfile = "2.2.0"
 serde.workspace = true
 serde_json.workspace = true
 tokio.workspace = true
@@ -26,7 +25,6 @@ tokio-rustls = "0.26.4"
 [dev-dependencies]
 kmp-testkit.workspace = true
 tempfile = "3.26.0"
-testcontainers = "0.28.0"
 
 [[test]]
 name = "valkey_integration"

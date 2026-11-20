@@ -22,6 +22,7 @@ We are grateful to their authors and contributors.
 | [reqwest](https://crates.io/crates/reqwest) | MIT/Apache-2.0 | HTTP client |
 | [serde](https://crates.io/crates/serde) | MIT/Apache-2.0 | Serialization framework |
 | [serde_json](https://crates.io/crates/serde_json) | MIT/Apache-2.0 | JSON serialization |
+| [serde-saphyr](https://crates.io/crates/serde-saphyr) | MIT/Apache-2.0 | YAML parsing of host configuration |
 | [tiktoken-rs](https://crates.io/crates/tiktoken-rs) | MIT | BPE tokenizer (cl100k_base) |
 | [tokio](https://crates.io/crates/tokio) | MIT | Async runtime |
 | [tokio-rustls](https://crates.io/crates/tokio-rustls) | MIT/Apache-2.0 | TLS for Tokio |
@@ -54,4 +55,3 @@ We are grateful to their authors and contributors.
 | Crate | License | Purpose |
 |-------|---------|---------|
 | [tempfile](https://crates.io/crates/tempfile) | MIT/Apache-2.0 | Temporary files for tests |
-| [testcontainers](https://crates.io/crates/testcontainers) | Apache-2.0 | Container-backed integration tests |

@@ -466,7 +466,14 @@ fn apply_item(value: &Value) -> Result<ApplyItem, ToolError> {
             .filter(|text| !text.is_empty())
             .map(str::to_string)
     };
-    let flag = |key: &str| value.get(key).and_then(Value::as_bool).unwrap_or(false);
+    // `reverse: "true"` read as false would write the link the other way.
+    let flag = |key: &str| match value.get(key) {
+        None => Ok(false),
+        Some(Value::Bool(flag)) => Ok(*flag),
+        Some(other) => Err(ToolError::invalid_argument(format!(
+            "accepted[].{key} must be a JSON boolean, true or false without quotes; received {other}"
+        ))),
+    };
     Ok(ApplyItem {
         item_id: text("item_id")
             .ok_or_else(|| ToolError::invalid_argument("accepted[].item_id is required"))?,
@@ -478,7 +485,7 @@ fn apply_item(value: &Value) -> Result<ApplyItem, ToolError> {
         })?,
         confidence: text("confidence"),
         rel: text("rel"),
-        reverse: flag("reverse"),
-        confirm_doubted: flag("confirm_doubted"),
+        reverse: flag("reverse")?,
+        confirm_doubted: flag("confirm_doubted")?,
     })
 }

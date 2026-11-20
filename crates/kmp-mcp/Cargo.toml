@@ -4,7 +4,7 @@ edition.workspace = true
 rust-version.workspace = true
 version.workspace = true
 license.workspace = true
-description = "Local-first agent memory that preserves why, exposed as typed MCP tools"
+description = "Local-first agent memory that preserves what happened, when and why, exposed as typed MCP tools"
 repository.workspace = true
 readme = "README.md"
 keywords = ["kmp", "mcp", "memory", "context", "agents"]
@@ -19,7 +19,7 @@ sqlite = ["kmp-embedded/sqlite"]
 
 [dependencies]
 getrandom.workspace = true
-rusqlite = { version = "0.40.1", features = ["bundled"] }
+rusqlite = { version = "0.41.1", features = ["bundled"] }
 opentelemetry.workspace = true
 prost-types.workspace = true
 prost.workspace = true
@@ -33,7 +33,7 @@ kmp-viewer.workspace = true
 reqwest = { workspace = true, features = ["blocking"] }
 serde.workspace = true
 serde_json.workspace = true
-serde_yaml.workspace = true
+serde-saphyr.workspace = true
 sha2.workspace = true
 tokio.workspace = true
 tokio-rustls = "0.26.4"

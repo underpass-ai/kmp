@@ -28,6 +28,9 @@ pub(crate) fn build_batch_plan(
     required_string(object, "actor")?;
     super::coordinates::observation_time(object)?;
     super::review_token::validate_review_token(object.get("review_token"))?;
+    // Whether the packet commits is read once and by type: a switch nobody
+    // can read stops the packet before any record is compiled.
+    super::write_options::WriteOptions::from_arguments(object)?;
     for field in ["current", "intent", "semantic_delta", "connect_to", "scope"] {
         if object.contains_key(field) {
             return Err(WriteValidationError::new(format!(
