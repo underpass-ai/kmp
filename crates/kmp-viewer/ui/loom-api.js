@@ -8,7 +8,9 @@
 globalThis.KMP_APP = globalThis.KMP_APP || {};
 
 KMP_APP.api = (() => {
-  async function call(path, params, method = "GET") {
+  /* `signal` lets a caller abandon a read it no longer wants: the browser
+     closes the connection and the server drops the read from its queue. */
+  async function call(path, params, method = "GET", { signal } = {}) {
     const finish = KMP_APP.loading?.beginRequest(path, params, method);
     try {
       if (globalThis.KMP_APP_API) return await globalThis.KMP_APP_API(path, params || {}, method);
@@ -19,7 +21,7 @@ KMP_APP.api = (() => {
             .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
             .join("&")
         : "";
-      const response = await fetch(path + query, { method });
+      const response = await fetch(path + query, { method, signal });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) {
         const error = new Error(body.error || `${path} failed with ${response.status}`);
@@ -36,7 +38,7 @@ KMP_APP.api = (() => {
   const EXTENT_FROM = "1900-01-01T00:00:00Z";
   const EXTENT_TO = "2100-01-01T00:00:00Z";
 
-  async function fetchProjection(about, axis, from, to, lod = "atlas", bins = 128, labels = "") {
+  async function fetchProjection(about, axis, from, to, lod = "atlas", bins = 128, labels = "", signal) {
     const params = {
       about,
       from: from || EXTENT_FROM,
@@ -47,8 +49,11 @@ KMP_APP.api = (() => {
     };
     if (axis) params.axis = axis;
     if (labels) params.labels = labels;
-    return call("/api/projection", params);
+    return call("/api/projection", params, "GET", { signal });
   }
 
-  return { call, fetchProjection, EXTENT_FROM, EXTENT_TO };
+  /* A read the caller abandoned is not a failure to report. */
+  const aborted = (error) => error?.name === "AbortError";
+
+  return { call, fetchProjection, aborted, EXTENT_FROM, EXTENT_TO };
 })();

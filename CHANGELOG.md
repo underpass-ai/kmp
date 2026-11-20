@@ -9,6 +9,64 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Changed
+
+- The viewer address is no longer reachable until the viewer is requested.
+  A stdio session starts with no listener; the first `kmp_view_open` binds
+  `KMP_VIEWER_ADDR` (or `127.0.0.1:7317`, falling forward to a free loopback
+  port when it is busy) and the viewer stays up for the session.
+  `kmp_view_get_state` and the first-write invitation hand out the link only
+  once the viewer listens. An explicit address that is unparsable or not
+  loopback is still refused at startup; one that is busy now comes back in
+  the `kmp_view_open` result (address and reason) instead of ending the
+  session. `kmp-mcp viewer` and `kmp-mcp demo` bind as before.
+- `KMP_VIEWER_ADDR=off kmp-mcp viewer` says the variable turns the viewer off
+  instead of trying to bind an address named `off`.
+
+### Removed
+
+- The viewer's `/api/graph` and `/api/timeline` routes, which no page called
+  (one answered 80 MB on a 20,000-entry about), with the public
+  `kmp_viewer::views::{graph_view, GraphView, timeline_view, TimelineView}`
+  they used.
+
+### Security
+
+- The viewer's accept loop survives accept errors, serves at most 64
+  connections at once and gives a silent socket 5 s to send its request head
+  (`408` after that). Idle sockets no longer switch the viewer off for the
+  rest of the session.
+- `POST /api/view/*` refuses requests whose `Origin` is not the viewer's own
+  or whose `Sec-Fetch-Site` names another site (`403`); a client that sends
+  neither still needs the session cookie. At most 64 views stay open; a new
+  one forgets the least recently touched.
+- The session cookie is named after the viewer's port, carries
+  `Max-Age=86400` and is renewed by every authenticated answer, so cookies of
+  ended sessions no longer pile up until every request is refused with `431`.
+- Every viewer answer adds `frame-ancestors 'none'; base-uri 'none';
+  form-action 'none'` to its CSP, plus `X-Frame-Options: DENY`,
+  `Cross-Origin-Resource-Policy: same-origin` and
+  `Cross-Origin-Opener-Policy: same-origin`.
+- The Host check refuses `[::1]` followed by anything but a port, and
+  accepts the loopback address the viewer is bound to, so
+  `kmp-mcp viewer 127.0.0.2:7420` answers its own link.
+
+### Fixed
+
+- The viewer runs one projection read at a time, and a read whose browser
+  abandoned it (the page now aborts superseded reads) leaves the queue.
+  Eight overlapping reads on a 20,000-entry about no longer hold eight copies
+  of the about at once.
+- Viewer parameters that are not numbers (`/api/trace` `entries`, `cursor`;
+  `/api/view` `since`) and projection times the calendar cannot place
+  (`0000-00-00T00:00:00Z`) are refused with `400` instead of being ignored.
+  An unknown about in `/api/projection` is named as an about.
+- A memory whose kind is `constructor`, `toString` or `__proto__` no longer
+  breaks the ChronoLoom scene: every lookup keyed by stored text checks its
+  own keys.
+- `/api/projection` sends the placeholder snapshot hash as `null`, like the
+  other viewer answers.
+
 ## [0.27.0] - 2026-11-19
 
 ### Security

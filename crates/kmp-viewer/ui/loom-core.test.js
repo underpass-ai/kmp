@@ -472,3 +472,22 @@ test("the prism distinguishes the values of each sequence under a shared key", (
   assert.deepEqual(loom.prism(m).order.map(c => [c.dimension, c.value, c.sequence]),
     [["alias", "NC", 1], ["alias", "Nébula Cache", 7], ["component", "NC", 2]]);
 });
+
+/* V-26: a kind is stored text. One named like an Object.prototype member
+   must count and look up like any other, never find the prototype's. */
+test("kinds named like Object.prototype members fold and look up as plain names", () => {
+  const kinds = ["constructor", "toString", "valueOf", "hasOwnProperty", "__proto__"];
+  const items = kinds.map((kind) =>
+    JSON.parse(`{"dimension":"d","from":"a","to":"b","total":1,"by_kind":{"${kind}":1}}`),
+  );
+  const [cell] = loom.foldAggregates([...items, ...items]);
+  assert.equal(cell.total, 10);
+  for (const kind of kinds) {
+    assert.equal(Object.getOwnPropertyDescriptor(cell.by_kind, kind)?.value, 2, kind);
+  }
+  assert.notEqual(Object.getPrototypeOf(cell.by_kind), null, "a plain object for JSON and deepEqual");
+  const geometry = { decision: "octahedron", normal: "sphere" };
+  for (const kind of kinds) assert.equal(loom.own(geometry, kind), undefined, kind);
+  assert.equal(loom.own(geometry, "decision"), "octahedron");
+  assert.equal(loom.own(null, "decision"), undefined);
+});

@@ -62,8 +62,8 @@ KMP_APP.theme = (() => {
     return paletteCache;
   }
 
-  const kindColor = (kind) => palette().kind[kind] || palette().overflow;
-  const classColor = (cls) => palette().cls[cls] || palette().cls.structural;
+  const kindColor = (kind) => KMP_LOOM.own(palette().kind, kind) || palette().overflow;
+  const classColor = (cls) => KMP_LOOM.own(palette().cls, cls) || palette().cls.structural;
   const pulseColors = (p = palette()) => [
     p.accent,
     p.cls.causal,

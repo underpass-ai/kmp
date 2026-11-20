@@ -119,24 +119,37 @@ const KMP_LOOM = (() => {
      that does not tell its values apart. Order is first-appearance. */
   function foldAggregates(items) {
     const folded = new Map();
+    // Kinds are stored text: a kind named `constructor` or `__proto__` must
+    // count like any other, so the sums live in Maps until the end.
+    const kinds = new Map();
     for (const item of items || []) {
       const key = `${item.dimension}\u0000${item.from}\u0000${item.to}`;
       let cell = folded.get(key);
       if (!cell) {
-        cell = { ...item, total: 0, by_kind: {} };
+        cell = { ...item, total: 0 };
         delete cell.scope_id;
         if (item.refs) cell.refs = [];
         folded.set(key, cell);
+        kinds.set(key, new Map());
       }
       cell.total += Number(item.total || 0);
+      const counts = kinds.get(key);
       for (const [kind, count] of Object.entries(item.by_kind || {})) {
-        cell.by_kind[kind] = (cell.by_kind[kind] || 0) + Number(count);
+        counts.set(kind, (counts.get(kind) || 0) + Number(count));
       }
       if (item.refs) {
         for (const ref of item.refs) if (!cell.refs.includes(ref)) cell.refs.push(ref);
       }
     }
+    for (const [key, cell] of folded) cell.by_kind = Object.fromEntries(kinds.get(key));
     return [...folded.values()];
+  }
+
+  /* A lookup keyed by stored text. A kind, label or class is whatever an
+     agent wrote; on a plain object `constructor`, `toString` or `__proto__`
+     would find the prototype's member instead of a miss. */
+  function own(table, key) {
+    return table != null && Object.hasOwn(table, key) ? table[key] : undefined;
   }
 
   /* ---------------- extent, bins, clusters ---------------- */
@@ -610,7 +623,7 @@ const KMP_LOOM = (() => {
   };
 
   function arcStyle(cls) {
-    return CLASS_STYLE[cls] || CLASS_STYLE.structural;
+    return own(CLASS_STYLE, cls) || CLASS_STYLE.structural;
   }
 
   /* Edges whose ends are both drawn entries; supersession and contradiction
@@ -772,6 +785,7 @@ const KMP_LOOM = (() => {
     compareModels,
     buildLanes,
     foldAggregates,
+    own,
     extent,
     projectionExtent,
     extentIncluding,

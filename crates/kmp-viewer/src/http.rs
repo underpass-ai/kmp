@@ -22,6 +22,10 @@ pub(crate) struct HttpRequest {
     pub(crate) host: Option<String>,
     pub(crate) cookie: Option<String>,
     pub(crate) accept_encoding: Option<String>,
+    /// `Origin`, as a browser sends it on every POST.
+    pub(crate) origin: Option<String>,
+    /// `Sec-Fetch-Site`, as current browsers send it on every request.
+    pub(crate) fetch_site: Option<String>,
 }
 
 impl HttpRequest {
@@ -39,6 +43,43 @@ impl HttpRequest {
                 (candidate == name).then_some(value)
             })
         })
+    }
+
+    /// Why a state-changing request is refused because it came from another
+    /// page, or `None` when it came from this one.
+    ///
+    /// `SameSite` does not cover this: cookies and "same site" ignore the
+    /// port, so a page served from another port of this loopback host sends
+    /// the session cookie with a form or `fetch` POST. Browsers name the
+    /// page that sent a request in `Origin` and `Sec-Fetch-Site`; either one
+    /// naming another page refuses it. A client that sends neither (curl, a
+    /// script) is not a browser page and has already shown the session
+    /// cookie to get this far.
+    pub(crate) fn cross_origin_refusal(&self) -> Option<HttpResponse> {
+        if let Some(site) = self.fetch_site.as_deref()
+            && !matches!(
+                site.trim().to_ascii_lowercase().as_str(),
+                "same-origin" | "none"
+            )
+        {
+            return Some(HttpResponse::error(
+                403,
+                "the shared view changes only from the viewer's own page",
+            ));
+        }
+        let origin = self.origin.as_deref()?.trim();
+        let own = self
+            .host
+            .as_deref()
+            .map(|host| format!("http://{}", host.trim()));
+        if own.is_some_and(|own| own.eq_ignore_ascii_case(origin)) {
+            None
+        } else {
+            Some(HttpResponse::error(
+                403,
+                "the shared view changes only from the viewer's own page",
+            ))
+        }
     }
 
     pub(crate) fn encoding_quality(&self, encoding: &str) -> Option<f32> {
@@ -207,6 +248,8 @@ pub(crate) async fn read_request(stream: &mut TcpStream) -> Result<HttpRequest, 
     };
 
     let mut host = None;
+    let mut origin = None;
+    let mut fetch_site = None;
     let mut cookies = Vec::new();
     let mut accept_encodings = Vec::new();
     let mut content_length = None;
@@ -218,6 +261,10 @@ pub(crate) async fn read_request(stream: &mut TcpStream) -> Result<HttpRequest, 
         if let Some((name, value)) = line.split_once(':') {
             if name.trim().eq_ignore_ascii_case("host") {
                 host = Some(value.trim().to_string());
+            } else if name.trim().eq_ignore_ascii_case("origin") {
+                origin = Some(value.trim().to_string());
+            } else if name.trim().eq_ignore_ascii_case("sec-fetch-site") {
+                fetch_site = Some(value.trim().to_string());
             } else if name.trim().eq_ignore_ascii_case("cookie") {
                 cookies.push(value.trim());
             } else if name.trim().eq_ignore_ascii_case("accept-encoding") {
@@ -258,6 +305,8 @@ pub(crate) async fn read_request(stream: &mut TcpStream) -> Result<HttpRequest, 
         host,
         cookie: (!cookies.is_empty()).then(|| cookies.join("; ")),
         accept_encoding: (!accept_encodings.is_empty()).then(|| accept_encodings.join(",")),
+        origin,
+        fetch_site,
     })
 }
 
@@ -277,7 +326,11 @@ pub(crate) async fn write_response(
          X-Content-Type-Options: nosniff\r\n\
          Referrer-Policy: no-referrer\r\n\
          Content-Security-Policy: default-src 'none'; script-src 'self'; \
-         style-src 'self'; connect-src 'self'; img-src 'self' data:\r\n",
+         style-src 'self'; connect-src 'self'; img-src 'self' data:; \
+         frame-ancestors 'none'; base-uri 'none'; form-action 'none'\r\n\
+         X-Frame-Options: DENY\r\n\
+         Cross-Origin-Resource-Policy: same-origin\r\n\
+         Cross-Origin-Opener-Policy: same-origin\r\n",
         response.status,
         reason,
         response.content_type,
@@ -304,24 +357,42 @@ pub(crate) async fn write_response(
     stream.flush().await
 }
 
-/// The viewer answers only to names that resolve to this machine. A browser
-/// lured to `evil.example` pointing at 127.0.0.1 (DNS rebinding) sends that
-/// name as `Host` — and is refused here.
-pub(crate) fn host_is_local(host: Option<&str>) -> bool {
-    let Some(host) = host else {
+/// The viewer answers only to names that resolve to this machine: the three
+/// loopback names, and the loopback address it is actually bound to, which
+/// is the one its printed link names. A browser lured to `evil.example`
+/// pointing at 127.0.0.1 (DNS rebinding) sends that name as `Host` — and is
+/// refused here.
+pub(crate) fn host_is_local(host: Option<&str>, bound: Option<std::net::IpAddr>) -> bool {
+    let Some(name) = host.and_then(|host| strip_port(host.trim())) else {
         return false;
     };
-    let name = strip_port(host.trim());
-    matches!(name, "localhost" | "127.0.0.1" | "[::1]")
+    if matches!(name, "localhost" | "127.0.0.1" | "[::1]") {
+        return true;
+    }
+    let literal = name
+        .strip_prefix('[')
+        .and_then(|inner| inner.strip_suffix(']'))
+        .unwrap_or(name);
+    bound.is_some_and(|bound| {
+        bound.is_loopback() && literal.parse::<std::net::IpAddr>().ok() == Some(bound)
+    })
 }
 
-fn strip_port(host: &str) -> &str {
-    if let Some(end) = host.strip_prefix('[').and_then(|_| host.find(']')) {
-        return &host[..=end];
+/// The name part of a `Host` value, or `None` when what follows the name is
+/// not a port. A bracketed IPv6 literal ends at `]`, which must close the
+/// value or be followed by `:port`; `[::1]evil.example` names nothing.
+fn strip_port(host: &str) -> Option<&str> {
+    let is_port = |port: &str| !port.is_empty() && port.bytes().all(|b| b.is_ascii_digit());
+    if host.starts_with('[') {
+        let end = host.find(']')?;
+        let rest = &host[end + 1..];
+        return (rest.is_empty() || rest.strip_prefix(':').is_some_and(is_port))
+            .then_some(&host[..=end]);
     }
     match host.rsplit_once(':') {
-        Some((name, port)) if !port.is_empty() && port.bytes().all(|b| b.is_ascii_digit()) => name,
-        _ => host,
+        Some((name, port)) if is_port(port) => Some(name),
+        Some(_) => None,
+        None => Some(host),
     }
 }
 
@@ -391,6 +462,7 @@ fn reason_phrase(status: u16) -> &'static str {
         404 => "Not Found",
         405 => "Method Not Allowed",
         406 => "Not Acceptable",
+        408 => "Request Timeout",
         409 => "Conflict",
         431 => "Request Header Fields Too Large",
         500 => "Internal Server Error",
@@ -414,11 +486,70 @@ mod tests {
 
     #[test]
     fn only_local_hosts_are_accepted() {
-        assert!(host_is_local(Some("localhost:7317")));
-        assert!(host_is_local(Some("127.0.0.1")));
-        assert!(host_is_local(Some("[::1]:7317")));
-        assert!(!host_is_local(Some("evil.example")));
-        assert!(!host_is_local(Some("evil.example:7317")));
-        assert!(!host_is_local(None));
+        assert!(host_is_local(Some("localhost:7317"), None));
+        assert!(host_is_local(Some("127.0.0.1"), None));
+        assert!(host_is_local(Some("[::1]:7317"), None));
+        assert!(host_is_local(Some("[::1]"), None));
+        assert!(!host_is_local(Some("evil.example"), None));
+        assert!(!host_is_local(Some("evil.example:7317"), None));
+        assert!(!host_is_local(None, None));
+        // What follows `]` must be nothing or a port.
+        assert!(!host_is_local(Some("[::1].evil.example"), None));
+        assert!(!host_is_local(Some("[::1]evil.example:80"), None));
+        assert!(!host_is_local(Some("[::1]:"), None));
+        assert!(!host_is_local(Some("localhost:7317x"), None));
+    }
+
+    #[test]
+    fn the_bound_loopback_address_answers_to_its_own_link() {
+        let bound = "127.0.0.2".parse().ok();
+        assert!(host_is_local(Some("127.0.0.2:7420"), bound));
+        assert!(!host_is_local(Some("127.0.0.3:7420"), bound));
+        assert!(!host_is_local(Some("127.0.0.2:7420"), None));
+        let public = "192.0.2.1".parse().ok();
+        assert!(!host_is_local(Some("192.0.2.1:7420"), public));
+    }
+
+    fn post(origin: Option<&str>, fetch_site: Option<&str>) -> HttpRequest {
+        HttpRequest {
+            method: "POST".to_string(),
+            path: "/api/view/open".to_string(),
+            query: BTreeMap::new(),
+            host: Some("127.0.0.1:7317".to_string()),
+            cookie: None,
+            accept_encoding: None,
+            origin: origin.map(str::to_string),
+            fetch_site: fetch_site.map(str::to_string),
+        }
+    }
+
+    #[test]
+    fn a_state_change_from_another_page_is_refused() {
+        assert!(post(None, None).cross_origin_refusal().is_none());
+        assert!(
+            post(Some("http://127.0.0.1:7317"), None)
+                .cross_origin_refusal()
+                .is_none()
+        );
+        assert!(
+            post(Some("http://127.0.0.1:7317"), Some("same-origin"))
+                .cross_origin_refusal()
+                .is_none()
+        );
+        for (origin, site) in [
+            (Some("http://127.0.0.1:3000"), None),
+            (Some("http://localhost:7317"), None),
+            (Some("null"), None),
+            (None, Some("same-site")),
+            (None, Some("cross-site")),
+            (Some("http://127.0.0.1:7317"), Some("same-site")),
+        ] {
+            let refused = post(origin, site).cross_origin_refusal();
+            assert_eq!(
+                refused.map(|response| response.status),
+                Some(403),
+                "{origin:?} {site:?}"
+            );
+        }
     }
 }

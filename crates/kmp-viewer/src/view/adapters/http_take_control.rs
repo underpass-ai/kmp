@@ -36,6 +36,8 @@ mod tests {
             host: None,
             cookie: None,
             accept_encoding: None,
+            origin: None,
+            fetch_site: None,
         }
     }
 
