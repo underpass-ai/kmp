@@ -1,3 +1,5 @@
+#[path = "support/isolated_home.rs"]
+mod isolated_home;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -12,7 +14,7 @@ fn plugin_root() -> PathBuf {
 /// installed assets on its own: no launcher variable, and a HOME that holds
 /// no host plugin cache — the developer's real one must not seed a test store.
 fn command(store: &Path) -> Command {
-    let mut command = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"));
+    let mut command = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"));
     command
         .env_remove("KMP_PLUGIN_ROOT")
         .env_remove("CODEX_HOME")

@@ -98,6 +98,21 @@ impl KernelMcpServer {
         server
     }
 
+    /// Keeps a remote store's retained continuations and salt under
+    /// `data_home` instead of the user data home, the way a hermetic caller
+    /// (a test) needs (#910).
+    pub fn with_remote_state_home(mut self, data_home: &std::path::Path) -> Self {
+        let relocate = |path: Option<std::path::PathBuf>| {
+            path.and_then(|path| {
+                path.file_name()
+                    .map(|name| data_home.join("agent-users").join(name))
+            })
+        };
+        self.continuation_store_path = relocate(self.continuation_store_path.take());
+        self.telemetry_salt_path = relocate(self.telemetry_salt_path.take());
+        self
+    }
+
     pub fn embedded(data_dir: &std::path::Path) -> Result<Self, String> {
         Self::embedded_with_engine(
             data_dir,

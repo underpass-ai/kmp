@@ -1,12 +1,15 @@
 //! `kmp-mcp demo` writes the worked example once, where the store resolves,
 //! and keeps it out of the project's committed bundle.
+#[path = "support/isolated_home.rs"]
+mod isolated_home;
+
 use std::path::Path;
 use std::process::{Command, Output};
 
 use serde_json::Value;
 
 fn kmp(scratch: &Path, project: &Path) -> Command {
-    let mut command = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"));
+    let mut command = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"));
     command
         .current_dir(project)
         .env_remove("KMP_MCP_DATA_DIR")

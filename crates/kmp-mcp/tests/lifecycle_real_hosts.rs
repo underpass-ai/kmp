@@ -1,3 +1,5 @@
+#[path = "support/isolated_home.rs"]
+mod isolated_home;
 use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -365,7 +367,7 @@ impl RealHostLifecycleHarness {
         let stamp = source.join("FORMAT_VERSION");
         let before = fs::read(&stamp).expect("baseline store stamp");
         let refused_export = self.root.path().join("unsupported-export.jsonl");
-        let output = Command::new(self.shared_binary())
+        let output = isolated_home::command(self.shared_binary())
             .args(["export", self.path(&refused_export)])
             .env("KMP_MCP_DATA_DIR", &source)
             .env("KMP_MCP_BACKEND", "embedded")

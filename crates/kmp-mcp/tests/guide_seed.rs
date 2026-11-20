@@ -1,5 +1,8 @@
 //! A fresh store gets its guide on the first guide read, from the assets
 //! installed for this binary, without anyone typing `guide sync`.
+#[path = "support/isolated_home.rs"]
+mod isolated_home;
+
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -13,7 +16,7 @@ fn plugin_root() -> PathBuf {
 /// A server whose only knowledge of the machine is what the test gives it:
 /// a scratch HOME, no launcher variable, an explicit store.
 fn command(scratch: &Path, store: &Path) -> Command {
-    let mut command = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"));
+    let mut command = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"));
     command
         .env_remove("KMP_PLUGIN_ROOT")
         .env_remove("CODEX_HOME")

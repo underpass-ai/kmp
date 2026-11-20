@@ -5,6 +5,9 @@
 //! it: write memory from one project, export from another, name an old store
 //! by hand, then stand somewhere else and ask.
 
+#[path = "support/isolated_home.rs"]
+mod isolated_home;
+
 use std::collections::BTreeMap;
 use std::fs;
 use std::io::Write;
@@ -36,7 +39,7 @@ impl Machine {
     }
 
     fn command(&self, working_dir: &str) -> Command {
-        let mut command = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"));
+        let mut command = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"));
         command
             .current_dir(self.at(working_dir))
             .env("HOME", self.at("home"))
