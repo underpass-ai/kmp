@@ -37,9 +37,9 @@ actually looking at.
 
 That is the session saying it is already serving this store as a graph — the
 same abouts, the same typed relations, the same evidence, in a window instead
-of in JSON. It appears on the **first memory a session writes**, because that
-is the first moment there is anything to look at, and it does not appear
-again.
+of in JSON. The viewer listens only after the first `kmp_view_open` of the
+session, so the block appears on the **first memory written once the viewer
+listens**, and it does not appear again. Writing never starts the viewer.
 
 Pass the link on when it appears. It is the one thing a human can look at
 without learning any of this, and most people never find out it exists.
