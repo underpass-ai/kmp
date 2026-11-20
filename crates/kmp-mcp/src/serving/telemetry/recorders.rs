@@ -451,7 +451,6 @@ mod tests {
             "client_name",
             "is_continuation",
             "subject_fingerprint",
-            "context_fingerprint",
             "answer_status",
             "citations",
         ] {

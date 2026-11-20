@@ -70,6 +70,79 @@ fn files(dir: &Path) -> Vec<String> {
     names
 }
 
+/// Every topic through the shipped binary: an empty store, no plugin root,
+/// no host plugin cache. The cards come from the engine itself and the store
+/// gains nothing.
+#[test]
+fn every_topic_answers_from_the_binary_without_plugin_assets_or_store() {
+    let scratch = tempfile::tempdir().expect("scratch");
+    let store = scratch.path().join("store");
+    let mut lines = vec![
+        json!({"jsonrpc":"2.0","id":0,"method":"initialize","params":{
+        "protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"t","version":"1"}}})
+        .to_string(),
+    ];
+    let topics = topics();
+    for (index, topic) in topics.iter().enumerate() {
+        lines.push(
+            json!({"jsonrpc":"2.0","id":index + 1,"method":"tools/call",
+                "params":{"name":"kmp_guide","arguments":{"topic":topic}}})
+            .to_string(),
+        );
+    }
+    let mut child = std::process::Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+        .env_remove("KMP_PLUGIN_ROOT")
+        .env_remove("CODEX_HOME")
+        .env("HOME", scratch.path().join("home"))
+        .env("KMP_MCP_BACKEND", "embedded")
+        .env("KMP_MCP_DATA_DIR", &store)
+        .env("XDG_CONFIG_HOME", scratch.path().join("config"))
+        .env("XDG_DATA_HOME", scratch.path().join("data"))
+        .env("KMP_VIEWER_ADDR", "off")
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::null())
+        .spawn()
+        .expect("kmp-mcp");
+    {
+        use std::io::Write;
+        let mut stdin = child.stdin.take().expect("stdin");
+        for line in &lines {
+            writeln!(stdin, "{line}").expect("request");
+        }
+    }
+    let output = child.wait_with_output().expect("exit");
+    let replies: Vec<Value> = String::from_utf8(output.stdout)
+        .expect("utf8")
+        .lines()
+        .map(|line| serde_json::from_str(line).expect("JSON"))
+        .collect();
+    assert_eq!(replies.len(), topics.len() + 1);
+    for (reply, topic) in replies[1..].iter().zip(&topics) {
+        let result = &reply["result"];
+        assert_eq!(result["isError"], false, "{topic}: {reply}");
+        assert_eq!(result["structuredContent"]["topic"], json!(topic));
+    }
+    // Nothing was seeded or written: the store holds no event at all.
+    let bundle = scratch.path().join("after.jsonl");
+    let export = std::process::Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+        .arg("export")
+        .arg(&bundle)
+        .env_remove("KMP_PLUGIN_ROOT")
+        .env("HOME", scratch.path().join("home"))
+        .env("KMP_MCP_BACKEND", "embedded")
+        .env("KMP_MCP_DATA_DIR", &store)
+        .env("XDG_CONFIG_HOME", scratch.path().join("config"))
+        .env("XDG_DATA_HOME", scratch.path().join("data"))
+        .env("KMP_VIEWER_ADDR", "off")
+        .output()
+        .expect("export");
+    assert!(export.status.success(), "{export:?}");
+    let text = std::fs::read_to_string(&bundle).expect("bundle");
+    let header: Value = serde_json::from_str(text.lines().next().expect("header")).expect("JSON");
+    assert_eq!(header["event_count"], 0, "a guide lookup writes nothing");
+}
+
 #[test]
 fn every_card_is_served_by_the_engine_within_its_budget() {
     let topics = topics();
@@ -321,4 +394,44 @@ async fn a_0_27_agent_directory_beside_the_store_is_left_alone() {
     );
     assert_eq!(std::fs::read(&legacy).expect("legacy bytes"), bytes);
     assert!(dir.path().join("continuations.sqlite3").is_file());
+}
+
+/// The first worked JSON call of a card's text.
+fn example(card: &Value) -> Value {
+    let text = card["structuredContent"]["text"]
+        .as_str()
+        .expect("card text");
+    let body = text
+        .split("```json\n")
+        .nth(1)
+        .expect("worked JSON")
+        .split("```")
+        .next()
+        .expect("end of example");
+    serde_json::from_str(body.trim()).expect("JSON example")
+}
+
+#[tokio::test]
+async fn the_worked_examples_of_the_cards_execute() {
+    let dir = tempfile::tempdir().expect("store");
+    let server = KernelMcpServer::embedded(dir.path()).expect("server");
+    // Write first, so the later examples read actual memory.
+    let write = example(&call(&server, "kmp_guide", json!({"topic":"write"})).await);
+    let written = call(&server, "kmp_write_memory", write.clone()).await;
+    assert_eq!(written["isError"], false, "{written}");
+    let failure = written["structuredContent"]["local_refs"]["failure"].clone();
+    let mut other = write;
+    other["about"] = json!("project:other");
+    other["idempotency_key"] = json!("sample-other");
+    let other = call(&server, "kmp_write_memory", other).await;
+    assert_eq!(other["isError"], false, "{other}");
+    for (topic, tool) in [("ask", "kmp_ask"), ("relate", "kmp_relate")] {
+        let arguments = example(&call(&server, "kmp_guide", json!({"topic":topic})).await);
+        let result = call(&server, tool, arguments).await;
+        assert_eq!(result["isError"], false, "{topic}: {result}");
+    }
+    let mut relabel = example(&call(&server, "kmp_guide", json!({"topic":"relabel"})).await);
+    relabel["ref"] = failure;
+    let result = call(&server, "kmp_relabel", relabel).await;
+    assert_eq!(result["isError"], false, "relabel: {result}");
 }
