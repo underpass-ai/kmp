@@ -64,7 +64,7 @@ def initial_calls():
                 {'id': 'failure', 'kind': 'observation', 'summary': 'The cache failed.',
                  'evidence': 'S1 reports the cache failure.'}],
              'labels': {'task': ['surface-control']}},
-            {'about': about, 'context_id': 'context_control', 'search_summaries': [
+            {'about': about, 'search_summaries': [
                 {'ref': ref, 'summary_en': 'The cache failed.'}]},
             {'about': about, 'actor': 'surface-control', 'relations': [
                 {'from': ref, 'to': about + ':check', 'rel': 'verified_by',
@@ -94,16 +94,14 @@ def specimens(schema, bases):
         yield {**base, 'unrecognized': True}
         yield {**base, **handle}
         # Cover all combinations of the initial required-field choices, including
-        # each writer variant. This checks actor/context and exclusive payloads.
+        # each writer variant. This checks the optional actor and exclusive payloads.
         keys = list(base)
         for present in itertools.product((False, True), repeat=len(keys)):
             yield {key: base[key] for key, keep in zip(keys, present) if keep}
-        for actor, context in itertools.product((None, 'writer'), (None, 'context_control')):
-            value = {key: val for key, val in base.items() if key not in ('actor', 'context_id')}
+        for actor in (None, 'writer'):
+            value = {key: val for key, val in base.items() if key != 'actor'}
             if actor is not None:
                 value['actor'] = actor
-            if context is not None:
-                value['context_id'] = context
             yield value
     if 'memory' in schema['properties']:
         for entries, relations, provenance, default in itertools.product(
