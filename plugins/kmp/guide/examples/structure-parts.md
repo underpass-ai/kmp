@@ -14,7 +14,7 @@ its own idempotency key. All timestamps are UTC; ingestion uses the actual
 runtime clock. No source below states a validity interval.
 
 ```json
-{"tool":"kmp_wake","save_as":"initial","expect_error":"not_found","arguments":{"about":"example:guide:structure-parts","budget":{"detail":"compact","max_bytes":20000}}}
+{"tool":"kmp_wake","save_as":"initial","arguments":{"about":"example:guide:structure-parts","budget":{"detail":"compact","max_bytes":20000}}}
 ```
 
 ## PLAN1 — contains a planned phase

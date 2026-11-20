@@ -47,14 +47,13 @@ histories follow the returned cursor before claiming complete coverage.
 
 ## Recover and record the original wording
 
-A fresh about returns `not_found`. On an existing about, recover its
+A wake on a fresh about says nothing is recorded. On an existing about, recover its
 catalogue and use the actual refs instead of pretending the history is empty.
 
 ```json
 {
   "tool": "kmp_wake",
   "save_as": "initial",
-  "expect_error": "not_found",
   "arguments": {
     "about": "example:guide:labels-negation",
     "budget": {"max_bytes": 20000}

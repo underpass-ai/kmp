@@ -24,7 +24,7 @@ memories has observed_at September 4; neither endpoint dates its declaration.
 This is a stored declaration clock, not inference of when its meaning became true.
 
 ```json
-{"tool":"kmp_wake","save_as":"initial","expect_error":"not_found","arguments":{"about":"example:guide:canonical-ingest","budget":{"detail":"compact","max_bytes":20000}}}
+{"tool":"kmp_wake","save_as":"initial","arguments":{"about":"example:guide:canonical-ingest","budget":{"detail":"compact","max_bytes":20000}}}
 ```
 
 ## C1 — establish and inspect the packet dependency

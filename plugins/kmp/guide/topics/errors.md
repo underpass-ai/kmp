@@ -17,9 +17,9 @@ and fixable, and `/kmp:doctor` distinguishes them:
 
 Which memory opens is a separate question from whether the tools are there,
 and it has one order: the `KMP_MCP_DATA_DIR` environment variable, then the
-selection saved with `kmp-mcp config memory-store <absolute-path>`, then the
-nearest project root, then the per-user default. `kmp-mcp config` prints the
-saved selection, the effective one and which rule won, without starting a host
+nearest project root, then the selection saved with
+`kmp-mcp config memory-store <absolute-path>`, then the per-user default.
+`kmp-mcp config` prints the saved selection, the effective one and which rule won, without starting a host
 or creating a store. A valid explicit override still works if the saved
 selection is invalid; config and doctor report that unused setting for repair.
 Without an override, repair or clear the invalid selection before starting

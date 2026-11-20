@@ -60,7 +60,7 @@ resolves these bindings and records the actual native requests and responses.
 An unexpected error or incomplete page stops it; continue a real partial page
 with its cursor before claiming a complete result.
 
-An isolated empty about returns the expected `not_found`. If it exists instead,
+A wake on an isolated empty about says nothing is recorded. If it exists instead,
 inspect the existing memory and labels; never bypass strict linking rules.
 
 ```json
@@ -73,8 +73,7 @@ inspect the existing memory and labels; never bypass strict linking rules.
       "max_bytes": 20000,
       "detail": "full"
     }
-  },
-  "expect_error": "not_found"
+  }
 }
 ```
 

@@ -59,14 +59,13 @@ the replay, never an MCP argument or permission to call that response complete.
 
 ## Recover, write and inspect the sources
 
-An empty about returns not_found. With an existing about, use its actual
+A wake on an empty about says nothing is recorded there. With an existing about, use its actual
 catalogue and refs instead of repeating this fresh-store assumption.
 
 ```json
 {
   "tool": "kmp_wake",
   "save_as": "initial",
-  "expect_error": "not_found",
   "arguments": {
     "about": "example:guide:budget-proof",
     "budget": {"max_bytes": 15000}
@@ -748,18 +747,10 @@ outstanding MCP page or validate a missing proof path.
 }
 ```
 
-## Continue through the agent context
+## Continue through a short handle
 
-The earlier reads intentionally exercised complete calls without a context.
-Register once for this inspection of D1, already written above:
-
-```json
-{
-  "tool": "kmp_guide",
-  "save_as": "short_context",
-  "arguments": {"registration_key":"guide-budget-proof-short-reader"}
-}
-```
+The earlier reads intentionally exercised complete calls. Inspect D1, already
+written above, with a deliberately small allowance:
 
 ```json
 {
@@ -767,8 +758,6 @@ Register once for this inspection of D1, already written above:
   "save_as": "short_first",
   "expect_partial": true,
   "arguments": {
-    "context_id":"${short_context.context_id}",
-    "purpose":"audit",
     "about":"example:guide:budget-proof",
     "ref":"${decision.generated_refs.0}",
     "include":{"raw":true},
@@ -778,9 +767,8 @@ Register once for this inspection of D1, already written above:
 ```
 
 The returned `next_actions[0].arguments` contains only `continuation` when the
-short form fits (with or without a context, every continuation is one). It
-already retains the context, D1 reference, raw inclusion and
-larger allowance. Execute it directly:
+short form fits. It already retains the D1 reference, raw inclusion and larger
+allowance. Execute it directly:
 
 ```json
 {
@@ -793,8 +781,9 @@ larger allowance. Execute it directly:
 
 If still partial, execute `short_next.next_actions[0]` and append the next page.
 Reusing `short_first`'s identifier repeats that same page, not the next one.
-Adding `budget`, `context_id` or another argument to the identifier is rejected:
-use the returned action unchanged, or start a new explicit selection. An expired
+Adding `budget` or another argument to the identifier is rejected (resending
+the same `about` is accepted): use the returned action unchanged, or start a
+new explicit selection. An expired
 identifier reports `CONTINUATION_UNAVAILABLE`; restart the original read and keep
 its earlier pages marked partial. A changed source still triggers the native
 cursor conflict. No identifier permits skipping HTTP grants or missing proof.
