@@ -1,8 +1,8 @@
 use std::collections::BTreeSet;
 
-use super::association_index::AssociationIndex;
 use super::bridged_key::BridgedKey;
 use super::indexed_field_stats::IndexedFieldStats;
+use super::indexed_seeds::IndexedSeeds;
 use super::lexical_bridge::LexicalBridge;
 use super::lexical_field::LexicalField;
 use super::lexical_row::LexicalRow;
@@ -23,6 +23,8 @@ pub struct IndexedQuestion {
     morphology: Morphology,
     /// Whether the question names an anchor the anchored gate requires.
     anchored: bool,
+    /// The anchor terms the gate reads the df of.
+    anchors: BTreeSet<String>,
 }
 
 impl IndexedQuestion {
@@ -39,10 +41,16 @@ impl IndexedQuestion {
             }
         }
         let anchored = contract.requires_anchors();
+        let anchors = contract
+            .anchors()
+            .iter()
+            .map(|anchor| anchor.term.clone())
+            .collect();
         Self {
             forms,
             morphology,
             anchored,
+            anchors,
         }
     }
 
@@ -59,6 +67,12 @@ impl IndexedQuestion {
     /// requires (P14 leaves such an ask unpruned).
     pub(super) fn requires_anchors(&self) -> bool {
         self.anchored
+    }
+
+    /// The anchor terms the anchored gate weighs by their df (whether one
+    /// is a hub, which one is rarest): the ask reads their df.
+    pub fn anchor_terms(&self) -> &BTreeSet<String> {
+        &self.anchors
     }
 
     /// The words of every form the ranker may read the question in.
@@ -81,31 +95,58 @@ impl IndexedQuestion {
     }
 
     /// The words the store associates with those of the question under one
-    /// reading: what `AssociationIndex::for_question` finds over
-    /// `documents`, which must hold every candidate that carries a word of
-    /// the question, with `stats` the whole about's direct field.
+    /// reading: what `AssociationIndex::for_question` finds over the seed
+    /// rows (`rows`, read through `seeds`, which keeps what it counts for
+    /// every later reading of the ask), which must hold every candidate that
+    /// carries a word of the question, with `stats` the whole about's direct
+    /// field holding the df of the question's words and of their partners
+    /// ([`Self::association_partners`]).
     pub fn associations(
         &self,
         stats: &IndexedFieldStats,
         aliased: bool,
-        documents: &[LexicalRow],
+        rows: &[LexicalRow],
+        seeds: &IndexedSeeds,
     ) -> BTreeSet<String> {
         let field =
             LexicalField::from_stats(stats.documents, stats.direct_length, &stats.direct_df);
-        let counts = documents
-            .iter()
-            .map(|row| row.direct_counts(aliased))
-            .collect::<Vec<_>>();
+        let documents = seeds.of(rows, aliased);
         let mut associated = BTreeSet::new();
         for form in &self.forms {
             let question = informative_term_counts(form, &self.morphology);
             associated.extend(
-                AssociationIndex::for_question(&question, &field, counts.iter())
+                documents
+                    .associations(&question, &field)
                     .expand(&question)
                     .into_keys(),
             );
         }
         associated
+    }
+
+    /// Every word the associations of any form of the question read the df
+    /// of under one reading, beyond the question's own
+    /// (`AssociationCounts::partners`): with those and the question's, a
+    /// field gives every association a field of the whole about gives.
+    /// `stats` must hold the df of the question's words.
+    pub fn association_partners(
+        &self,
+        stats: &IndexedFieldStats,
+        aliased: bool,
+        rows: &[LexicalRow],
+        seeds: &IndexedSeeds,
+    ) -> BTreeSet<String> {
+        let field =
+            LexicalField::from_stats(stats.documents, stats.direct_length, &stats.direct_df);
+        let documents = seeds.of(rows, aliased);
+        let mut partners = BTreeSet::new();
+        for form in &self.forms {
+            let question = informative_term_counts(form, &self.morphology);
+            if let Some(counts) = documents.counts(&question, &field).as_ref() {
+                partners.extend(counts.partners().cloned());
+            }
+        }
+        partners
     }
 }
 

@@ -172,33 +172,6 @@ pub(crate) trait ReadTx {
     /// for a present key.
     fn get(&self, table: Table, key: Key<'_>) -> Result<Option<Vec<u8>>, PortError>;
 
-    /// Project named paths from a JSON object without returning discarded
-    /// fields. Paths consist of dot-separated object keys. This is an internal
-    /// storage operation; field selection belongs to the adapter, not SQL.
-    fn project_str_json(
-        &self,
-        table: Table,
-        key: &str,
-        fields: &[&str],
-    ) -> Result<Option<Vec<u8>>, PortError> {
-        let Some(raw) = self.get(table, Key::Str(key))? else {
-            return Ok(None);
-        };
-        let value: serde_json::Value = serde_json::from_slice(&raw)
-            .map_err(|e| PortError::InvalidState(format!("invalid JSON record: {e}")))?;
-        let mut output = serde_json::Map::new();
-        for field in fields {
-            let mut selected = &value;
-            for component in field.split('.') {
-                selected = selected.get(component).unwrap_or(&serde_json::Value::Null);
-            }
-            output.insert((*field).to_string(), selected.clone());
-        }
-        serde_json::to_vec(&output)
-            .map(Some)
-            .map_err(|e| PortError::InvalidState(e.to_string()))
-    }
-
     /// Stored byte length of the value at `key`, without loading or decoding
     /// it. `None` means the key is absent, which is not the same answer as
     /// `Some(0)` for a present unit value. This measures the stored record,

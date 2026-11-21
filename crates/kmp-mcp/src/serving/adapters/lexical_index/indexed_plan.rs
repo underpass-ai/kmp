@@ -2,8 +2,8 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use kmp_application::MemoryAnswerPolicy;
 use kmp_proto_mapping::v1beta1::{
-    FloorBound, IndexedAsk, IndexedFieldStats, IndexedQuestion, LexicalBridge, LexicalRow,
-    RankPrefix, RankPrefixes,
+    FloorBound, IndexedAsk, IndexedFieldStats, IndexedQuestion, IndexedSeeds, LexicalBridge,
+    LexicalRow, RankPrefix, RankPrefixes,
 };
 
 use super::about_stats::AboutStats;
@@ -89,14 +89,28 @@ impl IndexedPlan {
             return Ok(Err(why));
         }
         let seed_rows = std::sync::Arc::new(first.values().cloned().collect::<Vec<_>>());
+        // The seed rows' fields, read once for the plan and every ranking.
+        let seeds_read = IndexedSeeds::default();
+        // The df the associations read: the question's words, and the words
+        // a question word pairs with in enough seed rows. Nothing the ask
+        // weighs or counts reads any other df (`AssociationCounts::partners`).
         let mut probed = seeds.clone();
-        probed.extend(held_terms(first.values()));
-        // Each term's df is read once, under both readings.
+        probed.extend(question.anchor_terms().iter().cloned());
         let mut frequencies = sidecar.document_frequencies(about, &probed)?;
+        for aliased in [false, true] {
+            let field = field_stats(&stats, &seeds, &frequencies, aliased);
+            probed.extend(question.association_partners(&field, aliased, &seed_rows, &seeds_read));
+        }
+        let partners = probed
+            .iter()
+            .filter(|term| !frequencies.contains_key(*term))
+            .cloned()
+            .collect::<BTreeSet<_>>();
+        frequencies.extend(sidecar.document_frequencies(about, &partners)?);
         let mut associated = BTreeSet::new();
         for aliased in [false, true] {
             let field = field_stats(&stats, &probed, &frequencies, aliased);
-            associated.extend(question.associations(&field, aliased, &seed_rows));
+            associated.extend(question.associations(&field, aliased, &seed_rows, &seeds_read));
         }
         let extra = associated
             .iter()
@@ -107,9 +121,8 @@ impl IndexedPlan {
         if !extra.is_empty() {
             reached.extend(candidates(sidecar, about, &extra)?);
         }
-        let mut terms = seeds;
+        let mut terms = probed;
         terms.extend(associated.iter().cloned());
-        terms.extend(held_terms(reached.values()));
         let unread = terms
             .iter()
             .filter(|term| !frequencies.contains_key(*term))
@@ -160,12 +173,31 @@ impl IndexedPlan {
             vocabulary,
             seed_rows: Some(seed_rows),
             rows: Some(std::sync::Arc::clone(&rows)),
+            seeds: seeds_read,
         };
         let read = rows.as_ref();
         // Top-k (P14): each candidate's rank prefix, and what is always read.
+        // A strict policy's focus also counts words a candidate's graph
+        // lends it; its reach bounds them (P14).
+        let reach = match ask {
+            Some((
+                MemoryAnswerPolicy::EvidenceOrUnknown | MemoryAnswerPolicy::ShowConflicts,
+                _,
+            )) => sidecar.reaches(about, read.keys())?,
+            _ => BTreeMap::new(),
+        };
         let prefixes = ask.and_then(|(policy, gated)| {
-            RankPrefixes::read(asked_text, policy, gated, &indexed, bridge, read.iter())
+            RankPrefixes::read(
+                asked_text,
+                policy,
+                gated,
+                &indexed,
+                bridge,
+                read.iter(),
+                &reach,
+            )
         });
+        drop(reach);
         let must = if let Some(prefixes) = &prefixes {
             let lifecycle = sidecar.lifecycle_docs(about)?;
             let anchors = prefixes.anchors();
@@ -198,9 +230,10 @@ impl IndexedPlan {
     /// every candidate is read), or why the index does not answer.
     ///
     /// Without prefixes every candidate is read. With them, the ones top-k
-    /// must read and the best `limit` others by prefix, ties at the cut
-    /// included, so an unread candidate always ranks strictly below every
-    /// one read with a lower prefix.
+    /// must read and the best `limit` others by prefix that some reading
+    /// could find eligible, ties at the cut included, so an unread candidate
+    /// always ranks strictly below every one read with a lower prefix, or
+    /// is ranked by nobody.
     pub(super) fn select(
         &self,
         limit: usize,
@@ -213,7 +246,9 @@ impl IndexedPlan {
                 let mut taken = 0usize;
                 let mut last = None;
                 for (prefix, doc) in prefixes.ordered() {
-                    if self.must.contains(&doc) {
+                    // What top-k must read is read; what no reading can
+                    // find eligible is neither read nor waited for.
+                    if self.must.contains(&doc) || prefixes.cannot_answer(&doc) {
                         continue;
                     }
                     if taken < limit || last == Some(prefix) {
@@ -244,17 +279,6 @@ fn candidates(
     terms: &BTreeSet<String>,
 ) -> Result<BTreeMap<String, LexicalRow>, String> {
     LexicalCandidates::candidates(sidecar, about, &terms.iter().cloned().collect::<Vec<_>>())
-}
-
-/// Every term a row carries under either reading.
-fn held_terms<'r>(rows: impl Iterator<Item = &'r LexicalRow>) -> BTreeSet<String> {
-    rows.flat_map(|row| {
-        row.terms()
-            .iter()
-            .filter(|term| term.is_held())
-            .map(|term| term.term.clone())
-    })
-    .collect()
 }
 
 /// One reading of the about's collection over `terms`, from their df

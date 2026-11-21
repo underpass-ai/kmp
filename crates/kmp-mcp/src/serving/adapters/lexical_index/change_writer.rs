@@ -110,6 +110,19 @@ pub(super) fn write_change(tx: &Connection, change: &AboutChange) -> Result<(), 
         };
     }
     RowWriter::new(tx, about).apply(&mut stats, &change.rows)?;
+    for (doc, reach) in &change.reach {
+        match reach {
+            Some(reach) => tx.execute(
+                "INSERT OR REPLACE INTO lex_reach(about, doc, reach) VALUES (?1, ?2, ?3)",
+                params![about, doc, reach],
+            ),
+            None => tx.execute(
+                "DELETE FROM lex_reach WHERE about = ?1 AND doc = ?2",
+                params![about, doc],
+            ),
+        }
+        .map_err(storage)?;
+    }
     stats.signals = change.signals.clone();
     stats.summaries = change.summaries;
     stats.language = change.language.clone();

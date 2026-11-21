@@ -129,17 +129,21 @@ async fn seed(server: &KernelMcpServer, draw: &mut Draw, memories: usize) {
     let later = (0..memories / 10)
         .map(|index| {
             let target = draw.below(memories);
-            let rel = if draw.below(3) == 0 {
+            let rel = if draw.below(3) < 2 {
                 "supersedes"
             } else {
                 "supports"
             };
+            // A relation's words count toward a strict focus (P14's reach):
+            // they name words the questions ask for.
             json!({"id":format!("later{index}"),"kind":"decision",
                 "summary":sentence(draw, index + 2 * memories),
                 "evidence":format!("Order {index} follows up."),
                 "connect_to":[{"ref":refs[format!("m{target}")],"rel":rel,"class":"evidential",
-                    "why":format!("Follow-up {index} of entry {target}."),
-                    "evidence":"The order names it.","confidence":"high"}]})
+                    "why":format!("Follow-up {index} of entry {target}: the {} {}.",
+                        draw.pick(&COMMON), draw.pick(&RARE)),
+                    "evidence":format!("The order names the {}.", draw.pick(&RARE)),
+                    "confidence":"high"}]})
         })
         .collect::<Vec<_>>();
     write(server, packet("seed:later", LATER, json!(later))).await;

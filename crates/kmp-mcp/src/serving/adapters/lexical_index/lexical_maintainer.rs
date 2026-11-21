@@ -20,7 +20,9 @@ use super::working_set::WorkingSet;
 /// `-5`: a relation's clock no longer counts `valid_from` (or a planned
 /// `occurred_at`) as the about's present (B4), so sidecars written before are
 /// rebuilt rather than read with the frontier they stored.
-pub(super) const INDEX_VERSION: &str = "lexical-index-5";
+/// `-6`: every candidate carries its reach (`lex_reach`, P14), so sidecars
+/// written before are rebuilt to hold one.
+pub(super) const INDEX_VERSION: &str = "lexical-index-6";
 
 /// Keeps the sidecar at the end of the store's log (DESIGN L6).
 ///
@@ -217,7 +219,7 @@ impl LexicalMaintainer {
         match refresh.run(&stats, &touched.nodes, &touched.relations)? {
             Refreshed::Changed(change) => {
                 report.abouts_refreshed += 1;
-                Ok(change)
+                Ok(*change)
             }
             Refreshed::LanguageMoved => {
                 report.abouts_rebuilt += 1;

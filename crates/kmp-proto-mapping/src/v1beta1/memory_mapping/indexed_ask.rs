@@ -26,17 +26,21 @@ pub struct IndexedAsk {
     /// them from here instead of tokenizing the candidate again.
     pub rows:
         Option<std::sync::Arc<std::collections::BTreeMap<String, super::lexical_row::LexicalRow>>>,
+    /// The seed rows' direct fields and associations, read once for every
+    /// ranking of the ask.
+    pub seeds: super::indexed_seeds::IndexedSeeds,
 }
 
 impl IndexedAsk {
-    /// The direct field of every seed row under one reading.
+    /// The direct field of every seed row under one reading, with the
+    /// associations counted over them.
     pub(super) fn seed_documents(
         &self,
         aliased: bool,
-    ) -> Option<std::sync::Arc<Vec<super::term_counts::TermCounts>>> {
-        self.seed_rows.as_ref().map(|rows| {
-            std::sync::Arc::new(rows.iter().map(|row| row.direct_counts(aliased)).collect())
-        })
+    ) -> Option<std::sync::Arc<super::seed_documents::SeedDocuments>> {
+        self.seed_rows
+            .as_ref()
+            .map(|rows| self.seeds.of(rows, aliased))
     }
 
     pub(super) fn stats(&self, aliased: bool) -> &IndexedFieldStats {
