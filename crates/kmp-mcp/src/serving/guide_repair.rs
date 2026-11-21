@@ -6,14 +6,6 @@ use super::{ToolError, ToolErrorCode};
 pub(super) struct GuideRepair;
 
 impl GuideRepair {
-    pub(super) fn missing(node_ref: &str, error: ToolError, searched: &[String]) -> ToolError {
-        if error.code == ToolErrorCode::NotFound {
-            Self::unavailable_after(node_ref, error, searched)
-        } else {
-            error
-        }
-    }
-
     /// Whether `arguments` read a guide node and `error` is the not-found
     /// that an absent guide answers with.
     pub(super) fn is_missing_guide_read(arguments: &Value, error: &ToolError) -> bool {
