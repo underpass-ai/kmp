@@ -81,7 +81,7 @@ mod tests {
     #[test]
     fn only_the_judged_identity_is_kept_in_its_order() {
         let selection = JudgedSelection::new(
-            "jev-1.13.0".into(),
+            "jev-1.14.0".into(),
             vec![("a:2".into(), sha("two")), ("a:1".into(), sha("one"))],
         )
         .expect("selection");

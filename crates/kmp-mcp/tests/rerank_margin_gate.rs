@@ -20,7 +20,7 @@ async fn call(server: &KernelMcpServer, id: u64, name: &str, arguments: Value) -
 async fn seeded(dir: &std::path::Path, rerank: &str) -> KernelMcpServer {
     std::fs::write(
         dir.join("typesafe.json"),
-        r#"{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.13.0","timeout_ms":20000}"#,
+        r#"{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.14.0","timeout_ms":20000}"#,
     )
     .expect("typesafe.json");
     std::fs::write(dir.join("rerank.json"), rerank).expect("rerank.json");
@@ -50,7 +50,7 @@ fn a_settled_ask_sends_no_judgement_and_the_gate_can_be_turned_off() {
     let path = cassette.path().join("empty.cassette.json");
     std::fs::write(
         &path,
-        r#"{"schema":"kmp.typesafe.cassette.v1","model":"jev-1.13.0","entries":{}}"#,
+        r#"{"schema":"kmp.typesafe.cassette.v1","model":"jev-1.14.0","entries":{}}"#,
     )
     .expect("cassette");
     let status = std::process::Command::new(std::env::current_exe().expect("test executable"))

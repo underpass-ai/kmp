@@ -22,7 +22,7 @@ use kmp_testkit::WriteReceipt;
 use serde::Deserialize;
 use serde_json::{Value, json};
 
-const TYPESAFE: &str = r#"{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.13.0","timeout_ms":20000}"#;
+const TYPESAFE: &str = r#"{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.14.0","timeout_ms":20000}"#;
 const BOOK_FILES: [&str; 2] = ["judgements.sqlite3", "judgements.sqlite3-wal"];
 
 #[derive(Debug, Deserialize)]

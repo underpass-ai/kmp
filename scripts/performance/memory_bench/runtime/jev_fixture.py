@@ -60,7 +60,7 @@ MODES = ('record', 'replay')
 CASSETTE, BOOK = 'cassette', 'book'
 BACKENDS = (CASSETTE, BOOK)
 DEFAULT_SAMPLES = 3  # jev-samples.sh
-DEFAULT_MODEL = 'jev-1.13.0'
+DEFAULT_MODEL = 'jev-1.14.0'
 NOT_JUDGED = ('RUST_LOG',)  # environment that changes logging, not verdicts
 
 

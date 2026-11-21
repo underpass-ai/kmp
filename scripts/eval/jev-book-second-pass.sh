@@ -18,7 +18,7 @@ CASSETTE="${KMP_TYPESAFE_CASSETTE:-${ROOT_DIR}/crates/kmp-testkit/judged/jev.cas
 WORK="$(mktemp -d)"
 trap 'rm -rf "${WORK}"' EXIT
 
-printf '{"schema":"kmp.typesafe.cassette.v1","model":"jev-1.13.0","entries":{}}\n' >"${WORK}/empty.cassette.json"
+printf '{"schema":"kmp.typesafe.cassette.v1","model":"jev-1.14.0","entries":{}}\n' >"${WORK}/empty.cassette.json"
 
 run() {
   cargo run --locked --quiet -p kmp-testkit --bin jev_kmp_scorecard -- "${CASES}"

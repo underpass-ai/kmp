@@ -152,7 +152,7 @@ fn an_expired_entry_never_reaches_the_pool() {
 fn a_rerank_rescues_proof_without_touching_the_cited_answer() {
     let baseline = ask(context(false).into(), QUESTION).expect("baseline");
     let ranking = RerankCandidateRanking::new(
-        "jev-1.13.0".into(),
+        "jev-1.14.0".into(),
         QUESTION,
         vec![
             ("entry:b".into(), sha(PARAPHRASE)),
@@ -175,7 +175,7 @@ fn a_rerank_rescues_proof_without_touching_the_cited_answer() {
         .find(|item| item.text == PARAPHRASE)
         .expect("the paraphrase is in proof");
     assert_eq!(rescued.metadata["reached_by"], "rerank");
-    assert_eq!(rescued.metadata["rerank_model"], "jev-1.13.0");
+    assert_eq!(rescued.metadata["rerank_model"], "jev-1.14.0");
     let lexical = proof
         .evidence
         .iter()
@@ -189,7 +189,7 @@ fn a_rerank_rescues_proof_without_touching_the_cited_answer() {
         reranked
             .warnings
             .iter()
-            .any(|w| w.contains("evidence rerank by jev-1.13.0"))
+            .any(|w| w.contains("evidence rerank by jev-1.14.0"))
     );
 }
 
@@ -229,7 +229,7 @@ fn the_answer_reuses_the_pools_ranking_byte_for_byte() {
     let bridge = LexicalBridge::none();
     let ranking = || {
         RerankCandidateRanking::new(
-            "jev-1.13.0".into(),
+            "jev-1.14.0".into(),
             QUESTION,
             vec![
                 ("entry:b".into(), sha(PARAPHRASE)),
