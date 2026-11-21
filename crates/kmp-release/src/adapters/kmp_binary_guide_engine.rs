@@ -90,14 +90,23 @@ impl KmpBinaryGuideEngine {
             })?;
             payload.push(b'\n');
         }
-        child
+        // An engine that stops before reading every request (one that fails
+        // at start, or answers and exits) closes its stdin: the write then
+        // breaks its pipe. Its exit status, stderr and the responses it did
+        // emit say what happened; a missing response is reported below.
+        match child
             .stdin
             .take()
             .ok_or_else(|| ReleaseError::invalid("guide engine stdin was not piped"))?
             .write_all(&payload)
-            .map_err(|error| {
-                ReleaseError::invalid(format!("could not write guide requests: {error}"))
-            })?;
+        {
+            Err(error) if error.kind() != std::io::ErrorKind::BrokenPipe => {
+                return Err(ReleaseError::invalid(format!(
+                    "could not write guide requests: {error}"
+                )));
+            }
+            _ => {}
+        }
         let output = child.wait_with_output().map_err(|error| {
             ReleaseError::invalid(format!("could not wait for guide engine: {error}"))
         })?;
@@ -305,5 +314,38 @@ mod tests {
         );
         let seen = std::fs::read_to_string(store.join("data-homes")).expect("recorded");
         assert_eq!(seen.lines().collect::<Vec<_>>(), [&expected, &expected]);
+    }
+
+    // An engine that fails before it reads its requests breaks the pipe the
+    // requests are written to. The operator reads why it failed, not
+    // "Broken pipe": the payload is far larger than a pipe holds, so the
+    // write cannot finish before the engine is gone.
+    #[test]
+    fn an_engine_that_stops_before_reading_reports_its_own_failure() {
+        let root = tempfile::tempdir().expect("root");
+        let engine = root.path().join("fake-kmp-mcp");
+        std::fs::write(
+            &engine,
+            "#!/bin/sh\necho 'store is locked by another process' >&2\nexit 3\n",
+        )
+        .expect("fake engine");
+        std::fs::set_permissions(&engine, std::fs::Permissions::from_mode(0o755))
+            .expect("executable");
+        let engine = KmpBinaryGuideEngine::new(&engine).expect("engine");
+        let large = GuideToolCallDto {
+            name: "kmp_guide".to_string(),
+            arguments: json!({"padding": "x".repeat(4 << 20)}),
+        };
+
+        let error = engine
+            .call_tools(root.path(), &[large])
+            .expect_err("a failed engine is an error");
+
+        let error = format!("{error:?}");
+        assert!(
+            error.contains("store is locked by another process") && error.contains("exit"),
+            "{error}"
+        );
+        assert!(!error.contains("Broken pipe"), "{error}");
     }
 }

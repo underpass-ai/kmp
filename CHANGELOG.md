@@ -421,6 +421,17 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
   the next scene paint, and a scene that cannot draw has none: once the
   renderer is unavailable the scene loader goes at once and stays away,
   while the detail loader still works.
+- `kmp-release` guide runs report why an engine failed when it stopped
+  before reading its requests (a store it could not open, for example)
+  instead of "could not write guide requests: Broken pipe". The broken pipe
+  is no longer an error of its own: the engine's exit status, stderr and
+  missing responses say what happened. This was also the cause of a flaky
+  `scratch_store_runs_keep_the_data_home_beside_the_store`, whose fake
+  engine exits without reading.
+- The `guide_engine_path_contract` tests pass with `CARGO_TARGET_DIR` or
+  `CARGO_BUILD_TARGET_DIR` exported, and no longer build their stub
+  `kmp-mcp` into that directory over the developer's engine. The release
+  build already honoured the variable; the fixture builds inherited it.
 - `kmp_ask` no longer answers what is not stored when the lexical-bridge table
   `kmp-mcp setup` installs is present. The table is built from a multilingual
   embedding, so besides translations it pairs neighbours inside one language
