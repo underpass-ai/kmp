@@ -5,8 +5,11 @@ live memory across machines, agents or services. It is self-operated, free and
 open source under Apache 2.0. It is not a paid tier and does not connect to an
 Underpass-hosted memory service.
 
-Start with [embedded KMP](../embedded/README.md) unless a shared service is a
-real requirement.
+**Experimental in 1.x.** `kmp-server`, the gRPC API `v1beta1`, MCP over HTTP
+and the Valkey, NATS and Neo4j adapters are outside the 1.0 compatibility
+promise ([Stability and support](../stability.md)). Start with
+[embedded KMP](../embedded/README.md) unless a shared service is a real
+requirement.
 
 ## What changes
 
@@ -21,8 +24,11 @@ real requirement.
 
 The agent-facing MCP server uses the shared memory contract. The plugin and
 skills do not become a second protocol. Backend support is not universal:
-`kmp_summaries_audit` is unavailable over gRPC, and the embedded loopback viewer
-requires a local kernel. Check the live catalogue and backend errors.
+`kmp_curate` and `kmp_summaries_audit` are unavailable over gRPC, the
+local-store commands (`export`, `import`, `snapshot`, `demo`, `viewer` and
+others) refuse to run with a remote kernel selected, and the embedded
+loopback viewer requires a local kernel. Check the live catalogue and backend
+errors.
 
 ## Architecture
 

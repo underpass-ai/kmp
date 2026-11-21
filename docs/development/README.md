@@ -89,3 +89,31 @@ Outside the kernel and outside the 1.0 promise.
   writing with a local model, producing a `kmp_ingest` payload.
 - [Automatic entities](automatic-entities.md) — cited identity proposals and
   bounded expansion.
+
+## Crates, contracts and assets
+
+The twelve crates published to crates.io, each with its own README:
+
+| Crate | What it is |
+|:--|:--|
+| [`kmp-mcp`](../../crates/kmp-mcp/README.md) | The MCP server and CLI: the binary users install. |
+| [`kmp-viewer`](../../crates/kmp-viewer/README.md) | ChronoLoom, the local viewer. |
+| [`kmp-embedded`](../../crates/kmp-embedded/README.md) | The in-process kernel composition. |
+| [`kmp-adapter-embedded`](../../crates/kmp-adapter-embedded/README.md) | The SQLite storage adapters. |
+| [`kmp-memory-api`](../../crates/kmp-memory-api/README.md) | The consumer-facing memory API. |
+| [`kmp-plugin-api`](../../crates/kmp-plugin-api/README.md) | The plugin API. |
+| [`kmp-application`](../../crates/kmp-application/README.md), [`kmp-domain`](../../crates/kmp-domain/README.md), [`kmp-ports`](../../crates/kmp-ports/README.md), [`kmp-observability`](../../crates/kmp-observability/README.md) | Kernel layers, published so the rest can be. |
+| [`kmp-proto`](../../crates/kmp-proto/README.md), [`kmp-proto-mapping`](../../crates/kmp-proto-mapping/README.md) | The `v1beta1` protocol and its mapping (experimental). |
+
+Other references:
+
+- [`api/examples`](../../api/examples/README.md) — canonical request and
+  response examples of the contracts.
+- [`distribution/`](../../distribution/README.md) — release assets: the Helm
+  chart, the MCPB package and the
+  [lexical-bridge table](../../distribution/lexical-bridge/README.md), built by
+  [`scripts/lexical-bridge`](../../scripts/lexical-bridge/README.md).
+- [`AGENTS.md`](../../AGENTS.md) — instructions for coding agents working on
+  this repository.
+- [Third-party notices](../../THIRD_PARTY_NOTICES.md) and the
+  [code of conduct](../../CODE_OF_CONDUCT.md).
