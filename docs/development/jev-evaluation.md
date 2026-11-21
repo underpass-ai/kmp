@@ -250,6 +250,11 @@ maintainer's delegate, to be ratified by the maintainer):
 - Raised, because all three 1.14 samples are above the old floor:
   `write_typed_with_jev` 0.6363 → 0.7272 and `labels_none_kept` 0 → 1. No
   other row meets that rule; none else changed.
+- The corridor-off reference arm (`KMP_EVAL_PATHS_CORRIDOR=off`) scores
+  `proposed_hops_right` 0.9000 on 1.14 (1.13: 0.9500). The floor gates the
+  default arm, with the corridor on; read against it, the reference arm
+  falls under 0.9130. It stays a reference measurement and was not used to
+  set the floor.
 - Known limits of this change: the ask-judge (P10) and write-expansion
   (P15) thresholds were not re-verified on 1.14; sample 3 of 1.14 fell
   under eight floors for a cause not traced (below); the 1.14 price comes
