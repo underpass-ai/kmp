@@ -411,6 +411,12 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
 
 ### Fixed
 
+- `scripts/performance/proof_batch_physical_run.py` and
+  `scripts/performance/sqlite_clients.py` no longer default to inputs under
+  the untracked `artifacts/` folder. The patch directory is a required
+  `PATCH_DIR` argument and `--checkpoint-only` requires `--clients-input`;
+  without them each refuses before creating anything and names the
+  `v0.27.0` path to restore them from.
 - `kmp-mcp doctor` gives one cause one failure. A database lost beside proof
   of memory is the Memory section's `FAIL` alone: the Database section no
   longer adds a second one ("injected schema objects") for the same empty
@@ -607,9 +613,10 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
   procedure and the remaining Spanish notes are in English.
 - Generated test evidence under `artifacts/` is no longer tracked (957
   files); documents cite it at the `v0.27.0` tag.
-  `scripts/performance/proof_batch_physical_run.py` and
-  `scripts/performance/sqlite_clients.py` need their inputs restored from
-  that tag.
+  `scripts/performance/proof_batch_physical_run.py` (`PATCH_DIR`) and
+  `scripts/performance/sqlite_clients.py --checkpoint-only`
+  (`--clients-input`) take their inputs restored from that tag as an
+  explicit argument.
 - Shipped guide text: the `guide` verb lesson no longer says a read seeds the
   stored guide, the `errors` topic says a refusal ends with a `Help:` line
   instead of offering `structuredContent.help`, and the `repository` topic
