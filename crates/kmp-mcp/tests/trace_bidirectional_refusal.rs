@@ -75,7 +75,10 @@ async fn several_destinations_are_named() {
 
 #[tokio::test]
 async fn a_time_selection_is_named() {
-    let content = refusal(trace(|call| call["as_of"] = json!({"time": "2026-09-01T10:00:00Z"}))).await;
+    let content = refusal(trace(|call| {
+        call["as_of"] = json!({"time": "2026-09-01T10:00:00Z"})
+    }))
+    .await;
     assert_under_the_rule(&content, "as_of");
 }
 

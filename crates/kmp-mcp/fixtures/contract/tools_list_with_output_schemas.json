@@ -70,6 +70,7 @@
                             "type": "string"
                           },
                           "ingested_at": {
+                            "format": "date-time",
                             "type": "string"
                           },
                           "metadata": {
@@ -79,9 +80,11 @@
                             "type": "object"
                           },
                           "observed_at": {
+                            "format": "date-time",
                             "type": "string"
                           },
                           "occurred_at": {
+                            "format": "date-time",
                             "type": "string"
                           },
                           "rank": {
@@ -94,9 +97,11 @@
                             "type": "integer"
                           },
                           "valid_from": {
+                            "format": "date-time",
                             "type": "string"
                           },
                           "valid_until": {
+                            "format": "date-time",
                             "type": "string"
                           }
                         },
@@ -158,9 +163,11 @@
                     "support_clocks": {
                       "properties": {
                         "ingested_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "observed_at": {
+                          "format": "date-time",
                           "type": "string"
                         }
                       },
@@ -176,6 +183,7 @@
                       "type": "string"
                     },
                     "time": {
+                      "format": "date-time",
                       "type": "string"
                     }
                   },
@@ -207,18 +215,23 @@
                     "clocks": {
                       "properties": {
                         "ingested_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "observed_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "occurred_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "valid_from": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "valid_until": {
+                          "format": "date-time",
                           "type": "string"
                         }
                       },
@@ -239,6 +252,7 @@
                           "type": "string"
                         },
                         "ingested_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "metadata": {
@@ -248,9 +262,11 @@
                           "type": "object"
                         },
                         "observed_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "occurred_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "rank": {
@@ -263,9 +279,11 @@
                           "type": "integer"
                         },
                         "valid_from": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "valid_until": {
+                          "format": "date-time",
                           "type": "string"
                         }
                       },
@@ -329,6 +347,7 @@
                 "type": "string"
               },
               "observed_at": {
+                "format": "date-time",
                 "type": "string"
               },
               "source_agent": {
@@ -793,12 +812,14 @@
                   "type": "object"
                 },
                 "observed_at": {
+                  "format": "date-time",
                   "type": [
                     "string",
                     "null"
                   ]
                 },
                 "occurred_at": {
+                  "format": "date-time",
                   "type": [
                     "string",
                     "null"
@@ -823,9 +844,11 @@
                   "type": "string"
                 },
                 "valid_from": {
+                  "format": "date-time",
                   "type": "string"
                 },
                 "valid_until": {
+                  "format": "date-time",
                   "type": "string"
                 }
               },
@@ -839,12 +862,14 @@
             "type": "array"
           },
           "observed_at": {
+            "format": "date-time",
             "type": [
               "string",
               "null"
             ]
           },
           "occurred_at": {
+            "format": "date-time",
             "type": [
               "string",
               "null"
@@ -986,6 +1011,7 @@
                   "type": "string"
                 },
                 "observed_at": {
+                  "format": "date-time",
                   "type": [
                     "string",
                     "null"
@@ -1081,9 +1107,11 @@
             "type": "string"
           },
           "valid_from": {
+            "format": "date-time",
             "type": "string"
           },
           "valid_until": {
+            "format": "date-time",
             "type": "string"
           }
         },
@@ -1659,6 +1687,7 @@
                 "type": "string"
               },
               "time": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -1776,9 +1805,11 @@
           "interval": {
             "properties": {
               "end": {
+                "format": "date-time",
                 "type": "string"
               },
               "start": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -1883,7 +1914,7 @@
                     ]
                   },
                   "next_cursor": {
-                    "description": "Opaque recall cursor (kmp2) for page.cursor, or null: it resumes after the item this page ended on. Keep bound arguments unchanged; only page.entries, budget.tokens and budget.max_bytes may vary. A kmp1 cursor is refused as outdated (READ_CURSOR_OUTDATED): restart.",
+                    "description": "Opaque recall cursor (kmp2) for page.cursor, or null: it resumes after the item this page ended on. Keep bound arguments unchanged; only page.entries and budget.max_bytes may vary. A kmp1 cursor is refused as outdated (READ_CURSOR_OUTDATED): restart.",
                     "type": [
                       "string",
                       "null"
@@ -2251,6 +2282,7 @@
                 "type": "string"
               },
               "time": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -2368,9 +2400,11 @@
           "interval": {
             "properties": {
               "end": {
+                "format": "date-time",
                 "type": "string"
               },
               "start": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -2495,7 +2529,7 @@
                     ]
                   },
                   "next_cursor": {
-                    "description": "Opaque recall cursor (kmp2) for page.cursor, or null: it resumes after the item this page ended on. Keep bound arguments unchanged; only page.entries, budget.tokens and budget.max_bytes may vary. A kmp1 cursor is refused as outdated (READ_CURSOR_OUTDATED): restart.",
+                    "description": "Opaque recall cursor (kmp2) for page.cursor, or null: it resumes after the item this page ended on. Keep bound arguments unchanged; only page.entries and budget.max_bytes may vary. A kmp1 cursor is refused as outdated (READ_CURSOR_OUTDATED): restart.",
                     "type": [
                       "string",
                       "null"
@@ -2761,9 +2795,11 @@
           "interval": {
             "properties": {
               "end": {
+                "format": "date-time",
                 "type": "string"
               },
               "start": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -2975,6 +3011,7 @@
                 "type": "integer"
               },
               "time": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -2989,6 +3026,7 @@
                 "type": "integer"
               },
               "time": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -3027,9 +3065,6 @@
           },
           "continuation": {
             "type": "string"
-          },
-          "depth": {
-            "type": "integer"
           },
           "dimensions": {
             "properties": {
@@ -3128,6 +3163,7 @@
                 "type": "integer"
               },
               "time": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -3153,9 +3189,11 @@
           "interval": {
             "properties": {
               "end": {
+                "format": "date-time",
                 "type": "string"
               },
               "start": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -3571,6 +3609,7 @@
                 "type": "string"
               },
               "time": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -3599,15 +3638,14 @@
           "from": {
             "type": "string"
           },
-          "goal": {
-            "type": "string"
-          },
           "interval": {
             "properties": {
               "end": {
+                "format": "date-time",
                 "type": "string"
               },
               "start": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -4532,6 +4570,7 @@
             "type": "string"
           },
           "observed_at": {
+            "format": "date-time",
             "type": "string"
           },
           "options": {
@@ -5255,9 +5294,11 @@
           "interval": {
             "properties": {
               "end": {
+                "format": "date-time",
                 "type": "string"
               },
               "start": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -6019,9 +6060,11 @@
                     "type": "string"
                   },
                   "from": {
+                    "format": "date-time",
                     "type": "string"
                   },
                   "to": {
+                    "format": "date-time",
                     "type": "string"
                   }
                 },

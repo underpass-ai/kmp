@@ -70,6 +70,7 @@
                             "type": "string"
                           },
                           "ingested_at": {
+                            "format": "date-time",
                             "type": "string"
                           },
                           "metadata": {
@@ -79,9 +80,11 @@
                             "type": "object"
                           },
                           "observed_at": {
+                            "format": "date-time",
                             "type": "string"
                           },
                           "occurred_at": {
+                            "format": "date-time",
                             "type": "string"
                           },
                           "rank": {
@@ -94,9 +97,11 @@
                             "type": "integer"
                           },
                           "valid_from": {
+                            "format": "date-time",
                             "type": "string"
                           },
                           "valid_until": {
+                            "format": "date-time",
                             "type": "string"
                           }
                         },
@@ -158,9 +163,11 @@
                     "support_clocks": {
                       "properties": {
                         "ingested_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "observed_at": {
+                          "format": "date-time",
                           "type": "string"
                         }
                       },
@@ -176,6 +183,7 @@
                       "type": "string"
                     },
                     "time": {
+                      "format": "date-time",
                       "type": "string"
                     }
                   },
@@ -207,18 +215,23 @@
                     "clocks": {
                       "properties": {
                         "ingested_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "observed_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "occurred_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "valid_from": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "valid_until": {
+                          "format": "date-time",
                           "type": "string"
                         }
                       },
@@ -239,6 +252,7 @@
                           "type": "string"
                         },
                         "ingested_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "metadata": {
@@ -248,9 +262,11 @@
                           "type": "object"
                         },
                         "observed_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "occurred_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "rank": {
@@ -263,9 +279,11 @@
                           "type": "integer"
                         },
                         "valid_from": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "valid_until": {
+                          "format": "date-time",
                           "type": "string"
                         }
                       },
@@ -329,6 +347,7 @@
                 "type": "string"
               },
               "observed_at": {
+                "format": "date-time",
                 "type": "string"
               },
               "source_agent": {
@@ -521,12 +540,14 @@
                   "type": "object"
                 },
                 "observed_at": {
+                  "format": "date-time",
                   "type": [
                     "string",
                     "null"
                   ]
                 },
                 "occurred_at": {
+                  "format": "date-time",
                   "type": [
                     "string",
                     "null"
@@ -551,9 +572,11 @@
                   "type": "string"
                 },
                 "valid_from": {
+                  "format": "date-time",
                   "type": "string"
                 },
                 "valid_until": {
+                  "format": "date-time",
                   "type": "string"
                 }
               },
@@ -567,12 +590,14 @@
             "type": "array"
           },
           "observed_at": {
+            "format": "date-time",
             "type": [
               "string",
               "null"
             ]
           },
           "occurred_at": {
+            "format": "date-time",
             "type": [
               "string",
               "null"
@@ -714,6 +739,7 @@
                   "type": "string"
                 },
                 "observed_at": {
+                  "format": "date-time",
                   "type": [
                     "string",
                     "null"
@@ -809,9 +835,11 @@
             "type": "string"
           },
           "valid_from": {
+            "format": "date-time",
             "type": "string"
           },
           "valid_until": {
+            "format": "date-time",
             "type": "string"
           }
         },
@@ -850,6 +878,7 @@
                 "type": "string"
               },
               "time": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -967,9 +996,11 @@
           "interval": {
             "properties": {
               "end": {
+                "format": "date-time",
                 "type": "string"
               },
               "start": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -1036,6 +1067,7 @@
                 "type": "string"
               },
               "time": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -1153,9 +1185,11 @@
           "interval": {
             "properties": {
               "end": {
+                "format": "date-time",
                 "type": "string"
               },
               "start": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -1305,9 +1339,11 @@
           "interval": {
             "properties": {
               "end": {
+                "format": "date-time",
                 "type": "string"
               },
               "start": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -1363,6 +1399,7 @@
                 "type": "integer"
               },
               "time": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -1377,6 +1414,7 @@
                 "type": "integer"
               },
               "time": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -1415,9 +1453,6 @@
           },
           "continuation": {
             "type": "string"
-          },
-          "depth": {
-            "type": "integer"
           },
           "dimensions": {
             "properties": {
@@ -1516,6 +1551,7 @@
                 "type": "integer"
               },
               "time": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -1541,9 +1577,11 @@
           "interval": {
             "properties": {
               "end": {
+                "format": "date-time",
                 "type": "string"
               },
               "start": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -1631,6 +1669,7 @@
                 "type": "string"
               },
               "time": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -1659,15 +1698,14 @@
           "from": {
             "type": "string"
           },
-          "goal": {
-            "type": "string"
-          },
           "interval": {
             "properties": {
               "end": {
+                "format": "date-time",
                 "type": "string"
               },
               "start": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -2190,6 +2228,7 @@
             "type": "string"
           },
           "observed_at": {
+            "format": "date-time",
             "type": "string"
           },
           "options": {
@@ -2546,9 +2585,11 @@
           "interval": {
             "properties": {
               "end": {
+                "format": "date-time",
                 "type": "string"
               },
               "start": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -2669,9 +2710,11 @@
                     "type": "string"
                   },
                   "from": {
+                    "format": "date-time",
                     "type": "string"
                   },
                   "to": {
+                    "format": "date-time",
                     "type": "string"
                   }
                 },

@@ -81,12 +81,13 @@ fn probes() -> Vec<(&'static str, Value)> {
                      "coordinates": [coordinate]},
                     {"id": "proj:t:b", "kind": "observation", "text": "The deploy failed.",
                      "coordinates": [{"dimension": "task", "scope_id": "task:t1"}]}],
-                "evidence": [{"id": "proj:t:ev", "text": "Log line: disk full.",
+                "evidence": [{"id": "evidence:proj:t:ev", "text": "Log line: disk full.",
                     "time": "2026-01-02T00:00:00Z", "supports": ["proj:t:a"],
                     "support_clocks": {"observed_at": "2026-01-02T00:00:00Z",
                                        "ingested_at": "2026-01-03T00:00:00Z"}}],
                 "relations": [{"from": "proj:t:b", "to": "proj:t:a", "rel": "depends_on",
-                    "class": "causal", "confidence": "high", "clocks": clocks(),
+                    "class": "causal", "confidence": "high", "why": "A full disk fails a deploy.",
+                    "evidence": "Log line: disk full.", "clocks": clocks(),
                     "coordinate": relation_coordinate}]},
             "provenance": {"source_kind": "agent", "source_agent": "audit",
                            "observed_at": "2026-01-02T00:00:00Z"}}),
@@ -321,8 +322,7 @@ async fn the_published_date_time_arguments_are_exactly_the_ones_the_validator_re
     for (tool, probe) in probes() {
         let accepted = call(&server, tool, &probe).await;
         assert_ne!(
-            accepted["isError"],
-            true,
+            accepted["isError"], true,
             "the {tool} probe is accepted as it stands: {accepted}"
         );
         let mut leaves = Vec::new();
@@ -342,7 +342,14 @@ async fn the_published_date_time_arguments_are_exactly_the_ones_the_validator_re
                 read_as_timestamp.insert(name);
             } else {
                 let text = refusal_text(&reply);
-                answers.insert(name, if text.is_empty() { "accepted".to_string() } else { text });
+                answers.insert(
+                    name,
+                    if text.is_empty() {
+                        "accepted".to_string()
+                    } else {
+                        text
+                    },
+                );
             }
         }
     }
