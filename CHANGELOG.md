@@ -9,6 +9,8 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-21
+
 1.0 is the first release covered by [stability and support](docs/stability.md).
 Its promise covers local use: one `kmp-mcp` process beside your agent, with an
 embedded SQLite store on your machine. That means the MCP tools over stdio,
@@ -3538,7 +3540,8 @@ The initial agent schema that expands with use and persistent consultation profi
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.27.1...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/underpass-ai/kmp/compare/v0.27.1...v1.0.0
 [0.27.1]: https://github.com/underpass-ai/kmp/compare/v0.27.0...v0.27.1
 [0.27.0]: https://github.com/underpass-ai/kmp/compare/v0.26.2...v0.27.0
 [0.26.2]: https://github.com/underpass-ai/kmp/compare/v0.26.1...v0.26.2
