@@ -928,7 +928,12 @@ pub fn ask_response_from_result(
                 .count()
         };
         warnings.push(format!(
-            "doubt band ({}) asked {} about {} passages: {} citations vetoed, {} promoted; its verdicts are frozen in the store's verdict book",
+            "{} ({}) asked {} about {} passages: {} citations vetoed, {} promoted; its verdicts are frozen in the store's verdict book",
+            if doubt.entry().is_cross_language() {
+                "cross-language judge"
+            } else {
+                "doubt band"
+            },
             doubt.entry().as_str(),
             doubt.model(),
             doubt.len(),

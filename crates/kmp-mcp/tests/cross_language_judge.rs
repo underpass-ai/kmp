@@ -219,5 +219,5 @@ async fn gate() {
     assert!(tally.answered_with_gold >= ANSWERED_FLOOR, "{tally:#?}");
 }
 
-const RESCUED_FLOOR: usize = 1;
-const ANSWERED_FLOOR: usize = 1;
+const RESCUED_FLOOR: usize = 6;
+const ANSWERED_FLOOR: usize = 33;
