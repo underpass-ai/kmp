@@ -13,19 +13,7 @@ pub struct CodexPluginCache {
 
 impl CodexPluginCache {
     pub fn from_environment() -> Self {
-        let home = std::env::var_os("CODEX_HOME")
-            .map(PathBuf::from)
-            .or_else(|| {
-                std::env::var_os("HOME")
-                    .map(PathBuf::from)
-                    .map(|home| home.join(".codex"))
-            })
-            .unwrap_or_else(|| {
-                std::env::current_dir()
-                    .unwrap_or_else(|_| PathBuf::from("."))
-                    .join(".codex")
-            });
-        Self::new(home)
+        Self::new(super::native_survey_roots::codex_home_from_environment())
     }
 
     pub fn new(codex_home: impl AsRef<Path>) -> Self {

@@ -238,6 +238,15 @@ pub(crate) fn check_or_stamp_as(
     }
 }
 
+/// What a retired format number was, in the words `store-format.md` uses.
+const fn retired_format_written_by(version: u32) -> Option<&'static str> {
+    match version {
+        1 => Some("a redb store written by KMP 0.3.x or earlier"),
+        2 => Some("a SQLite store with the old label identity, written by KMP 0.2.0 to 0.14.x"),
+        _ => None,
+    }
+}
+
 /// Maps a stamped number to an engine this build can open, or says exactly
 /// why not: retired, unsupported, or too new for the binary.
 fn resolve_stamped(data_dir: &Path, version: u32) -> Result<StorageEngine, PortError> {
@@ -251,11 +260,15 @@ fn resolve_stamped(data_dir: &Path, version: u32) -> Result<StorageEngine, PortE
     }
     if version < 3 {
         return Err(PortError::InvalidState(format!(
-            "embedded store at `{}` uses unsupported format version {version}; current KMP \
+            "embedded store at `{}` uses unsupported format version {version}{}; current KMP \
              opens format {SUPPORTED_FORMAT_VERSION} only and left the directory untouched. \
-             Preserve that directory and use a compatible binary to inspect it. \
-             This redesign requires a fresh store; old refs and bundles are not migrated",
+             No migration exists, and the bundles the releases that wrote it export are \
+             refused too. Keep the directory if you need its history (the release that wrote \
+             it still opens it), and give this engine another store",
             data_dir.display(),
+            retired_format_written_by(version)
+                .map(|origin| format!(" ({origin})"))
+                .unwrap_or_default(),
         )));
     }
     StorageEngine::from_format_version(version).ok_or_else(|| {
@@ -408,7 +421,18 @@ mod tests {
             message.contains("unsupported format version 1"),
             "{message}"
         );
-        assert!(message.contains("fresh store"), "{message}");
+        assert!(
+            message.contains("a redb store written by KMP 0.3.x"),
+            "{message}"
+        );
+        assert!(
+            message.contains("give this engine another store"),
+            "{message}"
+        );
+        assert!(
+            !message.contains("fresh store"),
+            "names no exporter: {message}"
+        );
         assert_eq!(fs::read(&store).expect("source remains"), b"legacy bytes");
     }
 

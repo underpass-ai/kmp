@@ -5,6 +5,9 @@ use std::path::PathBuf;
 pub struct SurveyRoots {
     pub home: PathBuf,
     pub data_home: PathBuf,
+    /// Codex's home: `CODEX_HOME`, else `~/.codex`. Its `config.toml` is
+    /// where a hand-written registration lives.
+    pub codex_home: PathBuf,
     pub working_dir: PathBuf,
     pub path_entries: Vec<PathBuf>,
 }

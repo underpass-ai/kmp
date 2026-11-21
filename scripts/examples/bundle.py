@@ -10,6 +10,11 @@ the shipped guide and demo use. Each packet goes through the public MCP
 writer of a temporary store, exactly as an agent would send it; the exported
 bundle is what `kmp-mcp import <file>` replays into an empty store. No model
 is involved and nothing outside the temporary directory is written.
+
+With `--base BUNDLE` the temporary store starts from that bundle (imported
+first), and the packets are sent on top of it: one already in it replays
+under its idempotency key and appends nothing. A committed history then grows
+by appending, and the stores already rebuilt from it stay a prefix of it.
 """
 from __future__ import annotations
 
@@ -31,6 +36,7 @@ def main() -> int:
     parser.add_argument("--binary", type=Path, required=True, help="kmp-mcp executable")
     parser.add_argument("--requests", type=Path, required=True, help="JSON array of kmp_ingest arguments")
     parser.add_argument("--out", type=Path, required=True, help="bundle to write")
+    parser.add_argument("--base", type=Path, help="bundle the store starts from, kept as a prefix")
     args = parser.parse_args()
 
     binary = args.binary.resolve()
@@ -52,6 +58,14 @@ def main() -> int:
             KMP_VIEWER_ADDR="off",
         )
         (scratch / "home").mkdir()
+        if args.base is not None:
+            imported = subprocess.run(
+                [str(binary), "import", str(args.base.resolve())],
+                cwd=scratch, env=env, text=True, capture_output=True,
+            )
+            if imported.returncode != 0:
+                sys.stderr.write(imported.stderr)
+                return imported.returncode
         client = Stdio(binary, scratch, env, lambda event: None)
         try:
             client.rpc("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},

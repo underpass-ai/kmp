@@ -51,8 +51,8 @@ impl DoubtBandJudge {
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
             Err(_) => return Err("cannot read ask judge configuration".into()),
         };
-        let config: AskJudgeConfig =
-            serde_json::from_slice(&bytes).map_err(|_| "invalid ask judge configuration")?;
+        let config: AskJudgeConfig = serde_json::from_slice(&bytes)
+            .map_err(|error| format!("invalid ask judge configuration: {error}"))?;
         config.validate()?;
         match judgement {
             Ok(Some(model)) => Ok(Some(Arc::new(Self::new(Arc::clone(model), config)))),

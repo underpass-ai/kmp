@@ -29,7 +29,7 @@ pub(crate) fn backend_finding() -> LifecycleFinding {
             None => {
                 LifecycleFinding::new(DiagnosticSeverity::Fail, "grpc, with no kernel to talk to")
                     .with_detail(format!(
-                        "set {} , or unset {} and the kernel runs right here",
+                        "set {}, or unset {} and the kernel runs right here",
                         crate::GRPC_ENDPOINT_ENV,
                         crate::MCP_BACKEND_ENV
                     ))

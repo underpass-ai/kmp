@@ -70,6 +70,9 @@ pub(crate) struct SqliteEngine {
     /// Opened as somebody else's memory: every connection is read-only at
     /// the SQLite level, so no code path can write to it.
     read_only: bool,
+    /// The file this store leaves beside itself once it holds events; none
+    /// for an engine opened without its data directory (tests, compaction).
+    memory_proof: Option<super::super::memory_proof::MemoryProof>,
 }
 
 impl SqliteEngine {
@@ -84,6 +87,7 @@ impl SqliteEngine {
             pool: Arc::new(Mutex::new(vec![connection])),
             revision_observer: Mutex::new(None),
             read_only: false,
+            memory_proof: None,
         })
     }
 
@@ -105,7 +109,21 @@ impl SqliteEngine {
             pool: Arc::new(Mutex::new(vec![connection])),
             revision_observer: Mutex::new(None),
             read_only: true,
+            memory_proof: None,
         })
+    }
+
+    /// Keep this store's proof of memory in `data_dir`, and write it now
+    /// when the log already holds events from before proofs existed.
+    pub(crate) fn proving_memory_in(mut self, data_dir: &Path) -> Result<Self, PortError> {
+        let proof = super::super::memory_proof::MemoryProof::for_data_dir(data_dir);
+        if !proof.is_recorded() && self.begin_read()?.count(Table::EventLog)? > 0 {
+            // Best effort, like every later attempt: a proof that cannot be
+            // written never turns a working open into a failure.
+            let _ = proof.record();
+        }
+        self.memory_proof = Some(proof);
+        Ok(self)
     }
 
     fn connect(&self) -> Result<Connection, PortError> {
@@ -186,7 +204,11 @@ impl Engine for SqliteEngine {
             .map_err(|error| {
                 PortError::Unavailable(format!("embedded store write transaction failed: {error}"))
             })?;
-        Ok(Box::new(SqliteWrite { connection }))
+        Ok(Box::new(SqliteWrite {
+            connection,
+            memory_proof: self.memory_proof.as_ref(),
+            appended_events: false,
+        }))
     }
 }
 
@@ -869,6 +891,10 @@ impl ReadTx for SqliteRead<'_> {
 
 struct SqliteWrite<'e> {
     connection: Pooled<'e>,
+    memory_proof: Option<&'e super::super::memory_proof::MemoryProof>,
+    /// Whether this transaction appended to the event log: the commit that
+    /// makes a store hold memory is the one that must leave its proof.
+    appended_events: bool,
 }
 
 impl SqliteWrite<'_> {
@@ -944,6 +970,7 @@ impl ReadTx for SqliteWrite<'_> {
 
 impl WriteTx for SqliteWrite<'_> {
     fn insert(&mut self, table: Table, key: Key<'_>, value: &[u8]) -> Result<(), PortError> {
+        self.appended_events |= table == Table::EventLog;
         self.ops().insert(table, key, value)
     }
     fn remove(&mut self, table: Table, key: Key<'_>) -> Result<(), PortError> {
@@ -957,7 +984,15 @@ impl WriteTx for SqliteWrite<'_> {
         // drop that follows returns it clean instead of rolling anything back.
         self.connection.execute_batch("COMMIT").map_err(|error| {
             PortError::Unavailable(format!("embedded store commit failed: {error}"))
-        })
+        })?;
+        if self.appended_events
+            && let Some(proof) = self.memory_proof
+        {
+            // The events are committed whatever happens here; a proof that
+            // could not be written is tried again on the next append.
+            let _ = proof.record();
+        }
+        Ok(())
     }
 }
 

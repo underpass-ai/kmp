@@ -199,6 +199,23 @@ fn doctor_and_info_list_the_switches_in_effect() {
     );
 }
 
+/// `grpc` with no endpoint names the variable to set, with no stray space
+/// before the comma.
+#[test]
+fn doctor_names_the_missing_grpc_endpoint_cleanly() {
+    let dir = store();
+    let doctor = text(&verb(dir.path(), &[("KMP_MCP_BACKEND", "grpc")], &["doctor"]).stdout);
+    assert!(
+        doctor.contains("grpc, with no kernel to talk to"),
+        "{doctor}"
+    );
+    assert!(
+        doctor.contains("KMP_KERNEL_GRPC_ENDPOINT, or unset"),
+        "{doctor}"
+    );
+    assert!(!doctor.contains("ENDPOINT ,"), "{doctor}");
+}
+
 fn plugin_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../plugins/kmp")
 }

@@ -59,11 +59,17 @@ pub(super) fn refuse_vanished_database(
     )))
 }
 
-/// Files that only exist once memory did: the telemetry salt (written by
-/// the first call that answered from the store), a write-ahead log with
-/// frames still in it, and a lexical index holding indexed memory.
+/// Files that only exist once memory did: the proof the store writes on its
+/// first append (however the events arrived: a session, `demo`, `import`, a
+/// project rebuild), the telemetry salt (written by the first call that
+/// answered from the store), a write-ahead log with frames still in it, and
+/// a lexical index holding indexed memory.
 fn evidence_of_earlier_memory(data_dir: &Path, store_file: &Path) -> Vec<PathBuf> {
     let mut evidence = Vec::new();
+    let proof = super::memory_proof::memory_proof_path(data_dir);
+    if proof.is_file() {
+        evidence.push(proof);
+    }
     let salt = data_dir.join(kmp_observability::TELEMETRY_SALT_FILE);
     if salt.is_file() {
         evidence.push(salt);
@@ -141,5 +147,17 @@ mod tests {
         std::fs::write(dir.path().join("store/kernel.sqlite3-wal"), b"frames").expect("wal");
 
         assert!(refuse_vanished_database(dir.path(), &file).is_err());
+    }
+
+    #[test]
+    fn the_proof_a_store_leaves_is_evidence_without_a_salt() {
+        let dir = tempfile::tempdir().expect("dir");
+        let file = dir.path().join("store/kernel.sqlite3");
+        std::fs::write(dir.path().join("held-memory"), b"held").expect("proof");
+
+        let missing = refuse_vanished_database(dir.path(), &file)
+            .expect_err("a store with a proof and no database is refused")
+            .to_string();
+        assert!(missing.contains("held-memory"), "{missing}");
     }
 }

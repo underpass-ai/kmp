@@ -175,8 +175,9 @@ kmp-mcp demo
 writes a worked example — a checkout service, an incident, the decision that
 replaced an earlier one and the measurement that verified it — into the store
 this directory resolves to, opens ChronoLoom on it and prints four questions
-to ask your agent. It is idempotent and never enters a project's committed
-bundle. `--no-viewer` writes and exits.
+to ask your agent. It is idempotent and never writes a project's store: inside
+a project it writes the store a directory outside any project would open, and
+says so. `--no-viewer` writes and exits.
 
 ### Agent routing policy
 
@@ -322,10 +323,10 @@ there. It separates them:
   inventory is not a conversation that can call a tool.
 
 It reads each host's own inventory (for Codex, `codex plugin list` and
-`codex mcp list`) and looks for one server named `kmp`; it does not report a
-second owner. A hand-written `[mcp_servers.kmp]` table in
-`~/.codex/config.toml` beside the plugin is named by the `kmp-mcp uninstall`
-preview. Do not add one.
+`codex mcp list`), and the files the `kmp-mcp uninstall` preview reads for
+hand-written wiring: a `[mcp_servers.kmp]` table in Codex's `config.toml`
+(`$CODEX_HOME`, default `~/.codex`) beside the plugin is reported as a second
+owner, and a retired `kernel-memory` registration always is. Do not add one.
 
 Two failures it names rather than leaving you to guess: an unsupported store
 format, which current KMP detects but deliberately does not open, leaving the

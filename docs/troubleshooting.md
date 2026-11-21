@@ -35,7 +35,7 @@ The host shows no `kmp_*` tools. Follow the
 |:--|:--|:--|
 | `FAIL  KMP_LEXICAL_INDEX holds a value kmp-mcp refuses` / ``KMP_LEXICAL_INDEX=`maybe` is not a value kmp-mcp accepts; it accepts on, off, true, false, 1, 0, yes, no`` | A switch value this build does not accept. The server does not start; other verbs exit 2. | Fix the value or unset the variable. Accepted values: [configuration](embedded/configuration.md#environment-switches). |
 | ``KMP_MCP_DATA_DIR=`relative/path` is not a value kmp-mcp accepts; it accepts an absolute path (no ~, not relative).`` | Relative store path. | Use an absolute path, or unset it. |
-| ``viewer address `0.0.0.0:7317` is not a loopback address`` | The viewer serves private memory and binds loopback only. | A loopback address, `off`, or unset `KMP_VIEWER_ADDR`. |
+| ``viewer address `0.0.0.0:7317` is not a loopback address; the viewer serves private memory and only binds a loopback address: 127.0.0.0/8 (such as 127.0.0.1) or [::1]`` | The viewer serves private memory and binds loopback only. | A loopback address, `off`, or unset `KMP_VIEWER_ADDR`. |
 | ``FAIL  `fixture` is not a backend`` | The test backend is not in a release binary. | Unset `KMP_MCP_BACKEND`. |
 | `warn  KMP_MCP_ENGINE is set, and this build reads no such switch` | A typo, a switch removed at 1.0, or another program's variable. | Unset it. |
 | `kmp-mcp export: this command works on the local store, and the environment selects a remote gRPC kernel …` | `KMP_MCP_BACKEND=grpc` or `KMP_KERNEL_GRPC_ENDPOINT` is set. | Unset both to work on this machine's store. |
@@ -44,7 +44,7 @@ The host shows no `kmp_*` tools. Follow the
 
 | You see | Cause | Fix |
 |:--|:--|:--|
-| ``embedded store at `<dir>` uses unsupported format version 1; current KMP opens format 4 only and left the directory untouched`` (or version 2) | A store from 0.14 or earlier. | Select another store (`kmp-mcp config memory-store --clear`, or move the directory aside). No migration exists; see [Store format](embedded/store-format.md). |
+| ``embedded store at `<dir>` uses unsupported format version 1 (a redb store written by KMP 0.3.x or earlier); current KMP opens format 4 only and left the directory untouched`` (or version 2, a SQLite store with the old label identity written by KMP 0.2.0 to 0.14.x) | A store from 0.14 or earlier. | Select another store (`kmp-mcp config memory-store --clear`, or move the directory aside). No migration exists; see [Store format](embedded/store-format.md). |
 | `uses format version 9, newer than this binary supports (4); upgrade the binary` | A newer engine wrote it. | `kmp-mcp update`. |
 | `FAIL  the selected memory's database cannot be read` (section **Database**) with `database disk image is malformed` or `file is not a database` | `store/kernel.sqlite3` is damaged. | Move the data directory aside, then `kmp-mcp import <bundle>` into the new empty store from your last export. In a project, the next session rebuilds the store from `.kmp/memory.jsonl`. |
 | ``lost its database: `<dir>/store/kernel.sqlite3` is missing, but this directory shows it held memory before`` | The database was deleted or emptied. KMP refuses to start an empty store over it. | Restore the file from a backup. In a project, move the directory aside: the next session rebuilds it from the committed bundle. |
@@ -58,7 +58,8 @@ The host shows no `kmp_*` tools. Follow the
 
 | You see | Cause | Fix |
 |:--|:--|:--|
-| `import requires an empty store; this store already holds 1 events` | `import <file>` restores into an empty store only. | To add exact abouts to a store that holds memory: `kmp-mcp import --from <bundle\|store-dir> --about <about>`. |
+| ``import refused; nothing was written. `kmp-mcp import <file>` restores a bundle whole into an empty store, and this store already holds 1 event`` | `import <file>` restores into an empty store only. | The refusal names both ways: to add exact abouts to a store that holds memory, `kmp-mcp import --from <bundle\|store-dir> --about <about>`; to restore the whole bundle, point `KMP_MCP_DATA_DIR` at a new directory. |
+| ``import refused; nothing was written. The source `<dir>` holds no about `project:nope` `` (or `the source holds no about` for a bundle) | `import --from` asked for an about the source does not have. | Check the about with `kmp-mcp memories` or the bundle header. |
 | `named snapshots belong to a project, but this store resolved to <dir> by the user rule` | Snapshots exist only for project stores. | `kmp-mcp export <file>`. |
 | `export needs a bundle file path here` | Outside a project there is no committed bundle to write. | `kmp-mcp export <file>`. |
 
@@ -91,9 +92,12 @@ process would:
 |:--|:--|:--|
 | ``warn  ask-gate.json: rejected: ask-gate.json names mode `bogus` `` | A value the file does not accept. The default applies. | Fix or remove it, then restart the host. |
 | `warn  lexical-bridge.kmpb: rejected: the table is unreadable or empty` | Damaged bridge table. Asks still match within one language. | Remove it, or `kmp-mcp setup` to install the machine table. |
-| `warn  typesafe.json: rejected: TYPESAFE_API_KEY is not set and no ~/.config/typesafe.env holds it` | Jev opted in without a key. Nothing is sent. | Set `TYPESAFE_API_KEY`, or write `typesafe.env` in your config directory (mode `0600`). |
+| `warn  typesafe.json: rejected: TYPESAFE_API_KEY is not set and no <config>/typesafe.env holds it` (`<config>` is `$XDG_CONFIG_HOME`, else `~/.config`; the line names the real path) | Jev opted in without a key. Nothing is sent. | Set `TYPESAFE_API_KEY`, or write `TYPESAFE_API_KEY=<key>` to the file it names (mode `0600`). |
+| ``warn  typesafe.json: rejected: invalid TypeSafe configuration: missing field `endpoint` at line 1 column 22`` | An incomplete file; the line names the field. | Use the full shape: `{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.14.0","timeout_ms":20000}`. |
 | `warn  typesafe.json: rejected: TypeSafe model must be a pinned version such as jev-1.14.0` | An alias such as `jev-latest`. | Name a pinned release. |
 | `warn  ask-judge.json: rejected: ask-judge.json needs typesafe.json beside the store` | A Jev feature without its parent opt-in. | Add `typesafe.json`, or remove the file. |
+| ``warn  rerank.json: rejected: invalid rerank configuration: missing field `pool_size` at line 1 column 2`` | `rerank.json` holds `{}` or lacks a field; the line names it. | Add the field it names, or remove the file. |
+| ``warn  ask-cross-language.json: rejected: invalid ask cross-language configuration: unknown field `vetoo`, expected one of `veto`, `rescue`, `keep_at`, `rescue_at`, `excerpt_chars` at line 1 column 8`` | A misspelt or unknown key; the line names it and the keys the file accepts. The same holds for `ask-judge.json`, `wake-focus.json`, `write-expansions.json` and `semantic-retrieval.json`. | Fix the key it names, or remove the file. |
 
 ## Hosts and engines
 
@@ -104,7 +108,12 @@ process would:
 | `warn  codex: MCP registration installed and enabled, live connection unverified` | `doctor` cannot open a host session itself. | Nothing to fix; ask the agent to call a `kmp_*` tool to confirm. |
 
 One plugin owns the MCP registration. Do not also add `[mcp_servers.kmp]`
-to `~/.codex/config.toml` or `claude mcp add kmp` by hand. `doctor` does not
-report such a second owner: it reads the host's inventory and looks only for
-one server named `kmp`. The `kmp-mcp uninstall` preview lists hand-written
-Codex wiring (`delete the [mcp_servers.kmp] block`).
+to Codex's `config.toml` (`$CODEX_HOME`, default `~/.codex`) or
+`claude mcp add kmp` by hand. `doctor` reads the same files as the
+`kmp-mcp uninstall` preview and reports such a second owner beside an
+installed plugin, and a retired `kernel-memory` registration anywhere:
+
+| You see | Cause | Fix |
+|:--|:--|:--|
+| `warn  codex: a second MCP owner is wired by hand beside the plugin` / `delete the [mcp_servers.kmp] block, then restart codex` | A hand-written `[mcp_servers.kmp]` table beside the plugin. | Delete the block from the file it names, then restart the host. |
+| ``warn  claude: a retired `kernel-memory` registration is still wired`` / `remove with: claude mcp remove kernel-memory, then restart claude` | Wiring from before the server was named `kmp`. | Run the command it names, then restart the host. |
