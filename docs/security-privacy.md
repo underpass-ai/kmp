@@ -40,8 +40,20 @@ must be a pinned release such as `jev-1.14.0`.
 | `kmp_write_memory` | `write-relations.json` | The memories just written (up to 1,000 characters each) and candidate memories of the same about (up to 300). |
 | `kmp_write_memory` | `write-expansions.json` | Each proposed search expansion, with its memory's text (up to 4,000). |
 
-Never sent: the store path, refs (questions use internal keys such as `p0`),
-other abouts, the telemetry salt, the key in the body. The key travels only
+What each question carries beside those texts (since the questions were
+rewritten to TypeSafe's guide, 2026-11-21):
+
+| Site | Named fields sent |
+|:--|:--|
+| `kmp_curate` pair typing, audit, pre-write check | `from`, `to` (dated texts), `order` (which of the two was recorded first, a sentence computed by KMP), and KMP's one-line meaning of each relation type it offers; the audit and the check add `relation`, `relation_means`, `why`, `evidence` |
+| `kmp_curate` partner round and paths | memory texts keyed by their own first informative words (at most four words, lowercase), never by ref |
+| `kmp_curate` lifecycle (`write-relations.json` `lifecycle: jev`) | `new`, `old`, `order` |
+| `kmp_ask` re-ranking and doubt band | state `{"user_question": …}`, each candidate's text |
+| `kmp_summaries_audit`, `write-expansions.json` | the same texts as before, asked as three and two questions |
+
+Never sent: the store path, refs (questions use internal keys such as `p0`,
+or keys made from a memory's own words), other abouts, the telemetry salt,
+the key in the body. The key travels only
 as an `Authorization` header. Each request is capped at 256 KiB. Verdicts are
 kept locally in `judgements.sqlite3`, keyed by hashes, with no text.
 
@@ -51,6 +63,17 @@ When a store opts in, the tools above declare `openWorldHint: true` in
 Source: `crates/kmp-mcp/src/serving/adapters/typesafe_*.rs` and the builders
 each row names in the code. Verified in code; no real call was made for this
 page.
+
+### TypeSafe model check (`doctor`)
+
+| Fact | Value |
+|:--|:--|
+| When | `kmp-mcp doctor`, only when the selected store has a valid `typesafe.json` and a key is found. `info` never calls. |
+| Request | `GET https://api.typesafe.ai/v1/models` with the key as the `Authorization` header; 3 s timeout. |
+| Carries | No body: no memory, no question, no store path. Reads the model names only. |
+| Result | The pinned model served (ok), not listed among the releases TypeSafe lists (a warning, before judgements fail), or "not checked" when the service cannot be reached or lists aliases only (as it did on 2026-11-21: `jev-latest`, `jev-preview`). |
+
+Source: `crates/kmp-mcp/src/serving/adapters/typesafe_model_check.rs`.
 
 ### Release check
 

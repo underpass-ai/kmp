@@ -12,6 +12,7 @@ fn fact(n: usize, text: &str) -> CurateFact {
         kind: String::new(),
         text: text.into(),
         occurred: None,
+        occurred_at: None,
         labels: Vec::new(),
     }
 }
@@ -40,21 +41,32 @@ fn material(texts: &[String], paired: &[usize]) -> CurateMaterial {
     }
 }
 
-/// Answers each choice with the first key it likes that is offered (`likes` maps a
-/// question key to the keys it likes), else `none`; each noul with `yes`
-/// when its key is in `confirmed`, else 0.1. Records every request.
+/// Answers each choice with the first key it likes that is offered (`likes`
+/// maps an orphan's key to the keys it likes) at probability 0.9, and its
+/// companion (`<key>.any`) yes when one is offered, else no; each other noul
+/// with yes when its key is in `confirmed`, else 0.1. Records every request.
 struct Judge {
-    likes: BTreeMap<&'static str, Vec<&'static str>>,
+    likes: BTreeMap<String, Vec<String>>,
     confirmed: BTreeSet<&'static str>,
     asked: Mutex<Vec<JudgementRequest>>,
 }
 
+/// The key of fact `n` of [`texts`].
+fn k(n: usize) -> String {
+    format!("note_{n}")
+}
+
 impl Judge {
-    fn new(likes: &[(&'static str, &[&'static str])]) -> Self {
+    fn new(likes: &[(usize, &[usize])]) -> Self {
+        Self::keyed(likes, k)
+    }
+
+    /// `likes` by fact index, with each fact's key from `key`.
+    fn keyed(likes: &[(usize, &[usize])], key: impl Fn(usize) -> String) -> Self {
         Self {
             likes: likes
                 .iter()
-                .map(|(key, liked)| (*key, liked.to_vec()))
+                .map(|(own, liked)| (key(*own), liked.iter().map(|n| key(*n)).collect()))
                 .collect(),
             confirmed: BTreeSet::new(),
             asked: Mutex::new(Vec::new()),
@@ -65,32 +77,41 @@ impl Judge {
         self.asked.lock().expect("asked").clone()
     }
 
+    fn liked(&self, own: &str, request: &JudgementRequest) -> Option<String> {
+        let JudgementQuestion::Choice { options, .. } = request.questions.get(own)? else {
+            return None;
+        };
+        self.likes
+            .get(own)?
+            .iter()
+            .find(|like| options.contains(like))
+            .cloned()
+    }
+
     fn answer(&self, request: &JudgementRequest) -> JudgementResponse {
         let mut response = JudgementResponse::empty("jev-test");
         for (key, question) in &request.questions {
             let answer = match question {
                 JudgementQuestion::Choice { options, .. } => {
-                    let liked = self.likes.get(key.as_str()).cloned().unwrap_or_default();
-                    let choice = liked
-                        .iter()
-                        .find(|like| options.iter().any(|option| option == *like))
-                        .map_or_else(|| "none".to_string(), |like| like.to_string());
+                    let choice = self
+                        .liked(key, request)
+                        .unwrap_or_else(|| options[0].clone());
                     JudgementAnswer::Choice {
+                        probabilities: BTreeMap::from([(choice.clone(), 0.9)]),
                         choice,
-                        probabilities: BTreeMap::new(),
-                        confidence: 0.9,
+                        confidence: 0.0,
                     }
                 }
-                JudgementQuestion::Noul { .. } => JudgementAnswer::Noul {
-                    yes: if self.confirmed.contains(key.as_str()) {
-                        0.9
-                    } else {
-                        0.1
-                    },
-                },
-                JudgementQuestion::Score { .. } | JudgementQuestion::CriteriaNoul { .. } => {
-                    panic!("partners ask no score")
+                JudgementQuestion::CriteriaNoul { .. } | JudgementQuestion::Noul { .. } => {
+                    let yes = match key.strip_suffix(".any") {
+                        Some(own) => self.liked(own, request).is_some(),
+                        None => self.confirmed.contains(key.as_str()),
+                    };
+                    JudgementAnswer::Noul {
+                        yes: if yes { 0.9 } else { 0.1 },
+                    }
                 }
+                JudgementQuestion::Score { .. } => panic!("partners ask no score"),
             };
             response.answers.insert(key.clone(), answer);
         }
@@ -145,18 +166,22 @@ fn texts(size: usize) -> Vec<String> {
 #[tokio::test]
 async fn an_about_within_one_choice_asks_once_as_it_always_did() {
     let material = material(&texts(40), &[]);
-    let judge = Judge::new(&[("f3", &["f9"]), ("f12", &["f1"])]);
+    let judge = Judge::new(&[(3, &[9]), (12, &[1])]);
     let (pairs, warnings) = run(&material, "120", PartnerFilter::Off, &judge).await;
     assert_eq!(judge.asked().len(), 1);
-    assert_eq!(judge.asked()[0].questions.len(), 30, "at most 30 orphans");
+    assert_eq!(
+        judge.asked()[0].questions.len(),
+        60,
+        "at most 30 orphans, each a choice and its companion"
+    );
     assert!(warnings.is_empty());
     assert_eq!(
         pairs,
         vec![
-            ("r12".to_string(), "r1".to_string()),
-            ("r3".to_string(), "r9".to_string())
+            ("r3".to_string(), "r9".to_string()),
+            ("r12".to_string(), "r1".to_string())
         ],
-        "in the order of the orphans' keys, as the one choice answered them"
+        "in the about's order of the orphans"
     );
 }
 
@@ -173,10 +198,10 @@ async fn a_large_about_is_read_in_windows_then_one_final_choice_between_winners(
         .collect::<Vec<_>>();
     assert_eq!(orphans, ["r0", "r1", "r2", "r399"]);
     let judge = Judge::new(&[
-        // Two winners, one in each window: the final choice takes f300.
-        ("f0", &["f300", "f10"]),
+        // Two winners, one in each window: the final choice takes 300.
+        (0, &[300, 10]),
         // One winner: it stands.
-        ("f1", &["f250"]),
+        (1, &[250]),
     ]);
     let (pairs, warnings) = run(&material, "512", PartnerFilter::Off, &judge).await;
     assert!(warnings.is_empty(), "{warnings:?}");
@@ -184,17 +209,16 @@ async fn a_large_about_is_read_in_windows_then_one_final_choice_between_winners(
     let asked = judge.asked();
     for request in &asked[..2] {
         for question in request.questions.values() {
-            let JudgementQuestion::Choice { options, .. } = question else {
-                panic!("a choice");
-            };
-            assert!(options.len() <= 240);
+            if let JudgementQuestion::Choice { options, .. } = question {
+                assert!(options.len() <= 239);
+            }
         }
     }
-    let JudgementQuestion::Choice { options, .. } = &asked[2].questions["f0"] else {
+    let JudgementQuestion::Choice { options, .. } = &asked[2].questions[&k(0)] else {
         panic!("a choice");
     };
-    assert_eq!(options, &["f10", "f300", "none"]);
-    assert_eq!(asked[2].questions.len(), 1, "only f0 is contested");
+    assert_eq!(options, &[k(10), k(300)]);
+    assert_eq!(asked[2].questions.len(), 2, "only fact 0 is contested");
     assert_eq!(
         pairs,
         vec![
@@ -226,23 +250,19 @@ async fn the_rare_term_filter_keeps_only_pairs_that_share_a_rare_term() {
         *note = format!("Person {n} reviewed the ledger pipeline.");
     }
     let material = material(&notes, &[]);
-    let likes: &[(&'static str, &[&'static str])] = &[("f1", &["f2"]), ("f3", &["f4"])];
-    let (kept, _) = run(
-        &material,
-        "120",
-        PartnerFilter::RareTerm,
-        &Judge::new(likes),
-    )
-    .await;
+    let likes: &[(usize, &[usize])] = &[(1, &[2]), (3, &[4])];
+    let keys = crate::curate::application::fact_keys::fact_keys(notes.iter().map(String::as_str));
+    let judge = || Judge::keyed(likes, |n| keys[n].clone());
+    let (kept, _) = run(&material, "120", PartnerFilter::RareTerm, &judge()).await;
     assert_eq!(kept, vec![("r1".to_string(), "r2".to_string())]);
-    let (all, _) = run(&material, "120", PartnerFilter::Off, &Judge::new(likes)).await;
+    let (all, _) = run(&material, "120", PartnerFilter::Off, &judge()).await;
     assert_eq!(all.len(), 2);
 }
 
 #[tokio::test]
 async fn the_confirming_filter_asks_one_noul_per_pair_and_keeps_the_confirmed() {
     let material = material(&texts(20), &[]);
-    let mut judge = Judge::new(&[("f1", &["f2"]), ("f3", &["f4"])]);
+    let mut judge = Judge::new(&[(1, &[2]), (3, &[4])]);
     judge.confirmed.insert("c1");
     let (kept, _) = run(&material, "120", PartnerFilter::Confirm, &judge).await;
     assert_eq!(judge.asked().len(), 2, "the round and one confirmation");
@@ -253,7 +273,7 @@ async fn the_confirming_filter_asks_one_noul_per_pair_and_keeps_the_confirmed() 
         confirming
             .questions
             .values()
-            .all(|question| matches!(question, JudgementQuestion::Noul { .. }))
+            .all(|question| matches!(question, JudgementQuestion::CriteriaNoul { .. }))
     );
     assert_eq!(confirming.state["pairs"]["c0"]["a"], "note 1");
     assert_eq!(kept, vec![("r3".to_string(), "r4".to_string())]);

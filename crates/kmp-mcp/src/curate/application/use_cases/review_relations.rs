@@ -2,7 +2,12 @@ use super::find_partners::FindPartners;
 use crate::curate::application::curate_material::CurateMaterial;
 use crate::curate::application::curate_review::CurateReview;
 use crate::curate::application::jev_usage::JevUsage;
-use crate::curate::application::judgement_plan::{pair_request, relation_options, suspect_request};
+use crate::curate::application::judgement_plan::{
+    backward_option, forward_option, pair_request, relation_options, suspect_request,
+};
+use crate::curate::application::pair_reading::{
+    chosen_probability, reading_of, typed_pair, verdict_of,
+};
 use crate::curate::domain::candidate_pair::CandidatePair;
 use crate::curate::domain::curate_finding::CurateFinding;
 use crate::curate::domain::curate_thresholds::{DOUBT_BELOW, NONE, RETYPE_AT};
@@ -13,6 +18,7 @@ use crate::serving::judgement_answer::JudgementAnswer;
 use crate::serving::judgement_failure::JudgementFailure;
 use crate::serving::judgement_request::JudgementRequest;
 use crate::serving::judgement_response::JudgementResponse;
+use crate::serving::noul_reading::NoulReading;
 use crate::serving::ports::judgement_model::JudgementModel;
 
 /// Review the relations of a reading: kernel pairs, Jev partners for
@@ -77,13 +83,12 @@ impl ReviewRelations<'_> {
         };
         let mut missing = Vec::new();
         for (n, pair) in pairs.into_iter().enumerate() {
-            match typed.answers.get(&format!("t{n}")).and_then(verdict_of) {
-                Some(verdict) if verdict.choice != NONE => missing.push(CurateFinding::Missing {
+            if let Some(verdict) = typed_pair(&typed, n) {
+                missing.push(CurateFinding::Missing {
                     pair,
                     suggested_rel: Some(verdict.choice.clone()),
                     verdict: Some(verdict),
-                }),
-                _ => continue,
+                });
             }
         }
         missing.sort_by(|left, right| confidence(right).total_cmp(&confidence(left)));
@@ -106,7 +111,7 @@ impl ReviewRelations<'_> {
                 let crosses = material.fact(&link.from).map(|fact| &fact.about)
                     != material.fact(&link.to).map(|fact| &fact.about);
                 let offered = relation_options(crosses).contains(&link.rel);
-                let direction = audit.answers.get(&format!("d{n}")).and_then(direction_of);
+                let direction = direction_of(&audit, n, &link.rel);
                 let reasons = doubt_reasons(support, &best, &link.rel, offered, direction);
                 if !reasons.is_empty() {
                     review.findings.push(CurateFinding::Suspect {
@@ -125,20 +130,33 @@ impl ReviewRelations<'_> {
     }
 }
 
-/// How strongly the judge reads the relation the declared way round:
-/// forward over forward plus backward. None when it reads neither way, which
-/// is a matter for support, not direction.
-pub(crate) fn direction_of(answer: &JudgementAnswer) -> Option<f64> {
-    let JudgementAnswer::Choice { probabilities, .. } = answer else {
+/// How strongly the judge reads item `n`'s relation the declared way round
+/// (`d<n>`): the declared option over both. None when its companion (`e<n>`,
+/// does either way hold?) reads no, which is a matter for support, not
+/// direction, or when it was not asked or not answered.
+pub(crate) fn direction_of(response: &JudgementResponse, n: usize, rel: &str) -> Option<f64> {
+    if reading_of(response, &format!("e{n}"))? == NoulReading::No {
+        return None;
+    }
+    let JudgementAnswer::Choice { probabilities, .. } = response.answers.get(&format!("d{n}"))?
+    else {
         return None;
     };
-    let forward = probabilities.get("forward").copied().unwrap_or(0.0);
-    let backward = probabilities.get("backward").copied().unwrap_or(0.0);
-    (forward + backward >= 0.2).then(|| forward / (forward + backward))
+    let forward = probabilities
+        .get(&forward_option(rel))
+        .copied()
+        .unwrap_or(0.0);
+    let backward = probabilities
+        .get(&backward_option(rel))
+        .copied()
+        .unwrap_or(0.0);
+    (forward + backward > 0.0).then(|| forward / (forward + backward))
 }
 
 /// Why a declaration, or an item about to be written, is doubted: its reason
-/// does not hold, Jev would type it otherwise, or it runs the wrong way.
+/// reads no (support at or below the line), Jev would type it otherwise (the
+/// probability of another offered type at or above the retype line, never
+/// its `confidence`), or it runs the wrong way.
 pub(crate) fn doubt_reasons(
     support: f64,
     best: &JevVerdict,
@@ -150,7 +168,9 @@ pub(crate) fn doubt_reasons(
     if support < DOUBT_BELOW {
         reasons.push("support");
     }
-    if offered && best.choice != rel && best.choice != NONE && best.confidence >= RETYPE_AT {
+    // `none` is no longer offered; a verdict that names it is never a type.
+    if offered && best.choice != rel && best.choice != NONE && chosen_probability(best) >= RETYPE_AT
+    {
         reasons.push("type");
     }
     if direction.is_some_and(|direction| direction < DOUBT_BELOW) {
@@ -159,27 +179,15 @@ pub(crate) fn doubt_reasons(
     reasons
 }
 
-fn verdict_of(answer: &JudgementAnswer) -> Option<JevVerdict> {
-    match answer {
-        JudgementAnswer::Choice {
-            choice,
-            probabilities,
-            confidence,
-        } => Some(JevVerdict {
-            choice: choice.clone(),
-            probabilities: probabilities.clone(),
-            confidence: *confidence,
-        }),
-        JudgementAnswer::Noul { .. } | JudgementAnswer::Score { .. } => None,
-    }
-}
-
+/// What orders the missing relations: the chosen type's probability, never
+/// `confidence`, which rescales it by how many types were offered (a pair
+/// across abouts is offered two).
 fn confidence(finding: &CurateFinding) -> f64 {
     match finding {
         CurateFinding::Missing {
             verdict: Some(verdict),
             ..
-        } => verdict.confidence,
+        } => chosen_probability(verdict),
         _ => 0.0,
     }
 }

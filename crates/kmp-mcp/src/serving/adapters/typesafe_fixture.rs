@@ -16,7 +16,8 @@ pub(super) struct Reply {
 
 /// Serves the replies in order, one connection each, then disappears. A
 /// call beyond the script fails to connect instead of being answered. Each
-/// request is returned as its raw header block and JSON body.
+/// request is returned as its raw header block and JSON body (`null` for a
+/// request without one).
 pub(super) fn serve(replies: Vec<Reply>) -> (reqwest::Url, JoinHandle<Vec<(String, Value)>>) {
     let listener = TcpListener::bind("127.0.0.1:0").expect("loopback bind");
     let url = reqwest::Url::parse(&format!(
@@ -48,13 +49,16 @@ pub(super) fn serve(replies: Vec<Reply>) -> (reqwest::Url, JoinHandle<Vec<(Strin
                         .strip_prefix("content-length:")
                         .map(|n| n.trim().parse::<usize>().expect("length"))
                 })
-                .expect("content length");
+                // A GET carries no body.
+                .unwrap_or(0);
             data.resize(header_end + length, 0);
             stream.read_exact(&mut data[header_end..]).expect("body");
-            received.push((
-                headers,
-                serde_json::from_slice(&data[header_end..]).expect("JSON body"),
-            ));
+            let body = if length == 0 {
+                Value::Null
+            } else {
+                serde_json::from_slice(&data[header_end..]).expect("JSON body")
+            };
+            received.push((headers, body));
             std::thread::sleep(reply.delay);
             let extra = reply
                 .headers

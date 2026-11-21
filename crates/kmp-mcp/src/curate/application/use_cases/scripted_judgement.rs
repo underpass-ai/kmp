@@ -8,7 +8,8 @@ use crate::serving::judgement_response::JudgementResponse;
 use crate::serving::ports::judgement_model::JudgementModel;
 
 /// Answers every noul with `noul` and every choice with `choice` when
-/// offered (else `none`), at `confidence`.
+/// offered (else `none` when offered, else its first option), giving the
+/// chosen option `confidence` as its probability too.
 pub(crate) struct Scripted {
     pub noul: f64,
     pub choice: &'static str,
@@ -45,8 +46,10 @@ impl JudgementModel for Scripted {
                     JudgementQuestion::Choice { options, .. } => {
                         let choice = if options.iter().any(|o| o == self.choice) {
                             self.choice
-                        } else {
+                        } else if options.iter().any(|o| o == "none") {
                             "none"
+                        } else {
+                            options.first().map_or("none", String::as_str)
                         };
                         JudgementAnswer::Choice {
                             choice: choice.into(),

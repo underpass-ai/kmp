@@ -17,8 +17,9 @@ pub(crate) enum PartnerFilter {
 }
 
 impl PartnerFilter {
-    /// A confirmed pair has at least this probability of yes.
-    pub(crate) const CONFIRM_AT: f64 = 0.5;
+    /// A confirmed pair reads yes: at least this probability (TypeSafe's
+    /// starting yes line); an unsettled pair is not confirmed.
+    pub(crate) const CONFIRM_AT: f64 = 0.7;
 
     /// The filter a store names (`off`, `rare_term`, `confirm`), or `None`
     /// for any other name.

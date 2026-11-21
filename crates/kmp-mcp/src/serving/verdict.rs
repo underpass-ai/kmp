@@ -289,6 +289,7 @@ mod tests {
         JudgementQuestion::Choice {
             instructions: json!("q"),
             options: vec!["none".into(), "b".into(), "a".into()],
+            described: Default::default(),
         }
     }
 

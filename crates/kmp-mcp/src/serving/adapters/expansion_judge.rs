@@ -15,17 +15,30 @@ use super::write_expansions_config::WriteExpansionsConfig;
 use crate::serving::judgement_answer::JudgementAnswer;
 use crate::serving::judgement_question::JudgementQuestion;
 use crate::serving::judgement_request::JudgementRequest;
+use crate::serving::noul_criteria::NoulCriteria;
 use crate::serving::ports::judgement_model::JudgementModel;
 
-/// What Jev is asked of each expansion. Changing its meaning bumps
-/// `JudgementSite::Expansions`'s template version.
-const QUESTION: &str = "Is `expansion` a way a reader would ask for or name `memory` — a question `memory` answers, a paraphrase of it, or the same in Spanish or English — that states no fact, name, number or answer `memory` does not state?";
-const STATE: &str = "Search expansions a writer proposed for its memories, each read against the memory it expands.";
+/// What Jev is asked of each expansion: two questions, one judgement each
+/// (TypeSafe's guide), with what a yes and a no mean. Changing a meaning
+/// bumps `JudgementSite::Expansions`'s template version.
+const BELONGS: (&str, &str, &str) = (
+    "Is `expansion` a way a reader would ask for or name `memory`?",
+    "`expansion` is a question `memory` answers, a paraphrase of it, or the same in Spanish or English",
+    "`expansion` is about another subject, or asks for something `memory` does not say",
+);
+const ADDS: (&str, &str, &str) = (
+    "Does `expansion` state a fact, name, number or answer that `memory` does not state?",
+    "`expansion` names a value, person, date or answer that is absent from `memory`",
+    "every fact, name and number in `expansion` is in `memory`, or it states none, as a bare question does",
+);
 
 /// Judges every expansion of `arguments.items` (`[{ref, text, expansions}]`)
 /// and answers `{enabled, accept_at, judged_by, verdicts, jev}`, where
-/// `verdicts` holds, per item, the probability of yes for each expansion in
-/// order. A failed judgement answers `enabled: false` with its reason.
+/// `verdicts` holds, per item and for each expansion in order, the
+/// probability that it belongs to its memory (`yes`) and that it states
+/// something its memory does not (`adds`). A failed judgement answers
+/// `enabled: false` with its reason; an unanswered one is `null`, which the
+/// write reports as not judged, never as refused.
 pub(crate) async fn judge_expansions(
     model: &dyn JudgementModel,
     config: &WriteExpansionsConfig,
@@ -44,16 +57,19 @@ pub(crate) async fn judge_expansions(
             .take(config.excerpt_chars())
             .collect::<String>();
         for (index, expansion) in expansions(item).iter().enumerate() {
-            questions.insert(
-                key(item_index, index),
-                JudgementQuestion::Noul {
-                    instructions: json!({
-                        "memory": memory,
-                        "expansion": expansion,
-                        "question": QUESTION,
-                    }),
-                },
-            );
+            for (suffix, (question, when_true, when_false)) in [("b", BELONGS), ("a", ADDS)] {
+                questions.insert(
+                    format!("{}_{suffix}", key(item_index, index)),
+                    JudgementQuestion::CriteriaNoul {
+                        instructions: json!({
+                            "memory": memory,
+                            "expansion": expansion,
+                            "question": question,
+                        }),
+                        criteria: NoulCriteria::new(when_true, when_false),
+                    },
+                );
+            }
         }
     }
     let judged_by = format!("{} noul>={:.2}", model.model(), config.accept_at());
@@ -62,7 +78,7 @@ pub(crate) async fn judge_expansions(
                       "judged_by": judged_by, "verdicts": []});
     }
     let request = JudgementRequest {
-        state: json!(STATE),
+        state: json!({}),
         questions,
     };
     let response = match model.evaluate(&request).await {
@@ -72,16 +88,21 @@ pub(crate) async fn judge_expansions(
         }
     };
     let mut verdicts = Vec::new();
+    let read = |key: String| match response.answers.get(&key) {
+        Some(JudgementAnswer::Noul { yes }) => json!(yes),
+        // Not answered: not judged, and so not kept.
+        _ => Value::Null,
+    };
     for (item_index, item) in items.iter().enumerate() {
-        let mut yes = Vec::new();
+        let (mut yes, mut adds) = (Vec::new(), Vec::new());
         for index in 0..expansions(item).len() {
-            match response.answers.get(&key(item_index, index)) {
-                Some(JudgementAnswer::Noul { yes: probability }) => yes.push(json!(probability)),
-                // An expansion the judge did not answer is not kept.
-                _ => yes.push(Value::Null),
-            }
+            yes.push(read(format!("{}_b", key(item_index, index))));
+            adds.push(read(format!("{}_a", key(item_index, index))));
         }
-        verdicts.push(json!({"ref": item.get("ref").cloned().unwrap_or(Value::Null), "yes": yes}));
+        verdicts.push(
+            json!({"ref": item.get("ref").cloned().unwrap_or(Value::Null),
+                             "yes": yes, "adds": adds}),
+        );
     }
     json!({
         "enabled": true,
@@ -137,6 +158,7 @@ mod tests {
         assert_eq!(answer["enabled"], true);
         assert_eq!(answer["verdicts"][0]["ref"], "a:1");
         assert_eq!(answer["verdicts"][0]["yes"], json!([0.8, 0.8]));
+        assert_eq!(answer["verdicts"][0]["adds"], json!([0.8, 0.8]));
         assert_eq!(answer["verdicts"][1]["yes"], json!([]));
         assert_eq!(answer["accept_at"], 0.5);
         assert!(

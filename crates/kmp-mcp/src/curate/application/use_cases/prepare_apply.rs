@@ -163,10 +163,7 @@ impl PrepareApply<'_> {
                                             },
                                             _ => return None,
                                         };
-                                        let direction = response
-                                            .answers
-                                            .get(&format!("d{n}"))
-                                            .and_then(direction_of);
+                                        let direction = direction_of(&response, n, &relation.rel);
                                         let reasons = doubt_reasons(
                                             support,
                                             &best,
@@ -234,6 +231,7 @@ mod tests {
             kind: String::new(),
             text: format!("text {reference}"),
             occurred: None,
+            occurred_at: None,
             labels: Vec::new(),
         }
     }

@@ -243,6 +243,69 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
 
 ### Changed
 
+- The questions KMP asks TypeSafe Jev follow TypeSafe's official guide
+  (skill 0.6.2), site by site, each point measured old form against new form
+  on synthetic held-out sets before it shipped
+  (`docs/development/jev-evaluation.md`, 2026-11-21). Only stores with a Jev
+  opt-in see a difference; with Jev off nothing changes.
+  - Choices gate on the chosen option's probability, never on `confidence`
+    (partner round, labels, retyping).
+  - A companion yes/no question replaces the `none` option: pair typing,
+    the partner round, the path step round without a corridor, the
+    pre-write direction, lifecycle.
+    Labels keep their `none` option (the companion proposed fewer right
+    values on the held-out set).
+  - Relation types, directions and lifecycle readings carry a description
+    in `criteria`; directions are named `from_<rel>_to` / `to_<rel>_from`;
+    facts offered as options are keyed by their first informative words
+    instead of `f17`.
+  - Which of two memories was recorded first is computed by KMP and stated
+    (`order`), for typing, the pre-write check, the audit and lifecycle.
+  - Re-ranking and the doubt band send the question as a named field
+    (`{"user_question": …}`) with what a yes and a no mean (the
+    cross-language judge's wording). Re-ranking keeps a passage unless Jev
+    reads no (0.3), ranking an unsettled one below every yes.
+  - The summary meaning check asks three questions (a value changed, a fact
+    added, a negation flipped); an unsettled summary is flagged with its own
+    words. Search expansions ask two (belongs, adds a fact), with the single
+    0.5 cut they had.
+  - Readings use TypeSafe's starting lines (yes at 0.7, no at 0.3) with an
+    explicit unsettled row; a late, failed or missing answer is "not
+    judged", never a no.
+  - Kept as they were, because the guide's form measured worse on the
+    held-out set: the focused-wake question and its 0.5 line, the support
+    question's criteria (the support question gains `order` and
+    `relation_means` only), the labels question, and the step round of a
+    goal search over its corridor (a companion about the whole walk read yes
+    for steps that were not among the few offered).
+
+  Each changed site's template version is now 2 (`rerank`, `doubt_band`,
+  `curate_review`, `curate_focus`, `write_relations`, `precheck`, `paths`,
+  `summaries`, `expansions`), so a Jev-on store re-judges each of these
+  sites once and then answers from its verdict book again. The book drops
+  those sites' version-1 verdicts the next time the store opens (it retires
+  superseded template versions); `wake_focus`, `labels` and `cross_language`
+  keep theirs.
+  Both judged cassettes are re-recorded. No floor of `jev-baseline.tsv`
+  falls in any of three samples; four rise because all three samples exceed
+  them (`missing_typed` 0.8181, `suspect_recall` 0.8750,
+  `proposed_hops_right` 0.9473, `write_typed_with_jev` 0.8181). A judged
+  sample costs about 76 % more Jev input tokens.
+- Each judgement a committed write asks (the partner round, the typing and
+  the lifecycle reading of its relation proposals; its search expansions)
+  waits at most 3 s, like the first pages of reads; a store with
+  `timeout_ms: 60000` could hold a committed write for minutes. A write that
+  asks all four waits at most about 12 s. A late judgement is reported as
+  not judged, and still lands in the verdict book.
+- TypeSafe's 529 (overloaded) is retried like a 429: twice, after
+  `Retry-After` or 0.5 s then 1 s, within the caller's deadline.
+- `kmp-mcp doctor` asks TypeSafe whether the model a store pins is still
+  served (`GET /v1/models`, the key and no store text), and warns when the
+  list names pinned releases and not this one. Unreachable reads "not
+  checked", and so does a list of aliases only, which is what TypeSafe
+  answers today (`jev-latest`, `jev-preview`): until it lists releases, the
+  check cannot see a deprecation.
+
 - TypeSafe Jev is pinned at `jev-1.14.0` (was `jev-1.13.0`) in the judged
   scorecards, the memory bench, the guide's `typesafe.json` example and the
   test fixtures. Both judged cassettes (`jev.cassette.json`,

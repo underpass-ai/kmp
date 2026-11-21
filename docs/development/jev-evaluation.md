@@ -353,6 +353,107 @@ The guarded retrieval cases (false answer, stale serve, high confidence)
 are not part of the re-ranking arms, so no guard figure with Jev exists
 for either model; their floors hold without Jev.
 
+## The questions to TypeSafe's guide (2026-11-21, `jev-1.14.0`)
+
+Every site's questions were held to TypeSafe's official skill (0.6.2): a
+companion yes/no instead of a `none` option, described options, content
+names instead of positional ones, one judgement per noul with a concrete
+`false`, facts KMP knows stated as named fields (which of two memories was
+recorded first), and a reading in code with an explicit unsettled row
+(yes ≥ 0.7, no ≤ 0.3). The owner asked for the guide's form by default; a
+point kept its old form only when the new one was detectably worse.
+
+**How it was decided** (pre-registered before each site's first call;
+evidence in `artifacts/kmp-1.0-2026-11-20/jev-sites/`): old and new form
+asked on the same items, three fresh samples each, the modal answer per
+item; tuning = the judged corpora and synth-v1 seed 7 (which had shaped
+earlier wording), held-out = synth-v1 seeds 53, 59, 61 (10^4, multi) and
+planted sets built by code from them (labels, summaries, expansions, wake
+intents). Only relation episodes a person can judge from the text were used
+(`chain`, `supersession-declared`, hub notes, distractors). The held-out set
+decides: the new form ships unless it is right on fewer items with an exact
+McNemar p < 0.05, or makes more false proposals with p < 0.10. Pools and
+shortlists were Python approximations of KMP's, and the bodies were rebuilt
+in Python and proven against recorded cassette keys.
+
+| Site, point | Held-out, old → new (n) | Decision |
+|---|---|---|
+| typing (review, focus, write, path steps): described options, companion, `order`, state `{}` | right 105 → 183 of 240 (p < 1e-6); false proposals 3 → 0 of 75 | new |
+| support noul: `criteria` | false doubts 0 → 7 of 60 (p = 0.016), all bare causal whys | **old** (no criteria) |
+| support noul: `order`, `relation_means`, state `{}` | right 75 → 74 of 105 (p = 1.0); false doubts 0 → 0 | new |
+| best type / retype: no `none`, no why, gate on probability | right 60 → 71 of 105 (p = 0.007); false retypes 0 → 2 of 60 (p = 0.5) | new |
+| pre-write direction: named options, companion, `order` | right 136 → 148 of 150 (p = 0.004) | new |
+| lifecycle: described options, same-thing companion, `order` | right 145 → 133 of 210 (p = 0.31); false proposals 50 → 2 of 120 | new, see below |
+| partner round: content keys, companion, gate on probability (seed 53) | right 75 → 78 of 95 (p = 0.68); false 11 → 10 | new |
+| focus / write partner noul: criteria, 0.7 line (seed 53) | facts right 12 → 13 of 13; non-gold pairs over the line 18 → 9 of 645 | new (n small) |
+| paths on-the-way: criteria, kept unless no | right 212 → 210 of 216 (p = 0.73); non-chain kept 2 → 0 | new |
+| paths steps, every fact offered (goal-less) | right 288 → 286 of 288 (p = 0.5); wrong steps 4 → 1 | new |
+| paths steps over a corridor (≤ 8 offered, companion over the walk) | right 382 → 360 of 396 (p = 0.0009); wrong 16 → 35 (p = 0.005) | **old** |
+| labels: companion instead of `none` | right 183 → 143 of 324 (p < 0.001) | **old** |
+| labels: gate on probability (old form) | right 183 → 203 (p = 0.0001); false 1 → 4 of 117 (p = 0.25) | new |
+| confirm filter (off by default): criteria, 0.7 | 21 → 21 (judged only) | new |
+| rerank: `{user_question}`, criteria noul, unsettled kept below | gold first 68 → 71 of 81 (p = 0.45); negatives with a kept passage 4 → 3 of 21 | new |
+| doubt band: the same wording, veto unchanged | non-answers vetoed 137 → 149 of 168 (p = 0.002); false vetoes 0 → 0 of 72 | new |
+| wake focus: named state, criteria, unsettled kept | required kept 191 → 216 of 226; non-required kept 247 → 252 of 1,790 (p = 0.0625) | **old** (guard rule) |
+| summaries: three nouls, criteria, unsettled flagged | unfaithful flagged 84 → 84 of 84; faithful flagged 37 → 1 of 42 | new |
+| expansions: two nouls with the 0.3 no-line | good kept 114 → 97 of 170 (p = 0.005) | **old line** |
+| expansions: two nouls with the single 0.5 cut | good kept 114 → 115; bad kept 0 → 1 of 169 | new |
+
+Gating on `confidence` versus the chosen option's probability, at the same
+line, on the same answers: labels differ on 71 of 972 gated answers
+(probability right on 64, confidence on 7); best type on 0–2; the partner
+round on 4 of 204 (probability right on 3). Previous probe F2: 7–17 %.
+
+**Two results the owner should weigh.**
+- Lifecycle passes the rule because its false proposals collapse (50 → 2
+  of 120), but it finds only 15 of 90 real held-out supersessions, against
+  75. The same-thing companion reads unsettled (median 0.53) on "same
+  setting, new value" pairs, so the 0.7 line withdraws them. Re-read of the
+  same answers, exploratory: a 0.5 line finds 52/90 with 15/120 false.
+  Lifecycle is off by default.
+- Wake keeps its old form only on the pre-registered guard alpha: the new
+  form kept 25 more of 226 required passages and 5 more of 1,790 planted
+  non-required ones.
+
+**Cost.** Input tokens per request, old → new (live, held-out): typing
+×2.7, pre-write check ×1.8, lifecycle ×2.0, steps ×2.0, on-the-way ×1.3,
+focus ×1.26, partner round ×2.1 (the companion doubles the questions),
+rerank +34 %, summaries ×3.3, expansions ×2.2. Most of it is the criteria
+text, billed once per question. Latency p50 per request moves by 0–40 ms
+(about 170–230 ms).
+
+**Not measured at n ≥ 100:** the focus noul (13 facts, 645 pairs), the
+confirm filter (21, judged only), the partner round (95 orphans, one seed),
+wake intents (63; the unit is the passage).
+
+**The judged corpus, re-recorded** (`jev.cassette.json` is new-form sample
+1, chosen before any score was read; samples 2 and 3 recorded the same day;
+the old-form columns are the three 1.14 samples of the pin move). Rows that
+moved, old s1/s2/s3 → new s1/s2/s3:
+
+| Metric (floor before → after) | Old form | New form |
+|---|---|---|
+| `missing_typed` (0.7272 → 0.8181) | 0.7273 / 0.7273 / 0.7778 | 0.9091 / 0.9091 / 0.8182 |
+| `suspect_recall` (0.7500 → 0.8750) | 0.7500 / 0.8750 / 0.6250 | 0.8750 in each |
+| `proposed_hops_right` (0.9130 → 0.9473) | 0.9130 / 0.9474 / 0.9375 | 0.9474 / 0.9474 / 0.9500 |
+| `write_typed_with_jev` (0.7272 → 0.8181) | 0.7273 in each | 0.9091 / 0.8182 / 0.9091 |
+| `precheck_right_no_direction` (0.7500) | 0.7500 / 0.7500 / 0.7143 | 0.7500 / 0.7500 / 0.8750 |
+| `missing_found`, `precheck_available`, `path_found_with_jev` | sample 3 under the floor | at the floor in each |
+
+No floor falls in any new-form sample; the four raised rows are those
+where all three exceed the old floor. Every other row is equal in all six
+columns. The 35 retrieval cases with re-ranking (narrow and wide) give MRR
+0.9643, R@1 0.900, R@5 1.000 in every sample, as before. A judged sample
+costs about 0.78 M input tokens (0.44 M in the old form, +76 %), about
+0.033 USD.
+
+Byte fidelity of the Python bodies the decisions were measured on: the 8
+pre-write checks, the judged summaries and 10 re-rank requests rebuild to
+keys of the new cassettes; the labels request, the six focused-wake pools
+and three corridor step rounds are byte-identical to the old cassette's
+(those sites kept their form). Spend for the whole change: about 21.4 M
+input tokens, 0.90 USD, ledger in the evidence directory.
+
 ## The cascade (P9, 2026-09-27, three recorded samples)
 
 Hypotheses and thresholds were registered before the second and third

@@ -246,3 +246,72 @@ async fn a_book_hit_says_so_sends_nothing_and_keeps_the_request_key() {
         ]
     );
 }
+
+/// Answers like [`TwoRequests`] after `delay`, and says when it finished.
+struct Slow {
+    delay: std::time::Duration,
+    finished: Arc<std::sync::atomic::AtomicBool>,
+}
+
+impl JudgementModel for Slow {
+    fn model(&self) -> &str {
+        "jev-1.14.0"
+    }
+
+    fn evaluate<'a>(
+        &'a self,
+        request: &'a JudgementRequest,
+    ) -> std::pin::Pin<
+        Box<dyn std::future::Future<Output = Result<JudgementResponse, String>> + Send + 'a>,
+    > {
+        Box::pin(async move {
+            tokio::time::sleep(self.delay).await;
+            self.finished
+                .store(true, std::sync::atomic::Ordering::SeqCst);
+            TwoRequests.evaluate(request).await
+        })
+    }
+}
+
+#[tokio::test]
+async fn a_write_judgement_past_its_deadline_is_not_judged_and_finishes_detached() {
+    let finished = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let slow = Slow {
+        delay: std::time::Duration::from_millis(300),
+        finished: Arc::clone(&finished),
+    };
+    let observed = ObservedJudgement::new(Arc::new(slow), JudgementSite::WriteRelations)
+        .with_deadline(Some(std::time::Duration::from_millis(50)));
+    let started = std::time::Instant::now();
+    let error = observed
+        .evaluate(&request("state", 1))
+        .await
+        .expect_err("late");
+    assert!(
+        started.elapsed() < std::time::Duration::from_millis(250),
+        "the write does not wait"
+    );
+    assert!(error.starts_with("not judged:"), "{error}");
+    assert!(error.contains("within 50 ms"), "{error}");
+    tokio::time::sleep(std::time::Duration::from_millis(400)).await;
+    assert!(
+        finished.load(std::sync::atomic::Ordering::SeqCst),
+        "the judgement runs on, so its verdict lands in the book"
+    );
+}
+
+#[tokio::test]
+async fn write_sites_carry_a_deadline_and_read_sites_keep_their_own() {
+    for site in [
+        JudgementSite::WriteRelations,
+        JudgementSite::Expansions,
+        JudgementSite::Rerank,
+        JudgementSite::CurateReview,
+    ] {
+        let observed = ObservedJudgement::new(Arc::new(TwoRequests), site);
+        assert!(
+            observed.evaluate(&request("state", 1)).await.is_ok(),
+            "{site:?} answers in time"
+        );
+    }
+}

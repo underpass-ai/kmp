@@ -92,7 +92,7 @@ impl TypeSafeJudgement {
     }
 }
 
-fn read_config(data_dir: &Path) -> Result<Option<TypeSafeConfig>, String> {
+pub(super) fn read_config(data_dir: &Path) -> Result<Option<TypeSafeConfig>, String> {
     let bytes = match std::fs::read(data_dir.join("typesafe.json")) {
         Ok(bytes) if bytes.len() <= 8192 => bytes,
         Ok(_) => return Err("TypeSafe configuration exceeds 8192 bytes".into()),

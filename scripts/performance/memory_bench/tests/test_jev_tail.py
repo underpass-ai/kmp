@@ -41,16 +41,19 @@ class RetryPolicyMirrorTest(unittest.TestCase):
         self.assertEqual(int(re.search(r'const MAX_RETRIES: u32 = (\d+);', source).group(1)), jev_tail.MAX_RETRIES)
         self.assertEqual(int(re.search(r'const MAX_RETRY_WAIT_SECS: u64 = (\d+);', source).group(1)),
                          jev_tail.MAX_RETRY_WAIT_SECS)
-        self.assertIn(f'.unwrap_or({jev_tail.DEFAULT_RETRY_WAIT_SECS})', source)
+        self.assertEqual(int(re.search(r'const FIRST_BACKOFF_MS: u64 = (\d+);', source).group(1)),
+                         jev_tail.FIRST_BACKOFF_MS)
+        self.assertEqual(int(re.search(r'const OVERLOADED: u16 = (\d+);', source).group(1)), 529)
         self.assertIn('.no_proxy()', source)  # why the proxy cannot sit in front of the binary
         for message in ('TypeSafe timed out', 'TypeSafe unavailable', 'TypeSafe rate limit persisted after retries',
                         'TypeSafe rejected the API key', 'TypeSafe returned HTTP {code}'):
             self.assertIn(message, source)
             self.assertIn(message, jev_tail.MESSAGES.values())
 
-    def test_retry_after_is_capped_and_defaults_to_one_second(self):
+    def test_retry_after_is_capped_and_defaults_to_a_doubling_backoff(self):
         policy = jev_tail.RetryPolicy()
-        self.assertEqual([policy.wait_for(v) for v in (None, '2', '60', 'soon', '-3')], [1, 2, 5, 1, 0])
+        self.assertEqual([policy.wait_for(v) for v in (None, '2', '60', 'soon', '-3')], [0.5, 2, 5, 0.5, 0])
+        self.assertEqual(policy.wait_for(None, 1), 1.0)
 
     def test_a_persistent_429_gives_up_after_two_retries(self):
         class Opener:

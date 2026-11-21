@@ -222,6 +222,7 @@ async fn choices_round_trip_through_the_book() {
             JudgementQuestion::Choice {
                 instructions: json!("Which relation?"),
                 options: vec!["supports".into(), "none".into(), "answers".into()],
+                described: Default::default(),
             },
         )]),
     };

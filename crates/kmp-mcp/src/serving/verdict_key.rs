@@ -52,13 +52,23 @@ impl VerdictKey {
             JudgementQuestion::Choice {
                 instructions,
                 options,
+                described,
             } => {
                 field(&mut hasher, b"choice");
                 field(&mut hasher, canonical(instructions).as_bytes());
                 let sorted = sorted_options(options);
                 field(&mut hasher, &(sorted.len() as u32).to_be_bytes());
-                for option in sorted {
-                    field(&mut hasher, normalized(&option).as_bytes());
+                for option in &sorted {
+                    field(&mut hasher, normalized(option).as_bytes());
+                }
+                // Described options are a different question; a choice with
+                // none described keeps the key it always had.
+                if !described.is_empty() {
+                    field(&mut hasher, b"described");
+                    for option in &sorted {
+                        let text = described.get(option).map(String::as_str).unwrap_or("");
+                        field(&mut hasher, normalized(text).as_bytes());
+                    }
                 }
             }
             JudgementQuestion::Score {
@@ -177,18 +187,29 @@ mod tests {
             &StateDigest::of(&json!("state")),
         );
         assert_ne!(reference, other_template);
-        let choice = JudgementQuestion::Choice {
-            instructions: json!({"passage": "p", "question": "q"}),
-            options: vec!["a".into(), "b".into()],
-        };
+        let choice = JudgementQuestion::choice(
+            json!({"passage": "p", "question": "q"}),
+            vec!["a".into(), "b".into()],
+        );
         assert_ne!(reference, key("jev-1", &choice, json!("state")));
+        let described = JudgementQuestion::described_choice(
+            json!({"passage": "p", "question": "q"}),
+            vec![("a".into(), "first".into()), ("b".into(), "second".into())],
+        );
+        assert_ne!(
+            key("jev-1", &choice, json!("state")),
+            key("jev-1", &described, json!("state")),
+            "a described choice is another question"
+        );
     }
 
     #[test]
     fn option_order_does_not_matter_but_the_option_set_does() {
-        let choice = |options: &[&str]| JudgementQuestion::Choice {
-            instructions: json!("Which?"),
-            options: options.iter().map(|o| o.to_string()).collect(),
+        let choice = |options: &[&str]| {
+            JudgementQuestion::choice(
+                json!("Which?"),
+                options.iter().map(|o| o.to_string()).collect(),
+            )
         };
         assert_eq!(
             key("m", &choice(&["a", "b"]), json!(null)),

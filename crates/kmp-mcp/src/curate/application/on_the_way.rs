@@ -2,8 +2,8 @@ use crate::curate::application::corridor::Corridor;
 use crate::curate::application::curate_material::CurateMaterial;
 use crate::curate::application::jev_usage::JevUsage;
 use crate::curate::application::judgement_plan::{PATH_FACTS, on_the_way_request};
-use crate::curate::domain::curate_thresholds::PARTNER_AT;
 use crate::serving::judgement_answer::JudgementAnswer;
+use crate::serving::noul_reading::NoulReading;
 use crate::serving::ports::judgement_model::JudgementModel;
 
 /// Further rounds a goal-less search asks, each from what the chain already
@@ -99,7 +99,11 @@ pub(crate) async fn facts_on_the_way(
             .enumerate()
             .filter_map(
                 |(n, reference)| match response.answers.get(&format!("w{n}")) {
-                    Some(JudgementAnswer::Noul { yes }) if *yes >= PARTNER_AT => {
+                    // Kept unless it reads no: an unsettled fact stays a
+                    // candidate, since the step round decides what joins.
+                    Some(JudgementAnswer::Noul { yes })
+                        if NoulReading::of(*yes) != NoulReading::No =>
+                    {
                         Some((*yes, reference.clone()))
                     }
                     _ => None,
@@ -136,6 +140,7 @@ mod tests {
             kind: String::new(),
             text: format!("text {reference}"),
             occurred: None,
+            occurred_at: None,
             labels: Vec::new(),
         };
         CurateMaterial {

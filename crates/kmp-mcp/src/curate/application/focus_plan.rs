@@ -4,8 +4,8 @@ use kmp_proto_mapping::v1beta1::PartnerShortlist;
 use serde_json::json;
 
 use crate::curate::application::curate_material::CurateMaterial;
-use crate::curate::application::judgement_plan::{excerpt, text_of};
-use crate::serving::judgement_question::JudgementQuestion;
+use crate::curate::application::judgement_plan::{criteria_noul, excerpt, text_of};
+use crate::curate::application::relation_wording::{FOCUS_FALSE, FOCUS_TRUE, focus_question};
 use crate::serving::judgement_request::JudgementRequest;
 
 /// Most facts a focused review asks about in one request.
@@ -18,7 +18,8 @@ const FOCUS_CHARS: usize = 1_000;
 const CANDIDATE_CHARS: usize = 300;
 
 /// For each focused fact (`new.k<k>`) and each of its shortlisted partners:
-/// is there a direct relation between them (`r<k>_<n>`)? The shortlist is
+/// is there a direct relation between them (`r<k>_<n>`), with what a yes and
+/// a no mean? A partner is proposed only when the answer reads yes. The shortlist is
 /// the current facts of its about that share a hard anchor with it and its
 /// best BM25 matches ([`PartnerShortlist`]), asked in the about's order; an
 /// about of at most [`LEXICAL_PARTNERS`] other facts is read whole. Returns
@@ -59,14 +60,14 @@ pub(crate) fn related_request(
             let key = format!("r{k}_{n}");
             questions.insert(
                 key.clone(),
-                JudgementQuestion::Noul {
-                    instructions: json!({
+                criteria_noul(
+                    json!({
                         "passage": excerpt(&text_of(material, &other.reference), CANDIDATE_CHARS),
-                        "question": format!(
-                            "Is there a direct relation between `passage` and `new.k{k}`: one causes, explains, supports, contradicts, updates, answers or repeats the other?"
-                        ),
+                        "question": focus_question(&format!("k{k}")),
                     }),
-                },
+                    FOCUS_TRUE,
+                    FOCUS_FALSE,
+                ),
             );
             keys.insert(key, (focused.clone(), other.reference.clone()));
         }
@@ -95,6 +96,7 @@ mod tests {
                     kind: String::new(),
                     text,
                     occurred: None,
+                    occurred_at: None,
                     labels: Vec::new(),
                 })
                 .collect(),
