@@ -33,7 +33,7 @@ pub(crate) use handshake::{
 };
 pub(crate) use registry::{
     advertised_input_schemas, advertised_tools_list, declared_tool_names, tools_list_result,
-    tools_list_result_with_apps, without_output_schemas,
+    tools_list_result_with_apps, with_open_world, without_output_schemas,
 };
 pub(crate) use time_move::{TIME_TOOL, TimeMove};
 pub(crate) use validator::reject_invalid_arguments;

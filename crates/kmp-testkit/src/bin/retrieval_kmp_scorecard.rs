@@ -351,7 +351,6 @@ async fn run_case(
         "about": case.about,
         "question": case.question,
         "answer_policy": case.answer_policy,
-        "depth": 3,
         "budget": {"detail": "balanced", "max_entries": max_entries}
     });
     if let Some(as_of) = &case.as_of {

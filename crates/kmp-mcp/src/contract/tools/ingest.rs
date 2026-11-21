@@ -18,7 +18,6 @@ pub(crate) fn definition() -> Value {
         ToolEffect::Write {
             destructive: true,
             idempotent: true,
-            open_world: false,
         },
         "Low-level writer of one exact canonical memory graph; prefer kmp_write_memory unless you produce that graph yourself.",
         json!({

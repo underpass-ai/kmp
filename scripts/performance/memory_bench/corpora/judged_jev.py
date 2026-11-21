@@ -340,7 +340,7 @@ def asks(servers, case, scores):
     for ask in case['expected']['ask']:
         arguments = {'about': case['about'], 'question': ask['question'],
                      'dimensions': _dimensions(case),
-                     'budget': {'depth': 3, 'tokens': 2048, 'max_entries': 10}}
+                     'budget': {'max_entries': 10}}
         positions = []
         for arm in ('plain', 'reranked', 'wide'):
             answered = servers[arm].call('kmp_ask', arguments)

@@ -432,4 +432,9 @@ impl KernelMcpServer {
     pub fn bridges_languages(&self) -> bool {
         self.backend.bridges_languages()
     }
+
+    /// The tools whose `openWorldHint` is true for this session.
+    pub(crate) fn open_world_tools(&self) -> Vec<&'static str> {
+        self.backend.open_world_tools()
+    }
 }

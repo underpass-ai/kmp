@@ -110,8 +110,8 @@ def retrieval_items(cases_path, subset='original', max_entries=10):
                   for seeded in case.get('memories', [])]
         setup += [('kmp_write_memory', write) for write in case.get('writes', [])]
         arguments = {'about': case['about'], 'question': case['question'],
-                     'answer_policy': case['answer_policy'], 'depth': 3,
-                     'budget': {'tokens': 2048, 'detail': 'balanced', 'max_entries': max_entries}}
+                     'answer_policy': case['answer_policy'],
+                     'budget': {'detail': 'balanced', 'max_entries': max_entries}}
         for name in ('as_of', 'interval', 'axis', 'dimensions'):
             if case.get(name) is not None:
                 arguments[name] = case[name]

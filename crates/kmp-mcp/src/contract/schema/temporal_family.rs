@@ -117,7 +117,7 @@ pub(crate) fn time_tool_definition(description: &str) -> Value {
     )]);
     tool_definition_with_output(
         TIME_TOOL,
-        ToolEffect::Read { open_world: false },
+        ToolEffect::Read,
         description,
         input_schema,
         temporal_output_schema(),

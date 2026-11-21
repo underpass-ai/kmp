@@ -16,7 +16,6 @@ pub(crate) fn definition() -> Value {
         ToolEffect::Write {
             destructive: false,
             idempotent: true,
-            open_world: false,
         },
         "Move an open view by declaring what it should show: focus, clock, zoom, dimensions, relation classes, selection, trace or paths.",
         json!({

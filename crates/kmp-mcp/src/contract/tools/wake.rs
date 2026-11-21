@@ -13,7 +13,7 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_wake",
-        ToolEffect::Read { open_world: true },
+        ToolEffect::Read,
         "Resume known work on an about: its current state, causal spine, labels and proof; the first read of a session.",
         json!({
             "type": "object",

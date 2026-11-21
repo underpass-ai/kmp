@@ -15,7 +15,7 @@ pub(crate) fn definition() -> Value {
         "kmp_inspect",
         // A pure read: a guide node the store lacks is answered with the
         // repair, never seeded (`tests/read_only_tools.rs`).
-        ToolEffect::Read { open_world: false },
+        ToolEffect::Read,
         "Read one stored memory or write receipt in full, with its evidence and links, before relying on it.",
         json!({
             "type": "object",

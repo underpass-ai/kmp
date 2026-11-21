@@ -137,20 +137,20 @@ fn kinds(schema: &Value) -> Vec<String> {
     }
 }
 
-/// A small valid value of `schema`; `salt` keeps array items distinct.
-fn minimal(schema: &Value, salt: usize) -> Value {
+/// A small valid value of `schema`; `ordinal` keeps array items distinct.
+fn minimal(schema: &Value, ordinal: usize) -> Value {
     if let Some(constant) = schema.get("const") {
         return constant.clone();
     }
     if let Some(Value::Array(choices)) = schema.get("enum") {
-        return choices[salt % choices.len()].clone();
+        return choices[ordinal % choices.len()].clone();
     }
     for union in ["oneOf", "anyOf"] {
         if let Some(Value::Array(branches)) = schema.get(union)
             && schema.get("type").is_none()
             && let Some(first) = branches.first()
         {
-            return minimal(first, salt);
+            return minimal(first, ordinal);
         }
     }
     let kind = kinds(schema)
@@ -160,7 +160,7 @@ fn minimal(schema: &Value, salt: usize) -> Value {
     match kind.as_str() {
         "string" => {
             let length = schema["minLength"].as_u64().unwrap_or(1) as usize;
-            let letter = (b'a' + (salt % 26) as u8) as char;
+            let letter = (b'a' + (ordinal % 26) as u8) as char;
             let mut candidates = vec![
                 letter.to_string().repeat(length.max(1)),
                 format!("read_{}", "0".repeat(32)),
@@ -176,18 +176,21 @@ fn minimal(schema: &Value, salt: usize) -> Value {
         "array" => {
             let count = schema["minItems"].as_u64().unwrap_or(0) as usize;
             let items = schema.get("items").cloned().unwrap_or(json!({}));
-            Value::Array((0..count).map(|n| minimal(&items, salt + n)).collect())
+            Value::Array((0..count).map(|n| minimal(&items, ordinal + n)).collect())
         }
         _ => {
             let mut object = Map::new();
             for key in schema["required"].as_array().into_iter().flatten() {
                 let key = key.as_str().unwrap_or_default();
-                object.insert(key.to_string(), minimal(&schema["properties"][key], salt));
+                object.insert(
+                    key.to_string(),
+                    minimal(&schema["properties"][key], ordinal),
+                );
             }
             if schema["minProperties"].as_u64().unwrap_or(0) > 0
                 && let Some(entries @ Value::Object(_)) = schema.get("additionalProperties")
             {
-                object.insert("k".to_string(), minimal(entries, salt));
+                object.insert("k".to_string(), minimal(entries, ordinal));
             }
             Value::Object(object)
         }

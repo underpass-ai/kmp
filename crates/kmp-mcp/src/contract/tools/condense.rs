@@ -16,7 +16,6 @@ pub(crate) fn definition() -> Value {
         ToolEffect::Write {
             destructive: true,
             idempotent: false,
-            open_world: false,
         },
         "Store your own compact card for one stored body, so later reads can show the card instead of the whole body.",
         json!({

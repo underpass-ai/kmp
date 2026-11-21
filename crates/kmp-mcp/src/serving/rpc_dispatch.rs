@@ -8,7 +8,7 @@ use serde_json::Value;
 use super::write_retry;
 use crate::contract::{
     advertised_input_schemas, initialize_result_with_apps, reject_invalid_arguments,
-    resource_read_result, resources_list_result, tools_list_result_with_apps,
+    resource_read_result, resources_list_result, tools_list_result_with_apps, with_open_world,
 };
 use crate::serving::json_rpc::{jsonrpc_error, jsonrpc_result};
 use crate::serving::kernel_mcp_server::KernelMcpServer;
@@ -88,9 +88,12 @@ impl KernelMcpServer {
             Some("tools/list") => id.map(|id| {
                 jsonrpc_result(
                     id,
-                    self.output_schema_tools(self.passage_tools(advertised_input_schemas(
-                        tools_list_result_with_apps(session.apps()),
-                    ))),
+                    with_open_world(
+                        self.output_schema_tools(self.passage_tools(advertised_input_schemas(
+                            tools_list_result_with_apps(session.apps()),
+                        ))),
+                        &self.open_world_tools(),
+                    ),
                 )
             }),
             Some("resources/list") if session.apps() => {

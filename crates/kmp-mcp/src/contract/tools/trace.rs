@@ -14,7 +14,7 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_trace",
-        ToolEffect::Read { open_world: false },
+        ToolEffect::Read,
         "Find the evidenced path from a stored memory to known destinations (`to`), or the evidence for required roles from that seed (`search.seek`).",
         json!({
             "type": "object",

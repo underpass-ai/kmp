@@ -13,7 +13,7 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_ask",
-        ToolEffect::Read { open_world: true },
+        ToolEffect::Read,
         "Answer a semantic question from cited stored text and evidence, or say UNKNOWN; for history, change or current state use kmp_time.",
         json!({
             "type": "object",

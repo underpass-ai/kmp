@@ -576,8 +576,7 @@ fn deterministic_action(trajectory: &Trajectory) -> Value {
                 "about": trajectory.about,
                 "from": current_ref,
                 "to": trace_target_ref,
-                "goal": "Kernel operator deterministic trace probe",
-                "budget": { "depth": 1 }
+                "goal": "Kernel operator deterministic trace probe"
             }
         }),
         Some(_) => {

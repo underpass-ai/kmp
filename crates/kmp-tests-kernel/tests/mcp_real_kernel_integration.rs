@@ -194,7 +194,6 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
 
     let first_page_arguments = json!({
         "about":"project:parity-live",
-        "depth":5,
         "budget":{"detail":"full","max_bytes":100000},
         "page":{"entries":4}
     });
