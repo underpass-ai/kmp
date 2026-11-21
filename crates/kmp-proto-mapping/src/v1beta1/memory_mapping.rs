@@ -4,6 +4,8 @@ mod anchor_strength;
 #[cfg(test)]
 mod anchored_alias_tests;
 #[cfg(test)]
+mod anchored_bridge_tests;
+#[cfg(test)]
 mod anchored_content_tests;
 mod anchored_gate;
 #[cfg(test)]

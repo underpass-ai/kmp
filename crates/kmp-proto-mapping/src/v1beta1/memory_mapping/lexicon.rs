@@ -32,6 +32,9 @@ pub(super) struct Lexicon {
     /// The word pairs the table vouched for between this question and these
     /// candidates, so a hit can say which ones carried it.
     bridged: Vec<BridgedKey>,
+    /// The pairs the table may vouch for a concept with: [`Self::bridged`]
+    /// without the function words ([`CrossLanguage::translations`]).
+    translations: Vec<BridgedKey>,
     /// Which memories the table may vouch for: those written in another
     /// language than the question.
     crossing: CrossLanguage,
@@ -100,6 +103,7 @@ impl Lexicon {
             associated,
             collection,
             floor,
+            translations: CrossLanguage::translations(&bridged),
             crossing: if bridged.is_empty() {
                 CrossLanguage::default()
             } else {
@@ -184,10 +188,10 @@ impl Lexicon {
         terms: &AnswerCandidateTerms,
     ) -> usize {
         let own_words = BridgedKey::focus_matches(&[], focus_terms, terms);
-        if self.bridged.is_empty() {
+        if self.translations.is_empty() {
             return own_words;
         }
-        let translated = BridgedKey::focus_matches(&self.bridged, focus_terms, terms);
+        let translated = BridgedKey::focus_matches(&self.translations, focus_terms, terms);
         // The language is read only when the table would add something.
         if translated > own_words && self.crossing.crosses_to(&item.text) {
             translated
@@ -210,7 +214,7 @@ impl Lexicon {
         if !matching_terms(&concept, &terms.content).is_empty() {
             return Some(StatedBy::OwnWords);
         }
-        (BridgedKey::content_matches(&self.bridged, &concept, terms) > 0
+        (BridgedKey::content_matches(&self.translations, &concept, terms) > 0
             && self.crossing.crosses_to(&item.text))
         .then_some(StatedBy::Translation)
     }

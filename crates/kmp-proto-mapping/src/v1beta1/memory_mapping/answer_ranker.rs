@@ -1188,11 +1188,12 @@ impl<'a> AnswerEvidenceRanker<'a> {
             self.bridge,
         );
         let crossing = CrossLanguage::of_question(question);
+        let translations = CrossLanguage::translations(&bridged);
         evidence
             .iter()
             .map(|item| {
                 let translated = if crossing.crosses_to(&item.text) {
-                    bridged.as_slice()
+                    translations.as_slice()
                 } else {
                     &[]
                 };
@@ -2543,13 +2544,35 @@ mod tests {
         let ranker = ranker_bridging_with(&table);
 
         let ranked = ranker.rank(
-            "valvula noche",
+            "¿Qué válvula de la noche?",
             MemoryAnswerPolicy::EvidenceOrUnknown,
             english_shift_report(),
         );
 
         assert_eq!(ranked[0].id, "detail:e1");
         assert!(!was_reached_indirectly(&ranked[0]));
+    }
+
+    #[test]
+    fn a_question_that_leans_in_no_language_is_not_translated_into_an_answer() {
+        let table = spanish_english_toy();
+        let ranker = ranker_bridging_with(&table);
+
+        // Bare keywords carry no function word: nothing says the question
+        // and the memory are in two languages, so the table may rank the
+        // memory but never answers with it.
+        let ranked = ranker.rank(
+            "valvula noche",
+            MemoryAnswerPolicy::EvidenceOrUnknown,
+            english_shift_report(),
+        );
+
+        let valve = ranked
+            .iter()
+            .find(|item| item.id == "detail:e1")
+            .expect("the bridged memory arrives as proof");
+        assert!(was_reached_indirectly(valve));
+        assert_eq!(valve.metadata[REACHED_BY_KEY], REACHED_BY_BRIDGE);
     }
 
     #[test]
@@ -2585,8 +2608,14 @@ mod tests {
         // Both concepts bridged, none shared: medium, because the table's
         // opinion is not the reader's words.
         assert_eq!(
-            ranker.confidence("valvula noche", valve),
+            ranker.confidence("¿Qué válvula de la noche?", valve),
             MemoryConfidence::Medium
+        );
+        // The same words with no grammar to read a language from: the table
+        // translates nothing.
+        assert_eq!(
+            ranker.confidence("valvula noche", valve),
+            MemoryConfidence::Low
         );
         // Two of four bridged and nothing shared: not enough to say so.
         assert_eq!(

@@ -1,5 +1,7 @@
 use kmp_domain::language::LanguageVocabulary;
 
+use super::bridged_key::BridgedKey;
+
 /// Whether the lexical bridge may vouch for a memory: the language the
 /// question leans in, read once, against the language a memory's text leans
 /// in.
@@ -20,10 +22,16 @@ use kmp_domain::language::LanguageVocabulary;
 /// its own function words (`LanguageVocabulary::leans_in`). A side that leans
 /// in no language — no function word, a tie, a language the kernel has no
 /// words for — gives the table nothing to translate between, and it vouches
-/// for nothing. Ranking is untouched: a bridged word still weighs in BM25
-/// and a memory it reached still arrives in the proof, marked; what changes
-/// is only whether the table may stand in for a concept when the kernel
-/// decides to answer.
+/// for nothing. Nor does a pair with a function word on either side
+/// (`sobre≈about`): such a word says how a sentence is put, never what it is
+/// about, so translating it states nothing that was asked.
+///
+/// BM25 is untouched: a bridged word still weighs in the score, and a memory
+/// it reached still arrives in the proof, marked. What changes is whether the
+/// table may stand in for a concept where the kernel decides — the focus a
+/// strict policy requires, the anchored gate, the coverage confidence reads —
+/// and a memory refused there drops from the answer to the marked proof,
+/// which moves it down the ranking.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub(super) struct CrossLanguage {
     asked: Option<&'static str>,
@@ -35,6 +43,20 @@ impl CrossLanguage {
         Self {
             asked: LanguageVocabulary::shipped().leans_in(question),
         }
+    }
+
+    /// The pairs that may stand in for a concept: those with no function
+    /// word on either side.
+    pub(super) fn translations(bridged: &[BridgedKey]) -> Vec<BridgedKey> {
+        let vocabulary = LanguageVocabulary::shipped();
+        bridged
+            .iter()
+            .filter(|pair| {
+                !vocabulary.is_function_word(&pair.term.question)
+                    && !vocabulary.is_function_word(&pair.term.candidate)
+            })
+            .cloned()
+            .collect()
     }
 
     /// Whether a memory with this text is written in another language than
@@ -51,7 +73,34 @@ impl CrossLanguage {
 
 #[cfg(test)]
 mod tests {
+    use super::super::bridged_term::BridgedTerm;
     use super::*;
+
+    fn pair(question: &str, candidate: &str) -> BridgedKey {
+        BridgedKey {
+            term: BridgedTerm {
+                question: question.to_string(),
+                candidate: candidate.to_string(),
+                similarity: 0.8,
+            },
+            question_key: question.to_string(),
+            candidate_key: candidate.to_string(),
+        }
+    }
+
+    #[test]
+    fn a_function_word_is_never_a_translation() {
+        let bridged = [
+            pair("sobre", "about"),
+            pair("para", "monthly"),
+            pair("mensual", "for"),
+            pair("mensual", "monthly"),
+        ];
+        assert_eq!(
+            CrossLanguage::translations(&bridged),
+            vec![pair("mensual", "monthly")]
+        );
+    }
 
     #[test]
     fn a_memory_in_the_other_language_is_crossed_to() {
