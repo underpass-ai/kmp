@@ -256,3 +256,46 @@ fn a_rescue_needs_its_own_entry_and_no_promotion_bar() {
     .expect("valid");
     assert!(promoting.with_rescue(900, 950).is_err());
 }
+
+/// The rescue's pool, pinned: it is read from the ask's own reading of the
+/// about (the strict ranking, then the `best_effort` one), never from the
+/// lexical index's postings (an ask with the judge on reads the whole
+/// about), and it holds exactly the memories the table reached that are
+/// written in another language than the question — not a memory in the
+/// question's language, not one the table did not touch.
+#[test]
+fn the_rescue_pool_is_the_other_language_memories_the_table_reached() {
+    let entries: &[(&str, &str, &str)] = &[
+        (
+            "observation:fuga",
+            "observation",
+            "El turno de noche encontró una fuga debajo de Ostrova.",
+        ),
+        (
+            "observation:puerta",
+            "observation",
+            "La cuadrilla de noche arregló la puerta rota con Pellucid.",
+        ),
+        (
+            "observation:llaves",
+            "observation",
+            "La cuadrilla del puerto movió las llaves de repuesto a Varnholm.",
+        ),
+        (
+            "observation:roof",
+            "observation",
+            "The roof crew painted the north wall on Monday.",
+        ),
+    ];
+    let mut context = context(entries);
+    let band = band(&mut context, RESCUED, rescue_only()).expect("in the band");
+    assert_eq!(band.entry, DoubtEntry::CrossLanguageUnknown);
+    let mut pool = band
+        .passages
+        .iter()
+        .map(|p| p.entry_ref.as_str())
+        .collect::<Vec<_>>();
+    assert!(band.passages.iter().all(|p| !p.in_core));
+    pool.sort_unstable();
+    assert_eq!(pool, ["observation:fuga", "observation:puerta"]);
+}
