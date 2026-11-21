@@ -159,4 +159,8 @@ fn the_reach_derivation_is_the_one_this_index_version_names() {
     );
 }
 
-const REACH_GOLDEN: [u64; 3] = [0, 0, 0];
+const REACH_GOLDEN: [u64; 3] = [
+    4_990_815_573_720_416_276,
+    9_508_968_171_711_424_678,
+    3_081_775_046_765_340_169,
+];
