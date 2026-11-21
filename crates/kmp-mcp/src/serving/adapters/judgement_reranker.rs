@@ -4,13 +4,18 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use kmp_proto_mapping::v1beta1::{LexicalMargin, RerankCandidateRanking, SemanticSource};
+use serde_json::json;
 use sha2::{Digest, Sha256};
 
 use super::passage_judgement::judge_passages;
 use super::rerank_config::RerankConfig;
 use super::shared_outcomes::SharedOutcomes;
+use crate::serving::answer_wording::{ASKED, STATES, STATES_FALSE, STATES_TRUE};
 use crate::serving::environment::judgement_deadline;
+use crate::serving::judgement_question::JudgementQuestion;
 use crate::serving::judgement_site::JudgementSite;
+use crate::serving::noul_criteria::NoulCriteria;
+use crate::serving::noul_reading::NoulReading;
 use crate::serving::ports::judgement_model::JudgementModel;
 use crate::serving::rerank_outcome::RerankOutcome;
 
@@ -18,10 +23,6 @@ use crate::serving::rerank_outcome::RerankOutcome;
 const RANKED: usize = 100;
 /// Frozen selections kept for continuation pages.
 const KEPT: usize = 64;
-/// Passages Jev judges less likely than this to answer are left out of the
-/// ranking: a channel that listed the whole pool would grow proof with what
-/// the judge itself thinks is irrelevant.
-const ANSWERS_AT: f64 = 0.5;
 
 /// Ask re-ranking by a remote judgement model, behind its own opt-in. One
 /// yes/no question per admitted passage — does it answer the question? —
@@ -138,11 +139,16 @@ impl JudgementReranker {
         let judged = tokio::spawn(async move {
             let kept = judge_passages(
                 model.as_ref(),
-                &question,
-                "Does `passage` answer the question in the state?",
+                json!({ ASKED: question }),
+                |passage| JudgementQuestion::CriteriaNoul {
+                    instructions: json!({"passage": passage, "question": STATES}),
+                    criteria: NoulCriteria::new(STATES_TRUE, STATES_FALSE),
+                },
                 &pool,
                 excerpt_chars,
-                ANSWERS_AT,
+                // Kept unless it reads no: an unsettled passage stays, ranked
+                // below every yes by its probability.
+                |yes| NoulReading::of(yes) != NoulReading::No,
                 RANKED,
             )
             .await?;

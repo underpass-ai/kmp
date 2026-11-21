@@ -150,6 +150,7 @@ mod tests {
                 JudgementQuestion::Choice {
                     instructions: json!("q"),
                     options: vec!["a".into(), "b".into()],
+                    described: Default::default(),
                 },
             ),
         ])

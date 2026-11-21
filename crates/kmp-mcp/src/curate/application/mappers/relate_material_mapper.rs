@@ -11,28 +11,31 @@ use crate::curate::domain::pair_origin::PairOrigin;
 /// declared between them, and the kernel's proposed pairs that nothing
 /// declares yet. Superseded and expired facts are history, not candidates.
 pub(crate) fn relate_material(response: &RelateResponse) -> CurateMaterial {
-    let to_fact = |fact: &kmp_proto::v1beta1::RelatedFact| CurateFact {
-        reference: fact.r#ref.clone(),
-        about: fact.about.clone(),
-        kind: fact.kind.clone(),
-        text: fact.text.clone(),
-        occurred: fact
+    let to_fact = |fact: &kmp_proto::v1beta1::RelatedFact| {
+        let occurred_at = fact
             .coordinates
             .iter()
             .filter_map(|coordinate| coordinate.occurred_at.as_ref())
             .map(|timestamp| timestamp.seconds)
-            .min()
-            .map(fact_date),
-        labels: fact
-            .coordinates
-            .iter()
-            .map(|coordinate| {
-                (
-                    coordinate.dimension.clone(),
-                    label_value(&coordinate.scope_id),
-                )
-            })
-            .collect(),
+            .min();
+        CurateFact {
+            reference: fact.r#ref.clone(),
+            about: fact.about.clone(),
+            kind: fact.kind.clone(),
+            text: fact.text.clone(),
+            occurred: occurred_at.map(fact_date),
+            occurred_at,
+            labels: fact
+                .coordinates
+                .iter()
+                .map(|coordinate| {
+                    (
+                        coordinate.dimension.clone(),
+                        label_value(&coordinate.scope_id),
+                    )
+                })
+                .collect(),
+        }
     };
     let (current, past): (Vec<_>, Vec<_>) = response
         .facts

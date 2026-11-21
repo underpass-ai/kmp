@@ -160,6 +160,7 @@ mod tests {
                     kind: String::new(),
                     text: "x".repeat(400),
                     occurred: None,
+                    occurred_at: None,
                     labels: Vec::new(),
                 })
                 .collect(),

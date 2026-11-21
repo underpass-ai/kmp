@@ -37,15 +37,20 @@
 # samples exceed the old floor: write_typed_with_jev 0.6363 -> 0.7272, labels_none_kept 0 -> 1.
 # Not re-verified on 1.14: the ask-judge (P10) and write-expansion (P15) thresholds. Sample 3 of
 # 1.14 fell under eight floors for a cause not traced (docs/development/jev-evaluation.md).
+# Reviewed change (2026-11-21): the questions were rewritten to TypeSafe's guide and the cassette
+# re-recorded (sample 1 of 3, chosen before any score was read). No floor falls in any of the three
+# samples. Raised, because all three samples exceed the old floor: missing_typed 0.7272 -> 0.8181,
+# suspect_recall 0.7500 -> 0.8750, proposed_hops_right 0.9130 -> 0.9473, write_typed_with_jev
+# 0.7272 -> 0.8181 (docs/development/jev-evaluation.md, "The questions to TypeSafe's guide").
 # Refresh with: JEV_BASELINE=write bash scripts/ci/jev-baseline.sh
 metric	floor
 cases	2
 missing_found	1.0000
-missing_typed	0.7272
+missing_typed	0.8181
 distractors_rejected	1.0000
 missing_found_by_jev	0.3636
 missing_found_without_jev	0.6363
-suspect_recall	0.7500
+suspect_recall	0.8750
 suspect_precision	1.0000
 good_declarations_kept	1.0000
 precheck_available	1.0000
@@ -59,10 +64,10 @@ ask_top5_rerank	1.0000
 ask_top5_wide	1.0000
 path_found_declared_only	0.0000
 path_found_with_jev	0.8000
-proposed_hops_right	0.9130
+proposed_hops_right	0.9473
 write_found_without_jev	0.6363
 write_found_with_jev	1.0000
-write_typed_with_jev	0.7272
+write_typed_with_jev	0.8181
 write_distractors_rejected	1.0000
 write_memory_partner_proposed	1.0000
 summaries_unfaithful_flagged_without_jev	0.0000

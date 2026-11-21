@@ -19,8 +19,9 @@ What is measured, exactly. kmp-mcp pins its endpoint to https://api.typesafe.ai
 and builds its HTTP client with `no_proxy()` (typesafe_config.rs,
 typesafe_judgement.rs), so no proxy can sit between the binary and the
 provider. The client here mirrors the binary's policy instead: up to
-`MAX_RETRIES` retries of a 429, each after `Retry-After` seconds (1 when absent,
-at most `MAX_RETRY_WAIT_SECS`), one per-request timeout, no retry of a timeout,
+`MAX_RETRIES` retries of a 429 or a 529, each after `Retry-After` seconds (at most
+`MAX_RETRY_WAIT_SECS`; when absent, 0.5 s doubled per retry), one per-request
+timeout, no retry of a timeout,
 and the binary's error message for each way of giving up. A test reads those
 constants from the Rust source, so the mirror cannot drift silently.
 
@@ -57,7 +58,8 @@ MODEL = 'jev-1.14.0'
 # Mirrors crates/kmp-mcp/src/serving/adapters/typesafe_{judgement,transport}.rs (checked by test_jev_tail).
 MAX_RETRIES = 2
 MAX_RETRY_WAIT_SECS = 5
-DEFAULT_RETRY_WAIT_SECS = 1
+FIRST_BACKOFF_MS = 500  # the wait when Retry-After is absent, doubled per retry
+RETRYABLE = (429, 529)  # rate limited, overloaded
 TIMEOUT_MS = 20_000  # timeout_ms of the judged stores' typesafe.json
 SITES = ('rerank', 'wake_focus', 'paths', 'labels')
 DEFAULT_PLAN = 'pass,429:1,pass,delay:1500,pass,timeout:25,pass,429,pass,pass'
@@ -83,14 +85,19 @@ class TailRefused(BenchError):
 class RetryPolicy:
     max_retries: int = MAX_RETRIES
     max_wait_s: int = MAX_RETRY_WAIT_SECS
-    default_wait_s: int = DEFAULT_RETRY_WAIT_SECS
+    first_backoff_ms: int = FIRST_BACKOFF_MS
     timeout_s: float = TIMEOUT_MS / 1e3
 
-    def wait_for(self, retry_after):
+    def wait_for(self, retry_after, attempt=0):
+        """Seconds before retry `attempt` (0-based): the announced delay, capped,
+        or else the first backoff doubled per attempt."""
+        backoff = self.first_backoff_ms * (2 ** min(attempt, 4)) / 1e3
+        if retry_after is None:
+            return backoff
         try:
-            wait = int(str(retry_after).strip()) if retry_after is not None else self.default_wait_s
+            wait = int(str(retry_after).strip())
         except ValueError:
-            wait = self.default_wait_s
+            return backoff
         return min(max(wait, 0), self.max_wait_s)
 
 
@@ -116,7 +123,7 @@ class TailSettings:
         return {'concurrency': list(self.concurrency), 'requests': self.requests, 'sites': list(self.sites),
                 'deadlines_ms': dict(sorted(self.deadlines_ms.items())), 'plan': self.plan.label(),
                 'policy': {'max_retries': self.policy.max_retries, 'max_wait_s': self.policy.max_wait_s,
-                           'default_wait_s': self.policy.default_wait_s, 'timeout_s': self.policy.timeout_s}}
+                           'first_backoff_ms': self.policy.first_backoff_ms, 'timeout_s': self.policy.timeout_s}}
 
 
 @dataclass(frozen=True)
@@ -152,7 +159,7 @@ def _timed_out(error):
 
 
 def send(url, body, key, site, policy, index=0, opener=None, sleep=time.sleep):
-    """One evaluation as the binary sends it: retries on 429, gives up on anything else."""
+    """One evaluation as the binary sends it: retries on 429 and 529, gives up on anything else."""
     opener = opener or urllib.request.build_opener(urllib.request.ProxyHandler({}))
     headers = {'Content-Type': 'application/json', SITE_HEADER: site, 'Authorization': f'Bearer {key}'}
     started = time.perf_counter()
@@ -170,8 +177,8 @@ def send(url, body, key, site, policy, index=0, opener=None, sleep=time.sleep):
                 return done('ok', response.status)
         except urllib.error.HTTPError as error:
             code = error.code
-            if code == 429 and attempts <= policy.max_retries:
-                wait = policy.wait_for(error.headers.get('Retry-After'))
+            if code in RETRYABLE and attempts <= policy.max_retries:
+                wait = policy.wait_for(error.headers.get('Retry-After'), attempts - 1)
                 sleep(wait)
                 waited += wait
                 continue

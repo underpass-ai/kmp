@@ -46,7 +46,7 @@ impl TypeSafeConfig {
 /// A model name ends in a release version, `<family>-<major>.<minor>.<patch>`.
 /// An alias the provider moves (`jev-latest`, `jev-preview`) would validate
 /// here and then fail every answer, which names the release it resolved to.
-fn names_a_pinned_version(model: &str) -> bool {
+pub(super) fn names_a_pinned_version(model: &str) -> bool {
     let Some((family, version)) = model.rsplit_once('-') else {
         return false;
     };

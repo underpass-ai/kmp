@@ -181,6 +181,7 @@ mod tests {
                 .map(|n| format!("f{n}"))
                 .chain(std::iter::once("none".to_string()))
                 .collect(),
+            described: Default::default(),
         }
     }
 
@@ -317,6 +318,7 @@ mod tests {
                     JudgementQuestion::Choice {
                         instructions: json!("q"),
                         options,
+                        described: Default::default(),
                     },
                 )]),
             };
