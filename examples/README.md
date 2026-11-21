@@ -6,7 +6,7 @@ README that says what is inside and what to ask.
 
 | Example | What it holds | Try |
 |:--|:--|:--|
-| [`retry-budget/`](retry-budget/README.md) | A checkout service, an incident, the decision that replaced an earlier one and the measurement that verified it. The same memory `kmp-mcp demo` writes. | "Why are retries to the payment provider capped at two?" |
+| [`retry-budget/`](retry-budget/README.md) | A checkout service, an incident, the decision that replaced an earlier one and the measurement that verified it. The same memories `kmp-mcp demo` writes, as a separate history: use one or the other in a store. | "Why are retries to the payment provider capped at two?" |
 | [`kmp-project/`](kmp-project/README.md) | KMP's own memory: the decisions behind this repository, each with its source. It is what the committed [`.kmp/memory.jsonl`](../.kmp/memory.jsonl) holds. | "Why does a release advance the marketplace branch last?" |
 
 ## Load one
@@ -19,7 +19,8 @@ KMP_MCP_DATA_DIR=/tmp/kmp-example kmp-mcp viewer
 ```
 
 Into the store a project already uses, bringing one about in beside what is
-there:
+there (refused, writing nothing, if `kmp-mcp demo` already wrote
+`example:kmp-demo` in that store):
 
 ```bash
 kmp-mcp import --from examples/retry-budget/memory.jsonl --about example:kmp-demo

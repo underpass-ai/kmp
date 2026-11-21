@@ -168,7 +168,7 @@ Build the baseline MCP from `fdb2020f` and the candidate with the same toolchain
 and Cargo settings. Save the baseline binary outside a target path that the
 candidate build overwrites. The runners require Python 3, Linux `/proc`, and no
 model, network service or token encoder. Raw JSONL traces, summaries, source and
-binary hashes are kept in [performance-771](../../artifacts/performance-771).
+binary hashes are kept in [performance-771](https://github.com/underpass-ai/kmp/tree/v0.27.0/artifacts/performance-771).
 The branch was subsequently rebased over the v0.18.3 release-only commit
 `65063cea`; the measured binaries use v0.18.2 and identical optimization logic.
 The evidence includes the measured Rust patch and SHA-256 manifests. Large

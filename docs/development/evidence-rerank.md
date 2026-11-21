@@ -10,7 +10,7 @@ Beside the selected store, place:
 - `typesafe.json`, the store's TypeSafe opt-in, shared with `kmp_curate`:
 
   ```json
-  {"endpoint": "https://api.typesafe.ai/v1/systemone", "model": "jev-1.13.0", "timeout_ms": 20000}
+  {"endpoint": "https://api.typesafe.ai/v1/systemone", "model": "jev-1.14.0", "timeout_ms": 20000}
   ```
 
 - `rerank.json`, Ask re-ranking itself. `pool_size` is from 1 to 400 and
@@ -26,7 +26,9 @@ Beside the selected store, place:
   off).
 
 and set `TYPESAFE_API_KEY` in the environment of the MCP process, or put
-`TYPESAFE_API_KEY=<key>` in `~/.config/typesafe.env` with mode 600. The
+`TYPESAFE_API_KEY=<key>` in `$XDG_CONFIG_HOME/typesafe.env` (else
+`~/.config/typesafe.env`) with mode 600. The model must be a pinned release
+(`jev-<major>.<minor>.<patch>`); an alias such as `jev-latest` is refused. The
 environment wins when both are set. Then
 restart that process. The key is never written to a file by KMP and never
 appears in logs, warnings or errors.
@@ -68,7 +70,7 @@ appears in logs, warnings or errors.
 
 ## Measured so far
 
-On 2026-09-25, on a copy of a real store (`project:made`, 307 facts), four
+On 2026-09-25, on a copy of a real store (307 facts), four
 paraphrased questions were asked with and without re-ranking:
 
 - Every Ask judged 40 passages in one request.
@@ -97,8 +99,8 @@ Ordinary retrieval continues with a warning in each of these cases:
 A failure is frozen like a success, so a later page cannot silently read a
 different order.
 
-Design: `docs/development/jev-rerank-design.md`. The TypeSafe client is shared
-with `kmp_curate` (`docs/development/jev-curate-design.md`).
+Design: `docs/archive/development/jev-rerank-design.md`. The TypeSafe client is shared
+with `kmp_curate` (`docs/archive/development/jev-curate-design.md`).
 
 ## Focused wake
 

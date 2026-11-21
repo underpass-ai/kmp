@@ -1,8 +1,9 @@
 # Optional local semantic retrieval
 
 The embedded MCP backend can supplement Ask proof with a local encoder. This
-is experimental; enabling it does not establish an accuracy improvement.
-The remote gRPC backend does not yet use this adapter.
+is experimental and outside the 1.0 compatibility promise: its file, protocol
+and sidecar may change in a minor release. Enabling it does not establish an
+accuracy improvement. The remote gRPC backend does not use this adapter.
 
 Place `semantic-retrieval.json` beside the selected store and restart its MCP
 process to opt in:

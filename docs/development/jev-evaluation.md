@@ -43,9 +43,13 @@ Jev's answers, never a key.
 
 ## The corpus
 
-There is one case, `payments-platform`. It is a bilingual journal of a
-payments platform across `service:billing` (English) and `service:pagos`
-(Spanish): 33 facts and 9 declared relations.
+There are two cases. The first, `payments-platform`, is a bilingual journal
+of a payments platform across `service:billing` (English) and `service:pagos`
+(Spanish): 33 facts and 9 declared relations. It is described below. The
+second, `atlas-large`, is a project store of about 300 facts (`project:atlas`)
+with deliberate lexical traps: answers phrased in other words than the
+question, a relation hidden among noise, a reversed declaration and a reversed
+pre-write item.
 
 - **Missing relations (8):** a status update, a replacement rule, a real
   contradiction, a support, a causal decision, a paraphrase that shares no
@@ -463,8 +467,8 @@ tokens ($0.013).
 round reads the about in windows of at most 240 options, one winner per
 window, and a final choice between two or more winners. Every request now
 carries at most 24k estimated tokens (1.5 bytes a token, the worst density of
-108 recorded requests; median 2.65). Pre-registered in
-`artifacts/kmp-bench-private/2026-09-26/eval-p9/PREREG-partner-cap-512.md`,
+108 recorded requests; median 2.65). Pre-registered in a note kept with the
+private bench data (outside the repository),
 recorded with the real Jev (3 samples, a fresh cassette and verdict book
 each), measured in replay; the 60/120 figures are the ones above, and the
 316-fact atlas case at 60/120 (no round) comes from the verdict book of the

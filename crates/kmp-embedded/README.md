@@ -13,7 +13,8 @@ use kmp_embedded::{
     EmbeddedKernel, default_engine_for_data_dir, resolve_data_dir_from_env,
 };
 
-// Data directory from KMP_MCP_DATA_DIR, or an explicit path.
+// The data directory KMP would select here: KMP_MCP_DATA_DIR, then the
+// nearest project, then the saved selection, then the per-user default.
 let dir = resolve_data_dir_from_env()?;
 let engine = default_engine_for_data_dir(dir.path());
 let kernel = EmbeddedKernel::open_with_engine(dir.path(), engine)?;
@@ -22,9 +23,10 @@ let kernel = EmbeddedKernel::open_with_engine(dir.path(), engine)?;
 Fresh stores always use shareable SQLite. The `sqlite` feature name remains
 as a compatibility alias for downstream manifests. An existing store opens
 from its `FORMAT_VERSION`; new stores use format 4 and format-3 stores upgrade on open. Unsupported
-formats are rejected without being touched. Preserve the source and export it
-with an explicitly archived compatible exporter, then import the portable
-bundle into an empty current store. KMP never guesses or silently changes an engine.
+formats (1 and 2) are rejected without being touched; no tested path brings
+them into a current store
+([store format](https://github.com/underpass-ai/kmp/blob/main/docs/embedded/store-format.md)).
+KMP never guesses or silently changes an engine.
 
 Projection is synchronous on purpose: when a write returns, what it
 materialized is already readable. There is no queue to drain and no eventual

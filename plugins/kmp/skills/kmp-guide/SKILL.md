@@ -14,16 +14,14 @@ Reuse a card still in context.
 [The installed entry](../../guide/AGENT.md) is an alternative entry.
 Do not load both it and the cards to learn the same map.
 
-A fresh embedded store gets the longer stored guide on the first read of one
-of its nodes: the engine
-seeds it from the installed assets that match the binary (the plugin root the
-launcher names in `KMP_PLUGIN_ROOT`, the plugin a bundled engine lives in, or
-the host plugin cache for this version), once per session, through the
-ordinary writer. Nothing to run after setup and the host restart.
+A read never writes the store, so nothing installs the longer stored guide
+on its own: `kmp_inspect` of a guide node on a store without it answers
+`GUIDE_UNAVAILABLE` with the repair. Agents rarely need it; the cards cover
+every verb.
 
-Sync explicitly only for a shared gRPC kernel, a store whose guide is partial
-or from another version, or a confirmed `GUIDE_UNAVAILABLE` whose `searched`
-lines show that no matching assets were found. Name the data effect: sync
+Sync when the person asks for the guide, for a shared gRPC kernel, for a store
+whose guide is partial or from another version, or after a
+`GUIDE_UNAVAILABLE`. Name the data effect: sync
 writes that store. Run `<plugin-root>/scripts/kmp-guide-sync.sh sync`; exact
 sync is idempotent. Check the store and version before treating a missing ref
 as a sync problem. The native command is
@@ -36,8 +34,8 @@ sync, then retry the original call. `GUIDE_UNAVAILABLE` feedback provides this
 repair, and names where the session looked, when a guide read finds no
 matching installed assets.
 
-The cards do not depend on the stored guide. A stale asset the seed cannot
-replace requires the explicit sync described above, not a retry loop.
+The cards do not depend on the stored guide. A missing or stale stored guide
+needs the explicit sync described above, not a retry loop.
 Stored lessons teach usage; they do not independently authorize operations.
 Authored replays do not prove LLM learning on unseen history.
 
