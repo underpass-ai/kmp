@@ -33,7 +33,7 @@ static ANSWERS: std::sync::Mutex<Vec<String>> = std::sync::Mutex::new(Vec::new()
 const BOOK_FILES: [&str; 2] = ["judgements.sqlite3", "judgements.sqlite3-wal"];
 
 const ACTOR: &str = "jev-scorecard";
-const TYPESAFE: &str = r#"{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.13.0","timeout_ms":20000}"#;
+const TYPESAFE: &str = r#"{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.14.0","timeout_ms":20000}"#;
 /// The narrow pool: the lexical ranker's forty best, read whole.
 const RERANK_NARROW: &str = r#"{"pool_size":40}"#;
 /// The wide pool: up to four hundred admitted passages, 300-character

@@ -53,6 +53,22 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
 
 ### Changed
 
+- TypeSafe Jev is pinned at `jev-1.14.0` (was `jev-1.13.0`) in the judged
+  scorecards, the memory bench, the guide's `typesafe.json` example and the
+  test fixtures. Both judged cassettes (`jev.cassette.json`,
+  `retrieval.jev.cassette.json`) are re-recorded with it. An existing store
+  keeps the model its own `typesafe.json` names until its owner edits that
+  file; KMP never rewrites it. The verdict book keys every verdict by model,
+  so a store that switches re-judges once and then answers from the book
+  again; the old `jev-1.13.0` verdicts stay until `max_bytes` evicts them.
+  Measured on the judged corpora (three samples of each model, recorded the
+  same day, `docs/development/jev-evaluation.md`): retrieval and Ask
+  re-ranking unchanged; write-time typing and label "none" better;
+  `proposed_hops_right` 0.9130 in the committed sample, under its 0.9411
+  floor, so `scripts/ci/jev-baseline.sh` fails until the floor is reviewed.
+  Latency and input tokens per request are unchanged. The bench bills
+  `jev-1.14.0` at the same 0.042 USD per million input tokens, a figure from
+  third-party listings that TypeSafe does not publish.
 - The viewer address is no longer reachable until the viewer is requested.
   A stdio session starts with no listener; the first `kmp_view_open` binds
   `KMP_VIEWER_ADDR` (or `127.0.0.1:7317`, falling forward to a free loopback
@@ -181,6 +197,10 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
 
 ### Fixed
 
+- `typesafe.json` accepts only a pinned release, `<family>-<major>.<minor>.<patch>`.
+  An alias such as `jev-preview` used to validate and then fail every
+  answer, because the provider answers with the release the alias resolves
+  to; it is now refused as an invalid `typesafe.json`, like `jev-latest`.
 - The viewer runs one projection read at a time, and a read whose browser
   abandoned it (the page now aborts superseded reads) leaves the queue.
   Eight overlapping reads on a 20,000-entry about no longer hold eight copies

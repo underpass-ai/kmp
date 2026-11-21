@@ -741,7 +741,7 @@ jev = "replay"
 git_ref = "main"
 
 [store_files]
-"typesafe.json" = { json = { endpoint = "https://api.typesafe.ai/v1/systemone", model = "jev-1.13.0", timeout_ms = 20000 } }
+"typesafe.json" = { json = { endpoint = "https://api.typesafe.ai/v1/systemone", model = "jev-1.14.0", timeout_ms = 20000 } }
 "rerank.json" = { json = { pool_size = 40 } }
 
 [env]
@@ -1113,7 +1113,7 @@ with a frozen selection (continuation page) evaluates nothing.
 ```json
 {"timestamp":"2026-09-25T22:48:54.599332Z","level":"DEBUG","target":"kmp_mcp::judgement",
  "fields":{"message":"judgement evaluated","event":"kmp_judgement","site":"rerank",
-           "model":"jev-1.13.0","source":"cassette_hit","status":"ok","questions":3,
+           "model":"jev-1.14.0","source":"cassette_hit","status":"ok","questions":3,
            "answers":3,"requests":1,"http_requests":0,"input_tokens":395,"elapsed_us":127,
            "request_key":"a0b4a155271abd4b5cbb4c446fba3ccb7a96299de1b60a27e222b270aded6b2b"}}
 ```
@@ -1121,7 +1121,7 @@ with a frozen selection (continuation page) evaluates nothing.
 | Field | Type | Meaning |
 |---|---|---|
 | `site` | enum | who spent it, below |
-| `model` | string | pinned model (`jev-1.13.0`) |
+| `model` | string | pinned model (`jev-1.14.0`) |
 | `source` | `remote`, `cassette_hit`, `cassette_miss`, `book_hit` | provider over the network; answered from `KMP_TYPESAFE_CASSETTE`; not in the cassette (replay: the evaluation fails; record: the provider was asked and the answer kept); answered from the verdict book (P5, `<data dir>/judgements.sqlite3`) with no provider request. A binary without the book never logs `book_hit`; the bench accepts it already (`domain/run_record.JEV_SOURCES`) and counts it as a replayed answer (`runtime/judgement_log.REPLAY_SOURCES`, `jev_cost` `book_hits`) |
 | `status` | `ok`, `error` | |
 | `questions` | int | typed questions in the request (one per passage for rerank/wake focus) |
@@ -1382,7 +1382,7 @@ binary this way (`KMP_BENCH_BINARY=target/release/kmp-mcp`).
 | `fixture_key` | hex64 | the key above; replay refuses a manifest for another key |
 | `sample` | int ≥ 0 | sample index; each sample records and replays alone |
 | `backend` | `cassette`, `book` | per-body cassette (every binary up to P5) or the P5 verdict book |
-| `model` | string | pinned model (`jev-1.13.0`) |
+| `model` | string | pinned model (`jev-1.14.0`) |
 | `file` | string or null | `cassette.json` or `judgements.sqlite3`; null when nothing was written |
 | `sha256` | hex64 or null | of that file |
 | `request_keys` | [hex64] | sorted `request_key`s the sample's `kmp_judgement` lines named |
@@ -1392,7 +1392,7 @@ binary this way (`KMP_BENCH_BINARY=target/release/kmp-mcp`).
 ```json jev-fixture
 {"schema": "kmp.bench.jev_fixture.v1",
  "fixture_key": "7777777777777777777777777777777777777777777777777777777777777777",
- "sample": 0, "backend": "cassette", "model": "jev-1.13.0", "file": "cassette.json",
+ "sample": 0, "backend": "cassette", "model": "jev-1.14.0", "file": "cassette.json",
  "sha256": "6666666666666666666666666666666666666666666666666666666666666666",
  "request_keys": ["a0b4a155271abd4b5cbb4c446fba3ccb7a96299de1b60a27e222b270aded6b2b"],
  "by_source": {"remote": 1}, "telemetry": true}
