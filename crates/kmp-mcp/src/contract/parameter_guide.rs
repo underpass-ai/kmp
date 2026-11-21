@@ -21,7 +21,7 @@ use crate::guide::GuideTopic;
 /// it was met (`about` on the two first calls of new work, `continuation` on
 /// the write that resumes its review). `tools` empty means every tool with
 /// that argument.
-pub(crate) const ADVERTISED_LINES: [(&[&str], &str, &str); 6] = [
+pub(crate) const ADVERTISED_LINES: [(&[&str], &str, &str); 7] = [
     (
         &["kmp_write_memory", "kmp_wake"],
         "about",
@@ -56,6 +56,13 @@ pub(crate) const ADVERTISED_LINES: [(&[&str], &str, &str); 6] = [
         &["kmp_write_memory"],
         "continuation",
         "Send alone, exactly as returned.",
+    ),
+    // The cursor each move takes is rule `time.cursor`; a real agent sent
+    // `forward` without one once the rule left the catalogue (tokens-2).
+    (
+        &["kmp_time"],
+        "move",
+        "rewind/forward take from or interval; goto takes at; near takes around.",
     ),
 ];
 
