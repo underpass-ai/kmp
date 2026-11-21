@@ -93,6 +93,7 @@ ends with `Help: kmp_guide {"topic":"…"}`.
 | The viewer listened from the start of every stdio session | Nothing listens until the first `kmp_view_open`. `kmp-mcp viewer` and `kmp-mcp demo` bind as before. A busy explicit address comes back in the `kmp_view_open` result instead of ending the session. |
 | Viewer routes `/api/graph` and `/api/timeline` | Removed (the page never called them). The session cookie is named after the port. |
 | `kmp-mcp export` to the project head replaced the committed bundle | Refuses to replace a bundle whose events it would not keep (ahead or divergent); `--overwrite-committed` replaces it anyway. |
+| `kmp-mcp export <file> --about X` replaced a committed `.kmp/memory.jsonl` holding other abouts when the file was named relatively, through a symlink, or from a store pinned by `KMP_MCP_DATA_DIR` | The same refusal for every export whose destination is a committed `.kmp/memory.jsonl`, named or not, filtered or not, whichever rule chose the store. It names the events and abouts it would drop; export without `--about`, or pass `--overwrite-committed`. A host that saves one about over a file holding others must handle the exit 2. |
 | A missing or empty database beside proof it held memory was restarted empty | Refused on open and by `doctor`, naming the way out. |
 | `doctor` could re-stamp `FORMAT_VERSION` and create a missing database | `doctor` opens the store read-only and runs SQLite's `quick_check`. |
 | Call log field `context_fingerprint` | Gone. |
