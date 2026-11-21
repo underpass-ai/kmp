@@ -11,8 +11,9 @@ ChronoLoom places each memory once on its owning about plane. Perspective orbit
 and a flat camera share the same exact UTC window and selection. Up to five
 additional abouts can be explicitly compared; ordinary labels filter entries.
 The three semantic detail levels remain: Atlas bins, Episode clusters and Moment entries. The
-application owns this bounded, paginated projection; the browser never walks a
-whole about or a depth-four graph to manufacture it.
+application owns this bounded, paginated projection: the browser never walks a
+whole about or a depth-four graph to manufacture it, although the server still
+reads the whole about for each new time window (see [Limits](#limits)).
 
 The inspector is labelled **Current record**: its status and links include
 updates outside the scene's time window. The clock and UTC window bound the
@@ -126,6 +127,17 @@ A work cutoff is explicit; the browser refuses incomplete framing. Unsupported
 adapters return an error instead of synthesizing consistency from separate reads.
 The negotiated MCP App uses `kmp_view_read_nodes` / gRPC `ReadNodes` for the same
 operation; the tool is absent from the model-facing catalogue.
+
+## Limits
+
+| Limit | Detail |
+|:--|:--|
+| Size | Promised to stay fluid up to **10,000 memories per about** in 1.x. Larger abouts work but slow down: each new time window reads the whole about on the server, one read at a time. Windowed reading is planned for 1.1. |
+| One read | At most 65,536 entries of an about. Above that the window still spans them all and the status bar says "Showing the newest 65,536 of N". |
+| 3D scene | Needs WebGL. Without it, layers, labels, search, the time window and memory detail still work. |
+| Search | Reads only the memories the window has loaded at Memories detail. |
+| Writes | None: the viewer never writes memory. **Declare…** composes a `kmp_curate` call for the agent to run. |
+| Network | Loopback only, behind a per-process capability link. [Security and privacy](../../docs/security-privacy.md#the-viewer). |
 
 See the [architecture and verification map](../../docs/architecture/chronoloom-shared-scene.md).
 

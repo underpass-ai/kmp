@@ -5,15 +5,18 @@
 > (`contract/cross_field_rule.rs`), documented in the `rules` of its guide
 > card and named with its fix in the refusal. The catalogue keeps only the
 > continuation split `if continuation else required`. The acceptance sets
-> below are unchanged; see `docs/development/agent-surface.md`.
+> below are unchanged, except that `context_id` is gone from every tool
+> (refused as an unknown argument) and `actor` is optional on the writers, so
+> the actor/context condition no longer exists. See
+> `docs/development/agent-surface.md`.
 
 Codex metadata captured on 15 September 2026 exposes thirteen KMP inputs as
 `unknown` or unions of generic dictionaries. The native catalogue still
 contains their named properties. Root `oneOf`, `anyOf` and an unnecessary
 `allOf` wrapper let a host render only constraint branches, losing the shared
-argument shape. Complete captures are retained in
-`artifacts/agent-surface-544-20260915/`. They describe one running host,
-not billed context.
+argument shape. The complete captures are in Git history at the
+[v0.27.0 tag](https://github.com/underpass-ai/kmp/tree/v0.27.0/artifacts/agent-surface-544-20260915).
+They describe one running host, not billed context.
 
 ## Change
 
@@ -84,7 +87,12 @@ python3 scripts/performance/agent_surface_capture.py \
   --binary /absolute/path/kmp-mcp --output tmp/capture.json.gz
 ```
 
-Compare the retained baseline with the reviewed current catalogue:
+Compare the retained baseline with the reviewed current catalogue. The
+baseline inputs are no longer in the tree; restore them from the tag first:
+
+```bash
+git archive v0.27.0 artifacts/agent-surface-544-20260915 | tar -x
+```
 
 ```bash
 uv run --with tiktoken==0.12.0 --with jsonschema==4.25.1 python \

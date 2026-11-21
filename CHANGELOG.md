@@ -589,6 +589,31 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
 - `kmp-mcp demo --dry-run` writes nothing: it no longer creates the store
   skeleton or records the store in the machine's index.
 
+### Documentation
+
+- New pages for 1.0: [stability and support](docs/stability.md) (what 1.x
+  promises, what is experimental, deprecation, the support window),
+  [upgrading from 0.27](docs/upgrading.md), [install](docs/install.md) (hosts
+  and platforms), [concepts](docs/concepts.md), the
+  [CLI reference](docs/embedded/cli.md), [store format](docs/embedded/store-format.md),
+  [security and privacy](docs/security-privacy.md) and
+  [troubleshooting](docs/troubleshooting.md). The configuration reference
+  lists the twelve optional files beside the store and the user config file.
+- Dated development and architecture records move to `docs/archive/`, with an
+  index; the three executed Jev implementation plans and
+  `docs/documentation-inventory.tsv` are deleted. The agent-surface
+  procedure and the remaining Spanish notes are in English.
+- Generated test evidence under `artifacts/` is no longer tracked (957
+  files); documents cite it at the `v0.27.0` tag.
+  `scripts/performance/proof_batch_physical_run.py` and
+  `scripts/performance/sqlite_clients.py` need their inputs restored from
+  that tag.
+- Shipped guide text: the `guide` verb lesson no longer says a read seeds the
+  stored guide, the `errors` topic says a refusal ends with a `Help:` line
+  instead of offering `structuredContent.help`, and the `repository` topic
+  names `import --from`. The `kmp-setup` skill describes every host, and
+  `/kmp:setup` hints `--hermes` and `--pi`.
+
 ## [0.27.1] - 2026-11-20
 
 ### Changed
@@ -1867,7 +1892,7 @@ The initial agent schema that expands with use and persistent consultation profi
   `VisualBin.scope_id`, `VisualCluster.scope_id`,
   `TemporalCoordinate.method / why / motivation`). ChronoLoom uses this
   catalogue for ordinary label filters within about planes; the projection map is
-  [docs/architecture/chronoloom-labels.md](docs/architecture/chronoloom-labels.md).
+  [docs/architecture/chronoloom-labels.md](docs/archive/architecture/chronoloom-labels.md).
 
 - The view speaks the whole selection. `/api/projection` takes `scope_ids`
   and `labels` — the latter as `key op value|value`, joined by `;`, with the

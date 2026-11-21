@@ -53,19 +53,20 @@ anything reads it: an unknown argument, a wrong JSON type, a value outside an
 or `UNKNOWN_ARGUMENT`), never answered from defaults. Clock arguments need a
 zone: `Z` or an offset such as `+01:00`.
 
-Usage refusals also offer `structuredContent.help.guide` and `help.examples`:
-complete `{tool, arguments}` calls to the relevant verb and worked lessons.
-Read the field and code in every feedback item first; reuse lessons already in
-context and consult only the missing explanation. The help is also available in
-the text fallback. It does not replace `feedback[].action`, which can inspect
-a missing prerequisite or restart a stale selection. Neither help nor a lesson
-authorizes writing invented evidence or widening the task's scope.
+A usage refusal ends its text with one line, `Help: kmp_guide {"topic":"…"}`,
+naming the topic that teaches the first refused argument; a cross-field rule
+is named as ``Rule `id`: … Fix: …`` and in `feedback[].rule`. Read the field
+and code in every feedback item first; reuse a card already in context and
+consult only the missing explanation. The help line does not replace
+`feedback[].action`, which can inspect a missing prerequisite or restart a
+stale selection. Neither a card nor a lesson authorizes writing invented
+evidence or widening the task's scope.
 
-Example: a `FUTURE_OBSERVATION` refusal links to the four-clock lesson. Read the
-source to correct the observation time; do not substitute today's time merely
-to make the call pass. A `RELATION_PROOF_REQUIRED` refusal links to decision
-history, where the relation has its own why and evidence. If the source does not
-justify that relation, the lesson cannot supply its proof.
+Example: on a `FUTURE_OBSERVATION` refusal, read the source to correct the
+observation time (the four-clock lesson shows how); do not substitute today's
+time merely to make the call pass. On a `RELATION_PROOF_REQUIRED` refusal, the
+relation needs its own why and evidence (decision history shows one). If the
+source does not justify that relation, the lesson cannot supply its proof.
 
 No automatic guide sync or retry occurs, and a guide read never writes the
 store. Backend/unavailable errors and
