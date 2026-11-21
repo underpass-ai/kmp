@@ -229,3 +229,56 @@ work per memory and what was done several times. The 1.0 targets of
   clock in the store, or keeping larger indexes, would bound it.
 - **Memory.** Wake and the about path hold the whole about several times
   over; peak RSS at 10^5 stays above 4 GB.
+
+## Reads at scale, second pass: what a read cannot return is not read (1.0)
+
+The first pass made each memory cheaper; this one stops reading what an
+answer cannot use. Same stores, same script (`latency_direct.py`), same
+gold questions; the base is `integration/v1.0` at a9b6e4d7.
+
+**Where the time went (10^4, before).** Stage timers and the SIGPROF
+sampler of the first pass, on a profiling build of the base.
+
+| read | largest terms |
+|---|---|
+| ask, derived question, 2.1 s | the plan 0.72 s: df of 22,630 terms (0.14 s), the associations counted twice over 4,931 seed rows (0.18 s), every reached row's terms collected (0.09 s), the prefixes (0.21 s); then a first top-k round that certifies nothing (no candidate is eligible) and a second that reads and ranks all 3,153 planned candidates (1.1 s) |
+| ask, gold anchored question, 0.98 s | the plan 0.6 s (the same terms), one round 0.3 s |
+| first wake, 1.0 s | the catalogue: one JSON projection statement per node (`json_extract` × 7 and `json_object`), then every node read again in full once admitted; the cl100k table loaded inside the first read (50 ms); label references parsed and re-encoded per entry; render and projection of the whole packet |
+| time, 0.5 s | the catalogue read on every call (the temporal index is kept only below 8,192 nodes), label references parsed per entry, then the proof plan and the mapping |
+
+**What changed (answers unchanged).**
+
+- **Reach (`lex_reach`).** Each candidate's row is joined by the words its
+  graph can lend a strict focus: the slugs of the refs it supports, the
+  details of its refs, the explanatory relations the selection keeps at
+  them. Top-k leaves out a candidate that cannot clear the floor, or whose
+  focus over its direct field and its reach stays below two thirds of the
+  question's focus concepts: no reading can find it eligible. The derived
+  question plans 3,153 candidates and none is eligible; top-k now reads the
+  55 it must and certifies in one round. The sidecar is `lexical-index-6`.
+- **The plan reads only the df an ask weighs.** The question's words, its
+  anchors, the associations and the words a question word shares three seed
+  rows with (22,630 → 4,693 terms on the derived question); the pairs are
+  counted once per ask, in a hash map, and shared with every ranking of it;
+  the prefixes are read from the rows in place; a candidate's id and row
+  come in one statement.
+- **Headers are decoded from the stored JSON** by serde, which skips what it
+  does not name, instead of a seven-path `json_extract` per node.
+- **A read with no dimensions of its own reads each node once**: whole in
+  the catalogue, instead of a header and then the node again once admitted.
+- **The temporal index of a 10^4 about is kept** (up to 16,384 nodes,
+  65,536 relations, 256 MiB of its conservative allowance).
+- **Label references** are parsed once per thread and kept (16 of them).
+- **The cl100k table** loads beside startup instead of inside the first read.
+
+TABLE
+
+GOLD
+
+**Profile after (10^4).** PROFILE_AFTER
+
+**Parity.** PARITY
+
+**Sidecar upgrade.** UPGRADE
+
+**What remains.** REMAINS
