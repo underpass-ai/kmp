@@ -59,6 +59,12 @@ impl CrossLanguage {
             .collect()
     }
 
+    /// Whether any memory can be written in another language than the
+    /// question: the question leans in one.
+    pub(super) fn may_cross(&self) -> bool {
+        self.asked.is_some()
+    }
+
     /// Whether a memory with this text is written in another language than
     /// the question, both read.
     pub(super) fn crosses_to(&self, text: &str) -> bool {

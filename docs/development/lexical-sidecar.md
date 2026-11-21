@@ -101,7 +101,11 @@ reads the same while no node lies one hop past depth 2 (`lex_far` empty).
   `contains_entry` edge touches, and for the evidence supporting each.
   `upkeep_tests` compares the reaches a sidecar followed write by write with
   those of one built from nothing, after a relation-only write between two
-  entries and the same relation written again with other words.
+  entries and the same relation written again with other words. The log
+  never removes a relation or a `supports` edge; the one removal it makes is
+  a `contains_entry` edge, when a relabel takes a label off an entry (which
+  keeps one at least): `reach_removal_tests` takes labels off both ends of
+  an explanatory relation and of a support and compares again.
 
 ## Shadow comparison
 
@@ -284,7 +288,8 @@ Why the bound is sound for the whole `RelevanceKey`:
   without its negated stretches, with its alias terms) counts its words, and
   the lowest floor of any form is compared.
 - Lexical bridge: the floor carries the bridged words exactly as the lexicon
-  builds it, and a candidate carrying a bridged word is always read.
+  builds it, and a candidate carrying a bridged word is kept for top-k, which
+  reads the best of them for the bridged rescue (below).
 - Associations: a candidate carrying one is always read (it may be rescued
   through it). The associations are now counted over the rows of every
   candidate that carries a word of the question (`IndexedAsk::seed_rows`),
@@ -360,12 +365,13 @@ whole on both surfaces, index limits and page sizes alike, with a warning
 **Reading fewer candidates.** Each candidate's rank prefix (content focus
 matches, content BM25, direct BM25, in tenths) is exact from its row
 (`RankPrefixes`, the same integers and the same lexicon the ranker builds).
-The index reads what top-k must (candidates an association, a bridged word or
-a declared lifecycle can rescue, `lifecycle_docs`) and the best
-`64 + depth + 16` others by prefix, ties at the cut included, answers them,
-and keeps the answer only when it is certified: the reading did not carry
-the whole ranking, and every eligible candidate it carried ranks strictly
-above the best prefix left unread. Otherwise it reads four times as many, up
+The index reads what top-k must (candidates an association or a declared
+lifecycle can rescue, `lifecycle_docs`), the best carriers of a bridged word
+for the bridged rescue (below), and the best `64 + depth + 16` others by
+prefix, ties at the cut included, answers them, and keeps the answer only
+when it is certified: the reading did not carry the whole ranking, every
+eligible candidate it carried ranks strictly above the best prefix left
+unread, and no carrier left unread could have been rescued. Otherwise it reads four times as many, up
 to every candidate; when the round carried the whole ranking of what it read
 because too few of its candidates were eligible, it reads enough to find the
 eligible candidates its depth needs at the rate it found them, twice over
@@ -398,6 +404,34 @@ measured question at 10^4 (3,153 planned candidates, none eligible) top-k
 reads the 55 it must and certifies in one round instead of reading all 3,153.
 Fewer selections now cover more than 35 % of the about, so more asks are
 answered from the index (180 of 184 gold reads at 10^4, against 133).
+
+**Carriers of a bridged word (P14, third pass).** With a table installed, a
+ranking rescues at most three candidates it rejected that carry a word the
+table bridged the question to (`bridged_candidates`, any language), the best
+by direct score first; nothing else a bridged word does needs the candidate
+read (its weight is in the floor and the prefix, and the focus a strict
+policy counts is bounded below). Top-k used to read every carrier, which with
+the shipped table put a common question past the 35 % bound (about 4,800
+carriers at 10^4). It now reads the carriers by the direct score their rows
+give (the last part of the prefix), at least 16 and down to the fourth that
+no reading can find eligible, ties at the cut included. Every ranking of the
+read records what its rescue took (`BridgedRescues`, carried by `IndexedAsk`);
+the round is certified only when every ranking took all three and the lowest
+of them scores strictly above the best carrier left unread, since a carrier
+scoring no more can only fall after them (a tie is decided by a key the rows
+do not hold, so it is not certified). Otherwise the next round reads four
+times as many carriers, up to all. The record is read from the ranking, not
+from the response: under the anchored gate an unanswered reading drops the
+rescued items from its proof, but the rescue still decides what the graph
+walk may reach. The table vouches for a focus concept only through a
+translation onto a memory in another language than the question
+(`CrossLanguage`), so the focus bound counts the translations alone, and
+nothing when the question leans in no language. On the measured question at
+10^4 with the shipped table, 4,815 candidates read → 108, and the ask is
+answered from the index instead of the whole about. `verify` checks the
+answers and `unanswerable_eligible`; `maxscore_parity_tests` adds a store
+where half the memories say a word in Spanish (some leaning in Spanish, some
+replaced or expired).
 
 **What the plan reads (second pass).** The df an ask weighs or counts is the
 df of the question's words in every form, of its anchors, of the words the

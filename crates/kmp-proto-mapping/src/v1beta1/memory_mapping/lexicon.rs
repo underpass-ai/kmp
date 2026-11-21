@@ -201,14 +201,22 @@ impl Lexicon {
 
     /// At most how many focus concepts a candidate whose searchable words
     /// are among `searchable` and whose direct field is `direct` answers
-    /// ([`BridgedKey::focus_bound`]).
+    /// ([`BridgedKey::focus_bound`]): [`Self::focus_matches`] counts a
+    /// translation only onto a memory in another language than the
+    /// question, so a question that leans in none is bounded by its own
+    /// words, and one that leans in one by its translations.
     pub(super) fn focus_bound<'t, D: CountedText + ?Sized>(
         &self,
         focus_terms: &BTreeSet<String>,
         searchable: impl IntoIterator<Item = &'t String>,
         direct: &D,
     ) -> usize {
-        BridgedKey::focus_bound(&self.bridged, focus_terms, searchable, direct)
+        let pairs = if self.crossing.may_cross() {
+            self.translations.as_slice()
+        } else {
+            &[]
+        };
+        BridgedKey::focus_bound(pairs, focus_terms, searchable, direct)
     }
 
     /// How this candidate states one concept the anchored gate asks of it,

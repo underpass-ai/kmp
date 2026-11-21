@@ -27,6 +27,7 @@ mod association_index;
 #[cfg(test)]
 mod association_index_parity_tests;
 mod bridged_key;
+mod bridged_rescues;
 mod bridged_term;
 mod bundle_lifecycle_links;
 mod bundle_node_index;
@@ -175,6 +176,7 @@ mod wake_summary_render_tests;
 
 pub use ask_gate::AskGate;
 pub use ask_retrieval_context::AskRetrievalContext;
+pub use bridged_rescues::BridgedRescues;
 pub use bundle_views::abouts_in_bundle;
 pub use confidence_calibration::ConfidenceCalibration;
 pub use doubt_band::DoubtBand;

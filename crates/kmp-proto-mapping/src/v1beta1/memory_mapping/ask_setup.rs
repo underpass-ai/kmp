@@ -93,6 +93,7 @@ impl<'a> AskSetup<'a> {
                     Some(rows) => ranker.with_indexed_rows(std::sync::Arc::clone(rows)),
                     None => ranker,
                 };
+                let ranker = ranker.with_bridged_rescues(indexed.rescues.clone());
                 match &indexed.vocabulary {
                     Some(vocabulary) => {
                         ranker.with_indexed_vocabulary(std::sync::Arc::clone(vocabulary))

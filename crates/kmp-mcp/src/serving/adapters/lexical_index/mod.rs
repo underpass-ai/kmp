@@ -31,6 +31,7 @@ mod sidecar_candidates;
 mod sidecar_meta;
 mod sqlite_lexical_sidecar;
 mod term_postings;
+mod top_k_selection;
 mod working_set;
 
 fn storage(error: impl std::fmt::Display) -> String {
@@ -54,3 +55,6 @@ mod maxscore_parity_tests;
 
 #[cfg(test)]
 mod parts_memo_tests;
+
+#[cfg(test)]
+mod reach_removal_tests;
