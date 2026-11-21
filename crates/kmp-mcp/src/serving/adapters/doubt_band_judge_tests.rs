@@ -39,7 +39,8 @@ impl JudgementModel for PassageJudge {
             .iter()
             .map(|(key, question)| {
                 let (instructions, graded) = match question {
-                    JudgementQuestion::Noul { instructions } => (instructions, false),
+                    JudgementQuestion::Noul { instructions }
+                    | JudgementQuestion::CriteriaNoul { instructions, .. } => (instructions, false),
                     JudgementQuestion::Score { instructions, .. } => (instructions, true),
                     JudgementQuestion::Choice { instructions, .. } => (instructions, false),
                 };

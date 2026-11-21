@@ -1,3 +1,4 @@
+use super::cross_language_judge::CrossLanguageJudge;
 use super::curate_doubt_cache::CurateDoubtCache;
 use super::curate_review_cache::CurateReviewCache;
 use super::doubt_band_judge::DoubtBandJudge;
@@ -68,6 +69,9 @@ pub struct EmbeddedKernelMcpBackend {
     wake_focus: Result<Option<Arc<WakeFocusJudge>>, String>,
     /// The ask doubt band judged by the same model (`ask-judge.json`).
     doubt_band: Result<Option<Arc<DoubtBandJudge>>, String>,
+    /// The same model as the cross-language judge of Ask
+    /// (`ask-cross-language.json`).
+    cross_language: Result<Option<Arc<CrossLanguageJudge>>, String>,
     /// Relations proposed after each write, opted into by
     /// `write-relations.json` beside `typesafe.json`.
     write_relations: bool,
@@ -139,6 +143,7 @@ impl EmbeddedKernelMcpBackend {
             rerank,
             wake_focus,
             doubt_band,
+            cross_language,
             write_relations,
             write_expansions,
             lexical_bridge,
@@ -172,6 +177,7 @@ impl EmbeddedKernelMcpBackend {
             rerank,
             wake_focus,
             doubt_band,
+            cross_language,
             write_relations: write_relations.is_some(),
             write_expansions,
             lifecycle,
@@ -244,7 +250,8 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
 
     /// Each tool whose Jev opt-in took effect when the store opened: the
     /// review and summary audit with `typesafe.json` and a key, Wake with
-    /// `wake-focus.json`, Ask with `rerank.json` or `ask-judge.json`, the
+    /// `wake-focus.json`, Ask with `rerank.json`, `ask-judge.json` or
+    /// `ask-cross-language.json`, the
     /// writer with `write-relations.json` or `write-expansions.json`.
     fn open_world_tools(&self) -> Vec<&'static str> {
         if !matches!(self.judgement, Ok(Some(_))) {
@@ -254,7 +261,10 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
         if matches!(self.wake_focus, Ok(Some(_))) {
             tools.push("kmp_wake");
         }
-        if matches!(self.rerank, Ok(Some(_))) || matches!(self.doubt_band, Ok(Some(_))) {
+        if matches!(self.rerank, Ok(Some(_)))
+            || matches!(self.doubt_band, Ok(Some(_)))
+            || matches!(self.cross_language, Ok(Some(_)))
+        {
             tools.push("kmp_ask");
         }
         if self.write_relations || matches!(self.write_expansions, Ok(Some(_))) {
@@ -334,6 +344,7 @@ impl EmbeddedKernelMcpBackend {
                     )
                     .with_gate(self.ask_gate)
                     .with_doubt_band(&self.doubt_band)
+                    .with_cross_language(&self.cross_language)
                     .with_lexical_sidecar(&self.lexical, self.kernel.store())
                     .call(arguments)
                     .await

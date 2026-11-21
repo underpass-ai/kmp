@@ -253,6 +253,49 @@ in the book for the next ask. A continuation never asks.
 experiment). With the band on, an ask is a function of the store and the
 verdict book, not of the store alone.
 
+### The cross-language judge (opt-in, sends text to TypeSafe)
+
+A store that opted into TypeSafe Jev can also ask it about the answers the
+lexical bridge carries across a language. Put `ask-cross-language.json`
+beside the store; each effect is off unless the file names it:
+
+```json
+{"veto": true, "rescue": true}
+```
+
+- **Veto** (`veto_at`, default 0.5). An answer that stands only because the
+  table translated what its citations state in another language — an
+  anchored verdict the table lifted, or an unanchored core every citation of
+  which is in another language and carried by `bridged_terms` — is asked
+  about: one noul per citation, "Does `passage` state the answer to the
+  question in the state? It may be written in another language." A citation
+  Jev finds at least `veto_at` likely not to state it leaves the core,
+  marked `judged_out`, and the gate decides again over what is left. A veto
+  only takes answers away.
+- **Rescue** (`rescue_at`, default 0.9). An UNKNOWN to a question that names
+  no required anchor, for which the table reached memories written in
+  another language (`reached_by: bridge` or `bridged_terms`), is asked about
+  up to eight of them, plus a companion noul: "Can the question in the state
+  be answered from `passages`?". The likeliest passage is cited only when it
+  and the companion both reach `rescue_at`. The citation is the stored
+  memory, marked `judged_by`, `judged_permille` and `judged_template`
+  (`cross_language.v1`); the confidence is never `high`; the summary says it
+  rests on Jev's judgement, not on the question's own words.
+
+The rescue relaxes one rule, and only inside this switch: an answer is
+otherwise built only from memories the question reached in its own words, and
+a memory the table reached stays in the proof. It never admits an absent
+anchor (an anchored question is never rescued) and never writes text.
+
+The judge asks through the verdict book under its own site
+(`cross_language`), with the 1.5 s deadline of the first page: past it, or
+when Jev fails, the deterministic answer stands with a warning and the
+verdict lands in the book for the next ask. A continuation never asks. When
+both this file and `ask-judge.json` are present, an ask that enters one of
+these two entries is judged here and not by the doubt band; one judge is
+asked per ask. Measured lines and their limits are in
+[languages](languages.md#the-cross-language-judge).
+
 ### Search expansions at write (opt-in, sends text to TypeSafe)
 
 A writer may propose, per memory, up to six `search_expansions` in

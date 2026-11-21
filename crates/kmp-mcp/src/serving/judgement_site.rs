@@ -29,12 +29,15 @@ pub(crate) enum JudgementSite {
     DoubtBand,
     /// Search expansions proposed at write (`write-expansions.json`).
     Expansions,
+    /// `kmp_ask` judged across a language (`ask-cross-language.json`): a
+    /// translated answer's veto, an UNKNOWN's rescue.
+    CrossLanguage,
 }
 
 impl JudgementSite {
     /// Every site, for what must cover them all (the verdict book retiring
     /// superseded templates).
-    pub(crate) const ALL: [Self; 11] = [
+    pub(crate) const ALL: [Self; 12] = [
         Self::Rerank,
         Self::WakeFocus,
         Self::CurateReview,
@@ -46,6 +49,7 @@ impl JudgementSite {
         Self::Summaries,
         Self::DoubtBand,
         Self::Expansions,
+        Self::CrossLanguage,
     ];
 
     pub(crate) fn as_str(self) -> &'static str {
@@ -61,6 +65,7 @@ impl JudgementSite {
             Self::Summaries => "summaries",
             Self::DoubtBand => "doubt_band",
             Self::Expansions => "expansions",
+            Self::CrossLanguage => "cross_language",
         }
     }
 
@@ -75,12 +80,15 @@ impl JudgementSite {
     }
 
     /// How long a first page may wait for Jev before it degrades, warned,
-    /// to the deterministic path (DESIGN L4 4b): 1.5 s for ask re-ranking
-    /// and the ask doubt band, 3 s for the first page of a focused wake,
-    /// none for curate, whose agent asked for the judgement itself.
+    /// to the deterministic path (DESIGN L4 4b): 1.5 s for ask re-ranking,
+    /// the ask doubt band and its cross-language judge, 3 s for the first
+    /// page of a focused wake, none for curate, whose agent asked for the
+    /// judgement itself.
     pub(crate) fn deadline(self) -> Option<Duration> {
         match self {
-            Self::Rerank | Self::DoubtBand => Some(Duration::from_millis(1_500)),
+            Self::Rerank | Self::DoubtBand | Self::CrossLanguage => {
+                Some(Duration::from_millis(1_500))
+            }
             Self::WakeFocus => Some(Duration::from_millis(3_000)),
             _ => None,
         }
@@ -149,6 +157,11 @@ mod tests {
             Some(std::time::Duration::from_millis(1_500))
         );
         assert_eq!(JudgementSite::DoubtBand.as_str(), "doubt_band");
+        assert_eq!(
+            JudgementSite::CrossLanguage.deadline(),
+            Some(std::time::Duration::from_millis(1_500))
+        );
+        assert_eq!(JudgementSite::CrossLanguage.as_str(), "cross_language");
         assert_eq!(JudgementSite::CurateReview.deadline(), None);
         assert_eq!(JudgementSite::Paths.deadline(), None);
         assert_eq!(JudgementSite::Paths.template().id, "paths");

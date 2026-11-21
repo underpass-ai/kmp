@@ -5,6 +5,7 @@ use kmp_proto::v1beta1::{MemoryConfidence, MemoryEvidence};
 use super::answer_ranker::ANSWER_CORE_LIMIT;
 use super::answer_selection::was_reached_indirectly;
 use super::ask_setup::AskSetup;
+use super::cross_language_band::bridged;
 use super::doubt_verdicts::DoubtVerdicts;
 use super::judged_core::JudgedCore;
 
@@ -16,6 +17,11 @@ use super::judged_core::JudgedCore;
 /// admitted, live memory the question reached directly, that names no
 /// excluded anchor alone and that the judge finds answers, joins the core,
 /// marked, up to the core's limit.
+///
+/// A cross-language rescue ([`DoubtVerdicts::is_rescue`]) may also cite a
+/// memory the lexical bridge reached, the one passage its verdicts name;
+/// it stands alone: a deterministic core that did not bear is not cited
+/// beside it.
 ///
 /// Returns the proof, the core and what the judge did.
 pub(super) fn apply_unanchored_doubt(
@@ -38,9 +44,10 @@ pub(super) fn apply_unanchored_doubt(
                 .map(|permille| (item.id.clone(), permille))
         })
         .collect::<BTreeMap<_, _>>();
+    let rescue = doubt.is_rescue();
     let kept = cited
         .iter()
-        .filter(|item| !vetoed.contains_key(&item.id))
+        .filter(|item| !vetoed.contains_key(&item.id) && !(rescue && !bore))
         .cloned()
         .collect::<Vec<_>>();
     let room = ANSWER_CORE_LIMIT - kept.len();
@@ -50,7 +57,7 @@ pub(super) fn apply_unanchored_doubt(
         .filter(|item| {
             !kept.iter().any(|core| core.id == item.id)
                 && !vetoed.contains_key(&item.id)
-                && !was_reached_indirectly(item)
+                && (!was_reached_indirectly(item) || (rescue && bridged(item)))
                 && ranker.is_live(item)
                 && !setup.negated_only(item)
         })

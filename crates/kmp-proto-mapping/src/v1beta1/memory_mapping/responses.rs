@@ -896,6 +896,20 @@ pub fn ask_response_from_result(
     } else {
         format!("; not found: {}", not_found.join(", "))
     };
+    // A cross-language rescue cites a memory on a judge's word, not on the
+    // question's: the summary says so, so the answer reads as a judgement.
+    let judged_note = match doubt {
+        Some(doubt)
+            if !unknown
+                && doubt.entry() == super::doubt_entry::DoubtEntry::CrossLanguageUnknown =>
+        {
+            format!(
+                "; cited on {}'s judgement that it states the answer in another language, not on the question's own words",
+                doubt.model()
+            )
+        }
+        _ => String::new(),
+    };
 
     let mut warnings = question_rendering_warnings(question, asked_as);
     if let Some(ranking) = &retrieval.rerank {
@@ -955,7 +969,7 @@ pub fn ask_response_from_result(
             }
         } else {
             format!(
-                "Retrieved {} memory {} for{}: {question}{not_found_note}",
+                "Retrieved {} memory {} for{}: {question}{not_found_note}{judged_note}",
                 because.len(),
                 if because.len() == 1 { "item" } else { "items" },
                 if answer_status == AnswerStatus::Partial {

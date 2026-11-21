@@ -30,6 +30,14 @@ pub(super) const JUDGED_TEMPLATE_KEY: &str = "judged_template";
 ///   did not admit, and it never writes text: the citation is the stored
 ///   memory, marked with the model, the probability and the template.
 ///
+/// - **Cross-language rescue**, only on a [`DoubtEntry::CrossLanguageUnknown`]
+///   band and only with [`Self::with_rescue`]: the one passage the judge
+///   finds likeliest to state the answer, when it and the companion
+///   judgement ("can the question be answered from these passages?") are
+///   both at least `rescue_at`, joins the core of an UNKNOWN. It is the
+///   only promotion that may cite a memory the question reached through the
+///   lexical bridge rather than in its own words.
+///
 /// Verdicts are keyed by evidence id and the SHA-256 of the exact text the
 /// judge read, so a memory whose text changed since is not judged.
 #[derive(Debug, Clone)]
@@ -39,6 +47,8 @@ pub struct DoubtVerdicts {
     template: String,
     veto_at: u16,
     promote_at: Option<u16>,
+    /// The rescue line and the companion's judgement, in thousandths.
+    rescue: Option<(u16, u16)>,
     judged: BTreeMap<(String, String), DoubtJudgement>,
 }
 
@@ -69,8 +79,25 @@ impl DoubtVerdicts {
             template,
             veto_at,
             promote_at,
+            rescue: None,
             judged: BTreeMap::new(),
         })
+    }
+
+    /// The cross-language rescue: `rescue_at` is the line both the best
+    /// passage and `companion` (how likely the question can be answered
+    /// from the passages at all) must reach, in thousandths. Only on a
+    /// [`DoubtEntry::CrossLanguageUnknown`] band without B2 promotion.
+    pub fn with_rescue(mut self, rescue_at: u16, companion: u16) -> ProtoMappingResult<Self> {
+        if self.entry != DoubtEntry::CrossLanguageUnknown
+            || self.promote_at.is_some()
+            || !(1..=1000).contains(&rescue_at)
+            || companion > 1000
+        {
+            return Err(invalid_argument("invalid cross-language rescue"));
+        }
+        self.rescue = Some((rescue_at, companion));
+        Ok(self)
     }
 
     /// Records the judgement of the passage `id` whose text hashes to
@@ -125,10 +152,50 @@ impl DoubtVerdicts {
 
     /// The promotion of an admitted memory, as the probability it answers.
     pub(super) fn promotes(&self, item: &MemoryEvidence) -> Option<u16> {
+        if let Some((rescue_at, companion)) = self.rescue {
+            return self.rescues(item, rescue_at, companion);
+        }
         let promote_at = self.promote_at?;
         self.judgement(item)
             .map(|judged| judged.answers)
             .filter(|answers| *answers >= promote_at)
+    }
+
+    /// Whether the judge vetoes `item`, were the answer to cite it.
+    pub fn is_vetoed(&self, item: &MemoryEvidence) -> bool {
+        self.vetoes(item).is_some()
+    }
+
+    /// Whether a cross-language rescue cites `item`.
+    pub fn is_rescued(&self, item: &MemoryEvidence) -> bool {
+        self.is_rescue() && self.promotes(item).is_some()
+    }
+
+    /// Whether these verdicts are a cross-language rescue, which may cite a
+    /// memory the bridge reached.
+    pub(super) fn is_rescue(&self) -> bool {
+        self.rescue.is_some()
+    }
+
+    /// The rescue of `item`: it is the passage judged likeliest to state the
+    /// answer (ties to the lowest id and digest), and it and the companion
+    /// both reach the line.
+    fn rescues(&self, item: &MemoryEvidence, rescue_at: u16, companion: u16) -> Option<u16> {
+        if companion < rescue_at {
+            return None;
+        }
+        let best =
+            self.judged
+                .iter()
+                .fold(
+                    None::<(&(String, String), u16)>,
+                    |best, (key, judged)| match best {
+                        Some((_, answers)) if answers >= judged.answers => best,
+                        _ => Some((key, judged.answers)),
+                    },
+                )?;
+        let digest = format!("{:x}", Sha256::digest(item.text.as_bytes()));
+        (best.0.0 == item.id && best.0.1 == digest && best.1 >= rescue_at).then_some(best.1)
     }
 
     /// Marks a vetoed citation, which stays in the proof.

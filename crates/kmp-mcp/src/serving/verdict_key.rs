@@ -37,6 +37,18 @@ impl VerdictKey {
                 field(&mut hasher, canonical(instructions).as_bytes());
                 field(&mut hasher, &0u32.to_be_bytes());
             }
+            // Its own word, so a noul that says what its answers mean never
+            // shares a verdict with the plain one.
+            JudgementQuestion::CriteriaNoul {
+                instructions,
+                criteria,
+            } => {
+                field(&mut hasher, b"criteria_noul");
+                field(&mut hasher, canonical(instructions).as_bytes());
+                field(&mut hasher, &2u32.to_be_bytes());
+                field(&mut hasher, normalized(&criteria.when_true).as_bytes());
+                field(&mut hasher, normalized(&criteria.when_false).as_bytes());
+            }
             JudgementQuestion::Choice {
                 instructions,
                 options,

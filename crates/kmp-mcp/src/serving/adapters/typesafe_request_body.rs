@@ -18,6 +18,14 @@ pub(super) fn typesafe_request_body(
                 JudgementQuestion::Noul { instructions } => {
                     json!({"type": "noul", "instructions": instructions})
                 }
+                JudgementQuestion::CriteriaNoul {
+                    instructions,
+                    criteria,
+                } => json!({
+                    "type": "noul",
+                    "instructions": instructions,
+                    "criteria": {"true": criteria.when_true, "false": criteria.when_false},
+                }),
                 JudgementQuestion::Choice {
                     instructions,
                     options,

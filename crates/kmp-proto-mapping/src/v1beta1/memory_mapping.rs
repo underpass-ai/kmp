@@ -42,9 +42,13 @@ mod content_scores;
 #[cfg(test)]
 mod counted_surface_tests;
 mod cross_language;
+mod cross_language_band;
+#[cfg(test)]
+mod cross_language_band_tests;
 mod decided_selection;
 mod dimensions;
 mod doubt_band;
+mod doubt_band_entries;
 mod doubt_band_reading;
 #[cfg(test)]
 mod doubt_band_tests;
@@ -166,6 +170,7 @@ pub use ask_retrieval_context::AskRetrievalContext;
 pub use bundle_views::abouts_in_bundle;
 pub use confidence_calibration::ConfidenceCalibration;
 pub use doubt_band::DoubtBand;
+pub use doubt_band_entries::DoubtBandEntries;
 pub use doubt_entry::DoubtEntry;
 pub use doubt_judgement::DoubtJudgement;
 pub use doubt_passage::DoubtPassage;
