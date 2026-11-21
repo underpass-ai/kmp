@@ -191,6 +191,15 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
   returns a handle retains its whole call, so the comparison holds for all of
   them. `tools/list` is unchanged.
 
+- `memory_bench`: a frozen question's first call is brought to the 1.0
+  contract (`Question.first_call` through `current_arguments`): a field 1.0
+  retired because the read ignored it (`budget.tokens`, recall `depth`, the
+  trace `goal`, `limit.tokens`, any budget on `kmp_curate`) is left out, and
+  `kmp_time`'s top-level `depth` moves into `budget.depth`. The frozen data is
+  untouched. A section with a journey that ended in an error is now `failed`
+  with no headline (verdict `captura_fallida`, reason `journeys not scored`),
+  instead of `ran` with a score over the rest.
+
 - **Timestamp arguments publish `"format": "date-time"`** in `tools/list`,
   so an agent sees that a clock wants an RFC 3339 instant with its zone
   before it sends a bare date. It is an annotation: the reader of the

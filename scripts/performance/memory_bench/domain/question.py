@@ -32,8 +32,49 @@ TOOL_SELECTIONS = {'kmp_ask': ('as_of', 'interval', 'axis', 'dimensions'),
                    'kmp_wake': ('as_of', 'interval', 'axis', 'dimensions'),
                    'kmp_trace': ('as_of', 'interval', 'axis'),
                    'kmp_curate': ('interval', 'axis', 'dimensions')}
-# Tools whose input schema takes no `budget` (kmp_curate since 1.0: it never honoured one).
-BUDGETLESS_TOOLS = ('kmp_curate',)
+# The budget fields each tool's input schema declares since 1.0 (kmp_curate: none). A
+# test holds this to crates/kmp-mcp/fixtures/contract/tools_list.json.
+BUDGET_FIELDS = {'kmp_wake': ('max_bytes', 'detail', 'max_entries'),
+                 'kmp_ask': ('max_bytes', 'detail', 'max_entries'),
+                 'kmp_time': ('max_bytes', 'detail', 'depth', 'max_entries'),
+                 'kmp_trace': ('max_bytes',), 'kmp_relate': ('max_bytes',), 'kmp_curate': ()}
+# Top-level arguments 1.0 removed because the read never honoured them (E11, #940):
+# `depth` beside a recall (every entry sits one hop from its scope) and the trace goal.
+RETIRED_ARGUMENTS = {'kmp_wake': ('depth',), 'kmp_ask': ('depth',), 'kmp_relate': ('depth',),
+                     'kmp_trace': ('depth', 'goal', 'role')}
+
+
+def current_arguments(tool, arguments):
+    """`arguments` as the 1.0 contract takes them.
+
+    A question frozen before 1.0 may carry a field the read ignored and 1.0
+    removed; sent as is, every binary since refuses the call and the journey is
+    never scored. Ignored fields are left out, so the call means what it meant
+    for every arm. kmp_time's top-level `depth` was honoured (it overrode
+    `budget.depth`), so it moves into the budget; `limit.tokens` changed nothing.
+    """
+    arguments = copy.deepcopy(arguments)
+    for name in RETIRED_ARGUMENTS.get(tool, ()):
+        arguments.pop(name, None)
+    if tool == 'kmp_time' and 'depth' in arguments:
+        depth = arguments.pop('depth')
+        if isinstance(arguments.get('budget'), dict):
+            arguments['budget']['depth'] = depth
+        else:
+            arguments['budget'] = {'depth': depth}
+    if tool == 'kmp_time' and isinstance(arguments.get('limit'), dict):
+        arguments['limit'].pop('tokens', None)
+        if not arguments['limit']:
+            arguments.pop('limit')
+    if tool in BUDGET_FIELDS and 'budget' in arguments:
+        budget = arguments['budget']
+        if isinstance(budget, dict):
+            kept = {key: value for key, value in budget.items() if key in BUDGET_FIELDS[tool]}
+            if kept:
+                arguments['budget'] = kept
+            else:
+                arguments.pop('budget')
+    return arguments
 # Owned by dedicated fields, or by the runner (continuations, guidance context).
 RESERVED_ARGUMENTS = ('about', 'question', 'answer_policy', 'asked_as', 'as_of', 'interval',
                       'axis', 'dimensions', 'continuation', 'context_id')
@@ -137,11 +178,11 @@ class Question:
 
         `default_budget` (a mode's budget) applies only when the question pins none;
         `max_bytes` then sets budget.max_bytes as token_harness' `first_arguments` does.
-        A tool that takes no budget (BUDGETLESS_TOOLS) gets neither.
+        Both pass through `current_arguments`: a tool gets only the budget fields it
+        declares (kmp_curate none), and a field 1.0 retired is left out.
         """
-        arguments = copy.deepcopy(self.arguments)
-        if (default_budget is not None and 'budget' not in arguments
-                and self.tool not in BUDGETLESS_TOOLS):
+        arguments = current_arguments(self.tool, self.arguments or {})
+        if default_budget is not None and 'budget' not in arguments:
             arguments['budget'] = copy.deepcopy(default_budget)
         arguments['about'] = self.about
         if self.tool == 'kmp_ask':
@@ -152,9 +193,9 @@ class Question:
         for name in ('as_of', 'interval', 'axis', 'dimensions'):
             if getattr(self, name) is not None:
                 arguments[name] = copy.deepcopy(getattr(self, name))
-        if max_bytes is not None and self.tool not in BUDGETLESS_TOOLS:
+        if max_bytes is not None:
             arguments.setdefault('budget', {})['max_bytes'] = max_bytes
-        return self.tool, arguments
+        return self.tool, current_arguments(self.tool, arguments)
 
     def as_dict(self):
         return {'schema': SCHEMA, 'id': self.id, 'corpus': self.corpus, 'type': self.type,
@@ -180,6 +221,13 @@ def _source(fields):
         if not re.fullmatch(r'[a-z][a-z0-9_]{0,63}', key) or isinstance(item, (dict, list)):
             fields.fail('source', f'{key!r}: flat snake_case keys with scalar values only')
     return dict(value)
+
+
+def calls_digest(questions, max_bytes=None, default_budget=None):
+    """The first call each question becomes under a plan (`Question.first_call`), in order."""
+    return cachekey.ordered_digest(
+        (question.id, cachekey.digest(list(question.first_call(max_bytes, default_budget))))
+        for question in questions)
 
 
 def questions_digest(questions):
