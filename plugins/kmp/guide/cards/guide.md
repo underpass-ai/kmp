@@ -1,6 +1,8 @@
 `kmp_guide {"topic":"write"}` returns one worked card and, in `parameters`,
 the meaning of each argument of the tools that topic teaches. `tools/list`
-carries only their types and constraints. Call it before a verb's first use;
+carries their types, enums and `required`; the card adds `rules`, the
+cross-field rules a refusal names with its fix, and `parameters` give each
+argument's default. Call it before a verb's first use;
 `kmp_guide {}` lists the topics. It is a lookup: nothing is recorded, and a
 refusal's `Help:` line names the topic to read.
 

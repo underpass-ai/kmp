@@ -10,8 +10,10 @@ use crate::serving::ToolError;
 ///
 /// The schema is the law of the call (#921, E1): type, enum, numeric and
 /// array bounds, pattern, required arguments, unknown arguments and the
-/// conditional shapes. `minLength` and `uniqueItems` are enforced although the
-/// advertised catalogue leaves them out to save tokens (#850). A name this
+/// conditional shapes. The checked schema is the full contract: what
+/// `tools/list` publishes, plus the closed-objects rule, the documented
+/// cross-field rules (`cross_field_rule`) and the bounds `tools/list` leaves
+/// out to save tokens (`contract::published_law`). A name this
 /// surface does not declare has no schema, and is refused as an unknown tool.
 pub(crate) fn reject_invalid_arguments(tool: &str, arguments: &Value) -> Result<(), ToolError> {
     let Some(schema) = tool_input_schema(tool) else {
@@ -29,7 +31,7 @@ fn refusal(tool: &str, violation: SchemaViolation) -> ToolError {
     let mut feedback = if violation.unknown {
         serde_json::json!({
             "code": "UNKNOWN_ARGUMENT", "severity": "error", "field": violation.field,
-            "reason": if tool == "kmp_write_memory" {
+            "reason": if tool == "kmp_write_memory" && violation.rule.is_none() {
                 "This field is not part of the native writer contract; remove it or use a declared field.".to_string()
             } else {
                 violation.message.clone()
@@ -44,6 +46,9 @@ fn refusal(tool: &str, violation: SchemaViolation) -> ToolError {
     };
     if !violation.allowed.is_empty() {
         feedback["allowed"] = Value::Array(violation.allowed);
+    }
+    if let Some(rule) = violation.rule {
+        feedback["rule"] = Value::String(rule);
     }
     error.with_feedback(feedback)
 }

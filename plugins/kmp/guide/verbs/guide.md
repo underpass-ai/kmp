@@ -1,8 +1,10 @@
 `kmp_guide` explains a topic before its first use. `kmp_guide {}` lists the
 topics; `kmp_guide {"topic":"write"}` returns that topic's worked card in
 `text` and, in `parameters`, one `path: description` line for each argument of
-the tools it teaches. `tools/list` advertises only types and constraints, plus
-one short line on the few arguments agents were most often refused over. Topic
+the tools it teaches. `tools/list` advertises types, enums and `required`, plus
+one short line on the few arguments agents were most often refused over; the
+card adds `rules`, the cross-field rules a refusal names with its fix, and
+each argument's default in its `parameters` line. Topic
 `relations` also returns `relation_vocabulary`.
 
 It is a plain lookup. Nothing is recorded about who asked, no identity or

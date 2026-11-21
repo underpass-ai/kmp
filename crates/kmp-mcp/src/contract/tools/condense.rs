@@ -1,6 +1,6 @@
 use serde_json::{Value, json};
 
-use crate::contract::schema::definition::tool_definition_with_output;
+use crate::contract::schema::definition::{ToolEffect, tool_definition_with_output};
 #[allow(unused_imports)]
 use crate::contract::schema::primitives::*;
 #[allow(unused_imports)]
@@ -11,8 +11,13 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_condense",
-        true,
-        "Write your own compact card for one stored body, so later reads of the same paths can show the card instead of the whole body. Entries and the evidence sources of the same about can both be condensed, which matters because a source shared by several paths is usually the largest record on them. The card is your derived view, never canonical memory and never proof: it stands only for the body version you declare, and a later write makes it stale rather than wrong. Accepted revisions are preserved in event history and survive export/import and rebuild without changing the canonical body. Declare the revision and record digest the read gave you; a body that moved under you is refused with both versions named.",
+        // A repeat is refused by `expect`, but no test pins that here, so
+        // the hint stays at the conservative default.
+        ToolEffect::Write {
+            destructive: true,
+            idempotent: false,
+        },
+        "Store your own compact card for one stored body, so later reads can show the card instead of the whole body.",
         json!({
             "type": "object",
             "additionalProperties": false,
@@ -47,9 +52,11 @@ pub(crate) fn definition() -> Value {
                     "type": "object",
                     "additionalProperties": false,
                     "description": "Compare-and-set on the card itself, separate from the body. Exactly one of absent or card_revision.",
-                    "if":{"required":["absent"]},
-                    "then":{"not":{"required":["card_revision"]}},
-                    "else":{"required":["card_revision"]},
+                    "allOf":[crate::contract::cross_field_rule::tagged("condense.expect", json!({
+                        "if":{"required":["absent"]},
+                        "then":{"not":{"required":["card_revision"]}},
+                        "else":{"required":["card_revision"]}
+                    }))],
                     "properties": {
                         "absent": {"type": "boolean", "const": true, "description": "No card is stored for this ref and language yet. Refused, naming the stored revision, if one is."},
                         "card_revision": {"type": "integer", "minimum": 1, "description": "The card revision you are replacing. Refused if another reader replaced it first."}

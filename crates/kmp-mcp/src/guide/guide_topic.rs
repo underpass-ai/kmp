@@ -31,7 +31,7 @@ const AUDIT: [(&str, &str); 7] = [
     ("kmp_trace", "search.expect_selection"),
 ];
 
-const TOPICS: [GuideTopic; 14] = [
+const TOPICS: [GuideTopic; 15] = [
     GuideTopic {
         name: "wake",
         purpose: "Resume known work",
@@ -51,6 +51,16 @@ const TOPICS: [GuideTopic; 14] = [
         serves: &[
             ("kmp_write_memory", "memories[].connect_to"),
             ("kmp_write_memory", "relations"),
+        ],
+    },
+    GuideTopic {
+        name: "review",
+        purpose: "Resume a write that answered needs_review",
+        text: include_str!("cards/review.md"),
+        serves: &[
+            ("kmp_write_memory", "continuation"),
+            ("kmp_write_memory", "read_context"),
+            ("kmp_write_memory", "review_token"),
         ],
     },
     GuideTopic {

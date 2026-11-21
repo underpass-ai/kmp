@@ -128,16 +128,17 @@ fn every_parameter_description_is_served_by_exactly_one_topic_card() {
                 .collect();
             assert_eq!(owners.len(), 1, "{name}: {line} served by {owners:?}");
         }
-        if name != "kmp_guide" {
-            let topic = GuideTopic::of_tool(name).expect("topic").name;
-            let pointer = format!("kmp_guide topic {topic}");
-            assert!(
-                served["description"]
-                    .as_str()
-                    .is_some_and(|d| d.contains(&pointer)),
-                "{name} points at {pointer}"
-            );
-        }
+        let topic = GuideTopic::of_tool(name).expect("topic").name;
+        let pointer = format!("Guide topic: {topic}.");
+        let points = served["description"]
+            .as_str()
+            .is_some_and(|d| d.ends_with(&pointer));
+        // A verb named like its topic is found by name; any other points.
+        assert_eq!(
+            points,
+            name != format!("kmp_{topic}"),
+            "{name} and {pointer}"
+        );
     }
 }
 
@@ -191,6 +192,7 @@ fn only_schema_annotations_are_stripped_never_data_named_description() {
             "description: a field called description",
             "items[]: row",
             "items[].x: x",
+            "set: Default: {\"description\":\"kept\"}.",
         ]
     );
     let stripped = without_parameter_descriptions(result);
@@ -206,8 +208,6 @@ fn only_schema_annotations_are_stripped_never_data_named_description() {
             .get("description")
             .is_none()
     );
-    assert_eq!(
-        stripped["tools"][0]["description"],
-        "Wake. Arguments explained: kmp_guide topic wake."
-    );
+    // kmp_wake is named like its topic: no pointer.
+    assert_eq!(stripped["tools"][0]["description"], "Wake.");
 }

@@ -73,9 +73,41 @@ impl KernelMcpServer {
             "text":topic.text,
             "parameters":topic_parameters(topic),
         });
+        let rules = topic_rules(topic);
+        if !rules.is_empty() {
+            card["rules"] = Value::Object(rules);
+        }
         if topic.name == "relations" {
             card["relation_vocabulary"] = json!(relation_vocabulary_lines());
         }
+        if topic.name == "guide" {
+            card["error_codes"] = guide_error_codes();
+        }
         Ok(card)
     }
+}
+
+/// The cross-field rules this topic's arguments carry: id → the rule and its
+/// fix. A refusal names the same id.
+fn topic_rules(topic: &GuideTopic) -> serde_json::Map<String, Value> {
+    let mut rules = serde_json::Map::new();
+    for rule in crate::contract::cross_field_rule::all() {
+        if topic.serves_path(rule.tool, rule.path) && !rules.contains_key(rule.id) {
+            rules.insert(
+                rule.id.to_string(),
+                json!(format!("{} Fix: {}", rule.rule, rule.fix)),
+            );
+        }
+    }
+    rules
+}
+
+/// The error codes a tool result can carry, each with what to do about it.
+pub(crate) fn guide_error_codes() -> Value {
+    Value::Object(
+        super::ToolErrorCode::ALL
+            .iter()
+            .map(|code| (code.as_str().to_string(), json!(code.guidance())))
+            .collect(),
+    )
 }

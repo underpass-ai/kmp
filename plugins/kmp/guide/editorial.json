@@ -476,6 +476,13 @@
           "evidence": "A short worked card for connect_to and relation-only writes: local ids, class completion, why and evidence per link, direction, and supersedes versus corrects. kmp_guide topic relations also returns the relation vocabulary projected from the writer spec."
         },
         {
+          "id": "card:review",
+          "kind": "instruction",
+          "depth": "basic",
+          "text_file": "cards/review.md",
+          "evidence": "A short card for resuming a kmp_write_memory that answered needs_review: the continuation sent alone, read_context and review_token."
+        },
+        {
           "id": "card:ingest",
           "kind": "instruction",
           "depth": "basic",
@@ -913,6 +920,14 @@
           "class": "procedural",
           "why": "The starting card links to the extended guidance for further explanation.",
           "evidence": "kmp_guide topic relabel serves this card; the extended node is read with kmp_inspect."
+        },
+        {
+          "from": "card:review",
+          "to": "verb:write",
+          "rel": "follows",
+          "class": "procedural",
+          "why": "The starting card links to the extended guidance for further explanation.",
+          "evidence": "kmp_guide topic review serves this card; the extended node is read with kmp_inspect."
         },
         {
           "from": "card:trace",
