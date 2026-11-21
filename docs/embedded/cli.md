@@ -56,12 +56,33 @@ listed by the server's `tools/list` and explained by `kmp_guide`.
 
 | Command | What it does |
 |:--|:--|
-| `kmp-mcp export [file] [--about <about>]...` | Writes a bundle of the whole log or of exact abouts. With no file in a project, writes the committed `.kmp/memory.jsonl`, first catching the store up with a bundle a pull brought ahead. |
-| `kmp-mcp export --overwrite-committed` | Replaces a committed bundle whose events the export would not keep (ahead or divergent). |
+| `kmp-mcp export [file] [--about <about>]...` | Writes a bundle of the whole log or of exact abouts. With no file in a project, writes the committed `.kmp/memory.jsonl`, first catching the store up with a bundle a pull brought ahead. The same holds when the file is named: `.kmp/memory.jsonl`, `./.kmp/memory.jsonl`, an absolute path or a symlink to it is the committed file. |
+| `kmp-mcp export --overwrite-committed` | Replaces a committed bundle whose events the export would not keep. |
 | `kmp-mcp export --repair-pending` | Publishes and acknowledges a write whose bundle publish was cut short. Stop other sessions first. |
 | `kmp-mcp import <file>` | Replays a bundle into an **empty** store. |
 | `kmp-mcp import --from <store-dir\|bundle-file> --about <about>...` | Brings exact abouts into the store selected here: imported, unchanged, or extended. A different history refuses the whole import and writes nothing. Running it again is a no-op. |
 | `kmp-mcp snapshot create\|list\|verify\|read\|merge ...` | Named, immutable recovery points. Project stores only; elsewhere use `export <file>`. |
+
+### What `export` refuses
+
+`export` refuses, writes nothing and exits 2 when its destination is an
+existing `.kmp/memory.jsonl` and the export would not keep every event that
+file holds. It does not matter how the file is named (no file, relative,
+absolute, through a symlink), whether `--about` filters the export, or which
+rule chose the store (the project's own, or one pinned by `KMP_MCP_DATA_DIR`).
+The refusal says how many events would be dropped and of which abouts, and
+the ways out:
+
+| Case | Way out |
+|:--|:--|
+| `--about` over a committed file that holds other abouts | Export without `--about`, or export the subset to another file. |
+| A pull brought the committed file ahead of the project's store | `kmp-mcp export` with no filter catches the store up first. |
+| A store pinned by `KMP_MCP_DATA_DIR` lacks committed events | `kmp-mcp import --from .kmp/memory.jsonl --about <about>`, then export again. |
+| The store and the file are different histories | The steps the refusal prints. |
+
+`--overwrite-committed` replaces the file anyway. An export to any other file
+is written as asked. `--about` over a committed file that holds only the named
+abouts, each a prefix of what the store holds, is an ordinary save.
 
 Bundles and formats: [Store format](store-format.md).
 

@@ -95,8 +95,16 @@ pub(super) async fn run(command: &str, first_argument: Option<&str>, args: &[&st
             }
         },
     };
-    let path = path.as_path();
-    let is_project_head = kmp_embedded::project_bundle_path(&resolved).as_deref() == Some(path);
+    // Whether this is the committed file is read from where the path lands,
+    // not from how it was spelled: `.kmp/memory.jsonl`, `./.kmp/…`, an
+    // absolute path or a symlinked directory all name the same file, and so
+    // does the project's file with the store pinned by KMP_MCP_DATA_DIR.
+    let destination = super::export_destination::ExportDestination::resolve(
+        path,
+        kmp_embedded::project_bundle_path(&resolved).as_deref(),
+    );
+    let path = destination.given.as_path();
+    let is_project_head = destination.is_project_head;
     if repair_pending && !abouts.is_empty() {
         eprintln!(
             "kmp-mcp: --repair-pending proves the project's whole memory was written; it \
@@ -196,20 +204,25 @@ pub(super) async fn run(command: &str, first_argument: Option<&str>, args: &[&st
                             return 2;
                         }
                     };
-                    if is_project_head
+                    if destination.is_committed
                         && let Err(refusal) =
-                            super::committed_export_guard::refuse_shrinking_committed(
-                                path,
-                                resolved.path(),
-                                &bundle,
-                                !abouts.is_empty(),
+                            super::committed_export_guard::refuse_dropping_committed(
+                                &super::committed_export_guard::ExportOver {
+                                    path: &destination.write_to,
+                                    data_dir: resolved.path(),
+                                    exported: &bundle,
+                                    abouts: &abouts,
+                                    is_project_head,
+                                },
                                 overwrite,
                             )
                     {
                         eprintln!("kmp-mcp: {refusal}");
                         return 2;
                     }
-                    if let Err(error) = kmp_embedded::write_bundle_atomically(path, &bundle) {
+                    if let Err(error) =
+                        kmp_embedded::write_bundle_atomically(&destination.write_to, &bundle)
+                    {
                         eprintln!("kmp-mcp: could not write `{}`: {error}", path.display());
                         return 2;
                     }

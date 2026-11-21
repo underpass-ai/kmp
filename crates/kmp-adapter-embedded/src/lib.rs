@@ -22,7 +22,8 @@ pub use adapter::{
     EVENT_FORMAT_VERSION, EmbeddedKernelStore, HeadStream, HistoryRelation, ImportReport,
     ProjectionRebuildReport, QualityTelemetryRetention, SUPPORTED_FORMAT_VERSION,
     SqliteQualityTelemetryReader, SqliteQualityTelemetryWriter, StorageEngine,
-    StoreMigrationReceipt, bundle_excluding_abouts, compare_bundle_histories, format_version_path,
-    merge_bundles, quality_telemetry_path, read_stamped_version, refuse_vanished_store_database,
-    store_file_path_for, validate_store_layout, verify_bundle,
+    StoreMigrationReceipt, bundle_excluding_abouts, committed_events_not_kept,
+    compare_bundle_histories, format_version_path, merge_bundles, quality_telemetry_path,
+    read_stamped_version, refuse_vanished_store_database, store_file_path_for,
+    validate_store_layout, verify_bundle,
 };

@@ -460,6 +460,18 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
 
 ### Fixed
 
+- `kmp-mcp export` no longer drops committed memory when the committed
+  `.kmp/memory.jsonl` is named instead of left implicit. The guard compared
+  the spelling of the path with the project head, so `export
+  .kmp/memory.jsonl --about X`, `./.kmp/memory.jsonl`, a symlinked directory,
+  and any path from a store pinned by `KMP_MCP_DATA_DIR` (how a host that
+  manages its store saves) replaced a bundle holding other abouts with one
+  holding only `X`; a whole export named relatively also skipped the catch-up
+  and dropped what a pull brought. The destination is now resolved first
+  (symlinks followed), every committed `.kmp/memory.jsonl` gets the same
+  refusal, and the refusal names how many events of which abouts it would
+  drop and the ways out: export without `--about`, or
+  `--overwrite-committed`. Other files are written as asked.
 - KMP's own memory (`.kmp/memory.jsonl`, from
   `examples/kmp-project/requests.json`) records the 1.0 decision that a read
   never writes and `kmp_guide` serves the guide from the engine, superseding

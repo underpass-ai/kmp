@@ -45,7 +45,7 @@ pub use format_version::{
     read_stamped_version, store_file_path_for, validate_store_layout,
 };
 pub use head_stream::HeadStream;
-pub use history_relation::{HistoryRelation, compare_bundle_histories};
+pub use history_relation::{HistoryRelation, committed_events_not_kept, compare_bundle_histories};
 pub use migration::StoreMigrationReceipt;
 pub use portability::{
     BUNDLE_FORMAT_VERSION, BundleEventRange, BundleHeader, ImportReport, bundle_excluding_abouts,
