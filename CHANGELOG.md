@@ -411,6 +411,13 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
 
 ### Fixed
 
+- A store leaves its proof of memory however it was first written. The first
+  commit that appends an event writes `held-memory` beside `FORMAT_VERSION`
+  (and a writable open of a store that already holds events writes it too).
+  A store filled only by `kmp-mcp demo`, `kmp-mcp import` or a project
+  rebuild had no `telemetry-salt`, so deleting its `kernel.sqlite3` made
+  `doctor` say `Usable` and the next session start an empty store over it;
+  that is now refused as `lost its database`.
 - `kmp-mcp doctor` reports a second MCP owner. It reads the same files as
   the `kmp-mcp uninstall` preview: a hand-written `[mcp_servers.kmp]` in
   Codex's `config.toml` (or `claude mcp add kmp`) beside an installed plugin

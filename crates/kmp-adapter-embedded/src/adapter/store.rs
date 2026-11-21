@@ -62,8 +62,10 @@ impl EmbeddedKernelStore {
             },
         )?;
 
-        let engine: Arc<dyn Engine> =
-            Arc::new(super::engine::sqlite::SqliteEngine::open_file(&store_file)?);
+        let engine: Arc<dyn Engine> = Arc::new(
+            super::engine::sqlite::SqliteEngine::open_file(&store_file)?
+                .proving_memory_in(data_dir)?,
+        );
         let store = Self { engine };
         super::card_history_format::upgrade_stamp(data_dir)?;
         super::node_card_adoption::adopt(&store)?;
