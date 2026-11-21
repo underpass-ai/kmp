@@ -241,10 +241,15 @@ fn the_inspection_lists_every_file_with_the_verdict_a_session_would_log() {
             .unwrap_or_else(|| panic!("no entry for {name}: {entries:?}"))
     };
 
-    assert_eq!(
-        state("rerank.json").state,
-        StoreConfigState::Rejected("invalid rerank configuration".into())
-    );
+    match &state("rerank.json").state {
+        StoreConfigState::Rejected(reason) => {
+            assert!(
+                reason.starts_with("invalid rerank configuration: EOF"),
+                "{reason}"
+            );
+        }
+        other => panic!("rerank.json was not rejected: {other:?}"),
+    }
     let curate = state("curate.json");
     assert_eq!(curate.state, StoreConfigState::On);
     assert_eq!(
@@ -263,5 +268,41 @@ fn the_inspection_lists_every_file_with_the_verdict_a_session_would_log() {
     assert!(
         !dir.path().join("judgements.sqlite3").exists(),
         "an inspection never opens the verdict book"
+    );
+}
+
+/// A rejected file names the field it lacks, so the reader does not have
+/// to guess the shape.
+#[test]
+fn an_incomplete_file_is_rejected_naming_the_missing_field() {
+    use crate::serving::store_config_state::StoreConfigState;
+
+    let dir = tempfile::tempdir().expect("dir");
+    std::fs::write(dir.path().join("rerank.json"), "{}").expect("rerank");
+    std::fs::write(
+        dir.path().join("typesafe.json"),
+        r#"{"model":"jev-1.14.0"}"#,
+    )
+    .expect("typesafe");
+
+    let entries = super::inspect_store_config(dir.path());
+    let reason = |name: &str| match &entries
+        .iter()
+        .find(|entry| entry.name == name)
+        .unwrap_or_else(|| panic!("no entry for {name}: {entries:?}"))
+        .state
+    {
+        StoreConfigState::Rejected(reason) => reason.clone(),
+        other => panic!("{name} was not rejected: {other:?}"),
+    };
+    let typesafe = reason("typesafe.json");
+    assert!(
+        typesafe.starts_with("invalid TypeSafe configuration: missing field `endpoint`"),
+        "{typesafe}"
+    );
+    let rerank = reason("rerank.json");
+    assert!(
+        rerank.starts_with("invalid rerank configuration: missing field `pool_size`"),
+        "{rerank}"
     );
 }

@@ -411,6 +411,11 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
 
 ### Fixed
 
+- A missing TypeSafe key names the file that was looked for
+  (`$XDG_CONFIG_HOME/typesafe.env`, else `~/.config/typesafe.env`) instead of
+  always `~/.config/typesafe.env`. An incomplete `typesafe.json` or a
+  `rerank.json` holding `{}` is rejected naming the field it lacks
+  (``invalid TypeSafe configuration: missing field `endpoint` …``).
 - `kmp-mcp import <file>` into a store that holds memory names the way
   forward: it says the store "already holds 1 event", and that
   `kmp-mcp import --from <file> --about <about>` brings exact abouts into it

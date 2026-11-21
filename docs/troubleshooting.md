@@ -92,9 +92,11 @@ process would:
 |:--|:--|:--|
 | ``warn  ask-gate.json: rejected: ask-gate.json names mode `bogus` `` | A value the file does not accept. The default applies. | Fix or remove it, then restart the host. |
 | `warn  lexical-bridge.kmpb: rejected: the table is unreadable or empty` | Damaged bridge table. Asks still match within one language. | Remove it, or `kmp-mcp setup` to install the machine table. |
-| `warn  typesafe.json: rejected: TYPESAFE_API_KEY is not set and no ~/.config/typesafe.env holds it` | Jev opted in without a key. Nothing is sent. | Set `TYPESAFE_API_KEY`, or write `typesafe.env` in your config directory (mode `0600`). |
+| `warn  typesafe.json: rejected: TYPESAFE_API_KEY is not set and no <config>/typesafe.env holds it` (`<config>` is `$XDG_CONFIG_HOME`, else `~/.config`; the line names the real path) | Jev opted in without a key. Nothing is sent. | Set `TYPESAFE_API_KEY`, or write `TYPESAFE_API_KEY=<key>` to the file it names (mode `0600`). |
+| ``warn  typesafe.json: rejected: invalid TypeSafe configuration: missing field `endpoint` at line 1 column 22`` | An incomplete file; the line names the field. | Use the full shape: `{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.14.0","timeout_ms":20000}`. |
 | `warn  typesafe.json: rejected: TypeSafe model must be a pinned version such as jev-1.14.0` | An alias such as `jev-latest`. | Name a pinned release. |
 | `warn  ask-judge.json: rejected: ask-judge.json needs typesafe.json beside the store` | A Jev feature without its parent opt-in. | Add `typesafe.json`, or remove the file. |
+| ``warn  rerank.json: rejected: invalid rerank configuration: missing field `pool_size` at line 1 column 2`` | `rerank.json` holds `{}` or lacks a field; the line names it. | Add the field it names, or remove the file. |
 
 ## Hosts and engines
 

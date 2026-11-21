@@ -32,8 +32,16 @@ impl TypeSafeApiKey {
         }
         match key_file {
             Some(path) if path.exists() => Self::from_file(&path),
-            _ => Err(
-                "TYPESAFE_API_KEY is not set and no ~/.config/typesafe.env holds it".to_string(),
+            // Name the file that was actually looked for: with
+            // XDG_CONFIG_HOME set it is not under ~/.config.
+            Some(path) => Err(format!(
+                "TYPESAFE_API_KEY is not set and no {} holds it",
+                path.display()
+            )),
+            None => Err(
+                "TYPESAFE_API_KEY is not set, and neither XDG_CONFIG_HOME nor HOME names a \
+                 directory for typesafe.env"
+                    .to_string(),
             ),
         }
     }
@@ -154,6 +162,23 @@ mod tests {
         std::fs::write(&path, "OTHER=1\n").expect("write");
         let error = TypeSafeApiKey::from_file(&path).expect_err("no key line");
         assert!(error.contains("not set"), "{error}");
+    }
+
+    #[test]
+    fn a_missing_key_names_the_file_that_was_looked_for() {
+        let dir = tempfile::tempdir().expect("dir");
+        let searched = dir.path().join("elsewhere/typesafe.env");
+        let error = TypeSafeApiKey::load_from(None, Some(searched.clone())).expect_err("no key");
+        assert_eq!(
+            error,
+            format!(
+                "TYPESAFE_API_KEY is not set and no {} holds it",
+                searched.display()
+            )
+        );
+        assert!(!error.contains("~/.config"), "{error}");
+        let nowhere = TypeSafeApiKey::load_from(None, None).expect_err("no key");
+        assert!(nowhere.contains("XDG_CONFIG_HOME nor HOME"), "{nowhere}");
     }
 
     #[test]
