@@ -91,8 +91,9 @@ pub(super) async fn grpc_tool_result(
         // name.
         "kmp_summaries_audit" => Err(ToolError::unavailable(
             "kmp_summaries_audit reads the store's own event log, which live gRPC mode does not \
-             serve. Run it against the embedded store, or list what is owed there with `kmp-mcp \
-             summaries pending`",
+             serve, and there is no other reading of it for a remote kernel: the local \
+             `kmp-mcp summaries pending` reads this machine's store, not the kernel's. Run the \
+             audit in a session on the embedded store that holds the memory.",
         )),
         // Curation reads Jev's opt-in and key beside the local store; a live
         // gRPC kernel has neither.

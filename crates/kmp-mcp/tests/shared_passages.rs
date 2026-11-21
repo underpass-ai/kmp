@@ -104,7 +104,8 @@ async fn all_nine_native_read_walks_match_inline_packets_after_expansion() {
     }
     let mut encoded_pages = 0;
     for (tool, mut args) in queries {
-        args["budget"] = if tool == "kmp_inspect" {
+        // Each read declares only the budget fields it honours (E11).
+        args["budget"] = if matches!(tool, "kmp_inspect" | "kmp_trace" | "kmp_relate") {
             json!({"max_bytes":512})
         } else {
             json!({"max_bytes":512,"detail":"full"})

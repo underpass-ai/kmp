@@ -158,7 +158,7 @@ pub(crate) fn tools_list_result_with_apps(apps: bool) -> Value {
             tools.push(app_view_take_control::definition());
         }
     }
-    result
+    crate::contract::timestamp_format::with_timestamp_formats(result)
 }
 
 /// The memory tools. Split from the view tools below so neither `json!`

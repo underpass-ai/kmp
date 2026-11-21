@@ -47,10 +47,8 @@
           "about": "question:parity",
           "answer_policy": "evidence_or_unknown",
           "budget": {
-            "depth": 2,
             "detail": "compact",
-            "max_bytes": "<stamped at call time>",
-            "tokens": 2400
+            "max_bytes": "<stamped at call time>"
           },
           "question": "Where is Rachel moving?"
         },
@@ -179,7 +177,7 @@
             "ingested_at": "<stamped at call time>",
             "observed_at": "2026-04-12T17:00:00Z"
           },
-          "confidence": "high",
+          "confidence": "unknown",
           "evidence_refs": [
             "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:current",
             "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:2"

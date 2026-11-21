@@ -438,10 +438,10 @@ impl MemoryArenaSmartWriter {
                     "about": about,
                     "around": {"ref": target_ref.as_str()},
                     "window": {"before_entries": 3, "after_entries": 0},
-                    "limit": {"entries": 8, "tokens": 1800},
+                    "limit": {"entries": 8},
                     "dimensions": {"scope": "current_about", "mode": "all"},
                     "include": {"evidence": true, "relations": true, "raw_refs": false},
-                    "budget": {"tokens": 1800, "depth": 2}
+                    "budget": {"depth": 2}
                 }),
             )
             .await?;

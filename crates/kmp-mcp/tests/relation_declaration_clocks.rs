@@ -85,7 +85,7 @@ async fn old_endpoints_do_not_backdate_a_new_relation_in_trace_or_wake() {
             &server,
             "kmp_wake",
             json!({"about":ABOUT,"as_of":{"time":cut},
-            "axis":"observed","budget":{"max_bytes":200000},"depth":5}),
+            "axis":"observed","budget":{"max_bytes":200000}}),
         )
         .await;
         let links = wake["proof"]["path"]

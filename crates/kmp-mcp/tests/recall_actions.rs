@@ -66,7 +66,7 @@ fn arguments(tool: &str, axis: &str, time: Value) -> Value {
             "selectors":[{"key":"component","op":"in","values":["export"]},
                 {"key":"component","op":"notin","values":["warehouse"]},
                 {"key":"component","op":"exists"},{"key":"incident","op":"notexists"}]},
-        "budget":{"max_bytes":8000,"detail":"full","depth":3},"page":{"entries":1}});
+        "budget":{"max_bytes":8000,"detail":"full"},"page":{"entries":1}});
     args.as_object_mut()
         .expect("arguments")
         .extend(time.as_object().expect("time selection").clone());

@@ -169,12 +169,19 @@ struct StartupFailure {
 }
 
 impl StartupFailure {
-    /// The backend could not be chosen from the environment. Saying which
-    /// variables settle it is genuinely the next step.
+    /// The server could not be composed from the environment. Pointing at
+    /// `KMP_MCP_BACKEND` is the next step only when someone set it to a
+    /// remote backend; a store or a switch that failed under the default
+    /// embedded kernel used to get the same hint, naming the wrong variable
+    /// (E7).
     fn selecting_a_backend(message: impl Into<String>) -> Self {
+        let remote_requested = std::env::var(MCP_BACKEND_ENV).is_ok_and(|value| {
+            let value = value.trim();
+            !value.is_empty() && !value.eq_ignore_ascii_case("embedded")
+        });
         Self {
             message: message.into(),
-            backend_selection: true,
+            backend_selection: remote_requested,
         }
     }
 
@@ -193,6 +200,10 @@ impl StartupFailure {
 /// port is bound here: the viewer listens from the first request that needs
 /// it, and an address that could never be bound is refused now.
 async fn server_from_env() -> Result<KernelMcpServer, StartupFailure> {
+    // Every switch first: a misspelt value is named for what it is, not
+    // reported as a backend that could not be chosen.
+    kmp_mcp::environment::check_environment()
+        .map_err(|refusal| StartupFailure::after_the_backend_was_chosen(refusal.to_string()))?;
     let viewer = kmp_mcp::viewer::viewer_addr_from_env();
     let backend_is_embedded = backend_is_embedded_from_env();
 
@@ -224,8 +235,7 @@ async fn server_from_env() -> Result<KernelMcpServer, StartupFailure> {
 
     let resolved = kmp_mcp::lifecycle::resolve_memory_for_use()
         .map_err(|error| StartupFailure::after_the_backend_was_chosen(error.to_string()))?;
-    let engine = kmp_embedded::resolve_engine_for_data_dir_from_env(resolved.path())
-        .map_err(|error| StartupFailure::after_the_backend_was_chosen(error.to_string()))?;
+    let engine = kmp_embedded::default_engine_for_data_dir(resolved.path());
     let lease = kmp_embedded::user_data_home()
         .map(|data_home| {
             kmp_mcp::lifecycle::StoreSessionLease::acquire(&data_home, resolved.path())

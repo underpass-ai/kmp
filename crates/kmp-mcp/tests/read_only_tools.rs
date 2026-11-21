@@ -10,9 +10,10 @@
 //! only when, the answer carried a handle.
 //!
 //! A writer marked `idempotentHint: true` changes nothing more the second
-//! time it receives the same call, by the same measure. Inspect is not
-//! marked read-only, and a test shows why. `openWorldHint` is true only on
-//! the tools a store's TypeSafe Jev opt-in actually sends text from.
+//! time it receives the same call, by the same measure. Inspect is read-only
+//! too: a guide node the store lacks is answered with the repair, never
+//! seeded, and a test holds it to that. `openWorldHint` is true only on the
+//! tools a store's TypeSafe Jev opt-in actually sends text from.
 #[path = "support/isolated_home.rs"]
 mod isolated_home;
 
@@ -221,6 +222,7 @@ fn read_case(tool: &str, first: &str, second: &str) -> Vec<(&'static str, Value)
             json!({"about": ABOUT, "from": first, "to": second}),
         )],
         "kmp_relate" => vec![("kmp_relate", json!({"about": ABOUT}))],
+        "kmp_inspect" => vec![("kmp_inspect", json!({"about": ABOUT, "ref": first}))],
         "kmp_summaries_audit" => vec![("kmp_summaries_audit", json!({"about": ABOUT}))],
         "kmp_guide" => vec![("kmp_guide", json!({"topic": "write"}))],
         "kmp_view_get_state" => vec![
@@ -308,7 +310,6 @@ fn a_writer_marked_idempotent_changes_nothing_the_second_time() {
                        "observed_at": "2026-11-20T13:00:00Z", "why": "incident triage",
                        "add": {"incident": ["i1"]}, "options": {"labels_new": ["incident"]}}),
             )],
-            "kmp_inspect" => vec![("kmp_inspect", json!({"about": ABOUT, "ref": first}))],
             "kmp_view_apply_intent" => vec![
                 ("kmp_view_open", json!({"about": ABOUT})),
                 (
@@ -350,7 +351,7 @@ fn a_writer_marked_idempotent_changes_nothing_the_second_time() {
 }
 
 #[test]
-fn inspect_is_not_read_only_because_a_guide_node_read_seeds_the_guide() {
+fn inspect_of_a_guide_node_the_store_lacks_writes_nothing() {
     let (_dir, root) = scratch();
     seeded(&root);
     let before = snapshot(&root);
@@ -367,14 +368,21 @@ fn inspect_is_not_read_only_because_a_guide_node_read_seeds_the_guide() {
     writeln!(child.stdin.take().expect("stdin"), "{request}").expect("request");
     let output = child.wait_with_output().expect("server exits");
     let reply: Value = serde_json::from_slice(&output.stdout).expect("JSON");
-    assert_ne!(reply["result"]["isError"], true, "{reply}");
+    // The store has no guide and the read does not install one: it answers
+    // with the repair, which names kmp_guide, and leaves every byte as it was
+    // even with the plugin's assets in reach.
+    assert_eq!(reply["result"]["isError"], true, "{reply}");
+    let message = reply["result"]["structuredContent"]["error"]["message"]
+        .as_str()
+        .unwrap_or_default();
+    assert!(message.contains("kmp_guide"), "{message}");
     let memory = changed(&before, &snapshot(&root))
         .into_iter()
         .filter(|path| !diagnostic(path) && !continuation_store(path))
         .collect::<Vec<_>>();
     assert!(
-        memory.iter().any(|path| path.contains("kernel.sqlite3")),
-        "the guide seed writes the store: {memory:?}"
+        memory.is_empty(),
+        "a guide read wrote the store: {memory:?}"
     );
     let listed = &session(&root, &[("tools/list", Value::Null)])[0];
     let inspect = listed["result"]["tools"]
@@ -383,7 +391,7 @@ fn inspect_is_not_read_only_because_a_guide_node_read_seeds_the_guide() {
         .iter()
         .find(|tool| tool["name"] == "kmp_inspect")
         .expect("inspect");
-    assert_eq!(inspect["annotations"]["readOnlyHint"], false);
+    assert_eq!(inspect["annotations"]["readOnlyHint"], true);
 }
 
 /// The five tools a store's TypeSafe Jev opt-in can send text from.

@@ -3,7 +3,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use super::cassette_judgement::judgement_key;
+use super::judgement_key::judgement_key;
 use super::verdict_ledger::VerdictLedger;
 use crate::serving::judgement_origin::JudgementOrigin;
 use crate::serving::judgement_request::JudgementRequest;

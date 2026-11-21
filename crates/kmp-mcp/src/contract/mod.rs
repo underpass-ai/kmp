@@ -20,6 +20,7 @@ mod summaries_audit_surface;
 mod surface_audit;
 pub(crate) mod temporal_entry_field;
 pub(crate) mod time_move;
+mod timestamp_format;
 pub(crate) mod tools;
 pub(crate) mod validator;
 mod validator_switches_audit;
@@ -36,4 +37,6 @@ pub(crate) use registry::{
     tools_list_result_with_apps, with_open_world, without_output_schemas,
 };
 pub(crate) use time_move::{TIME_TOOL, TimeMove};
-pub(crate) use validator::{reject_invalid_arguments, validate_required_arguments};
+pub(crate) use validator::reject_invalid_arguments;
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
+pub(crate) use validator::validate_required_arguments;

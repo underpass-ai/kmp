@@ -12,46 +12,21 @@ pub const GRPC_TLS_KEY_PATH_ENV: &str = "KMP_KERNEL_GRPC_TLS_KEY_PATH";
 pub const GRPC_TLS_DOMAIN_NAME_ENV: &str = "KMP_KERNEL_GRPC_TLS_DOMAIN_NAME";
 /// Bearer key for the optional TypeSafe judgement adapter. Never logged.
 pub const TYPESAFE_API_KEY_ENV: &str = "TYPESAFE_API_KEY";
-/// Evaluation only: a file of recorded TypeSafe judgements. With
-/// `KMP_TYPESAFE_CASSETTE_MODE=record` real answers are appended to it; in
-/// the default `replay` mode they are answered from it, with no network and
-/// no key, and an unrecorded request fails instead of being guessed.
-pub const TYPESAFE_CASSETTE_ENV: &str = "KMP_TYPESAFE_CASSETTE";
-pub const TYPESAFE_CASSETTE_MODE_ENV: &str = "KMP_TYPESAFE_CASSETTE_MODE";
-/// Evaluation only: the largest about a review without `focus` asks Jev for
-/// its orphans' partners in (2–512 facts). Unset, the store's
-/// `curate.json` or the default (120).
-pub const EVAL_PARTNER_FACTS_ENV: &str = "KMP_EVAL_PARTNER_FACTS";
 
-/// `off` lifts the deadlines a first ask or wake page waits for Jev
-/// (recording a cassette against the real provider, where a slow answer
-/// must be kept, not degraded). Any other value, or none, keeps them.
-pub const JUDGEMENT_DEADLINES_ENV: &str = "KMP_JUDGEMENT_DEADLINES";
-
-/// The lexical sidecar (`lexical-index.sqlite3`, DESIGN L6): `on` (the
-/// default) answers every ask it can hold from its postings; `shadow` only
-/// compares it with every ask; `verify` answers both ways and logs whether
-/// they agree; `off` keeps it closed. Any other value keeps the default
-/// ([`crate::serving::lexical_index_mode::LexicalIndexMode`]).
+/// The lexical sidecar (`lexical-index.sqlite3`, DESIGN L6): on (the
+/// default) answers every ask it can hold from its postings; off keeps it
+/// closed. It reads the on/off words every switch reads; debug and
+/// `eval-hooks` builds also accept the measurement modes `shadow` and
+/// `verify` ([`crate::serving::lexical_index_mode::LexicalIndexMode`]). Any
+/// other value is refused at startup.
 pub const LEXICAL_INDEX_ENV: &str = "KMP_LEXICAL_INDEX";
 
-/// MaxScore against the floor (DESIGN L6, P14): an ask the lexical index
-/// answers leaves unread the candidates no reading of the question lets
-/// clear the floor. On by default; `off` reads every candidate the postings
-/// reach, as P13 did. Any other value keeps it on.
-pub const LEXICAL_MAXSCORE_ENV: &str = "KMP_LEXICAL_MAXSCORE";
-
-/// Whether MaxScore prunes (`KMP_LEXICAL_MAXSCORE`, on unless `off`).
-pub(crate) fn lexical_maxscore() -> bool {
-    optional_env_string(LEXICAL_MAXSCORE_ENV).is_none_or(|value| !value.eq_ignore_ascii_case("off"))
-}
-
-/// How long `site` waits for Jev on a first page, unless the operator
-/// lifted the deadlines.
+/// How long `site` waits for Jev on a first page, unless an evaluation lifted
+/// the deadlines ([`crate::environment::eval_hooks`]).
 pub(crate) fn judgement_deadline(
     site: crate::serving::judgement_site::JudgementSite,
 ) -> Option<std::time::Duration> {
-    if optional_env_string(JUDGEMENT_DEADLINES_ENV).as_deref() == Some("off") {
+    if crate::environment::eval_hooks::judgement_deadlines_lifted() {
         return None;
     }
     site.deadline()

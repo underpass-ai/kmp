@@ -330,24 +330,39 @@ fn fallback_from_unopenable_project(
 }
 
 fn reject_unexpanded_home_override(env_override: Option<&str>) -> Result<(), PortError> {
-    let Some(explicit) = env_override
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-    else {
-        return Ok(());
-    };
+    match env_override.and_then(data_dir_override_refusal) {
+        Some(refusal) => Err(PortError::InvalidState(refusal)),
+        None => Ok(()),
+    }
+}
+
+/// Why a value of `KMP_MCP_DATA_DIR` cannot name a store, or `None` when it
+/// can (blank counts as unset). A `~` path is refused because MCP host
+/// configuration is not a shell; a relative path because it would open a
+/// different store from every working directory a host starts in, the
+/// same reason `config memory-store` refuses one.
+pub fn data_dir_override_refusal(value: &str) -> Option<String> {
+    let explicit = value.trim();
+    if explicit.is_empty() {
+        return None;
+    }
     let path = Path::new(explicit);
     let starts_with_tilde = path
         .components()
         .next()
         .is_some_and(|component| component.as_os_str() == "~");
-    if !starts_with_tilde {
-        return Ok(());
+    if starts_with_tilde {
+        return Some(
+            SelectionRefusal::unexpanded(format!("{DATA_DIR_ENV} value"), explicit).to_string(),
+        );
     }
-
-    Err(PortError::InvalidState(
-        SelectionRefusal::unexpanded(format!("{DATA_DIR_ENV} value"), explicit).to_string(),
-    ))
+    if !path.is_absolute() {
+        return Some(format!(
+            "{DATA_DIR_ENV} `{explicit}` is relative; it must be an absolute path, or it would \
+             open a different store from every working directory the host starts in"
+        ));
+    }
+    None
 }
 
 fn prepare_data_dir(resolved: &ResolvedDataDir) -> Result<(), PortError> {

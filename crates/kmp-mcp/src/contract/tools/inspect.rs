@@ -13,13 +13,9 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_inspect",
-        // A read of a node of the installed guide on a store that lacks it
-        // seeds the guide first (`serving::guide_seed`), so Inspect is not a
-        // pure read; the seed is content-addressed and appends nothing twice.
-        ToolEffect::Write {
-            destructive: false,
-            idempotent: true,
-        },
+        // A pure read: a guide node the store lacks is answered with the
+        // repair, never seeded (`tests/read_only_tools.rs`).
+        ToolEffect::Read,
         "Read one stored memory or write receipt in full, with its evidence and links, before relying on it.",
         json!({
             "type": "object",

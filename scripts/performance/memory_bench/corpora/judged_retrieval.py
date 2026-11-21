@@ -97,8 +97,8 @@ class RetrievalCase:
 
     def ask_arguments(self, max_entries=10):
         arguments = {'about': self.about, 'question': self.question,
-                     'answer_policy': self.answer_policy, 'depth': 3,
-                     'budget': {'tokens': 2048, 'detail': 'balanced', 'max_entries': max_entries}}
+                     'answer_policy': self.answer_policy,
+                     'budget': {'detail': 'balanced', 'max_entries': max_entries}}
         for name in ('as_of', 'interval', 'axis', 'dimensions'):
             if getattr(self, name) is not None:
                 arguments[name] = getattr(self, name)

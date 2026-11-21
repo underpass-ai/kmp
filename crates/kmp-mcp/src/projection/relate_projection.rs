@@ -98,6 +98,7 @@ fn fact_state_label(value: i32) -> &'static str {
         Ok(FactState::Current) => "current",
         Ok(FactState::Superseded) => "superseded",
         Ok(FactState::Expired) => "expired",
+        Ok(FactState::NotYetInForce) => "not_yet_in_force",
         _ => "unknown",
     }
 }

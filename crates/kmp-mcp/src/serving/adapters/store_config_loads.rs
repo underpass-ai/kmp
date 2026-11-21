@@ -30,9 +30,7 @@ use super::write_relations_config::WriteRelationsConfig;
 use crate::curate::domain::partner_cap::PartnerCap;
 use crate::curate::domain::partner_filter::PartnerFilter;
 use crate::curate::domain::paths_corridor::PathsCorridor;
-use crate::serving::environment::{
-    TYPESAFE_API_KEY_ENV, TYPESAFE_CASSETTE_ENV, TYPESAFE_CASSETTE_MODE_ENV, optional_env_string,
-};
+use crate::serving::environment::{TYPESAFE_API_KEY_ENV, optional_env_string};
 use crate::serving::judgement_site::JudgementSite;
 use crate::serving::ports::judgement_model::JudgementModel;
 use crate::serving::ports::semantic_candidate_provider::SemanticCandidateProvider;
@@ -56,18 +54,18 @@ pub(super) struct StoreConfigLoads {
 
 impl StoreConfigLoads {
     pub(super) fn load(data_dir: &Path, book: VerdictBookAccess) -> Self {
+        // A judgement cassette is an evaluation hook: a release build
+        // reads no cassette (`crate::environment::eval_hooks`).
+        let (cassette, cassette_mode) = crate::environment::eval_hooks::typesafe_cassette();
+        let behind_cassette = cassette.is_some();
         let judgement = load_judgement(
             data_dir,
             optional_env_string(TYPESAFE_API_KEY_ENV),
-            optional_env_string(TYPESAFE_CASSETTE_ENV),
-            optional_env_string(TYPESAFE_CASSETTE_MODE_ENV),
+            cassette,
+            cassette_mode,
         );
         let ledger = match book {
-            VerdictBookAccess::Open => VerdictLedger::load(
-                data_dir,
-                &judgement,
-                optional_env_string(TYPESAFE_CASSETTE_ENV).is_some(),
-            ),
+            VerdictBookAccess::Open => VerdictLedger::load(data_dir, &judgement, behind_cassette),
             VerdictBookAccess::ConfigurationOnly => VerdictBookConfig::load(data_dir).map(|_| None),
         };
         let observed = |site| {
@@ -102,13 +100,13 @@ impl StoreConfigLoads {
                 .clone()
                 .map_err(|error| format!("{file} needs a working typesafe.json: {error}"))
         };
-        let mut report = StoreConfigReport::new(data_dir)
-            .beside_store("typesafe.json", judged.clone())
-            .at(
-                "typesafe-cassette",
-                optional_env_string(TYPESAFE_CASSETTE_ENV).map(Into::into),
-                judged.clone(),
-            )
+        let mut report =
+            StoreConfigReport::new(data_dir).beside_store("typesafe.json", judged.clone());
+        // Only a build that carries the cassette hook reports it.
+        if let (Some(cassette), _) = crate::environment::eval_hooks::typesafe_cassette() {
+            report = report.at("typesafe-cassette", Some(cassette.into()), judged.clone());
+        }
+        let mut report = report
             .beside_store("rerank.json", verdict(&self.rerank))
             .beside_store("wake-focus.json", verdict(&self.wake_focus))
             .beside_store("semantic-retrieval.json", verdict(&self.semantic))

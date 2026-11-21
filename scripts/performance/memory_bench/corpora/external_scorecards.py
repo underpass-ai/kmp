@@ -96,7 +96,9 @@ def build(binary, repo_root, runner=subprocess.run, release=False):
     command = ['cargo', 'build', '--locked', '--quiet', '-p', 'kmp-testkit', '--bin', binary,
                '--message-format=json']
     if release:
-        command.insert(2, '--release')
+        # The scorecards replay judgement cassettes, a test hook a release
+        # build carries only with kmp-mcp's eval-hooks feature (1.0).
+        command[2:2] = ['--release', '--features', 'kmp-mcp/eval-hooks']
     done = runner(command, cwd=repo_root, capture_output=True, text=True, check=False)
     if done.returncode != 0:
         raise ScorecardFailed(f'cargo build {binary}: exit {done.returncode}: {done.stderr[-800:]}')

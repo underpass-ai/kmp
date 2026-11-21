@@ -343,10 +343,10 @@ impl LongMemEvalSmartWriter {
                 "about": input.about,
                 "around": {"ref": input.target_ref},
                 "window": {"before_entries": 8, "after_entries": 0},
-                "limit": {"entries": 12, "tokens": 2400},
+                "limit": {"entries": 12},
                 "dimensions": {"scope": "current_about", "mode": "all"},
                 "include": {"evidence": true, "relations": true, "raw_refs": false},
-                "budget": {"tokens": 2400, "depth": 2}
+                "budget": {"depth": 2}
             }),
         )
         .await?;

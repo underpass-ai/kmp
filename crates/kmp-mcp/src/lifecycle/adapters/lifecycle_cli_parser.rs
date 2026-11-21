@@ -96,7 +96,9 @@ impl LifecycleCliParser {
     }
 
     fn default_install_dir() -> PathBuf {
+        // Blank is unset, as for every switch.
         std::env::var_os("KMP_INSTALL_DIR")
+            .filter(|dir| !dir.to_string_lossy().trim().is_empty())
             .map(PathBuf::from)
             .or_else(|| {
                 std::env::var_os("HOME")
