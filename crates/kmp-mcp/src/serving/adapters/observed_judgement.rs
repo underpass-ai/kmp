@@ -13,7 +13,7 @@ use std::time::Instant;
 
 use sha2::{Digest, Sha256};
 
-use super::cassette_judgement::judgement_key;
+use super::judgement_key::judgement_key;
 use super::ledgered_judgement::LedgeredJudgement;
 use super::verdict_ledger::VerdictLedger;
 use crate::serving::judgement_origin::JudgementOrigin;

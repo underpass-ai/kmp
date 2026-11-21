@@ -175,7 +175,11 @@ impl KernelMcpServer {
 
     /// Whether one ref is in this store, asked through the same read the
     /// agent would use. Never a write.
-    async fn memory_ref_exists(&self, about: &str, reference: &str) -> Result<bool, ToolError> {
+    pub(super) async fn memory_ref_exists(
+        &self,
+        about: &str,
+        reference: &str,
+    ) -> Result<bool, ToolError> {
         let reference = reference.trim();
         if reference.is_empty() {
             return Ok(false);

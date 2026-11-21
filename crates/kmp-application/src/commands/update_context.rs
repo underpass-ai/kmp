@@ -145,7 +145,11 @@ where
             };
             if !same_logical_command {
                 return Err(ApplicationError::Ports(kmp_domain::PortError::Conflict(
-                    format!("idempotency key '{key}' was already accepted with different content"),
+                    format!(
+                        "idempotency key '{key}' was already accepted with different content, \
+                         possibly in another about: keys are global to the store, not per \
+                         about. Use a new key for new content"
+                    ),
                 )));
             }
             return Ok(UpdateContextOutcome {

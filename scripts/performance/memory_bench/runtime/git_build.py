@@ -2,7 +2,9 @@
 
 A `git_ref` (SCHEMAS.md section 4) is resolved to a commit and built in a
 throwaway git worktree under the scratch area with
-`cargo build --release --locked -p kmp-mcp`; the executable and its
+`cargo build --release --locked -p kmp-mcp`, with `--features eval-hooks` when
+that ref's kmp-mcp declares it (1.0 moved the judgement cassette and the other
+test hooks behind it; older refs carry them unconditionally); the executable and its
 `provenance.json` land in `bin/<binary_sha256>/` (section 7) and the worktree is
 removed. A second request for the same commit is a cache hit. Every build shares
 one cargo target directory in the scratch area, so a later ref recompiles only
@@ -32,6 +34,20 @@ SCHEMA = 'kmp.bench.binary.v1'
 PROVENANCE = 'provenance.json'
 EXECUTABLE = 'kmp-mcp'
 BUILD_COMMAND = ('cargo', 'build', '--release', '--locked', '-p', 'kmp-mcp')
+# The bench replays judgement cassettes; since 1.0 a release build reads them
+# only with this feature.
+HOOKS_FEATURE = 'eval-hooks'
+HOOKS_MANIFEST = Path('crates') / 'kmp-mcp' / 'Cargo.toml'
+
+
+def build_command(worktree):
+    """The build of one checkout: with the hooks feature when its manifest declares it."""
+    manifest = Path(worktree) / HOOKS_MANIFEST
+    try:
+        declares = f'{HOOKS_FEATURE} = ' in manifest.read_text(encoding='utf-8')
+    except OSError:
+        declares = False
+    return BUILD_COMMAND + (('--features', HOOKS_FEATURE) if declares else ())
 TARGET_DIR = 'cargo-target'
 TOOL_TIMEOUT_S = 60.0
 BUILD_TIMEOUT_S = 3600.0
@@ -91,7 +107,7 @@ def resolve_path(value, repo_root=REPO_ROOT, runner=subprocess.run):
     path = Path(value)
     path = (path if path.is_absolute() else Path(repo_root) / path).resolve()
     if not path.is_file():
-        raise GitBuildFailed(f'{path} not found: cargo build --release -p kmp-mcp')
+        raise GitBuildFailed(f'{path} not found: cargo build --release -p kmp-mcp --features eval-hooks')
     return ResolvedBinary(path, sha256_file(path), binary_version(path, runner),
                           path_provenance(path, repo_root, runner))
 
@@ -143,12 +159,13 @@ def build_ref(ref, layout, repo_root=REPO_ROOT, runner=subprocess.run, log=sys.s
         print(f'memory_bench: building {ref} ({commit[:12]}) in {worktree}', file=log, flush=True)
         env = {**os.environ, 'CARGO_TARGET_DIR': str(target)}
         started = time.perf_counter()
-        _run(BUILD_COMMAND, worktree, runner, BUILD_TIMEOUT_S, env)
+        command = build_command(worktree)
+        _run(command, worktree, runner, BUILD_TIMEOUT_S, env)
         seconds = round(time.perf_counter() - started, 3)
         built = target / 'release' / EXECUTABLE
         sha = sha256_file(built)
         provenance = {'schema': SCHEMA, 'source': 'git_ref', 'git_ref': ref, 'git_commit': commit,
-                      'build': ' '.join(BUILD_COMMAND), 'cargo': _run(['cargo', '--version'], worktree, runner),
+                      'build': ' '.join(command), 'cargo': _run(['cargo', '--version'], worktree, runner),
                       'rustc': _run(['rustc', '--version'], worktree, runner), 'built_at': _now(),
                       'build_s': seconds, 'binary_sha256': sha, 'version': binary_version(built, runner)}
     finally:

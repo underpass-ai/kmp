@@ -70,6 +70,7 @@
                             "type": "string"
                           },
                           "ingested_at": {
+                            "format": "date-time",
                             "type": "string"
                           },
                           "metadata": {
@@ -79,9 +80,11 @@
                             "type": "object"
                           },
                           "observed_at": {
+                            "format": "date-time",
                             "type": "string"
                           },
                           "occurred_at": {
+                            "format": "date-time",
                             "type": "string"
                           },
                           "rank": {
@@ -94,9 +97,11 @@
                             "type": "integer"
                           },
                           "valid_from": {
+                            "format": "date-time",
                             "type": "string"
                           },
                           "valid_until": {
+                            "format": "date-time",
                             "type": "string"
                           }
                         },
@@ -158,9 +163,11 @@
                     "support_clocks": {
                       "properties": {
                         "ingested_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "observed_at": {
+                          "format": "date-time",
                           "type": "string"
                         }
                       },
@@ -176,6 +183,7 @@
                       "type": "string"
                     },
                     "time": {
+                      "format": "date-time",
                       "type": "string"
                     }
                   },
@@ -207,18 +215,23 @@
                     "clocks": {
                       "properties": {
                         "ingested_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "observed_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "occurred_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "valid_from": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "valid_until": {
+                          "format": "date-time",
                           "type": "string"
                         }
                       },
@@ -239,6 +252,7 @@
                           "type": "string"
                         },
                         "ingested_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "metadata": {
@@ -248,9 +262,11 @@
                           "type": "object"
                         },
                         "observed_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "occurred_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "rank": {
@@ -263,9 +279,11 @@
                           "type": "integer"
                         },
                         "valid_from": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "valid_until": {
+                          "format": "date-time",
                           "type": "string"
                         }
                       },
@@ -329,6 +347,7 @@
                 "type": "string"
               },
               "observed_at": {
+                "format": "date-time",
                 "type": "string"
               },
               "source_agent": {
@@ -793,12 +812,14 @@
                   "type": "object"
                 },
                 "observed_at": {
+                  "format": "date-time",
                   "type": [
                     "string",
                     "null"
                   ]
                 },
                 "occurred_at": {
+                  "format": "date-time",
                   "type": [
                     "string",
                     "null"
@@ -823,9 +844,11 @@
                   "type": "string"
                 },
                 "valid_from": {
+                  "format": "date-time",
                   "type": "string"
                 },
                 "valid_until": {
+                  "format": "date-time",
                   "type": "string"
                 }
               },
@@ -839,12 +862,14 @@
             "type": "array"
           },
           "observed_at": {
+            "format": "date-time",
             "type": [
               "string",
               "null"
             ]
           },
           "occurred_at": {
+            "format": "date-time",
             "type": [
               "string",
               "null"
@@ -986,6 +1011,7 @@
                   "type": "string"
                 },
                 "observed_at": {
+                  "format": "date-time",
                   "type": [
                     "string",
                     "null"
@@ -1081,9 +1107,11 @@
             "type": "string"
           },
           "valid_from": {
+            "format": "date-time",
             "type": "string"
           },
           "valid_until": {
+            "format": "date-time",
             "type": "string"
           }
         },
@@ -1659,6 +1687,7 @@
                 "type": "string"
               },
               "time": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -1675,9 +1704,6 @@
           },
           "budget": {
             "properties": {
-              "depth": {
-                "type": "integer"
-              },
               "detail": {
                 "enum": [
                   "compact",
@@ -1691,18 +1717,12 @@
               },
               "max_entries": {
                 "type": "integer"
-              },
-              "tokens": {
-                "type": "integer"
               }
             },
             "type": "object"
           },
           "continuation": {
             "type": "string"
-          },
-          "depth": {
-            "type": "integer"
           },
           "dimensions": {
             "properties": {
@@ -1785,9 +1805,11 @@
           "interval": {
             "properties": {
               "end": {
+                "format": "date-time",
                 "type": "string"
               },
               "start": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -1892,7 +1914,7 @@
                     ]
                   },
                   "next_cursor": {
-                    "description": "Opaque recall cursor (kmp2) for page.cursor, or null: it resumes after the item this page ended on. Keep bound arguments unchanged; only page.entries, budget.tokens and budget.max_bytes may vary. A kmp1 cursor is refused as outdated (READ_CURSOR_OUTDATED): restart.",
+                    "description": "Opaque recall cursor (kmp2) for page.cursor, or null: it resumes after the item this page ended on. Keep bound arguments unchanged; only page.entries and budget.max_bytes may vary. A kmp1 cursor is refused as outdated (READ_CURSOR_OUTDATED): restart.",
                     "type": [
                       "string",
                       "null"
@@ -2260,6 +2282,7 @@
                 "type": "string"
               },
               "time": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -2279,9 +2302,6 @@
           },
           "budget": {
             "properties": {
-              "depth": {
-                "type": "integer"
-              },
               "detail": {
                 "enum": [
                   "compact",
@@ -2295,18 +2315,12 @@
               },
               "max_entries": {
                 "type": "integer"
-              },
-              "tokens": {
-                "type": "integer"
               }
             },
             "type": "object"
           },
           "continuation": {
             "type": "string"
-          },
-          "depth": {
-            "type": "integer"
           },
           "dimensions": {
             "properties": {
@@ -2386,9 +2400,11 @@
           "interval": {
             "properties": {
               "end": {
+                "format": "date-time",
                 "type": "string"
               },
               "start": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -2513,7 +2529,7 @@
                     ]
                   },
                   "next_cursor": {
-                    "description": "Opaque recall cursor (kmp2) for page.cursor, or null: it resumes after the item this page ended on. Keep bound arguments unchanged; only page.entries, budget.tokens and budget.max_bytes may vary. A kmp1 cursor is refused as outdated (READ_CURSOR_OUTDATED): restart.",
+                    "description": "Opaque recall cursor (kmp2) for page.cursor, or null: it resumes after the item this page ended on. Keep bound arguments unchanged; only page.entries and budget.max_bytes may vary. A kmp1 cursor is refused as outdated (READ_CURSOR_OUTDATED): restart.",
                     "type": [
                       "string",
                       "null"
@@ -2692,24 +2708,7 @@
           },
           "budget": {
             "properties": {
-              "depth": {
-                "type": "integer"
-              },
-              "detail": {
-                "enum": [
-                  "compact",
-                  "balanced",
-                  "full"
-                ],
-                "type": "string"
-              },
               "max_bytes": {
-                "type": "integer"
-              },
-              "max_entries": {
-                "type": "integer"
-              },
-              "tokens": {
                 "type": "integer"
               }
             },
@@ -2796,9 +2795,11 @@
           "interval": {
             "properties": {
               "end": {
+                "format": "date-time",
                 "type": "string"
               },
               "start": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -2831,7 +2832,7 @@
             "type": "array"
           },
           "facts": {
-            "description": "The entries of the selected abouts within the selection: `ref`, `about`, `kind`, `text` verbatim, `coordinates`, and `state` — `current`, `superseded` (with `superseded_by`) or `expired` (with `valid_until`) — as the lifecycle stood at the end of the interval.",
+            "description": "The entries of the selected abouts within the selection: `ref`, `about`, `kind`, `text` verbatim, `coordinates`, and `state` — `current`, `superseded` (with `superseded_by`), `expired` (with `valid_until`) or `not_yet_in_force` (its `valid_from` still ahead) — as the lifecycle stood at the end of the interval.",
             "type": "array"
           },
           "next_actions": {
@@ -3010,6 +3011,7 @@
                 "type": "integer"
               },
               "time": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -3024,6 +3026,7 @@
                 "type": "integer"
               },
               "time": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -3056,18 +3059,12 @@
               },
               "max_entries": {
                 "type": "integer"
-              },
-              "tokens": {
-                "type": "integer"
               }
             },
             "type": "object"
           },
           "continuation": {
             "type": "string"
-          },
-          "depth": {
-            "type": "integer"
           },
           "dimensions": {
             "properties": {
@@ -3166,6 +3163,7 @@
                 "type": "integer"
               },
               "time": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -3191,9 +3189,11 @@
           "interval": {
             "properties": {
               "end": {
+                "format": "date-time",
                 "type": "string"
               },
               "start": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -3202,9 +3202,6 @@
           "limit": {
             "properties": {
               "entries": {
-                "type": "integer"
-              },
-              "tokens": {
                 "type": "integer"
               }
             },
@@ -3612,6 +3609,7 @@
                 "type": "string"
               },
               "time": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -3628,24 +3626,7 @@
           },
           "budget": {
             "properties": {
-              "depth": {
-                "type": "integer"
-              },
-              "detail": {
-                "enum": [
-                  "compact",
-                  "balanced",
-                  "full"
-                ],
-                "type": "string"
-              },
               "max_bytes": {
-                "type": "integer"
-              },
-              "max_entries": {
-                "type": "integer"
-              },
-              "tokens": {
                 "type": "integer"
               }
             },
@@ -3657,15 +3638,14 @@
           "from": {
             "type": "string"
           },
-          "goal": {
-            "type": "string"
-          },
           "interval": {
             "properties": {
               "end": {
+                "format": "date-time",
                 "type": "string"
               },
               "start": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -3681,9 +3661,6 @@
               }
             },
             "type": "object"
-          },
-          "role": {
-            "type": "string"
           },
           "search": {
             "properties": {
@@ -4336,10 +4313,8 @@
         "anthropic/maxResultSizeChars": 10000
       },
       "annotations": {
-        "destructiveHint": false,
-        "idempotentHint": true,
         "openWorldHint": false,
-        "readOnlyHint": false
+        "readOnlyHint": true
       },
       "description": "Read one stored memory or write receipt in full, with its evidence and links, before relying on it. Guide topic: audit.",
       "inputSchema": {
@@ -4595,6 +4570,7 @@
             "type": "string"
           },
           "observed_at": {
+            "format": "date-time",
             "type": "string"
           },
           "options": {
@@ -5228,31 +5204,6 @@
             ],
             "type": "string"
           },
-          "budget": {
-            "properties": {
-              "depth": {
-                "type": "integer"
-              },
-              "detail": {
-                "enum": [
-                  "compact",
-                  "balanced",
-                  "full"
-                ],
-                "type": "string"
-              },
-              "max_bytes": {
-                "type": "integer"
-              },
-              "max_entries": {
-                "type": "integer"
-              },
-              "tokens": {
-                "type": "integer"
-              }
-            },
-            "type": "object"
-          },
           "dimensions": {
             "properties": {
               "abouts": {
@@ -5343,9 +5294,11 @@
           "interval": {
             "properties": {
               "end": {
+                "format": "date-time",
                 "type": "string"
               },
               "start": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -5751,7 +5704,10 @@
           },
           "jev": {
             "description": "review: model, requests and input tokens spent; null when Jev was not used.",
-            "type": "object"
+            "type": [
+              "object",
+              "null"
+            ]
           },
           "labels": {
             "additionalProperties": false,
@@ -6104,9 +6060,11 @@
                     "type": "string"
                   },
                   "from": {
+                    "format": "date-time",
                     "type": "string"
                   },
                   "to": {
+                    "format": "date-time",
                     "type": "string"
                   }
                 },

@@ -6,14 +6,6 @@ use super::{ToolError, ToolErrorCode};
 pub(super) struct GuideRepair;
 
 impl GuideRepair {
-    pub(super) fn missing(node_ref: &str, error: ToolError, searched: &[String]) -> ToolError {
-        if error.code == ToolErrorCode::NotFound {
-            Self::unavailable_after(node_ref, error, searched)
-        } else {
-            error
-        }
-    }
-
     /// Whether `arguments` read a guide node and `error` is the not-found
     /// that an absent guide answers with.
     pub(super) fn is_missing_guide_read(arguments: &Value, error: &ToolError) -> bool {
@@ -63,7 +55,8 @@ impl GuideRepair {
             matching plugin directory containing guide/guide.requests.json and guide/memory.jsonl. \
             Sync writes both guide abouts and may update the maintained memory bundle. Then \
             restart this connection with the same store selection and retry the original call. \
-            Repeating that sync is idempotent; a runtime guide read does not install assets.";
+            Repeating that sync is idempotent. A read never writes the store: every guide \
+            topic is also served by kmp_guide from the engine, with no store at all.";
         let looked = if searched.is_empty() {
             String::new()
         } else {

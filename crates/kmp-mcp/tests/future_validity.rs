@@ -84,4 +84,36 @@ async fn the_memory_in_force_is_served_and_the_future_one_waits() {
         current.find("Diego").is_none_or(|diego| marta < diego),
         "the memory not yet in force follows the live one: {woken}"
     );
+    // And it says what it is: wherever it is shown, a memory not yet in
+    // force is labelled so and never reads as current state.
+    for line in woken["wake"]["current_state"].as_array().expect("lines") {
+        let line = line.as_str().expect("line");
+        if line.contains("Diego") {
+            assert!(line.contains("not yet in force"), "{line}");
+        } else if line.contains("Marta") {
+            assert!(!line.contains("not yet in force"), "{line}");
+        }
+    }
+
+    let related = call(&server, 5, "kmp_relate", json!({"about": "team:rota"})).await;
+    let states = related["facts"]
+        .as_array()
+        .expect("facts")
+        .iter()
+        .map(|fact| {
+            (
+                fact["text"].as_str().unwrap_or_default().to_string(),
+                fact["state"].as_str().unwrap_or_default().to_string(),
+            )
+        })
+        .collect::<Vec<_>>();
+    for (text, state) in &states {
+        let expected = if text.contains("Diego") {
+            "not_yet_in_force"
+        } else {
+            "current"
+        };
+        assert_eq!(state, expected, "{text}: {related}");
+    }
+    assert_eq!(states.len(), 2, "{related}");
 }

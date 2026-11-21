@@ -88,7 +88,9 @@ impl LexicalSidecar {
                     sidecar: Some(sidecar),
                     mode,
                     limits,
-                    prune: crate::serving::environment::lexical_maxscore(),
+                    // MaxScore against the floor (P14). Its A/B switch,
+                    // KMP_LEXICAL_MAXSCORE, was removed at 1.0.
+                    prune: true,
                 }
             }
             Err(error) => {

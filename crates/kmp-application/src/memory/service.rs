@@ -316,7 +316,9 @@ where
             {
                 return Err(ApplicationError::Ports(kmp_domain::PortError::Conflict(
                     format!(
-                        "idempotency key '{}' was already accepted with different content",
+                        "idempotency key '{}' was already accepted with different content, \
+                         possibly in another about: keys are global to the store, not per about. \
+                         Use a new key for new content",
                         command.idempotency_key
                     ),
                 )));

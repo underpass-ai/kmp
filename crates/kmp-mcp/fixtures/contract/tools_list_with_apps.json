@@ -70,6 +70,7 @@
                             "type": "string"
                           },
                           "ingested_at": {
+                            "format": "date-time",
                             "type": "string"
                           },
                           "metadata": {
@@ -79,9 +80,11 @@
                             "type": "object"
                           },
                           "observed_at": {
+                            "format": "date-time",
                             "type": "string"
                           },
                           "occurred_at": {
+                            "format": "date-time",
                             "type": "string"
                           },
                           "rank": {
@@ -94,9 +97,11 @@
                             "type": "integer"
                           },
                           "valid_from": {
+                            "format": "date-time",
                             "type": "string"
                           },
                           "valid_until": {
+                            "format": "date-time",
                             "type": "string"
                           }
                         },
@@ -158,9 +163,11 @@
                     "support_clocks": {
                       "properties": {
                         "ingested_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "observed_at": {
+                          "format": "date-time",
                           "type": "string"
                         }
                       },
@@ -176,6 +183,7 @@
                       "type": "string"
                     },
                     "time": {
+                      "format": "date-time",
                       "type": "string"
                     }
                   },
@@ -207,18 +215,23 @@
                     "clocks": {
                       "properties": {
                         "ingested_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "observed_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "occurred_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "valid_from": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "valid_until": {
+                          "format": "date-time",
                           "type": "string"
                         }
                       },
@@ -239,6 +252,7 @@
                           "type": "string"
                         },
                         "ingested_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "metadata": {
@@ -248,9 +262,11 @@
                           "type": "object"
                         },
                         "observed_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "occurred_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "rank": {
@@ -263,9 +279,11 @@
                           "type": "integer"
                         },
                         "valid_from": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "valid_until": {
+                          "format": "date-time",
                           "type": "string"
                         }
                       },
@@ -329,6 +347,7 @@
                 "type": "string"
               },
               "observed_at": {
+                "format": "date-time",
                 "type": "string"
               },
               "source_agent": {
@@ -521,12 +540,14 @@
                   "type": "object"
                 },
                 "observed_at": {
+                  "format": "date-time",
                   "type": [
                     "string",
                     "null"
                   ]
                 },
                 "occurred_at": {
+                  "format": "date-time",
                   "type": [
                     "string",
                     "null"
@@ -551,9 +572,11 @@
                   "type": "string"
                 },
                 "valid_from": {
+                  "format": "date-time",
                   "type": "string"
                 },
                 "valid_until": {
+                  "format": "date-time",
                   "type": "string"
                 }
               },
@@ -567,12 +590,14 @@
             "type": "array"
           },
           "observed_at": {
+            "format": "date-time",
             "type": [
               "string",
               "null"
             ]
           },
           "occurred_at": {
+            "format": "date-time",
             "type": [
               "string",
               "null"
@@ -714,6 +739,7 @@
                   "type": "string"
                 },
                 "observed_at": {
+                  "format": "date-time",
                   "type": [
                     "string",
                     "null"
@@ -809,9 +835,11 @@
             "type": "string"
           },
           "valid_from": {
+            "format": "date-time",
             "type": "string"
           },
           "valid_until": {
+            "format": "date-time",
             "type": "string"
           }
         },
@@ -850,6 +878,7 @@
                 "type": "string"
               },
               "time": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -866,9 +895,6 @@
           },
           "budget": {
             "properties": {
-              "depth": {
-                "type": "integer"
-              },
               "detail": {
                 "enum": [
                   "compact",
@@ -882,18 +908,12 @@
               },
               "max_entries": {
                 "type": "integer"
-              },
-              "tokens": {
-                "type": "integer"
               }
             },
             "type": "object"
           },
           "continuation": {
             "type": "string"
-          },
-          "depth": {
-            "type": "integer"
           },
           "dimensions": {
             "properties": {
@@ -976,9 +996,11 @@
           "interval": {
             "properties": {
               "end": {
+                "format": "date-time",
                 "type": "string"
               },
               "start": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -1045,6 +1067,7 @@
                 "type": "string"
               },
               "time": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -1064,9 +1087,6 @@
           },
           "budget": {
             "properties": {
-              "depth": {
-                "type": "integer"
-              },
               "detail": {
                 "enum": [
                   "compact",
@@ -1080,18 +1100,12 @@
               },
               "max_entries": {
                 "type": "integer"
-              },
-              "tokens": {
-                "type": "integer"
               }
             },
             "type": "object"
           },
           "continuation": {
             "type": "string"
-          },
-          "depth": {
-            "type": "integer"
           },
           "dimensions": {
             "properties": {
@@ -1171,9 +1185,11 @@
           "interval": {
             "properties": {
               "end": {
+                "format": "date-time",
                 "type": "string"
               },
               "start": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -1236,24 +1252,7 @@
           },
           "budget": {
             "properties": {
-              "depth": {
-                "type": "integer"
-              },
-              "detail": {
-                "enum": [
-                  "compact",
-                  "balanced",
-                  "full"
-                ],
-                "type": "string"
-              },
               "max_bytes": {
-                "type": "integer"
-              },
-              "max_entries": {
-                "type": "integer"
-              },
-              "tokens": {
                 "type": "integer"
               }
             },
@@ -1340,9 +1339,11 @@
           "interval": {
             "properties": {
               "end": {
+                "format": "date-time",
                 "type": "string"
               },
               "start": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -1398,6 +1399,7 @@
                 "type": "integer"
               },
               "time": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -1412,6 +1414,7 @@
                 "type": "integer"
               },
               "time": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -1444,18 +1447,12 @@
               },
               "max_entries": {
                 "type": "integer"
-              },
-              "tokens": {
-                "type": "integer"
               }
             },
             "type": "object"
           },
           "continuation": {
             "type": "string"
-          },
-          "depth": {
-            "type": "integer"
           },
           "dimensions": {
             "properties": {
@@ -1554,6 +1551,7 @@
                 "type": "integer"
               },
               "time": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -1579,9 +1577,11 @@
           "interval": {
             "properties": {
               "end": {
+                "format": "date-time",
                 "type": "string"
               },
               "start": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -1590,9 +1590,6 @@
           "limit": {
             "properties": {
               "entries": {
-                "type": "integer"
-              },
-              "tokens": {
                 "type": "integer"
               }
             },
@@ -1672,6 +1669,7 @@
                 "type": "string"
               },
               "time": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -1688,24 +1686,7 @@
           },
           "budget": {
             "properties": {
-              "depth": {
-                "type": "integer"
-              },
-              "detail": {
-                "enum": [
-                  "compact",
-                  "balanced",
-                  "full"
-                ],
-                "type": "string"
-              },
               "max_bytes": {
-                "type": "integer"
-              },
-              "max_entries": {
-                "type": "integer"
-              },
-              "tokens": {
                 "type": "integer"
               }
             },
@@ -1717,15 +1698,14 @@
           "from": {
             "type": "string"
           },
-          "goal": {
-            "type": "string"
-          },
           "interval": {
             "properties": {
               "end": {
+                "format": "date-time",
                 "type": "string"
               },
               "start": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -1741,9 +1721,6 @@
               }
             },
             "type": "object"
-          },
-          "role": {
-            "type": "string"
           },
           "search": {
             "properties": {
@@ -2141,10 +2118,8 @@
         "anthropic/maxResultSizeChars": 10000
       },
       "annotations": {
-        "destructiveHint": false,
-        "idempotentHint": true,
         "openWorldHint": false,
-        "readOnlyHint": false
+        "readOnlyHint": true
       },
       "description": "Read one stored memory or write receipt in full, with its evidence and links, before relying on it. Guide topic: audit.",
       "inputSchema": {
@@ -2253,6 +2228,7 @@
             "type": "string"
           },
           "observed_at": {
+            "format": "date-time",
             "type": "string"
           },
           "options": {
@@ -2519,31 +2495,6 @@
             ],
             "type": "string"
           },
-          "budget": {
-            "properties": {
-              "depth": {
-                "type": "integer"
-              },
-              "detail": {
-                "enum": [
-                  "compact",
-                  "balanced",
-                  "full"
-                ],
-                "type": "string"
-              },
-              "max_bytes": {
-                "type": "integer"
-              },
-              "max_entries": {
-                "type": "integer"
-              },
-              "tokens": {
-                "type": "integer"
-              }
-            },
-            "type": "object"
-          },
           "dimensions": {
             "properties": {
               "abouts": {
@@ -2634,9 +2585,11 @@
           "interval": {
             "properties": {
               "end": {
+                "format": "date-time",
                 "type": "string"
               },
               "start": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -2763,9 +2716,11 @@
                     "type": "string"
                   },
                   "from": {
+                    "format": "date-time",
                     "type": "string"
                   },
                   "to": {
+                    "format": "date-time",
                     "type": "string"
                   }
                 },
@@ -3087,6 +3042,7 @@
             "type": "object"
           },
           "from": {
+            "format": "date-time",
             "type": "string"
           },
           "limit": {
@@ -3101,6 +3057,7 @@
             "type": "string"
           },
           "to": {
+            "format": "date-time",
             "type": "string"
           }
         },

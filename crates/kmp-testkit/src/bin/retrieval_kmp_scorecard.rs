@@ -351,8 +351,7 @@ async fn run_case(
         "about": case.about,
         "question": case.question,
         "answer_policy": case.answer_policy,
-        "depth": 3,
-        "budget": {"tokens": 2048, "detail": "balanced", "max_entries": max_entries}
+        "budget": {"detail": "balanced", "max_entries": max_entries}
     });
     if let Some(as_of) = &case.as_of {
         arguments["as_of"] = as_of.clone();

@@ -40,8 +40,9 @@ Codex reads `.codex-plugin/plugin.json` and starts `kmp-mcp` from `PATH`.
 Claude Code reads
 `.claude-plugin/plugin.json` and starts through `.mcp.json` →
 `scripts/run-embedded-mcp.sh`, which can prefer the binary bundled in a
-release package. Put the bundled `bin/` on `PATH` for Codex. On Windows hosts,
-Claude uses `scripts\run-embedded-mcp.cmd`. To build the package from a checkout:
+release package. Put the bundled `bin/` on `PATH` for Codex. `.mcp.json` wires
+only the POSIX launcher; `scripts\run-embedded-mcp.cmd` is its Windows twin, for
+a host configured to start it by hand. To build the package from a checkout:
 `bash scripts/plugin/package-kmp-plugin.sh`.
 
 **Claude Code** — native install from KMP's co-located stable marketplace:
@@ -235,8 +236,9 @@ inside, reads supersession and expiry as they stood then, and an `UNKNOWN`
 names the nearest match outside the span.
 
 Setup and update install the versioned guide assets but never select or write
-a memory store. The first guide read seeds them into the store it was asked
-about: `guide:kmp-agent` explains every live verb to the agent and `guide:kmp`
+a memory store, and no read writes one: `kmp_guide` serves every topic from the
+engine, and `/kmp:guide` installs the longer guides into a store:
+`guide:kmp-agent` explains every live verb to the agent and `guide:kmp`
 is the short human path. `/kmp:guide` opens the human path and forces an
 explicit, deterministic refresh when one is needed. Check the selected store
 before synchronizing explicitly.

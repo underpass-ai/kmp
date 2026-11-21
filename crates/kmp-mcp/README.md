@@ -217,7 +217,9 @@ newline-delimited JSON-RPC responses to stdout.
 Run it with nothing set and it serves the embedded kernel. An endpoint in
 the environment chooses gRPC; `KMP_MCP_BACKEND=fixture` chooses the canned
 responses, and has to be asked for by name so that memory which is not real
-is never a default.
+is never a default. The fixture is a test hook: it exists in debug builds
+(`cargo run`, `cargo test`) and with the `eval-hooks` feature, never in a
+release binary.
 
 Minimal smoke request:
 
@@ -228,8 +230,7 @@ Minimal smoke request:
 Smoke an installed binary, with the script from the repository:
 
 ```bash
-KMP_MCP_BACKEND=fixture KMP_MCP_BIN=kmp-mcp \
-  bash scripts/mcp/kmp-stdio-smoke.sh
+KMP_MCP_BIN=kmp-mcp bash scripts/mcp/kmp-stdio-smoke.sh
 ```
 
 Tool call example:

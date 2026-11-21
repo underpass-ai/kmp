@@ -14,6 +14,7 @@ use super::diagnosis_render::{section, sgr};
 use super::durability_probe::committed_bundle_finding;
 use super::embedded_memory_probe::{compiled_formats, data_dir_finding};
 use super::engines_probe::engines_findings;
+use super::environment_probe::{environment_findings, unread_switch_findings};
 use super::search_summary_probe::search_summary_finding;
 use super::startup_log_probe::startup_history;
 use super::store_config_probe::store_config_findings;
@@ -69,6 +70,10 @@ pub(crate) fn observe_doctor(lifecycle: Vec<LifecycleFinding>) -> DoctorObservat
     let backend = backend_finding();
     let backend_level = backend.severity();
     sections.push(ReportSection::single("Backend", backend));
+    let mut environment = environment_findings();
+    environment.extend(unread_switch_findings());
+    let environment_level = worst_severity(environment.iter().map(|finding| finding.severity()));
+    sections.push(ReportSection::new("Environment", environment));
 
     let (data_dir, resolved) = data_dir_finding();
     let data_dir_level = data_dir.severity();
@@ -156,6 +161,7 @@ pub(crate) fn observe_doctor(lifecycle: Vec<LifecycleFinding>) -> DoctorObservat
         lifecycle_level,
         engines_level,
         backend_level,
+        environment_level,
         history_level,
         agent_policy_level,
         telemetry_level,

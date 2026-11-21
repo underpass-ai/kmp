@@ -43,9 +43,7 @@ async fn grpc_backend_maps_kernel_memory_service_responses_to_kmp_tools() {
             "about": "node:root",
             "role": "implementer",
             "intent": "continue the live incident",
-            "depth": 3,
             "budget": {
-                "tokens": 1600,
                 "detail": "full",
                 "max_bytes": 4000
             },
@@ -105,7 +103,6 @@ async fn grpc_backend_maps_kernel_memory_service_responses_to_kmp_tools() {
             "question": "What should the next agent trust?",
             "answer_policy": "evidence_or_unknown",
             "budget": {
-                "tokens": 654,
                 "detail": "full",
                 "max_bytes": 4000
             }
@@ -137,12 +134,8 @@ async fn grpc_backend_maps_kernel_memory_service_responses_to_kmp_tools() {
             "about": "node",
             "from": "node:root",
             "to": "node:target",
-            "goal": "prove path",
             "as_of": {"time":"2026-09-10T10:00:00.500Z"},
-            "axis":"observed",
-            "budget": {
-                "tokens": 111
-            }
+            "axis":"observed"
         }),
     )
     .await;
@@ -155,7 +148,8 @@ async fn grpc_backend_maps_kernel_memory_service_responses_to_kmp_tools() {
         trace["result"]["structuredContent"]["trace"][0]["to"],
         "node:target"
     );
-    assert_eq!(recorded.traces().await[0].goal, "prove path");
+    // `goal` left the MCP contract at 1.0 (E11): nothing is forwarded.
+    assert_eq!(recorded.traces().await[0].goal, "");
     let recorded_trace = &recorded.traces().await[0];
     assert_eq!(
         recorded_trace.axis,
@@ -227,14 +221,13 @@ async fn grpc_backend_maps_temporal_tools_to_kernel_memory_service() {
                 "scope_ids": ["conversation:rachel"]
             },
             "limit": {
-                "entries": 5,
-                "tokens": 1000
+                "entries": 5
             },
             "include": {
                 "relations": true,
                 "raw_refs": false
             },
-            "depth": 4
+            "budget": {"depth": 4}
         }),
     )
     .await;

@@ -32,6 +32,8 @@ TOOL_SELECTIONS = {'kmp_ask': ('as_of', 'interval', 'axis', 'dimensions'),
                    'kmp_wake': ('as_of', 'interval', 'axis', 'dimensions'),
                    'kmp_trace': ('as_of', 'interval', 'axis'),
                    'kmp_curate': ('interval', 'axis', 'dimensions')}
+# Tools whose input schema takes no `budget` (kmp_curate since 1.0: it never honoured one).
+BUDGETLESS_TOOLS = ('kmp_curate',)
 # Owned by dedicated fields, or by the runner (continuations, guidance context).
 RESERVED_ARGUMENTS = ('about', 'question', 'answer_policy', 'asked_as', 'as_of', 'interval',
                       'axis', 'dimensions', 'continuation', 'context_id')
@@ -135,9 +137,11 @@ class Question:
 
         `default_budget` (a mode's budget) applies only when the question pins none;
         `max_bytes` then sets budget.max_bytes as token_harness' `first_arguments` does.
+        A tool that takes no budget (BUDGETLESS_TOOLS) gets neither.
         """
         arguments = copy.deepcopy(self.arguments)
-        if default_budget is not None and 'budget' not in arguments:
+        if (default_budget is not None and 'budget' not in arguments
+                and self.tool not in BUDGETLESS_TOOLS):
             arguments['budget'] = copy.deepcopy(default_budget)
         arguments['about'] = self.about
         if self.tool == 'kmp_ask':
@@ -148,7 +152,7 @@ class Question:
         for name in ('as_of', 'interval', 'axis', 'dimensions'):
             if getattr(self, name) is not None:
                 arguments[name] = copy.deepcopy(getattr(self, name))
-        if max_bytes is not None:
+        if max_bytes is not None and self.tool not in BUDGETLESS_TOOLS:
             arguments.setdefault('budget', {})['max_bytes'] = max_bytes
         return self.tool, arguments
 

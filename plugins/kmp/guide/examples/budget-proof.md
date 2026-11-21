@@ -556,7 +556,7 @@ marker is not a new path selection. Trace has no offset field to inspect.
     "about": "example:guide:budget-proof",
     "from": "${result.generated_refs.0}",
     "to": "${constraint.generated_refs.0}",
-    "budget": {"depth": 6, "max_bytes": 12000},
+    "budget": {"max_bytes": 12000},
     "page": {"entries": 1}
   }
 }
@@ -685,7 +685,7 @@ outstanding MCP page or validate a missing proof path.
     "about": "example:guide:budget-proof",
     "from": "${result.generated_refs.0}",
     "to": "${unrelated.generated_refs.0}",
-    "budget": {"depth": 6, "max_bytes": 12000}
+    "budget": {"max_bytes": 12000}
   }
 }
 ```

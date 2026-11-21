@@ -4,6 +4,18 @@ use serde_json::{Value, json};
 use super::KernelMcpServer;
 use crate::continuation::ReadContinuation;
 
+/// Whether read results carry shared-passage tables.
+pub(crate) const PASSAGES_ENV: &str = "KMP_MCP_PASSAGES";
+
+/// `Some(true)` for `shared`, `Some(false)` for `inline`, `None` otherwise.
+pub(crate) fn passages_named(value: &str) -> Option<bool> {
+    match value.trim().to_ascii_lowercase().as_str() {
+        "inline" => Some(false),
+        "shared" => Some(true),
+        _ => None,
+    }
+}
+
 impl KernelMcpServer {
     /// Opt in at the host boundary. The default native contract stays inline;
     /// this setting adds no verb, call argument, store write or retained page.
@@ -13,11 +25,15 @@ impl KernelMcpServer {
     }
 
     /// Compose the same mode in stdio (with or without viewer) and HTTP startup.
+    /// Blank is unset; the words are case-insensitive, like every switch.
     pub fn with_passage_format_from_env(self) -> Result<Self, String> {
-        let enabled = match std::env::var("KMP_MCP_PASSAGES").as_deref() {
-            Err(std::env::VarError::NotPresent) | Ok("inline") => false,
-            Ok("shared") => true,
-            _ => return Err("KMP_MCP_PASSAGES must be inline or shared".into()),
+        let enabled = match crate::serving::environment::optional_env_string(PASSAGES_ENV) {
+            None => false,
+            Some(value) => passages_named(&value).ok_or_else(|| {
+                format!(
+                    "{PASSAGES_ENV}=`{value}` is not a value kmp-mcp accepts; use inline or shared"
+                )
+            })?,
         };
         Ok(self.with_shared_passages(enabled))
     }

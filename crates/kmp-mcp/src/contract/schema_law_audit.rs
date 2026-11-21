@@ -135,6 +135,27 @@ fn each_keyword_refuses_what_it_should() {
     assert!(check(&schema, &json!({"mode": "a", "to": ["x"], "count": 3}), "t").is_ok());
 }
 
+/// `format` is an annotation: the law accepts any string under
+/// `"format": "date-time"`, and the reader of the argument refuses a bare
+/// date. The catalogue tags timestamp strings with it, so a law that
+/// enforced it would refuse with a second, different wording.
+#[test]
+fn format_is_an_annotation_the_law_never_enforces() {
+    let schema = json!({"type": "string", "format": "date-time"});
+    for value in ["2026-08-01", "not a time", "2026-08-01T09:30:00Z"] {
+        assert!(check(&schema, &json!(value), "t").is_ok(), "{value}");
+    }
+    assert!(
+        check(&schema, &json!(1), "t").is_err(),
+        "the type still holds"
+    );
+    let tagged = tools_list_result_with_apps(true).to_string();
+    assert!(
+        tagged.contains(r#""format":"date-time""#),
+        "the catalogue tags its timestamps"
+    );
+}
+
 #[test]
 fn one_of_refuses_a_value_that_fits_two_shapes() {
     let schema = json!({"oneOf": [{"required": ["a"]}, {"required": ["b"]}]});

@@ -5,7 +5,8 @@
 //! more `supports` edges than memories, ranking every non-structural
 //! relation first filled the five state lines with bookkeeping and pushed
 //! the decisions themselves out. A memory the lifecycle has replaced or
-//! retired is still returned, after the live ones.
+//! retired is still returned, after the live ones; one not yet in force is
+//! labelled so.
 
 use std::collections::BTreeSet;
 
@@ -120,7 +121,21 @@ pub(super) fn rendered_current_state(
                 .into_iter()
                 .map(|(_, section)| section.content.clone()),
         )
-        .chain(retired.iter().map(memory_line))
+        .chain(retired.iter().map(|node| {
+            // A memory whose `valid_from` is still ahead is recorded but not
+            // yet in force: it follows the live ones and says so, never
+            // reading as current state.
+            if lifecycle.is_pending(node.node_id()) {
+                format!(
+                    "{} ({}, not yet in force): {}",
+                    node.node_id(),
+                    node.node_kind(),
+                    node.summary().trim()
+                )
+            } else {
+                memory_line(node)
+            }
+        }))
         .take(STATE_LINES)
         .collect::<Vec<_>>();
     // Never an empty state for an about that rendered something.

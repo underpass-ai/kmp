@@ -240,6 +240,14 @@ pub(super) fn projected(packet: Value, arguments: Value) -> Value {
         .projected()
 }
 
+/// A wake projected with wake's own planning default: the arguments no
+/// longer carry `budget.tokens`, so the default is the tool's.
+pub(super) fn projected_wake(packet: Value, arguments: Value) -> Value {
+    project_recall_output(packet, &arguments, 1_600, &Cl100kEstimator::new())
+        .expect("projection")
+        .projected()
+}
+
 pub(super) fn relation_set(value: &Value) -> BTreeSet<String> {
     value
         .pointer("/proof/path")

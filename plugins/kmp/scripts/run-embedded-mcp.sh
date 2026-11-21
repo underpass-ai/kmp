@@ -34,5 +34,5 @@ for resolver in "$bundled_engine" "$path_engine"; do
   esac
 done
 
-echo "KMP plugin: no engine matches this plugin; run kmp setup" >&2
+echo "KMP plugin: no engine matches this plugin; run /kmp:setup (or kmp-mcp setup)" >&2
 exit 127

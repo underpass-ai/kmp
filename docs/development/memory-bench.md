@@ -31,7 +31,8 @@ token figure is `null` with its reason; nothing else changes.
    either by path or by `git_ref`; a `git_ref` builds the committed tree only,
    so uncommitted work is invisible to it.
 2. **Build.** Two ways, pick one:
-   - `cargo build --release -p kmp-mcp`, and a variant with
+   - `cargo build --release -p kmp-mcp --features eval-hooks` (the judgement
+     cassette is a test hook a plain release binary does not carry), and a variant with
      `path = "target/release/kmp-mcp"`. Fast when the tree is already built;
      the report records the checkout's commit and whether the tree was dirty.
    - `[binary] git_ref = "<branch or commit>"`. `quick-a` resolves the ref to a

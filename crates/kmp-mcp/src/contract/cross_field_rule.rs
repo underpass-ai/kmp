@@ -157,6 +157,13 @@ pub(crate) fn all() -> &'static [CrossFieldRule] {
                 "Keep the options of one mode.",
             ),
             rule(
+                "trace.bidirectional",
+                "kmp_trace",
+                "search.direction",
+                "`search.direction: bidirectional` is the single-destination trace: one `to` (a string), no `as_of`, `interval` or `axis`, and in `search` only `max_nodes`, `max_edges`, `max_depth`, `max_states` and `paths_per_target` (at most 1).",
+                "Remove the argument this refusal names, or leave out `search.direction` (or use `outgoing`/`incoming`) for several destinations, a time selection or the other search options.",
+            ),
+            rule(
                 "ingest.observed",
                 "kmp_ingest",
                 "provenance.observed_at",

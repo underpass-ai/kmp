@@ -23,6 +23,7 @@ use kmp_viewer::{
 };
 
 use crate::serving::ToolError;
+use crate::viewer::unrendered_view_notice;
 
 pub(crate) const VIEW_TOOLS: [&str; 3] = [
     "kmp_view_open",
@@ -34,7 +35,7 @@ pub(crate) fn is_view_tool(name: &str) -> bool {
     VIEW_TOOLS.contains(&name) || matches!(name, "kmp_view_undo" | "kmp_view_take_control")
 }
 
-fn view_id_of(arguments: &Value) -> String {
+pub(super) fn view_id_of(arguments: &Value) -> String {
     arguments
         .get("view_id")
         .and_then(Value::as_str)
@@ -105,18 +106,17 @@ pub(crate) fn open(
         ));
     };
     if !about_exists {
-        return Err(ToolError::not_found(format!(
-            "`{about}` is not an anchor in this store; opening a view onto it would render an \
-             empty loom that looks like an answer"
-        )));
+        return Err(super::unknown_about::unknown_view_about(about));
     }
+    let expected_revision = arguments.get("expected_revision").and_then(Value::as_u64);
+    let guard = super::view_open_guard::unchecked_guard(arguments, about, expected_revision);
     let command = OpenViewCommand {
         view_id: arguments
             .get("view_id")
             .and_then(Value::as_str)
             .map(str::to_string),
         about: Some(about.to_string()),
-        expected_revision: arguments.get("expected_revision").and_then(Value::as_u64),
+        expected_revision,
         actor: "agent".to_string(),
         explanation: Some("opened a different about".to_string()),
     };
@@ -129,8 +129,12 @@ pub(crate) fn open(
         "clocks": Clock::NAMES,
         "semantic_zoom_ladder": SemanticZoom::NAMES,
     });
-    if viewer_url.is_none() {
-        extra["unhonored"] = json!([crate::viewer::unrendered_view_notice(viewer.err())]);
+    let unrendered = viewer_url
+        .is_none()
+        .then(|| unrendered_view_notice(viewer.err()));
+    let unhonored = unrendered.into_iter().chain(guard).collect::<Vec<_>>();
+    if !unhonored.is_empty() {
+        extra["unhonored"] = json!(unhonored);
     }
     Ok(state_result(&state, extra, viewer_url))
 }

@@ -29,6 +29,8 @@ the two entries alone do not complete that packet. Conversely, a complete page
 may offer a new history position because `selection.has_more:true`. That is a
 new selection, not a continuation of missing proof. Neither establishes that
 the evidence is sufficient for the question.
+`page.entries` sizes a page in records (entries and proof items);
+`limit.entries` bounds the selected entries.
 
 An empty selected interval says nothing about another clock or interval. Labels
 and related memories can guide a declared zoom; do not silently widen scope.

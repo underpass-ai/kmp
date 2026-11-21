@@ -7,6 +7,6 @@ argument's default. Call it before a verb's first use;
 refusal's `Help:` line names the topic to read.
 
 The cards ship inside the engine. The longer guide (`guide:kmp-agent`) is
-memory in the store: a direct read of one of its nodes seeds it once from the
-plugin assets installed for this binary. Without matching assets that read
-answers `GUIDE_UNAVAILABLE` with the explicit `kmp-mcp guide sync` repair.
+memory in the store, installed only by `kmp-mcp guide sync`: a read never
+writes the store. On a store without it a direct read of one of its nodes
+answers `GUIDE_UNAVAILABLE` with that repair.
