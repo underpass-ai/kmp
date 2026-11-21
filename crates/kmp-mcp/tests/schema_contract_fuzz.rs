@@ -352,7 +352,12 @@ fn refused_by_the_schema(tool: &str, reply: &Value) -> bool {
             .as_array()
             .into_iter()
             .flatten()
-            .any(|item| item["code"] == "SCHEMA_VIOLATION" || item["code"] == "UNKNOWN_ARGUMENT")
+            .any(|item| {
+                matches!(
+                    item["code"].as_str(),
+                    Some("SCHEMA_VIOLATION" | "UNKNOWN_ARGUMENT" | "CONTINUATION_ARGUMENT_DIFFERS")
+                )
+            })
 }
 
 /// Whether the refusal names the mutated field, a parent of it, or (for a
@@ -392,11 +397,9 @@ fn names_the_field(tool: &str, path: &[Step], reply: &Value) -> bool {
 }
 
 /// One call per documented rule that breaks only that rule, built from the
-/// baselines. `continuation-alone` is broken on every tool whose published
-/// schema takes a continuation, with the first argument a handle may not
-/// carry beside it.
-fn rule_cases(tools: &[Value]) -> Vec<(&'static str, String, Value)> {
-    let handle = format!("read_{}", "0".repeat(32));
+/// baselines. `continuation-alone` needs a real handle, so it is broken in the
+/// test itself (`continuation_alone_case`).
+fn rule_cases() -> Vec<(&'static str, String, Value)> {
     let link = json!({"from": "proj:w:a", "to": "proj:w:b", "rel": "supports",
         "why": "w", "evidence": "e"});
     let with = |tool: &str, change: &dyn Fn(&mut Value)| {
@@ -404,7 +407,7 @@ fn rule_cases(tools: &[Value]) -> Vec<(&'static str, String, Value)> {
         change(&mut call);
         (tool.to_string(), call)
     };
-    let mut cases = vec![
+    let cases = vec![
         (
             "write.one-form",
             with("kmp_write_memory", &|c| c["relations"] = json!([link])),
@@ -501,41 +504,43 @@ fn rule_cases(tools: &[Value]) -> Vec<(&'static str, String, Value)> {
             }),
         ),
     ];
-    for tool in tools {
-        let schema = &tool["inputSchema"];
-        if schema["if"] != json!({"required": ["continuation"]}) {
-            continue;
-        }
-        let name = tool["name"].as_str().expect("name");
-        // A valid value for an argument the handle cannot carry, so only the
-        // rule can refuse the call: the baseline's own, else the first enum
-        // value, else an empty object.
-        let base = baseline(name, 901).unwrap_or(json!({}));
-        let (extra, value) = schema["properties"]
-            .as_object()
-            .expect("properties")
-            .iter()
-            .filter(|(key, _)| !["continuation", "about", "actor", "page"].contains(&key.as_str()))
-            .find_map(|(key, property)| {
-                base.get(key)
-                    .cloned()
-                    .or_else(|| property["enum"].get(0).cloned())
-                    .or_else(|| {
-                        kinds_of(property)
-                            .contains(&"object".to_string())
-                            .then(|| json!({}))
-                    })
-                    .map(|value| (key.clone(), value))
-            })
-            .expect("an argument a handle cannot carry");
-        let mut call = json!({"continuation": handle});
-        call[extra.as_str()] = value;
-        cases.push(("continuation-alone", (name.to_string(), call)));
-    }
     cases
         .into_iter()
         .map(|(id, (tool, call))| (id, tool, call))
         .collect()
+}
+
+/// `continuation-alone`, broken with a real handle: an argument resent
+/// beside it with a value its call does not have. The same value would be
+/// accepted (`tests/continuation_bound_arguments.rs`).
+async fn continuation_alone_case(server: &KernelMcpServer) -> (&'static str, String, Value) {
+    let mut long = ingest("proj:a", "proj:a:long", "seed-long");
+    long["memory"]["entries"][0]["text"] =
+        json!("The deploy log records each retry of node 7. ".repeat(90));
+    let reply = send(server, call(7000, "kmp_ingest", &long)).await;
+    assert_ne!(reply["result"]["isError"], true, "seed: {reply}");
+    let first = send(
+        server,
+        call(
+            7001,
+            "kmp_inspect",
+            &json!({"about": "proj:a", "ref": "proj:a:long", "include": {"raw": true},
+                    "budget": {"max_bytes": 512}}),
+        ),
+    )
+    .await;
+    let handle =
+        first["result"]["structuredContent"]["next_actions"][0]["arguments"]["continuation"]
+            .clone();
+    assert!(
+        handle.is_string(),
+        "an inspect page returns a handle: {first}"
+    );
+    (
+        "continuation-alone",
+        "kmp_inspect".to_string(),
+        json!({"continuation": handle, "ref": "proj:a:e0"}),
+    )
 }
 
 /// Every rule id the guide cards document, read live from `kmp_guide`.
@@ -615,7 +620,8 @@ async fn every_call_the_published_schema_refuses_is_refused_at_the_boundary() {
         .find(|tool| tool["name"] == "kmp_guide")
         .expect("kmp_guide is listed");
     let documented = documented_rules(&server, guide).await;
-    let cases = rule_cases(&tools);
+    let mut cases = rule_cases();
+    cases.push(continuation_alone_case(&server).await);
     let mut covered = cases
         .iter()
         .map(|(id, _, _)| id.to_string())

@@ -1,7 +1,7 @@
 A rich link, local ones included, answers `status:needs_review` with
 `accepted:false`: nothing is written yet. Review the returned neighbourhood of
 stored memories; the review is yours, not a request for human approval. Then
-send the returned `continuation` alone (or with the same `about`/`actor`), or
+send the returned `continuation` alone (an argument beside it must keep its value), or
 correct the proposal and send it again. Resuming rechecks the context before
 commit, and context that changed meanwhile refreshes the review instead of
 writing. Never invent a date, alias or proof to pass.

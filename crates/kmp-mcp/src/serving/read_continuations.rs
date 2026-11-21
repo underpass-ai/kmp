@@ -1,4 +1,4 @@
-use serde_json::{Map, Value, json};
+use serde_json::{Value, json};
 
 use super::{KernelMcpServer, ToolError};
 use crate::continuation::{
@@ -12,10 +12,6 @@ fn continuation_error(error: &ContinuationError) -> ToolError {
         ContinuationError::Unavailable(message) => ToolError::backend(message),
     }
 }
-
-/// Arguments a caller may resend beside a handle: the call already binds
-/// them, so the same value is accepted and a different one is refused.
-const BOUND_ALONGSIDE: [&str; 2] = ["about", "actor"];
 
 impl KernelMcpServer {
     /// The store of retained continuations. `require_existing` resolves a
@@ -89,7 +85,7 @@ impl KernelMcpServer {
             ));
         }
         crate::contract::reject_invalid_arguments(name, &call.arguments)?;
-        alongside.check_bound(&call.arguments)?;
+        alongside.check_bound(name, &call.arguments)?;
         let mut arguments = call.arguments;
         if alongside.repeat_core {
             // Rehydrate once: the page it returns proposes incremental pages again.
@@ -206,63 +202,80 @@ fn continues(tool: &str, arguments: &Value) -> bool {
     }
 }
 
-/// What a caller sent beside a handle. A handle stands for the whole call:
-/// Wake/Ask also accept `page.repeat_core`, which resends the core of that
-/// same page, and any verb accepts an argument the call already binds when
-/// it carries the same value.
+/// What a caller sent beside a handle. A handle stands for the whole call it
+/// retained, so any argument of that call may be resent beside it with the
+/// same value (an agent often repeats the `about`, `move` or `page.entries`
+/// of its first call), and is then ignored. A value the call does not carry,
+/// or carries differently, would be a different read and is refused, naming
+/// the argument. Wake/Ask also accept `page.repeat_core`, which resends the
+/// core of that same page.
 struct Alongside {
     repeat_core: bool,
-    bound: Map<String, Value>,
+    /// Each resent argument by its path (`move`, `page.entries`).
+    sent: Vec<(String, Value)>,
 }
 
 impl Alongside {
     fn read(tool: &str, arguments: &Value) -> Result<Self, ToolError> {
-        let alone = || {
-            ToolError::invalid_argument(
-                "Use continuation alone on its returned verb (Wake and Ask also accept page.repeat_core); other arguments start a different call — send the original arguments with page.cursor instead.",
-            )
-        };
-        let object = arguments.as_object().ok_or_else(alone)?;
+        let object = arguments
+            .as_object()
+            .ok_or_else(|| ToolError::invalid_argument("tool arguments must be an object"))?;
         let mut repeat_core = false;
-        let mut bound = Map::new();
+        let mut sent = Vec::new();
         for (key, value) in object {
             match key.as_str() {
                 "continuation" => {}
-                "page" if matches!(tool, "kmp_wake" | "kmp_ask") => {
-                    let flags = value.as_object().ok_or_else(alone)?;
-                    if flags.len() != 1 || !flags.contains_key("repeat_core") {
-                        return Err(alone());
+                "page" => {
+                    let page = value
+                        .as_object()
+                        .ok_or_else(|| ToolError::invalid_argument("page must be an object"))?;
+                    for (field, value) in page {
+                        if field == "repeat_core" && matches!(tool, "kmp_wake" | "kmp_ask") {
+                            repeat_core = value.as_bool().ok_or_else(|| {
+                                ToolError::invalid_argument("page.repeat_core must be a boolean")
+                            })?;
+                        } else {
+                            sent.push((format!("page.{field}"), value.clone()));
+                        }
                     }
-                    repeat_core = flags["repeat_core"].as_bool().ok_or_else(|| {
-                        ToolError::invalid_argument("page.repeat_core must be a boolean")
-                    })?;
                 }
-                key if BOUND_ALONGSIDE.contains(&key) => {
-                    bound.insert(key.to_string(), value.clone());
-                }
-                _ => return Err(alone()),
+                _ => sent.push((key.clone(), value.clone())),
             }
         }
-        Ok(Self { repeat_core, bound })
+        Ok(Self { repeat_core, sent })
     }
 
     /// Every argument resent beside the handle must equal the one the call
     /// was retained with; a different value would be a different call.
-    fn check_bound(&self, retained: &Value) -> Result<(), ToolError> {
-        for (key, sent) in &self.bound {
-            match retained.get(key) {
-                Some(kept) if kept == sent => {}
-                Some(kept) => {
-                    return Err(ToolError::invalid_argument(format!(
-                        "this continuation is bound to {key} {kept}, not {sent}: drop {key} to continue, or send the original call to start another"
-                    )));
-                }
-                None => {
-                    return Err(ToolError::invalid_argument(format!(
-                        "this continuation carries no {key}: drop {key} to continue, or send the original call to start another"
-                    )));
-                }
+    fn check_bound(&self, tool: &str, retained: &Value) -> Result<(), ToolError> {
+        for (path, sent) in &self.sent {
+            let kept = match path.strip_prefix("page.") {
+                Some(field) => retained.get("page").and_then(|page| page.get(field)),
+                None => retained.get(path.as_str()),
+            };
+            if kept == Some(sent) {
+                continue;
             }
+            let bound = match kept {
+                Some(kept) => format!("this continuation is bound to {kept}"),
+                None => "this continuation does not carry it".to_string(),
+            };
+            let detail = format!("`{path}` is {sent} here, but {bound}.");
+            let reason = format!(
+                "{detail} Drop `{path}`, or send the original arguments with `page.cursor`, \
+                 which starts a different read."
+            );
+            return Err(ToolError::invalid_argument(
+                crate::contract::cross_field_rule::refusal_wording(
+                    tool,
+                    "continuation-alone",
+                    &detail,
+                ),
+            )
+            .with_feedback(
+                json!({"code":"CONTINUATION_ARGUMENT_DIFFERS","severity":"error",
+                "field":path,"rule":"continuation-alone","reason":reason,"action":null}),
+            ));
         }
         Ok(())
     }

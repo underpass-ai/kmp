@@ -1,11 +1,14 @@
 """kmp.bench.question.v1: validation, round trip, first call, digests and privacy."""
 import copy
+import json
 from pathlib import Path
 import tempfile
 import unittest
 
 from ..domain import question as q
 from ..domain.errors import PrivacyViolation, QuestionInvalid
+
+REPO = Path(__file__).resolve().parents[4]
 
 A = 'synth:mono-a000'
 
@@ -233,11 +236,40 @@ class ToolTest(unittest.TestCase):
                                      'from': 'service:billing:b02', 'to': 'service:billing:b03',
                                      'max_hops': 6})
 
+    def test_first_call_leaves_out_what_1_0_retired(self):
+        # A frozen question may still carry a field the read ignored; 1.0 refuses it.
+        asked = q.Question.from_dict(ask(arguments={'depth': 3, 'budget': {
+            'tokens': 2048, 'depth': 2, 'detail': 'balanced', 'max_entries': 5}}))
+        _, arguments = asked.first_call(max_bytes=4096)
+        self.assertEqual(arguments['budget'], {'detail': 'balanced', 'max_entries': 5, 'max_bytes': 4096})
+        self.assertNotIn('depth', arguments)
+        trace = q.current_arguments('kmp_trace', {'from': 'a', 'to': 'b', 'goal': 'g', 'role': 'r',
+                                                  'budget': {'max_bytes': 900, 'depth': 1, 'tokens': 9}})
+        self.assertEqual(trace, {'from': 'a', 'to': 'b', 'budget': {'max_bytes': 900}})
+        # kmp_time honoured its top-level depth: it moves into the budget.
+        time = q.current_arguments('kmp_time', {'move': 'rewind', 'depth': 4,
+                                                'limit': {'entries': 3, 'tokens': 100}})
+        self.assertEqual(time, {'move': 'rewind', 'budget': {'depth': 4}, 'limit': {'entries': 3}})
+        self.assertEqual(q.current_arguments('kmp_curate', {'mode': 'paths', 'budget': {'max_bytes': 1}}),
+                         {'mode': 'paths'})
+
+    def test_budget_fields_are_the_published_contract(self):
+        listed = json.loads((REPO / 'crates/kmp-mcp/fixtures/contract/tools_list.json').read_text())
+        schemas = {tool['name']: tool['inputSchema'] for tool in listed['tools']}
+        for tool, fields in q.BUDGET_FIELDS.items():
+            declared = schemas[tool]['properties'].get('budget', {}).get('properties', {})
+            self.assertEqual(sorted(declared), sorted(fields), tool)
+        for tool, names in q.RETIRED_ARGUMENTS.items():
+            self.assertFalse(set(names) & set(schemas[tool]['properties']), tool)
+        self.assertNotIn('depth', schemas['kmp_time']['properties'])
+        self.assertNotIn('tokens', schemas['kmp_time']['properties']['limit']['properties'])
+
     def test_ask_first_call_budget_rules(self):
         pinned = q.Question.from_dict(ask(asked_as='¿Qué válvula falló?', dimensions={'scope': 'current_about'},
                                           arguments={'depth': 3, 'budget': {'tokens': 2048, 'max_bytes': 512}}))
         tool, arguments = pinned.first_call(max_bytes=10000, default_budget={'max_entries': 5})
-        self.assertEqual(arguments['budget'], {'tokens': 2048, 'max_bytes': 10000})
+        self.assertEqual(arguments['budget'], {'max_bytes': 10000})
+        self.assertNotIn('depth', arguments)
         self.assertEqual(arguments['asked_as'], '¿Qué válvula falló?')
         self.assertEqual(arguments['dimensions'], {'scope': 'current_about'})
         self.assertEqual(pinned.arguments['budget']['max_bytes'], 512, 'first_call must not mutate')

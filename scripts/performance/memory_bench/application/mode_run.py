@@ -153,6 +153,9 @@ def run_mode(request, log=sys.stderr):
             results.append(public_section.run(specs, mode, public, request.private_root))
         print(f'memory_bench {mode.name}: {results[-1].name} {results[-1].status} '
               f'{results[-1].verdict or ""} {results[-1].seconds:.1f}s', file=log, flush=True)
+        if results[-1].status == sections.FAILED:
+            print(f'memory_bench {mode.name}: {results[-1].name} FAILED: {results[-1].reason}',
+                  file=log, flush=True)
     summary = summarize(request, mode, modes, specs, results, started_at, time.perf_counter() - started)
     paths = write_summary(summary, private or public)
     return summary, paths, results

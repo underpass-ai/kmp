@@ -77,8 +77,8 @@ pub(crate) fn all() -> &'static [CrossFieldRule] {
                 "continuation-alone",
                 tool,
                 "continuation",
-                "A `continuation` is sent alone, exactly as returned; beside it only the `about` or `actor` it already binds (Wake and Ask also take `page`).",
-                "Send `{\"continuation\":\"…\"}` alone; to change an argument, send the original call again.",
+                "A `continuation` stands for the call it was returned with: beside it, an argument is accepted only with the value that call already has (Wake and Ask also take `page.repeat_core`).",
+                "Drop the argument this refusal names and send the continuation alone; to change it, send the original arguments with `page.cursor`, which starts a different read.",
             ));
         }
         rules.extend([
