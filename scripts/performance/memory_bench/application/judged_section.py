@@ -49,6 +49,7 @@ FILE = 'judged.json'
 TOLERANCE = 1e-4 + 1e-9  # the recorded TSVs keep 4 decimals (judged_retrieval.compare_to_recorded)
 EXACT = ('cases', 'all_positives', 'guarded_cases')
 RECORDED = {('retrieval', 'plain'): judged_retrieval.DEFAULT_BASELINE,
+            ('retrieval', 'shipped-bridge'): judged_retrieval.SHIPPED_BRIDGE_BASELINE,
             ('jev', 'replay'): judged_jev.DEFAULT_BASELINE}
 
 
@@ -105,6 +106,12 @@ def _sha(path):
 def _env(spec, arm, repo_root):
     env = {'KMP_LEXICAL_BRIDGE': str(Path(repo_root) / judged_retrieval.DEFAULT_BRIDGE)}
     variant_env = spec.variant.env_map()
+    if arm.arm == 'shipped-bridge':
+        # The table `kmp-mcp setup` installs, whatever the variant names: the arm
+        # holds the stress cases to what every user runs (judged_retrieval).
+        env.update({k: v for k, v in variant_env.items() if k not in JEV_ENV})
+        env['KMP_LEXICAL_BRIDGE'] = str(Path(repo_root) / judged_retrieval.SHIPPED_BRIDGE)
+        return env
     if arm.arm == 'plain':
         env.update(variant_env)
         if 'KMP_TYPESAFE_CASSETTE' in variant_env:
@@ -117,7 +124,11 @@ def _env(spec, arm, repo_root):
 
 
 def _cases_path(arm, repo_root):
-    return Path(repo_root) / (judged_jev.DEFAULT_CASES if arm.corpus == 'jev' else judged_retrieval.DEFAULT_CASES)
+    if arm.corpus == 'jev':
+        return Path(repo_root) / judged_jev.DEFAULT_CASES
+    if arm.arm == 'shipped-bridge':
+        return Path(repo_root) / judged_retrieval.SHIPPED_BRIDGE_CASES
+    return Path(repo_root) / judged_retrieval.DEFAULT_CASES
 
 
 def cache_key(spec, arm, env, extra_files, repo_root):
@@ -136,7 +147,7 @@ def _measure(spec, arm, env, extra_files, work, repo_root):
         scores = judged_jev.run_collection(stores, judged_jev.load_cases(_cases_path(arm, repo_root)))
         rows = scores.row_map()
     else:
-        rerank = None if arm.arm == 'plain' else arm.arm
+        rerank = None if arm.arm in ('plain', 'shipped-bridge') else arm.arm
         scored = judged_retrieval.run_collection(stores, judged_retrieval.load_cases(_cases_path(arm, repo_root)),
                                                  rerank=rerank)
         rows = scored.row_map()
@@ -149,7 +160,7 @@ def measure_arm(spec, arm, layout, repo_root=REPO_ROOT, use_cache=True):
     Cached under `reports/<key>/judged.json`; `use_cache=False` (an A/A replica)
     measures now and writes nothing."""
     env = _env(spec, arm, repo_root)
-    extra_files = tuple(spec.variant.store_files) if arm.arm == 'plain' else ()
+    extra_files = tuple(spec.variant.store_files) if arm.arm in ('plain', 'shipped-bridge') else ()
     key = cache_key(spec, arm, env, extra_files, repo_root)
     target = layout.report(key) / FILE
     if use_cache and target.is_file():
