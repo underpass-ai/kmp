@@ -152,35 +152,39 @@ async fn an_omitted_relation_confidence_is_recorded_as_unknown_never_high() {
     )
     .await;
     assert_eq!(written["isError"], false, "{written}");
-    let receipt = receipt(&server, &written).await;
-    let link = &receipt["canonical_memory"]["relations"][0];
-    assert_eq!(link["rel"], "follows", "{receipt}");
-    assert_eq!(link["confidence"], "unknown", "{receipt}");
+    let first = receipt(&server, &written).await;
+    let link = &first["canonical_memory"]["relations"][0];
+    assert_eq!(link["rel"], "follows", "{first}");
+    assert_eq!(link["confidence"], "unknown", "{first}");
 
-    // The schema says so too.
-    let tools = rpc(
+    // The contract says so too: tools/list leaves defaults to the guide
+    // card, which serves them in the argument's line.
+    let card = call(&server, "kmp_guide", json!({"topic":"relations"})).await;
+    let text = card["structuredContent"].to_string();
+    assert!(text.contains("unknown"), "{card}");
+
+    // The relation-only shape records the same default.
+    let linked = call(
         &server,
-        json!({"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}),
+        "kmp_write_memory",
+        json!({"about":"proj:honest","actor":"tester","idempotency_key":"relation-only",
+               "observed_at":"2026-11-20T12:00:00Z",
+               "relations":[{"from": first["canonical_memory"]["entries"][0]["id"],
+                              "to": first["canonical_memory"]["entries"][1]["id"],
+                              "rel":"follows","class":"procedural",
+                              "why":"The retry follows the failure.","evidence":"R2 follows R1."}]}),
     )
     .await;
-    let write = tools["result"]["tools"]
+    assert_eq!(linked["isError"], false, "{linked}");
+    let linked_receipt = receipt(&server, &linked).await;
+    let relation = linked_receipt["canonical_memory"]["relations"]
         .as_array()
-        .expect("tools")
+        .expect("relations")
         .iter()
-        .find(|tool| tool["name"] == "kmp_write_memory")
-        .expect("writer")
-        .clone();
-    let properties = &write["inputSchema"]["properties"];
-    assert_eq!(
-        properties["memories"]["items"]["properties"]["connect_to"]["items"]["properties"]["confidence"]
-            ["default"],
-        "unknown"
-    );
-    assert_eq!(
-        properties["relations"]["items"]["properties"]["confidence"]["default"],
-        "unknown"
-    );
-    assert_eq!(properties["source_kind"]["default"], "agent");
+        .find(|relation| relation["rel"] == "follows")
+        .cloned()
+        .expect("the declared link");
+    assert_eq!(relation["confidence"], "unknown", "{linked_receipt}");
 }
 
 #[tokio::test]

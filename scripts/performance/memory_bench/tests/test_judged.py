@@ -480,6 +480,7 @@ class ExternalScorecardTest(unittest.TestCase):
 
         self.assertEqual(Path('/x/relate'), ext.build('relate_kmp_scorecard', ROOT, runner, release=True))
         self.assertEqual('--release', seen[0][2])
+        self.assertIn('kmp-mcp/eval-hooks', seen[0])  # the cassette needs the hooks
         with self.assertRaises(ext.ScorecardFailed):
             ext.build('x', ROOT, lambda *a, **k: SimpleNamespace(returncode=1, stdout='', stderr='boom'))
         with self.assertRaises(ext.ScorecardFailed):

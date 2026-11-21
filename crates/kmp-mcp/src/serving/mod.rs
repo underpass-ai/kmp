@@ -19,7 +19,6 @@ mod guide_dispatch;
 #[cfg(test)]
 pub(crate) use guide_dispatch::guide_error_codes;
 mod guide_repair;
-pub(crate) mod guide_seed;
 pub(crate) mod json_rpc;
 pub(crate) mod judgement_answer;
 pub(crate) mod judgement_failure;

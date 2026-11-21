@@ -92,7 +92,7 @@ fn assert_lean_page_sections(body: &Value) {
 fn wake_arguments() -> Value {
     json!({"about":ABOUT,"intent":"review the export",
         "dimensions":{"selectors":[{"key":"component","op":"in","values":["export"]}]},
-        "budget":{"max_bytes":4000,"detail":"full","depth":3}})
+        "budget":{"max_bytes":4000,"detail":"full"}})
 }
 
 #[tokio::test]

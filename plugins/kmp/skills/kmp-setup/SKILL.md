@@ -79,8 +79,9 @@ Thai are not segmented by word yet; storage remains byte-exact. Upgrades must
 leave the policy file intact.
 
 Setup and update must not select or write a memory store. The guide needs no
-step of its own: the first guide read on a fresh embedded store seeds it from
-the installed assets that match the engine. Run the explicit sync only when the
+step of its own: `kmp_guide` serves every topic from the engine, and a read
+never writes the store. Run the explicit sync, which installs the longer guide
+into the store for `kmp_inspect`, only when the
 user asks to refresh the guides, for a shared gRPC kernel, or when a guide read
 reports `GUIDE_UNAVAILABLE` and its `searched` lines show no matching assets:
 

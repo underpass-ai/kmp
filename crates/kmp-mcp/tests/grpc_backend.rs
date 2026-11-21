@@ -43,7 +43,6 @@ async fn grpc_backend_maps_kernel_memory_service_responses_to_kmp_tools() {
             "about": "node:root",
             "role": "implementer",
             "intent": "continue the live incident",
-            "depth": 3,
             "budget": {
                 "detail": "full",
                 "max_bytes": 4000

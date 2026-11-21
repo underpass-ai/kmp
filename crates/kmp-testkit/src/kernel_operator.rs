@@ -66,11 +66,7 @@ pub fn kernel_operator_allowed_full_tools() -> Vec<String> {
 
 pub fn kernel_operator_is_bounded_tool_call(tool: &str, arguments: &Value) -> bool {
     match tool {
-        "kmp_wake" => {
-            path_non_empty_string(arguments, &["about"])
-                && optional_limit(arguments, &["budget", "depth"], 8)
-                && optional_limit(arguments, &["depth"], 8)
-        }
+        "kmp_wake" => path_non_empty_string(arguments, &["about"]),
         KERNEL_OPERATOR_TIME_TOOL => match kernel_operator_time_move(tool, arguments) {
             Some("near") => {
                 positive_limit(arguments, &["limit", "entries"], 64)
@@ -88,7 +84,6 @@ pub fn kernel_operator_is_bounded_tool_call(tool: &str, arguments: &Value) -> bo
         },
         "kmp_relate" => {
             path_non_empty_string(arguments, &["about"])
-                && optional_limit(arguments, &["budget", "depth"], 8)
                 && optional_limit(arguments, &["page", "entries"], 256)
         }
         "kmp_trace" => {
@@ -105,7 +100,7 @@ pub fn kernel_operator_is_bounded_tool_call(tool: &str, arguments: &Value) -> bo
                     .and_then(Value::as_bool)
                     .is_some_and(|raw| !raw)
         }
-        "kmp_ask" => optional_limit(arguments, &["budget", "depth"], 8),
+        "kmp_ask" => path_non_empty_string(arguments, &["question"]),
         "kmp_write_memory" => bounded_write_memory(arguments),
         "kmp_ingest" => bounded_ingest(arguments),
         _ => false,
@@ -252,7 +247,7 @@ fn validate_wake_arguments(arguments: &Value) -> Result<(), String> {
         arguments,
         "action.arguments",
         &["about"],
-        &["role", "intent", "dimensions", "depth", "budget"],
+        &["role", "intent", "dimensions", "budget"],
     )?;
     required_non_empty_string(arguments, "about", "action.arguments")?;
     validate_optional_non_empty_string(arguments, "role", "action.arguments")?;
@@ -260,7 +255,6 @@ fn validate_wake_arguments(arguments: &Value) -> Result<(), String> {
     if let Some(dimensions) = arguments.get("dimensions") {
         validate_dimensions(dimensions, "action.arguments.dimensions")?;
     }
-    validate_optional_positive_integer(arguments, "depth", "action.arguments")?;
     if let Some(budget) = arguments.get("budget") {
         validate_budget(budget, "action.arguments.budget")?;
     }
@@ -272,7 +266,7 @@ fn validate_ask_arguments(arguments: &Value) -> Result<(), String> {
         arguments,
         "action.arguments",
         &["about", "answer_policy", "dimensions", "question"],
-        &["budget", "depth"],
+        &["budget"],
     )?;
     required_non_empty_string(arguments, "about", "action.arguments")?;
     validate_answer_policy(required_string(
@@ -288,7 +282,6 @@ fn validate_ask_arguments(arguments: &Value) -> Result<(), String> {
     if let Some(budget) = arguments.get("budget") {
         validate_budget(budget, "action.arguments.budget")?;
     }
-    validate_optional_positive_integer(arguments, "depth", "action.arguments")?;
     Ok(())
 }
 
@@ -1453,8 +1446,7 @@ mod tests {
                 "arguments": {
                     "about": "about:1",
                     "intent": "continue investigation",
-                    "dimensions": { "mode": "only", "include": ["agent"], "scope": "abouts", "abouts": ["about:2"] },
-                    "budget": { "depth": 2 }
+                    "dimensions": { "mode": "only", "include": ["agent"], "scope": "abouts", "abouts": ["about:2"] }
                 }
             }),
             json!({

@@ -47,7 +47,6 @@
           "about": "question:parity",
           "answer_policy": "evidence_or_unknown",
           "budget": {
-            "depth": 2,
             "detail": "compact",
             "max_bytes": "<stamped at call time>"
           },

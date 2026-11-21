@@ -236,8 +236,9 @@ inside, reads supersession and expiry as they stood then, and an `UNKNOWN`
 names the nearest match outside the span.
 
 Setup and update install the versioned guide assets but never select or write
-a memory store. The first guide read seeds them into the store it was asked
-about: `guide:kmp-agent` explains every live verb to the agent and `guide:kmp`
+a memory store, and no read writes one: `kmp_guide` serves every topic from the
+engine, and `/kmp:guide` installs the longer guides into a store:
+`guide:kmp-agent` explains every live verb to the agent and `guide:kmp`
 is the short human path. `/kmp:guide` opens the human path and forces an
 explicit, deterministic refresh when one is needed. Check the selected store
 before synchronizing explicitly.

@@ -25,7 +25,7 @@ pub(crate) fn definition() -> Value {
                 "dimensions": dimensions_schema(),
                 "interval": interval_schema(),
                 "axis": recall_axis_schema(),
-                "budget": budget_schema(&[BudgetField::MaxBytes, BudgetField::Depth(2)]),
+                "budget": budget_schema(&[BudgetField::MaxBytes]),
                 "page": page_schema("Maximum number of items from facts, declared, coordinate, tensions and proposed, in that order, to return in this page.")
             }
         }),

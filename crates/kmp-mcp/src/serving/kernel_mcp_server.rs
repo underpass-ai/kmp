@@ -58,11 +58,6 @@ pub struct KernelMcpServer {
     /// `None` inside once it could not be, so no call retries it.
     pub(super) telemetry_salt:
         std::sync::OnceLock<Option<Arc<crate::serving::telemetry::FingerprintSalt>>>,
-    /// Whether this session already tried to seed the installed guide into
-    /// its store, taken before the attempt so two reads cannot both seed.
-    pub(super) guide_seed_attempted: AtomicBool,
-    /// What that attempt did, for the repair a later failed read carries.
-    pub(super) guide_seed: std::sync::OnceLock<crate::serving::guide_seed::GuideSeedOutcome>,
 }
 
 /// The canned-answer server the test suite drives. Debug and `eval-hooks`
@@ -162,8 +157,6 @@ impl KernelMcpServer {
             session: crate::serving::mcp_session::McpSession::new(),
             telemetry_salt_path: None,
             telemetry_salt: std::sync::OnceLock::new(),
-            guide_seed_attempted: AtomicBool::new(false),
-            guide_seed: std::sync::OnceLock::new(),
         }
     }
 

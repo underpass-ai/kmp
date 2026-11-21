@@ -866,9 +866,6 @@
           },
           "budget": {
             "properties": {
-              "depth": {
-                "type": "integer"
-              },
               "detail": {
                 "enum": [
                   "compact",
@@ -882,18 +879,12 @@
               },
               "max_entries": {
                 "type": "integer"
-              },
-              "tokens": {
-                "type": "integer"
               }
             },
             "type": "object"
           },
           "continuation": {
             "type": "string"
-          },
-          "depth": {
-            "type": "integer"
           },
           "dimensions": {
             "properties": {
@@ -1064,9 +1055,6 @@
           },
           "budget": {
             "properties": {
-              "depth": {
-                "type": "integer"
-              },
               "detail": {
                 "enum": [
                   "compact",
@@ -1080,18 +1068,12 @@
               },
               "max_entries": {
                 "type": "integer"
-              },
-              "tokens": {
-                "type": "integer"
               }
             },
             "type": "object"
           },
           "continuation": {
             "type": "string"
-          },
-          "depth": {
-            "type": "integer"
           },
           "dimensions": {
             "properties": {
@@ -1236,24 +1218,7 @@
           },
           "budget": {
             "properties": {
-              "depth": {
-                "type": "integer"
-              },
-              "detail": {
-                "enum": [
-                  "compact",
-                  "balanced",
-                  "full"
-                ],
-                "type": "string"
-              },
               "max_bytes": {
-                "type": "integer"
-              },
-              "max_entries": {
-                "type": "integer"
-              },
-              "tokens": {
                 "type": "integer"
               }
             },
@@ -1444,9 +1409,6 @@
               },
               "max_entries": {
                 "type": "integer"
-              },
-              "tokens": {
-                "type": "integer"
               }
             },
             "type": "object"
@@ -1591,9 +1553,6 @@
             "properties": {
               "entries": {
                 "type": "integer"
-              },
-              "tokens": {
-                "type": "integer"
               }
             },
             "type": "object"
@@ -1688,24 +1647,7 @@
           },
           "budget": {
             "properties": {
-              "depth": {
-                "type": "integer"
-              },
-              "detail": {
-                "enum": [
-                  "compact",
-                  "balanced",
-                  "full"
-                ],
-                "type": "string"
-              },
               "max_bytes": {
-                "type": "integer"
-              },
-              "max_entries": {
-                "type": "integer"
-              },
-              "tokens": {
                 "type": "integer"
               }
             },
@@ -1741,9 +1683,6 @@
               }
             },
             "type": "object"
-          },
-          "role": {
-            "type": "string"
           },
           "search": {
             "properties": {
@@ -2141,10 +2080,8 @@
         "anthropic/maxResultSizeChars": 10000
       },
       "annotations": {
-        "destructiveHint": false,
-        "idempotentHint": true,
         "openWorldHint": false,
-        "readOnlyHint": false
+        "readOnlyHint": true
       },
       "description": "Read one stored memory or write receipt in full, with its evidence and links, before relying on it. Guide topic: audit.",
       "inputSchema": {
@@ -2518,31 +2455,6 @@
               "validity"
             ],
             "type": "string"
-          },
-          "budget": {
-            "properties": {
-              "depth": {
-                "type": "integer"
-              },
-              "detail": {
-                "enum": [
-                  "compact",
-                  "balanced",
-                  "full"
-                ],
-                "type": "string"
-              },
-              "max_bytes": {
-                "type": "integer"
-              },
-              "max_entries": {
-                "type": "integer"
-              },
-              "tokens": {
-                "type": "integer"
-              }
-            },
-            "type": "object"
           },
           "dimensions": {
             "properties": {

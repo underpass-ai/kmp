@@ -1675,9 +1675,6 @@
           },
           "budget": {
             "properties": {
-              "depth": {
-                "type": "integer"
-              },
               "detail": {
                 "enum": [
                   "compact",
@@ -1691,18 +1688,12 @@
               },
               "max_entries": {
                 "type": "integer"
-              },
-              "tokens": {
-                "type": "integer"
               }
             },
             "type": "object"
           },
           "continuation": {
             "type": "string"
-          },
-          "depth": {
-            "type": "integer"
           },
           "dimensions": {
             "properties": {
@@ -2279,9 +2270,6 @@
           },
           "budget": {
             "properties": {
-              "depth": {
-                "type": "integer"
-              },
               "detail": {
                 "enum": [
                   "compact",
@@ -2295,18 +2283,12 @@
               },
               "max_entries": {
                 "type": "integer"
-              },
-              "tokens": {
-                "type": "integer"
               }
             },
             "type": "object"
           },
           "continuation": {
             "type": "string"
-          },
-          "depth": {
-            "type": "integer"
           },
           "dimensions": {
             "properties": {
@@ -2692,24 +2674,7 @@
           },
           "budget": {
             "properties": {
-              "depth": {
-                "type": "integer"
-              },
-              "detail": {
-                "enum": [
-                  "compact",
-                  "balanced",
-                  "full"
-                ],
-                "type": "string"
-              },
               "max_bytes": {
-                "type": "integer"
-              },
-              "max_entries": {
-                "type": "integer"
-              },
-              "tokens": {
                 "type": "integer"
               }
             },
@@ -2831,7 +2796,7 @@
             "type": "array"
           },
           "facts": {
-            "description": "The entries of the selected abouts within the selection: `ref`, `about`, `kind`, `text` verbatim, `coordinates`, and `state` — `current`, `superseded` (with `superseded_by`) or `expired` (with `valid_until`) — as the lifecycle stood at the end of the interval.",
+            "description": "The entries of the selected abouts within the selection: `ref`, `about`, `kind`, `text` verbatim, `coordinates`, and `state` — `current`, `superseded` (with `superseded_by`), `expired` (with `valid_until`) or `not_yet_in_force` (its `valid_from` still ahead) — as the lifecycle stood at the end of the interval.",
             "type": "array"
           },
           "next_actions": {
@@ -3056,9 +3021,6 @@
               },
               "max_entries": {
                 "type": "integer"
-              },
-              "tokens": {
-                "type": "integer"
               }
             },
             "type": "object"
@@ -3202,9 +3164,6 @@
           "limit": {
             "properties": {
               "entries": {
-                "type": "integer"
-              },
-              "tokens": {
                 "type": "integer"
               }
             },
@@ -3628,24 +3587,7 @@
           },
           "budget": {
             "properties": {
-              "depth": {
-                "type": "integer"
-              },
-              "detail": {
-                "enum": [
-                  "compact",
-                  "balanced",
-                  "full"
-                ],
-                "type": "string"
-              },
               "max_bytes": {
-                "type": "integer"
-              },
-              "max_entries": {
-                "type": "integer"
-              },
-              "tokens": {
                 "type": "integer"
               }
             },
@@ -3681,9 +3623,6 @@
               }
             },
             "type": "object"
-          },
-          "role": {
-            "type": "string"
           },
           "search": {
             "properties": {
@@ -4336,10 +4275,8 @@
         "anthropic/maxResultSizeChars": 10000
       },
       "annotations": {
-        "destructiveHint": false,
-        "idempotentHint": true,
         "openWorldHint": false,
-        "readOnlyHint": false
+        "readOnlyHint": true
       },
       "description": "Read one stored memory or write receipt in full, with its evidence and links, before relying on it. Guide topic: audit.",
       "inputSchema": {
@@ -5228,31 +5165,6 @@
             ],
             "type": "string"
           },
-          "budget": {
-            "properties": {
-              "depth": {
-                "type": "integer"
-              },
-              "detail": {
-                "enum": [
-                  "compact",
-                  "balanced",
-                  "full"
-                ],
-                "type": "string"
-              },
-              "max_bytes": {
-                "type": "integer"
-              },
-              "max_entries": {
-                "type": "integer"
-              },
-              "tokens": {
-                "type": "integer"
-              }
-            },
-            "type": "object"
-          },
           "dimensions": {
             "properties": {
               "abouts": {
@@ -5751,7 +5663,10 @@
           },
           "jev": {
             "description": "review: model, requests and input tokens spent; null when Jev was not used.",
-            "type": "object"
+            "type": [
+              "object",
+              "null"
+            ]
           },
           "labels": {
             "additionalProperties": false,

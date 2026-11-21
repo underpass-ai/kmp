@@ -2400,8 +2400,7 @@ fn an_ask_across_abouts_names_the_abouts_it_read_and_the_ones_that_were_empty() 
         let mut arguments = serde_json::json!({
             "about": "project:alpha",
             "question": "Which breaker tripped during the north outage?",
-            "answer_policy": "evidence_or_unknown",
-            "depth": 3
+            "answer_policy": "evidence_or_unknown"
         });
         for (key, value) in extra.as_object().expect("extra arguments") {
             arguments[key] = value.clone();
@@ -2990,7 +2989,7 @@ fn an_equivalence_declared_from_a_relate_proposal_is_the_one_edge_that_crosses_a
     let asked = call(
         9,
         "kmp_ask",
-        serde_json::json!({"about": "service:alpha", "question": "What froze the rollout during the payments audit?", "answer_policy": "best_effort", "dimensions": both, "depth": 3}),
+        serde_json::json!({"about": "service:alpha", "question": "What froze the rollout during the payments audit?", "answer_policy": "best_effort", "dimensions": both}),
     );
     let evidence = asked["structuredContent"]["proof"]["evidence"]
         .as_array()

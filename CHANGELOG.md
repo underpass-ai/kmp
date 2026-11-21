@@ -142,16 +142,22 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
   `kmp-adapter-embedded`.
 - **Local commands refuse a remote kernel.** With `KMP_KERNEL_GRPC_ENDPOINT`
   set (or `KMP_MCP_BACKEND=grpc`), `export`, `import`, `document`,
-  `snapshot`, `summaries`, `memories`, `demo`, `viewer`, `guide` and
-  `consolidation` exit 2 saying they work on the local store, instead of
+  `snapshot`, `summaries`, `memories`, `demo`, `viewer` and `consolidation` exit 2 saying they work on the local store, instead of
   answering from a store the session never uses; `info` and `doctor` say the
   memory is not on this machine.
 - **Budgets declare only what each read honours.** `budget.tokens` (echoed,
   never filtering) is gone from every tool, and `limit.tokens` from
-  `kmp_time`. `kmp_trace.budget` keeps only `max_bytes`; `kmp_relate.budget`
-  keeps `max_bytes` and `depth`; `kmp_curate` has no `budget`. The
+  `kmp_time`. `depth` (top-level and `budget.depth`) is gone from `kmp_wake`,
+  `kmp_ask` and `kmp_relate`: every entry sits one hop from its scope, and
+  1, 2 and 25 answered the same, across abouts and under a dimension filter;
+  `kmp_time` keeps it. `kmp_trace.budget` keeps only `max_bytes`,
+  `kmp_relate.budget` only `max_bytes`, and `kmp_curate` has no `budget`. The
   `kmp_trace.role` alias of `goal` is gone. Each is refused as an unknown
-  argument.
+  argument; returned actions no longer repeat them.
+- **A read never writes the store.** `kmp_inspect` of a guide node the store
+  lacks answers `GUIDE_UNAVAILABLE` with the repair instead of seeding the
+  guide; `kmp_guide` serves every topic from the engine and `kmp-mcp guide
+  sync` installs the longer guide. `kmp_inspect` is now `readOnlyHint: true`.
 - **An omitted relation confidence is recorded as `unknown`**, not `high`,
   on `kmp_write_memory` (`memories[].connect_to[]`, `relations[]`) and
   `kmp_curate` apply; the schema declares `default: "unknown"`. Under

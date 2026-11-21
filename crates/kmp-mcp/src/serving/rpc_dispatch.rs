@@ -324,25 +324,18 @@ impl KernelMcpServer {
             .as_ref()
             .map(|client| (client.name.as_str(), client.version.as_str()));
         let mut outcome = self.backend.call_tool_for(name, arguments, caller).await;
-        // A guide node a human or an agent reads directly is seeded the same
-        // way kmp_guide seeds it, and read once more; a store that still has
-        // no guide answers with the repair and where this session looked.
+        // A guide node absent from this store is answered with the repair and
+        // nothing else: a read never writes the store (kmp_inspect is
+        // read-only), and kmp_guide serves every topic from the engine.
         if name == "kmp_inspect"
             && let Err(error) = &outcome
             && super::guide_repair::GuideRepair::is_missing_guide_read(arguments, error)
         {
-            let seed = self.seed_installed_guide().await;
-            if seed.seeded() {
-                outcome = self.backend.call_tool_for(name, arguments, caller).await;
-            }
-            if let Err(error) = outcome {
-                let node_ref = arguments["ref"].as_str().unwrap_or_default();
-                outcome = Err(super::guide_repair::GuideRepair::missing(
-                    node_ref,
-                    error,
-                    &seed.searched(),
-                ));
-            }
+            let node_ref = arguments["ref"].as_str().unwrap_or_default();
+            outcome = Err(super::guide_repair::GuideRepair::unavailable(
+                node_ref,
+                error.clone(),
+            ));
         }
         if let Err(error) = outcome {
             outcome = Err(self.name_unknown_about(name, arguments, error).await);

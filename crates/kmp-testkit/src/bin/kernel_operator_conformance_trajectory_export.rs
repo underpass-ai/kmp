@@ -181,8 +181,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 "remaining_budget": budget(5),
                 "requested_wake": requested_wake(
                     "resume_process",
-                    json!({ "mode": "all", "scope": "current_about" }),
-                    2
+                    json!({ "mode": "all", "scope": "current_about" })
                 ),
                 "operator_state": {
                     "decision": "wake_current_about",
@@ -196,9 +195,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "about": about,
                     "role": "operator",
                     "intent": "resume_process",
-                    "dimensions": { "mode": "all", "scope": "current_about" },
-                    "depth": 2,
-                    "budget": { "depth": 2 }
+                    "dimensions": { "mode": "all", "scope": "current_about" }
                 }),
             ),
             json!({ "success": true, "observed_refs": [current_ref, prior_observation_ref] }),
@@ -225,8 +222,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 "remaining_budget": budget(4),
                 "requested_wake": requested_wake(
                     "recover_after_empty_navigation",
-                    json!({ "mode": "all", "scope": "current_about" }),
-                    2
+                    json!({ "mode": "all", "scope": "current_about" })
                 ),
                 "operator_state": {
                     "decision": "wake_current_about",
@@ -240,9 +236,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "about": about,
                     "role": "operator",
                     "intent": "recover_after_empty_navigation",
-                    "dimensions": { "mode": "all", "scope": "current_about" },
-                    "depth": 2,
-                    "budget": { "depth": 2 }
+                    "dimensions": { "mode": "all", "scope": "current_about" }
                 }),
             ),
             json!({ "success": true, "observed_refs": [current_ref, prior_timeout_ref] }),
@@ -268,8 +262,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 "requested_ask": requested_ask(
                     "What evidence explains the failed mobile login?",
                     "evidence_or_unknown",
-                    json!({ "mode": "all", "scope": "current_about" }),
-                    2
+                    json!({ "mode": "all", "scope": "current_about" })
                 ),
                 "operator_state": {
                     "decision": "ask_for_context",
@@ -283,8 +276,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "about": about,
                     "answer_policy": "evidence_or_unknown",
                     "dimensions": { "mode": "all", "scope": "current_about" },
-                    "question": "What evidence explains the failed mobile login?",
-                    "depth": 2
+                    "question": "What evidence explains the failed mobile login?"
                 }),
             ),
             json!({ "success": true, "observed_refs": [prior_observation_ref] }),
@@ -314,8 +306,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                         "mode": "only",
                         "scope": "current_about",
                         "include": ["agent:triage", "agent:solver"]
-                    }),
-                    2
+                    })
                 ),
                 "operator_state": {
                     "decision": "ask_conflicts",
@@ -333,8 +324,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                         "scope": "current_about",
                         "include": ["agent:triage", "agent:solver"]
                     },
-                    "question": "Which hypotheses conflict with the observed refresh race?",
-                    "depth": 2
+                    "question": "Which hypotheses conflict with the observed refresh race?"
                 }),
             ),
             json!({ "success": true, "observed_refs": [prior_timeout_ref, prior_observation_ref] }),
@@ -360,8 +350,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 "requested_ask": requested_ask(
                     "Did a similar refresh race happen in another incident?",
                     "evidence_or_unknown",
-                    json!({ "mode": "all", "scope": "all_abouts" }),
-                    2
+                    json!({ "mode": "all", "scope": "all_abouts" })
                 ),
                 "operator_state": {
                     "decision": "use_all_abouts_explicitly",
@@ -375,8 +364,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "about": about,
                     "answer_policy": "evidence_or_unknown",
                     "dimensions": { "mode": "all", "scope": "all_abouts" },
-                    "question": "Did a similar refresh race happen in another incident?",
-                    "depth": 2
+                    "question": "Did a similar refresh race happen in another incident?"
                 }),
             ),
             json!({ "success": true, "observed_refs": ["incident:payments:observation:token-refresh-race"] }),
@@ -403,8 +391,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 "requested_ask": requested_ask(
                     "Does another incident show the same auth regression pattern?",
                     "evidence_or_unknown",
-                    json!({ "mode": "all", "scope": "all_abouts" }),
-                    2
+                    json!({ "mode": "all", "scope": "all_abouts" })
                 ),
                 "operator_state": {
                     "decision": "use_all_abouts_explicitly",
@@ -418,8 +405,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "about": about,
                     "answer_policy": "evidence_or_unknown",
                     "dimensions": { "mode": "all", "scope": "all_abouts" },
-                    "question": "Does another incident show the same auth regression pattern?",
-                    "depth": 2
+                    "question": "Does another incident show the same auth regression pattern?"
                 }),
             ),
             json!({ "success": true, "observed_refs": ["incident:payments:observation:token-refresh-race"] }),
@@ -1565,8 +1551,7 @@ fn golden_v3_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 "remaining_budget": budget(4),
                 "requested_wake": requested_wake(
                     "recover_after_empty_navigation",
-                    json!({ "mode": "all", "scope": "current_about" }),
-                    2
+                    json!({ "mode": "all", "scope": "current_about" })
                 ),
                 "operator_state": {
                     "decision": "wake_current_about",
@@ -1580,9 +1565,7 @@ fn golden_v3_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "about": about,
                     "role": "operator",
                     "intent": "recover_after_empty_navigation",
-                    "dimensions": { "mode": "all", "scope": "current_about" },
-                    "depth": 2,
-                    "budget": { "depth": 2 }
+                    "dimensions": { "mode": "all", "scope": "current_about" }
                 }),
             ),
             json!({ "success": true, "observed_refs": [prior_observation_ref, prior_timeout_ref] }),
@@ -1705,8 +1688,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 "remaining_budget": budget(4),
                 "requested_wake": requested_wake(
                     "resume_process",
-                    json!({ "mode": "all", "scope": "current_about" }),
-                    2
+                    json!({ "mode": "all", "scope": "current_about" })
                 )
             }),
             read_tools.clone(),
@@ -1716,9 +1698,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "about": about,
                     "role": "operator",
                     "intent": "resume_process",
-                    "dimensions": { "mode": "all", "scope": "current_about" },
-                    "depth": 2,
-                    "budget": { "depth": 2 }
+                    "dimensions": { "mode": "all", "scope": "current_about" }
                 }),
             ),
             json!({ "success": true, "observed_refs": [current_ref, observation_ref] }),
@@ -1745,8 +1725,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 "remaining_budget": budget(3),
                 "requested_wake": requested_wake(
                     "recover_after_empty_navigation",
-                    json!({ "mode": "all", "scope": "current_about" }),
-                    2
+                    json!({ "mode": "all", "scope": "current_about" })
                 )
             }),
             read_tools.clone(),
@@ -1756,9 +1735,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "about": about,
                     "role": "operator",
                     "intent": "recover_after_empty_navigation",
-                    "dimensions": { "mode": "all", "scope": "current_about" },
-                    "depth": 2,
-                    "budget": { "depth": 2 }
+                    "dimensions": { "mode": "all", "scope": "current_about" }
                 }),
             ),
             json!({ "success": true, "observed_refs": [current_ref, stale_hypothesis_ref] }),
@@ -1815,8 +1792,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "requested_ask": requested_ask(
                         question,
                         answer_policy,
-                        dimensions.clone(),
-                        2
+                        dimensions.clone()
                     )
                 }),
                 read_tools.clone(),
@@ -1826,8 +1802,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                         "about": about,
                         "answer_policy": answer_policy,
                         "dimensions": dimensions,
-                        "question": question,
-                        "depth": 2
+                        "question": question
                     }),
                 ),
                 json!({ "success": true, "observed_refs": [observation_ref, decision_ref, sibling_ref] }),
@@ -2241,8 +2216,7 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "remaining_budget": budget(5),
                     "requested_wake": requested_wake(
                         "resume_process",
-                        json!({ "mode": "all", "scope": "current_about" }),
-                        2
+                        json!({ "mode": "all", "scope": "current_about" })
                     ),
                     "operator_state": {
                         "decision": "wake_current_about",
@@ -2256,9 +2230,7 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                         "about": about,
                         "role": "operator",
                         "intent": "resume_process",
-                        "dimensions": { "mode": "all", "scope": "current_about" },
-                        "depth": 2,
-                        "budget": { "depth": 2 }
+                        "dimensions": { "mode": "all", "scope": "current_about" }
                     }),
                 ),
                 json!({ "success": true, "observed_refs": [current_ref, observation_ref] }),
@@ -2316,8 +2288,7 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                         "requested_ask": requested_ask(
                             &question,
                             answer_policy,
-                            dimensions.clone(),
-                            2
+                            dimensions.clone()
                         ),
                         "operator_state": {
                             "decision": "ask_for_context",
@@ -2331,8 +2302,7 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                             "about": about,
                             "answer_policy": answer_policy,
                             "dimensions": dimensions,
-                            "question": question,
-                            "depth": 2
+                            "question": question
                         }),
                     ),
                     json!({ "success": true, "observed_refs": [observation_ref, decision_ref, sibling_ref] }),
@@ -2944,8 +2914,7 @@ fn push_training_corpus_variants(
                     "requested_ask": requested_ask(
                         question,
                         answer_policy,
-                        dimensions.clone(),
-                        2
+                        dimensions.clone()
                     ),
                     "operator_state": {
                         "decision": "ask_for_context",
@@ -2959,8 +2928,7 @@ fn push_training_corpus_variants(
                         "about": about,
                         "answer_policy": answer_policy,
                         "dimensions": dimensions,
-                        "question": question,
-                        "depth": 2
+                        "question": question
                     }),
                 ),
                 json!({ "success": true, "observed_refs": [prior_observation_ref, final_decision_ref] }),
@@ -4086,22 +4054,19 @@ fn requested_move(movement: &str, cursor_key: &str, cursor: Value) -> Value {
     })
 }
 
-fn requested_wake(intent: &str, dimensions: Value, depth: usize) -> Value {
+fn requested_wake(intent: &str, dimensions: Value) -> Value {
     json!({
         "role": "operator",
         "intent": intent,
-        "dimensions": dimensions,
-        "budget": { "depth": depth },
-        "depth": depth
+        "dimensions": dimensions
     })
 }
 
-fn requested_ask(question: &str, answer_policy: &str, dimensions: Value, depth: usize) -> Value {
+fn requested_ask(question: &str, answer_policy: &str, dimensions: Value) -> Value {
     json!({
         "question": question,
         "answer_policy": answer_policy,
-        "dimensions": dimensions,
-        "depth": depth
+        "dimensions": dimensions
     })
 }
 

@@ -535,7 +535,6 @@ fn bounded_trace_page(id: &str) -> bool {
         "about": "about:1",
         "from": "node:1",
         "to": "node:2",
-        "budget": { "depth": 2 },
         "page": page
     });
     kernel_operator_is_bounded_tool_call("kmp_trace", &arguments)

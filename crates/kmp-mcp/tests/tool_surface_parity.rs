@@ -363,10 +363,7 @@ fn calls() -> Vec<(&'static str, Value)> {
                 "budget": {"max_bytes": 2500}
             }),
         ),
-        (
-            "kmp_relate",
-            json!({"about": ABOUT, "budget": {"depth": 3}}),
-        ),
+        ("kmp_relate", json!({"about": ABOUT})),
         (
             "kmp_trace",
             json!({"about": ABOUT, "from": DETAIL, "to": CLAIM}),

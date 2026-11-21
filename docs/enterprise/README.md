@@ -106,7 +106,7 @@ ones the local engine gives for the same fault:
 | A missing guide node | `not_found` | `unavailable` |
 
 The local commands that read this machine's store (`export`, `import`,
-`document`, `snapshot`, `summaries`, `memories`, `demo`, `viewer`, `guide`,
+`document`, `snapshot`, `summaries`, `memories`, `demo`, `viewer`,
 `consolidation`) refuse to run, exit 2, while the environment selects a remote
 kernel, and `info`/`doctor` say the memory is not on this machine.
 

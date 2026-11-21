@@ -87,17 +87,9 @@ mod tests {
         let tools = tools_list_result();
         let tools = tools["tools"].as_array().expect("tools");
         let honoured: [(&str, &[&str], Option<u64>); 6] = [
-            (
-                "kmp_wake",
-                &["depth", "detail", "max_bytes", "max_entries"],
-                Some(2),
-            ),
-            (
-                "kmp_ask",
-                &["depth", "detail", "max_bytes", "max_entries"],
-                Some(2),
-            ),
-            ("kmp_relate", &["depth", "max_bytes"], Some(2)),
+            ("kmp_wake", &["detail", "max_bytes", "max_entries"], None),
+            ("kmp_ask", &["detail", "max_bytes", "max_entries"], None),
+            ("kmp_relate", &["max_bytes"], None),
             (
                 "kmp_time",
                 &["depth", "detail", "max_bytes", "max_entries"],

@@ -39,10 +39,16 @@ pub(crate) async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
     }
     // The diagnostics report a bad switch instead of refusing to run, and
     // help and version need nothing from the environment.
-    if !matches!(
-        command,
-        "info" | "doctor" | "--help" | "-h" | "help" | "--version" | "-V" | "version"
-    ) && let Err(refusal) = kmp_mcp::environment::check_environment()
+    // `plugin resolve-engine` speaks the launcher's protocol on stdout; the
+    // engine it names refuses a bad switch itself when it serves, with the
+    // right words, instead of the launcher's "no engine matches".
+    let launcher_protocol = command == "plugin" && args.first() == Some(&"resolve-engine");
+    if !launcher_protocol
+        && !matches!(
+            command,
+            "info" | "doctor" | "--help" | "-h" | "help" | "--version" | "-V" | "version"
+        )
+        && let Err(refusal) = kmp_mcp::environment::check_environment()
     {
         eprintln!("kmp-mcp: {refusal}");
         return 2;
@@ -162,7 +168,6 @@ fn reads_the_local_store(command: &str) -> bool {
             | "summaries"
             | "demo"
             | "memories"
-            | "guide"
             | "viewer"
     )
 }

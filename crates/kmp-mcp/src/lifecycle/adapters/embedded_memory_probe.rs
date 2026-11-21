@@ -137,7 +137,7 @@ pub(crate) fn data_dir_finding() -> (LifecycleFinding, Option<ResolvedDataDir>) 
             )
             .with_detail(
                 "the commands that read the local store (export, import, document, snapshot, \
-                 summaries, memories, demo, viewer, guide, consolidation) refuse to run; unset \
+                 summaries, memories, demo, viewer, consolidation) refuse to run; unset \
                  KMP_MCP_BACKEND and KMP_KERNEL_GRPC_ENDPOINT to use this machine's store",
             ),
             None,

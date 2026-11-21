@@ -272,7 +272,6 @@ mod tests {
                 "as_of",
                 "axis",
                 "budget",
-                "depth",
                 "dimensions",
                 "intent",
                 "interval",
@@ -289,7 +288,6 @@ mod tests {
                 "asked_as",
                 "axis",
                 "budget",
-                "depth",
                 "dimensions",
                 "interval",
                 "page",
@@ -348,7 +346,7 @@ mod tests {
         );
 
         // These shared shapes are one-to-one with MemoryBudget,
-        // DimensionSelection and PageRequest. `depth` at the tool root is an
+        // DimensionSelection and PageRequest. `depth` at the root of `kmp_time` is an
         // explicit compatibility alias for MemoryBudget.depth. Trace.role, an
         // alias for TraceRequest.goal, and budget.tokens left at 1.0 (E11).
         // Inspect.budget and Inspect.page are
@@ -357,7 +355,7 @@ mod tests {
         let wake_properties = &schema("kmp_wake")["properties"];
         assert_eq!(
             keys(&wake_properties["budget"]),
-            expected(&["depth", "detail", "max_bytes", "max_entries"])
+            expected(&["detail", "max_bytes", "max_entries"])
         );
         assert_eq!(
             keys(&wake_properties["dimensions"]),

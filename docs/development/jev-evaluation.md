@@ -36,8 +36,10 @@ KMP_TYPESAFE_CASSETTE_MODE=record JEV_BASELINE=write bash scripts/ci/jev-baselin
 
 Recording goes through `KMP_TYPESAFE_CASSETTE` and
 `KMP_TYPESAFE_CASSETTE_MODE=record|replay`, which wrap the store's TypeSafe
-judgement model. They are for evaluation only. The cassette holds requests'
-digests and Jev's answers, never a key.
+judgement model. They are for evaluation only: a release binary carries them
+only when built with `--features eval-hooks` (debug builds, which
+`jev-baseline.sh` runs, always do). The cassette holds requests' digests and
+Jev's answers, never a key.
 
 ## The corpus
 

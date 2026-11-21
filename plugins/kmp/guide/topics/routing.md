@@ -114,8 +114,9 @@ The reads (`wake`, `ask`, `time`, `trace`, `relate`, `summaries_audit`,
 `view_get_state`, `guide`) declare `readOnlyHint: true`: they change no memory.
 What one may leave behind is the server log, a bounded quality-telemetry row, a
 continuation handle when the answer has more pages and, on a store whose owner
-opted into TypeSafe Jev, cached verdicts. `inspect` is not read-only: reading a
-node of the installed guide on a store without it seeds the guide first.
+opted into TypeSafe Jev, cached verdicts. `inspect` is read-only too: a node
+of the installed guide that the store lacks is answered with the repair, never
+seeded.
 
 `openWorldHint` is true on `wake`, `ask`, `write_memory`, `curate` and
 `summaries_audit`, which send the text they read to TypeSafe when the store

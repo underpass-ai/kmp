@@ -10,7 +10,7 @@ pub(super) async fn check(
     for tool in ["kmp_wake", "kmp_ask"] {
         let mut args = json!({"about":"project:parity-live","axis":"occurred",
             "interval":{"start":"2026-08-01T00:00:00Z"},
-            "budget":{"max_bytes":512,"detail":"full","depth":5}});
+            "budget":{"max_bytes":512,"detail":"full"}});
         if tool == "kmp_ask" {
             args["question"] = json!("Did the compact projection stay under the byte limit?");
             args["asked_as"] = json!("¿La proyección compacta respetó el límite de bytes?");

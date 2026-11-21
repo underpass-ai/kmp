@@ -8,7 +8,10 @@ only the candidates its postings reach.
 
 ## Modes
 
-`KMP_LEXICAL_INDEX` chooses once per process:
+`KMP_LEXICAL_INDEX` chooses once per process. A release binary accepts `on`
+and `off` (with the on/off spellings every switch reads); `shadow` and
+`verify` are measurement modes that only debug builds and builds with the
+`eval-hooks` cargo feature accept:
 
 | Value | What the sidecar does |
 |---|---|

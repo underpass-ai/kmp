@@ -1153,7 +1153,6 @@ async fn large_recall_keeps_the_strongest_answer_and_semantic_wake_state() {
             "about": "project:large-recall",
             "question": "What exact deficiencies caused rejection and what authority remains withheld?",
             "answer_policy": "evidence_or_unknown",
-            "depth": 3,
             "budget": budget
         }),
     )
@@ -1186,7 +1185,6 @@ async fn large_recall_keeps_the_strongest_answer_and_semantic_wake_state() {
         json!({
             "about": "project:large-recall",
             "intent": "continue gate remediation",
-            "depth": 3,
             "budget": {
                 "detail": "balanced",
                 "max_entries": 12
@@ -1243,7 +1241,6 @@ async fn ask_recalls_supported_constraint_across_morphology_and_clause_reorderin
                     "about": "project:live-validation",
                     "question": question,
                     "answer_policy": "evidence_or_unknown",
-                    "depth": 3,
                     "budget": {
                         "detail": "balanced",
                         "max_entries": 10
@@ -1323,8 +1320,7 @@ async fn ask_recalls_supported_constraint_across_morphology_and_clause_reorderin
         json!({
             "about": "project:live-validation",
             "question": "Which catering vendor supplies the launch dinner?",
-            "answer_policy": "evidence_or_unknown",
-            "depth": 3
+            "answer_policy": "evidence_or_unknown"
         }),
     )
     .await;
@@ -1346,7 +1342,6 @@ async fn graph_aware_reranker_keeps_answer_claims_ahead_of_weak_novelty() {
         "about": "decision:sqlite-wal",
         "question": "Which embedded storage engine should two KMP processes sharing one store use, and which engine did it replace?",
         "answer_policy": "evidence_or_unknown",
-        "depth": 3,
         "budget": {
             "detail": "balanced",
             "max_entries": 12,
@@ -1419,7 +1414,6 @@ async fn current_default_recall_survives_a_partial_decision_update() {
                     "about": "decision:fresh-store-default",
                     "question": question,
                     "answer_policy": "evidence_or_unknown",
-                    "depth": 3,
                     "budget": {"detail": "balanced", "max_bytes": 10_000}
                 }),
             )
@@ -1638,7 +1632,6 @@ async fn writer_relation_why_survives_paraphrased_recall_and_audit() {
             "about": "project:relation-why-conformance",
             "question": "Which embedded storage engine should independent KMP processes sharing one store use, and why was the single-writer layout replaced?",
             "answer_policy": "evidence_or_unknown",
-            "depth": 3,
             "budget": {"detail": "full", "max_bytes": 10_000}
         }),
     )

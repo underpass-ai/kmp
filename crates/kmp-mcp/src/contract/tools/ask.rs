@@ -30,8 +30,7 @@ pub(crate) fn definition() -> Value {
                     "default": "evidence_or_unknown"
                 },
                 "dimensions": dimensions_schema(),
-                "depth": integer_schema("Optional graph traversal depth. Applies in embedded and live gRPC modes; it overrides budget.depth."),
-                "budget": budget_schema(&[BudgetField::MaxBytes, BudgetField::Detail, BudgetField::Depth(2), BudgetField::MaxEntries]),
+                "budget": budget_schema(&[BudgetField::MaxBytes, BudgetField::Detail, BudgetField::MaxEntries]),
                 "page": recall_page_schema(),
                 "as_of": as_of_schema(),
                 "interval": interval_schema(),

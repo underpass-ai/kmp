@@ -67,7 +67,7 @@ for all of them:
 | `KMP_LEXICAL_BRIDGE` | `<store>/lexical-bridge.kmpb`, then `<data home>/kmp/lexical-bridge.kmpb` | a file path, or `none` | The cross-language word table `kmp_ask` uses. |
 | `TYPESAFE_API_KEY` | unset, then `typesafe.env` | a token of at most 512 characters | Key for TypeSafe Jev; read only when the store has `typesafe.json`. Its value is never printed. |
 | `KMP_VERSION_CHECK` | on | on/off | Whether `plugin notice` asks GitHub for the latest release, at most once a day: the only network call KMP makes by default. |
-| `KMP_PLUGIN_ROOT` | set by the plugin launchers | a directory | The plugin tree the engine seeds its guide from. |
+| `KMP_PLUGIN_ROOT` | set by the plugin launchers | a directory | The plugin tree `guide sync` installs the longer guide from. |
 | `KMP_INSTALL_DIR` | `~/.local/bin` | a directory | Default of `setup`/`update --engine-dir`. |
 | `KMP_MCP_BACKEND` | `embedded`; `grpc` when `KMP_KERNEL_GRPC_ENDPOINT` is set | `embedded`, `grpc` | Which kernel answers. gRPC is experimental and outside the 1.0 promise. |
 | `KMP_KERNEL_GRPC_ENDPOINT` | unset | a URL; `https://` implies server TLS | Selects the remote gRPC kernel (experimental). Under it the commands that read the local store refuse to run. |

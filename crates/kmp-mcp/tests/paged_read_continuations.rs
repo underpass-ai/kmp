@@ -60,8 +60,8 @@ async fn short_recall_temporal_trace_and_relate_preserve_complete_evidence() {
         // Each read declares only the budget fields it honours (E11).
         args["budget"] = match tool {
             "kmp_trace" => json!({"max_bytes":1000000}),
-            "kmp_relate" => json!({"max_bytes":1000000,"depth":4}),
-            _ => json!({"max_bytes":1000000,"detail":"full","depth":4}),
+            "kmp_relate" => json!({"max_bytes":1000000}),
+            _ => json!({"max_bytes":1000000,"detail":"full"}),
         };
         let full = call(&server, tool, args.clone()).await;
         assert_eq!(full["isError"], false, "{tool}: {full}");

@@ -36,7 +36,10 @@ impl KernelMcpServer {
         let handled = ["continuation", "review_token"]
             .iter()
             .any(|key| arguments.get(*key).is_some());
-        if !ROOTED_AT_ABOUT.contains(&tool)
+        // The local product only: a remote kernel keeps its own refusals,
+        // and the next steps below name this machine's store.
+        if self.backend_name() != "embedded"
+            || !ROOTED_AT_ABOUT.contains(&tool)
             || handled
             || matches!(
                 error.code,

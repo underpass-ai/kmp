@@ -101,7 +101,7 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
             "kmp_wake",
             json!({"about":"project:parity-live","budget":{"detail":"compact","max_bytes":10000}}),
         ),
-        ("kmp_wake", json!({"about":"project:parity-live","depth":2})),
+        ("kmp_wake", json!({"about":"project:parity-live"})),
         (
             "kmp_wake",
             json!({"about":"project:parity-live","axis":"occurred",
@@ -864,7 +864,6 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
                 "about": "question:mcp-ingest-smoke",
                 "role": "memory",
                 "intent": "read back the memory written through MCP",
-                "depth": 2,
                 "budget": {
                     "max_bytes": 100000,
                     "detail": "full"
@@ -942,8 +941,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
                 "dimensions": {
                     "mode": "only",
                     "include": ["conversation"]
-                },
-                "depth": 3
+                }
             }),
         )
         .await;
@@ -975,8 +973,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
             json!({
                 "about": ROOT_NODE_ID,
                 "role": DEVELOPER_ROLE,
-                "intent": "continue from the seeded kernel memory",
-                "depth": 2
+                "intent": "continue from the seeded kernel memory"
             }),
         )
         .await;
@@ -992,8 +989,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
             "kmp_ask",
             json!({
                 "about": ROOT_NODE_ID,
-                "question": "Which seeded decision should the next agent inspect?",
-                "depth": 2
+                "question": "Which seeded decision should the next agent inspect?"
             }),
         )
         .await;

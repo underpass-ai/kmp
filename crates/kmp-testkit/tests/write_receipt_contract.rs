@@ -112,8 +112,7 @@ async fn a_pending_proposal_is_refused_and_its_review_is_left_to_the_writer() {
         &server,
         3,
         "kmp_ask",
-        json!({"about":ABOUT,"question":"Did R4 satisfy the P9 limit?","depth":3,
-            "budget":{"detail":"balanced","max_entries":10}}),
+        json!({"about":ABOUT,"question":"Did R4 satisfy the P9 limit?","budget":{"detail":"balanced","max_entries":10}}),
     )
     .await;
     assert!(
@@ -149,8 +148,7 @@ async fn the_same_write_reads_as_landed_once_its_review_is_resolved() {
         &server,
         4,
         "kmp_ask",
-        json!({"about":ABOUT,"question":"Did R4 satisfy the P9 limit?","depth":3,
-            "budget":{"detail":"balanced","max_entries":10}}),
+        json!({"about":ABOUT,"question":"Did R4 satisfy the P9 limit?","budget":{"detail":"balanced","max_entries":10}}),
     )
     .await;
     assert!(
