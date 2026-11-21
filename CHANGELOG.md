@@ -179,6 +179,18 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
 
 ### Changed — surface honesty
 
+- **A continuation accepts an argument resent with the value its call
+  already has.** Beside `continuation`, any argument of the retained call
+  (`about`, `move`, `page.entries`, …) may be repeated unchanged and is
+  ignored: the answer is the continuation's own, byte for byte. A value the
+  call does not have is refused under `continuation-alone`, naming the
+  argument (`feedback[].field`, code `CONTINUATION_ARGUMENT_DIFFERS`) and
+  saying that the original arguments with `page.cursor` start a different
+  read. It used to refuse every argument but `about`/`actor` (and Wake/Ask's
+  `page.repeat_core`) by name, even with the same value. Every verb that
+  returns a handle retains its whole call, so the comparison holds for all of
+  them. `tools/list` is unchanged.
+
 - **Timestamp arguments publish `"format": "date-time"`** in `tools/list`,
   so an agent sees that a clock wants an RFC 3339 instant with its zone
   before it sends a bare date. It is an annotation: the reader of the

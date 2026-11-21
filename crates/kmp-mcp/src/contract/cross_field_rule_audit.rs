@@ -165,14 +165,12 @@ fn a_rule_refusal_names_the_rule_and_its_fix() {
     );
     assert!(error.message.contains("Fix: "), "{}", error.message);
     assert_eq!(error.feedback[0]["rule"], "write.labels");
-    let error = reject_invalid_arguments(
-        "kmp_wake",
-        &json!({"continuation": format!("read_{}", "0".repeat(32)), "budget": {}}),
+    // Beside a handle the law accepts any declared argument: whether its
+    // value is the one the handle binds is the server's comparison with the
+    // retained call (`tests/continuation_bound_arguments.rs`).
+    reject_invalid_arguments(
+        "kmp_time",
+        &json!({"continuation": format!("read_{}", "0".repeat(32)), "move": "forward"}),
     )
-    .expect_err("a continuation is sent alone");
-    assert!(
-        error.message.starts_with("Rule `continuation-alone`: "),
-        "{}",
-        error.message
-    );
+    .expect("the law leaves a resent argument to the retained call");
 }
