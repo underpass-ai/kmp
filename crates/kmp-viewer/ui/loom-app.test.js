@@ -2,7 +2,7 @@
 
 /* The application half of the loom under node: state, viewport, data and
    sync loaded into a bare context with the adapters stubbed out. The scene,
-   panels and gestures are DOM and Pixi adapters — they are exercised by the
+   panels and gestures are DOM and Three.js adapters — they are exercised by the
    HTTP smoke suite and the MCP App contracts, not here. */
 
 const assert = require("node:assert/strict");
@@ -66,6 +66,7 @@ function loom(stubs = {}) {
       return elements.get(id);
     },
     showError: spy("dom.showError"),
+    setNotice: spy("dom.setNotice"),
     el: () => ({ append() {}, style: {} }),
     fmtMs: () => "",
     fmtMsFull: () => "",
@@ -128,16 +129,6 @@ test("clampWindow honors the extent and the one-second floor", () => {
   same(app.state.clampWindow(full, -5000, 50), { t0: 0, t1: 1000 });
   same(app.state.clampWindow(full, 20000, 99999999), { t0: 20000, t1: 100000 });
   same(app.state.clampWindow(full, 10000, 30000), { t0: 10000, t1: 30000 });
-});
-
-test("entryAlpha lets the trace outrank a search miss", () => {
-  const { app } = loom();
-  const m = { ref: "r", kind: "decision" };
-  assert.equal(app.state.entryAlpha(m), 1);
-  app.state.view.searchHits = new Set(["other"]);
-  assert.ok(app.state.entryAlpha(m) < 0.2, "a search miss fades");
-  app.state.view.trace = { refs: new Set(["r"]) };
-  assert.equal(app.state.entryAlpha(m), 1, "a traced entry stays legible");
 });
 
 test("setWindow clamps, remembers, redraws, reports and reloads", () => {
@@ -706,14 +697,56 @@ test("loadProjection re-fetches when the projection's density resolves another r
         clusters: [],
         relations: [],
         page: { total: 10000 },
+        source: { total: 70000, read: 65536 },
+        missing: ["visual_source_entries"],
         truncated: true,
       };
     },
   };
   await app.data.loadProjection();
   assert.ok(fetched.length >= 1);
-  const error = calls.find((call) => call.name === "dom.showError" && String(call.args[0]).includes("projection is partial"));
-  assert.ok(error, "a truncated projection says so");
+  const notice = calls.findLast((call) => call.name === "dom.setNotice" && call.args[0] === "partial");
+  assert.equal(notice.args[1],
+    "Showing the newest 65,536 of 70,000 memories up to this window's end; move the window earlier to see older ones",
+    "a truncated read says how much it left out, and keeps saying it");
+});
+
+/* V-06/V-10: what a projection leaves out is a state: it stays until a
+   projection that leaves nothing out replaces it. */
+test("a partial projection is said until a complete one replaces it", () => {
+  const { app } = loom();
+  const notice = app.data.partialNotice;
+  assert.equal(notice({ missing: ["visual_source_entries"] }),
+    "This about holds more memories than one read takes; the oldest are left out of this window");
+  assert.equal(notice({ missing: [], page: { has_more: true, returned: 2048, total: 5000 } }),
+    "Showing 2,048 of 5,000 memories in this window; zoom in to see the rest");
+  assert.equal(notice({ missing: [], page: { has_more: false, returned: 3, total: 3 } }), "");
+});
+
+/* V-10: a 401 means the MCP process that issued the capability is gone.
+   The page stops polling and says so; a lost connection is said too. */
+test("a dead session stops polling and a lost connection is said", async () => {
+  const { app, calls } = loom();
+  let failure = Object.assign(new Error("offline"), { name: "TypeError" });
+  let attempts = 0;
+  app.control = { unavailable: () => calls.push({ name: "control.unavailable", args: [] }) };
+  app.api.call = async () => {
+    attempts += 1;
+    throw failure;
+  };
+  const originalSetTimeout = setTimeout;
+  app.state.sync.revision = 1;
+  app.sync.startViewPolling();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.ok(calls.some((call) => call.name === "dom.setNotice" && call.args[0] === "connection" && call.args[1]),
+    "a lost connection is said");
+  assert.ok(calls.some((call) => call.name === "control.unavailable"));
+  failure = Object.assign(new Error("needs its capability link"), { status: 401 });
+  await new Promise((resolve) => originalSetTimeout(resolve, 2100));
+  const after = attempts;
+  assert.equal(app.state.sync.polling, false, "a 401 stops the poll loop");
+  await new Promise((resolve) => originalSetTimeout(resolve, 50));
+  assert.equal(attempts, after, "no request follows an ended session");
 });
 
 test("the applied projection owns its resolved level of detail", async () => {
@@ -1422,4 +1455,14 @@ test("putting paths away is reported once as its own gesture", async () => {
   assert.equal(posted[0].clear_paths, "1");
   assert.equal(posted.length, 2, "the next report differs: it no longer clears");
   assert.equal(posted[1].clear_paths, undefined);
+});
+
+test("any 401 tells the page its session ended", async () => {
+  const { app, calls, context } = loom();
+  app.provenance = { idle: (...args) => calls.push({ name: "provenance.idle", args }) };
+  context.fetch = async () => ({ ok: false, status: 401, json: async () => ({ error: "needs its capability link" }) });
+  await assert.rejects(app.api.call("/api/abouts"), (error) => error.status === 401);
+  assert.ok(calls.some((call) => call.name === "dom.setNotice" && call.args[0] === "session"
+    && /session has ended/.test(call.args[1])));
+  assert.ok(calls.some((call) => call.name === "provenance.idle" && call.args[0] === "Session ended"));
 });

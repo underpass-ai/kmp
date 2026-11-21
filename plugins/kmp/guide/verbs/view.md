@@ -37,9 +37,9 @@ actually looking at.
 
 That is the session saying it is already serving this store as a graph — the
 same abouts, the same typed relations, the same evidence, in a window instead
-of in JSON. It appears on the **first memory a session writes**, because that
-is the first moment there is anything to look at, and it does not appear
-again.
+of in JSON. The viewer listens only after the first `kmp_view_open` of the
+session, so the block appears on the **first memory written once the viewer
+listens**, and it does not appear again. Writing never starts the viewer.
 
 Pass the link on when it appears. It is the one thing a human can look at
 without learning any of this, and most people never find out it exists.
@@ -99,6 +99,6 @@ steps stay listed in the panel as outside the frame.
 The person can press **Declare…** on a proposed step and write the why and
 evidence. The loom does not write: it composes the exact `kmp_curate`
 `mode:"apply"` call and asks the person to give it to you. Run it unchanged
-(add your `context_id`, or keep the `actor` they named), handle `needs_review`
+(keep the `actor` they named), handle `needs_review`
 and doubts as for any apply, and draw the paths again to show the result. The
 `review_token` belongs to this serving process; after a restart, search again.

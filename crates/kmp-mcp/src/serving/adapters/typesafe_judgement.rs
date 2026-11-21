@@ -57,6 +57,8 @@ impl TypeSafeJudgement {
 
     /// The pinned model the store opted into, validated like a live load but
     /// without a key: what a replayed cassette must have been recorded for.
+    /// The model a store's opt-in names: what a cassette replays against.
+    #[cfg(any(debug_assertions, feature = "eval-hooks"))]
     pub(super) fn configured_model(data_dir: &Path) -> Result<Option<String>, String> {
         let Some(config) = read_config(data_dir)? else {
             return Ok(None);
@@ -99,7 +101,9 @@ fn read_config(data_dir: &Path) -> Result<Option<TypeSafeConfig>, String> {
     };
     serde_json::from_slice(&bytes)
         .map(Some)
-        .map_err(|_| "invalid TypeSafe configuration".into())
+        // serde names the field that is missing or of the wrong type; the
+        // file holds no secret, so its words are safe to repeat.
+        .map_err(|error| format!("invalid TypeSafe configuration: {error}"))
 }
 
 impl JudgementModel for TypeSafeJudgement {

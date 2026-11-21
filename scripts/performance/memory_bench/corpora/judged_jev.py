@@ -33,7 +33,7 @@ DEFAULT_CASES = 'crates/kmp-testkit/judged/jev_cases.json'
 DEFAULT_BASELINE = 'docs/development/jev-baseline.tsv'
 DEFAULT_CASSETTE = 'crates/kmp-testkit/judged/jev.cassette.json'
 ACTOR = 'jev-scorecard'
-TYPESAFE = '{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.13.0","timeout_ms":20000}'
+TYPESAFE = '{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.14.0","timeout_ms":20000}'
 RERANK_NARROW = '{"pool_size":40}'
 RERANK_WIDE = '{"pool_size":400,"excerpt_chars":300}'
 WAKE_FOCUS = '{"pool_size":400,"excerpt_chars":300}'
@@ -340,7 +340,7 @@ def asks(servers, case, scores):
     for ask in case['expected']['ask']:
         arguments = {'about': case['about'], 'question': ask['question'],
                      'dimensions': _dimensions(case),
-                     'budget': {'depth': 3, 'tokens': 2048, 'max_entries': 10}}
+                     'budget': {'max_entries': 10}}
         positions = []
         for arm in ('plain', 'reranked', 'wide'):
             answered = servers[arm].call('kmp_ask', arguments)

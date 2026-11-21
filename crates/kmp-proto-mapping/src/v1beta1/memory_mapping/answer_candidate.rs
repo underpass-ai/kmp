@@ -50,14 +50,16 @@ impl AnswerCandidate {
         // question that asks about history is asking for exactly them.
         if matches!(
             context.temporal_state(&item),
-            CandidateTemporalState::Superseded | CandidateTemporalState::Expired
+            CandidateTemporalState::Superseded
+                | CandidateTemporalState::Expired
+                | CandidateTemporalState::NotYetInForce
         ) && !query_requests_lifecycle(question_terms, &context.morphology)
         {
             return Err(Box::new((item, terms)));
         }
 
         let strict_focus = focus.strict;
-        if !answers_focus(focus, lexicon, &terms) {
+        if !answers_focus(focus, lexicon, &item, &terms) {
             return Err(Box::new((item, terms)));
         }
         // A citation that crossed a language says which words carried it.
@@ -125,16 +127,18 @@ impl AnswerCandidate {
 
 /// Whether a candidate answers the focus a strict policy requires. A memory
 /// in another language is about the same thing; the focus it must answer
-/// counts a bridged concept as answered.
+/// counts a concept the table translated onto it as answered. Inside one
+/// language the table vouches for nothing ([`Lexicon::focus_matches`]).
 pub(super) fn answers_focus(
     focus: RankingFocus<'_>,
     lexicon: &Lexicon,
+    item: &MemoryEvidence,
     terms: &AnswerCandidateTerms,
 ) -> bool {
     focus
         .strict
         .is_none_or(|(focus_terms, required_focus_matches)| {
-            lexicon.focus_matches(focus_terms, terms) >= *required_focus_matches
+            lexicon.focus_matches(focus_terms, item, terms) >= *required_focus_matches
         })
 }
 
@@ -144,9 +148,10 @@ pub(super) fn answers_focus(
 pub(super) fn reached_by_the_question(
     focus: RankingFocus<'_>,
     lexicon: &Lexicon,
+    item: &MemoryEvidence,
     terms: &AnswerCandidateTerms,
 ) -> bool {
-    lexicon.clears_floor(terms) && answers_focus(focus, lexicon, terms)
+    lexicon.clears_floor(terms) && answers_focus(focus, lexicon, item, terms)
 }
 
 /// The question's search keys that reached a candidate through its summary

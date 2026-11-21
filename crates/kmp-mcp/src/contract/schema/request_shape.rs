@@ -75,7 +75,7 @@ pub(crate) fn label_selector_schema() -> Value {
 pub(crate) fn temporal_coordinate_schema() -> Value {
     json!({
         "type": "object",
-        "additionalProperties": true,
+        "additionalProperties": false,
         "required": ["dimension", "scope_id"],
         "properties": {
             "dimension": string_schema("Dimension kind for this coordinate."),
@@ -97,40 +97,62 @@ pub(crate) fn temporal_coordinate_schema() -> Value {
         }
     })
 }
-pub(crate) fn budget_schema(default_tokens: u32, default_depth: u32) -> Value {
+/// The fields a read's `budget` may carry. Each tool declares only the ones
+/// its read honours (E11): `tokens` was echoed and never filtered anything,
+/// and trace, relate and curate ignored most of the rest.
+#[derive(Clone, Copy)]
+pub(crate) enum BudgetField {
+    MaxBytes,
+    Detail,
+    Depth(u32),
+    MaxEntries,
+}
+
+pub(crate) fn budget_schema(fields: &[BudgetField]) -> Value {
+    let mut properties = serde_json::Map::new();
+    for field in fields {
+        let (name, schema) = match field {
+            BudgetField::MaxBytes => (
+                "max_bytes",
+                json!({
+                    "type": "integer",
+                    "minimum": 512,
+                    "default": 10_000,
+                    "description": "Enforced compact-JSON structuredContent ceiling. Below the stable response floor, return that floor with a warning naming it, not an error."
+                }),
+            ),
+            BudgetField::Detail => (
+                "detail",
+                json!({
+                    "type": "string",
+                    "enum": ["compact", "balanced", "full"],
+                    "default": "balanced",
+                    "description": "How much expansion detail is eligible before byte or entry caps are applied."
+                }),
+            ),
+            BudgetField::Depth(default_depth) => (
+                "depth",
+                json!({
+                    "type": "integer",
+                    "minimum": 1,
+                    "default": default_depth,
+                    "description": "Graph traversal depth."
+                }),
+            ),
+            BudgetField::MaxEntries => (
+                "max_entries",
+                json!({
+                    "type": "integer",
+                    "minimum": 1
+                }),
+            ),
+        };
+        properties.insert(name.to_string(), schema);
+    }
     json!({
         "type": "object",
         "additionalProperties": false,
-        "properties": {
-            "tokens": {
-                "type": "integer",
-                "minimum": 1,
-                "default": default_tokens,
-                "description": "Advisory cl100k planning hint, reported for compatibility; never filters structuredContent. max_bytes is the enforced ceiling."
-            },
-            "max_bytes": {
-                "type": "integer",
-                "minimum": 512,
-                "default": 10_000,
-                "description": "Enforced compact-JSON structuredContent ceiling. Below the stable response floor, return that floor with a warning naming it, not an error."
-            },
-            "detail": {
-                "type": "string",
-                "enum": ["compact", "balanced", "full"],
-                "default": "balanced",
-                "description": "How much expansion detail is eligible before byte or entry caps are applied."
-            },
-            "depth": {
-                "type": "integer",
-                "minimum": 1,
-                "default": default_depth,
-                "description": "Graph traversal depth; the default applies in embedded and live gRPC modes."
-            },
-            "max_entries": {
-                "type": "integer",
-                "minimum": 1
-            }
-        }
+        "properties": properties
     })
 }
 pub(crate) fn recall_page_schema() -> Value {
@@ -141,12 +163,12 @@ pub(crate) fn recall_page_schema() -> Value {
             "entries": {
                 "type": "integer",
                 "minimum": 1,
-                "description": "Optional maximum expansion items on this page; the normative byte ceiling still applies."
+                "description": "Optional maximum expansion items on this page. An item is one projection record (a label, a path step, an evidence item, a state line), not one memory: page.total counts records. The normative byte ceiling still applies."
             },
             "cursor": {
                 "type": "string",
                 "minLength": 1,
-                "description": "Opaque projection.page.next_cursor. Repeat all bound recall arguments unchanged; only page.entries, budget.tokens, and budget.max_bytes may vary."
+                "description": "Opaque projection.page.next_cursor. Repeat all bound recall arguments unchanged; only page.entries and budget.max_bytes may vary."
             },
             "repeat_core": {
                 "type": "boolean",

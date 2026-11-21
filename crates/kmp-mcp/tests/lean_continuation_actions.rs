@@ -92,7 +92,7 @@ fn assert_lean_page_sections(body: &Value) {
 fn wake_arguments() -> Value {
     json!({"about":ABOUT,"intent":"review the export",
         "dimensions":{"selectors":[{"key":"component","op":"in","values":["export"]}]},
-        "budget":{"max_bytes":4000,"detail":"full","depth":3}})
+        "budget":{"max_bytes":4000,"detail":"full"}})
 }
 
 #[tokio::test]
@@ -153,7 +153,7 @@ async fn recall_continuations_are_handles_that_complete_the_packet() {
 }
 
 #[tokio::test]
-async fn a_handle_accepts_repeat_core_and_nothing_else() {
+async fn a_handle_accepts_repeat_core_and_refuses_a_different_argument() {
     let dir = tempfile::tempdir().expect("store");
     let server = KernelMcpServer::embedded(dir.path()).expect("server");
     seed(&server, "lean:rehydrate", 8).await;

@@ -2,20 +2,28 @@ use serde_json::Value;
 
 use kmp_proto::v1beta1::{AskResponse, WakeResponse};
 
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 use kmp_application::queries::cl100k_estimator::Cl100kEstimator;
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 use kmp_domain::TokenEstimator;
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 use kmp_proto_mapping::v1beta1::recall_projection::{
     ProjectionOutcome, project_recall_output_typed,
 };
 
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 use crate::serving::tool_error::ToolError;
 
 pub(crate) fn wake_from_response(response: WakeResponse) -> Value {
-    kmp_proto_mapping::v1beta1::recall_projection::wake_value(&response)
+    let mut value = kmp_proto_mapping::v1beta1::recall_projection::wake_value(&response);
+    super::proof_compaction::compact_recall_proof(&mut value);
+    value
 }
 
 pub(crate) fn ask_from_response(response: AskResponse) -> Value {
-    kmp_proto_mapping::v1beta1::recall_projection::ask_value(&response)
+    let mut value = kmp_proto_mapping::v1beta1::recall_projection::ask_value(&response);
+    super::proof_compaction::compact_recall_proof(&mut value);
+    value
 }
 
 /// Applies the caller's budget to the JSON that the MCP host actually sees.
@@ -44,6 +52,7 @@ fn enforce_recall_output_budget_with_estimator(
         .expect("test recall cursor should be valid")
 }
 
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 pub(crate) fn try_enforce_recall_output_budget(
     value: Value,
     arguments: &Value,
@@ -53,6 +62,7 @@ pub(crate) fn try_enforce_recall_output_budget(
     try_enforce_recall_output_budget_with_estimator(value, arguments, default_tokens, estimator)
 }
 
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 fn try_enforce_recall_output_budget_with_estimator(
     value: Value,
     arguments: &Value,
@@ -325,15 +335,24 @@ mod tests {
                 .as_array()
                 .expect("proof path")
                 .iter()
-                .all(|relation| relation.get("evidence").is_none()
-                    && relation["evidence_refs"]
-                        .as_array()
-                        .is_some_and(|refs| !refs.is_empty()
-                            && refs.iter().all(|evidence_ref| {
-                                evidence_ref.as_str().is_some_and(|evidence_ref| {
-                                    canonical_ids.contains(evidence_ref)
+                .all(|relation| {
+                    // The endpoints' detail evidence supports the hop without
+                    // being repeated in evidence_refs (proof_compaction).
+                    let endpoint = |key: &str| {
+                        relation[key].as_str().is_some_and(|reference| {
+                            canonical_ids.contains(format!("detail:{reference}").as_str())
+                        })
+                    };
+                    relation.get("evidence").is_none()
+                        && relation["evidence_refs"].as_array().is_some_and(|refs| {
+                            (!refs.is_empty() || endpoint("from") || endpoint("to"))
+                                && refs.iter().all(|evidence_ref| {
+                                    evidence_ref.as_str().is_some_and(|evidence_ref| {
+                                        canonical_ids.contains(evidence_ref)
+                                    })
                                 })
-                            })))
+                        })
+                })
         );
     }
     #[test]

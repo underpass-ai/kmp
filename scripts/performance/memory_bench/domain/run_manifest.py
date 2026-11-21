@@ -12,7 +12,7 @@ from .fields import Fields
 from .run_record import MAX_CALLS_LIMIT, RUN_SCHEMA
 
 KEY_FIELDS = ('binary_sha256', 'config_digest', 'store_key', 'questions_digest', 'mode',
-              'bench_version', 'nonce')
+              'bench_version', 'nonce', 'calls_digest')
 OPTIONAL = ('machine', 'order', 'isolation', 'started_at', 'ended_at', 'failures', 'max_bytes', 'notes')
 
 

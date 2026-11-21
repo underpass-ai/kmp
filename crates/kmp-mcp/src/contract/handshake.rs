@@ -8,24 +8,6 @@ pub(crate) const SERVER_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub(crate) const CHRONOLOOM_APP_URI: &str = "ui://kmp/chronoloom.html";
 pub(crate) const MCP_APP_MIME: &str = "text/html;profile=mcp-app";
 
-/// `tools/list`.
-///
-/// Alias resolution happens at the JSON-RPC boundary. Backends, telemetry and
-/// newly written provenance therefore see one canonical vocabulary, while a
-/// saved permission rule or script using the former names keeps working for
-/// the migration release.
-pub(crate) fn canonical_tool_name(name: &str) -> &str {
-    match name {
-        "kernel_ingest" => "kmp_ingest",
-        "kernel_write_memory" => "kmp_write_memory",
-        "kernel_wake" => "kmp_wake",
-        "kernel_ask" => "kmp_ask",
-        "kernel_trace" => "kmp_trace",
-        "kernel_inspect" => "kmp_inspect",
-        _ => name,
-    }
-}
-
 #[cfg(test)]
 pub(crate) fn initialize_result(backend: &str, grpc_tls: &str) -> Value {
     initialize_result_with_apps(backend, grpc_tls, false, false, None)

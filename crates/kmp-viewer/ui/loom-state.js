@@ -4,7 +4,7 @@
    shared aggregate advances. The objects are stable references — modules
    destructure them once and mutate properties, never reassign — so every
    module reads the same truth.
-   Pure besides the data: no DOM, no PIXI, no fetch. Exposes KMP_APP.state. */
+   Pure besides the data: no DOM, no renderer, no fetch. Exposes KMP_APP.state. */
 "use strict";
 
 globalThis.KMP_APP = globalThis.KMP_APP || {};
@@ -27,13 +27,11 @@ KMP_APP.state = (() => {
     entries: [], // entryModels, ordered
     byRef: new Map(),
     lanes: [], // [{name, index, count, scopes}]
-    laneIndex: new Map(),
     edges: [], // explanatory arcs (classified)
     supersessions: [],
     contradictions: [],
     proofEdges: [],
     supersededRefs: new Set(),
-    contradictedRefs: new Set(),
     observability: { series: [], exemplars: [] },
   };
 
@@ -80,19 +78,6 @@ KMP_APP.state = (() => {
 
   /* How faded an entry draws under the active filters. The domain of "what
      is emphasized right now", independent of any renderer. */
-  function entryAlpha(m) {
-    let a = 1;
-    if (model.supersededRefs.has(m.ref)) a = 0.35; // history, not garbage
-    if (view.dimmedKinds.has(m.kind)) a = Math.min(a, 0.15);
-    if (view.searchHits.size) a = view.searchHits.has(m.ref) ? 1 : Math.min(a, 0.15);
-    if (view.trace) a = view.trace.refs.has(m.ref) ? 1 : Math.min(a, 0.12);
-    return a;
-  }
-
-  function visibleLanes() {
-    return model.lanes.filter((lane) => !view.hiddenLanes.has(lane.name));
-  }
-
   /* Clamps a requested window into the known extent with a one-second
      floor — the arithmetic of setWindow, kept pure and testable. */
   function clampWindow(full, t0, t1, minSpan = 1000) {
@@ -101,5 +86,5 @@ KMP_APP.state = (() => {
     return { t0: clamped0, t1: clamped1 };
   }
 
-  return { model, view, sync, tracePick, entryAlpha, visibleLanes, clampWindow };
+  return { model, view, sync, tracePick, clampWindow };
 })();

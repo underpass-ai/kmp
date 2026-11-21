@@ -182,11 +182,10 @@ impl EngineStore for FilesystemEngineStore {
         result
     }
 
-    fn prove(
+    fn reported_version(
         &self,
         executable: &EngineExecutable,
-        target: &ReleaseVersion,
-    ) -> Result<EngineProof, LifecycleError> {
+    ) -> Result<ReleaseVersion, LifecycleError> {
         let version_child = Command::new(executable.as_path())
             .arg("--version")
             .stdout(Stdio::piped())
@@ -195,23 +194,57 @@ impl EngineStore for FilesystemEngineStore {
             .map_err(|error| Self::io(executable.as_path(), error))?;
         let version_output = Self::wait_for_proof(version_child, executable.as_path())?;
         let version_text = String::from_utf8_lossy(&version_output.stdout);
-        let expected_prefix = format!("kmp-mcp {}", target.engine_version());
-        if !version_output.status.success() || !version_text.starts_with(&expected_prefix) {
+        let mut words = version_text.split_whitespace();
+        match (version_output.status.success(), words.next(), words.next()) {
+            (true, Some("kmp-mcp"), Some(version)) => ReleaseVersion::parse(version),
+            _ => Err(LifecycleError::SurfaceMismatch(format!(
+                "{} did not report a KMP version: {}",
+                executable.as_path().display(),
+                version_text.trim()
+            ))),
+        }
+    }
+
+    fn prove(
+        &self,
+        executable: &EngineExecutable,
+        target: &ReleaseVersion,
+    ) -> Result<EngineProof, LifecycleError> {
+        let reported = self.reported_version(executable)?;
+        if reported.engine_version() != target.engine_version() {
             return Err(LifecycleError::SurfaceMismatch(format!(
-                "{} did not report {}: {}",
+                "{} did not report {}: kmp-mcp {}",
                 executable.as_path().display(),
                 target,
-                version_text.trim()
+                reported
             )));
         }
 
         let scratch = Self::unique_path(&std::env::temp_dir(), "lifecycle-probe");
         fs::create_dir_all(&scratch).map_err(|error| Self::io(&scratch, error))?;
         let result = (|| {
+            // The proof is a start like any other, and a start remembers its
+            // store in the machine index, takes a lease and collects the
+            // plugin versions an earlier update deferred. None of that is the
+            // proof's business: a setup that then fails, or a doctor, must
+            // not delete the version a live session is reading (S5) nor
+            // leave a scratch store in the user's index. So every location
+            // the engine derives from the environment is inside the scratch
+            // directory that is removed below.
+            let home = scratch.join("home");
             let mut child = Command::new(executable.as_path())
                 .env_remove("KMP_MCP_BIN")
+                .env_remove("HERMES_HOME")
+                .env_remove("PI_CODING_AGENT_DIR")
+                .env("HOME", &home)
+                .env("USERPROFILE", &home)
+                .env("CODEX_HOME", home.join(".codex"))
+                .env("XDG_DATA_HOME", home.join(".local/share"))
+                .env("XDG_CONFIG_HOME", home.join(".config"))
+                .env("XDG_CACHE_HOME", home.join(".cache"))
+                .env("XDG_STATE_HOME", home.join(".local/state"))
                 .env("KMP_MCP_BACKEND", "embedded")
-                .env("KMP_MCP_DATA_DIR", &scratch)
+                .env("KMP_MCP_DATA_DIR", scratch.join("memory"))
                 .env("KMP_VIEWER_ADDR", "off")
                 .stdin(Stdio::piped())
                 .stdout(Stdio::piped())

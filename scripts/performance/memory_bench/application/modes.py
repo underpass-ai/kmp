@@ -20,7 +20,7 @@ from .verdict import VERDICTS
 SCHEMA = 'kmp.bench.modes.v1'
 MODES_PATH = Path(__file__).resolve().parents[1] / 'config' / 'modes.toml'
 SECTIONS = ('real-store', 'synth', 'retrieval-judged', 'jev-judged', 'public')
-RETRIEVAL_ARMS = ('plain', 'narrow', 'wide')
+RETRIEVAL_ARMS = ('plain', 'narrow', 'wide', 'shipped-bridge')
 TOPOLOGIES = ('mono', 'multi')
 PUBLIC_CORPORA = ('factconsolidation', 'longmemeval-s', 'musique', '2wiki', 'locomo')
 PUBLIC_SETUPS = ('subset', 'full')

@@ -1,6 +1,6 @@
 use serde_json::{Value, json};
 
-use crate::contract::schema::definition::tool_definition_with_output;
+use crate::contract::schema::definition::{ToolEffect, tool_definition_with_output};
 #[allow(unused_imports)]
 use crate::contract::schema::primitives::*;
 #[allow(unused_imports)]
@@ -13,8 +13,8 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_ask",
-        false,
-        "Retrieve cited stored text and evidence, or UNKNOWN; never generate an answer. Read proof.evidence[].text and judge whether it answers. A dated semantic question uses as_of or a half-open UTC interval and axis; proof records the selection and nearest_outside on a bounded UNKNOWN. If the first English question finds UNKNOWN or irrelevant evidence, re-ask at most once in the user's own words. Changing optional arguments is another selection, not pagination; continue only through projection.page.next_cursor with bound arguments unchanged. After those selections, reclassify the original goal: history/current state uses temporal navigation; genuinely semantic UNKNOWN is terminal. Do not inspect the root, widen scope or traverse the graph to bypass it. proof.confidence measures lexical overlap, not answer correctness or relation-writer certainty; reached_by items are supporting proof, not direct answers. See proof fields for language-bridge and summary provenance.",
+        ToolEffect::Read,
+        "Answer a semantic question from cited stored text and evidence, or say UNKNOWN; for history, change or current state use kmp_time.",
         json!({
             "type": "object",
             "additionalProperties": false,
@@ -26,11 +26,11 @@ pub(crate) fn definition() -> Value {
                 "answer_policy": {
                     "type": "string",
                     "description": "Deterministic evidence policy. Explicit `contradicts` relations on the proof path are surfaced in proof.conflicts under every policy unless an endpoint was superseded at the selected time; the historical edge remains auditable. evidence_or_unknown and show_conflicts return UNKNOWN when the best retained evidence barely shares a term with the question or, for a question naming an identifier, no retained memory names it beside what was asked; show_conflicts selects no additional conflict detection today. best_effort keeps that low-overlap neighbourhood and never generates fallback text.",
-                    "enum": ["evidence_or_unknown", "show_conflicts", "best_effort"]
+                    "enum": ["evidence_or_unknown", "show_conflicts", "best_effort"],
+                    "default": "evidence_or_unknown"
                 },
                 "dimensions": dimensions_schema(),
-                "depth": integer_schema("Optional graph traversal depth. Applies in embedded and live gRPC modes; it overrides budget.depth."),
-                "budget": budget_schema(2_400, 2),
+                "budget": budget_schema(&[BudgetField::MaxBytes, BudgetField::Detail, BudgetField::MaxEntries]),
                 "page": recall_page_schema(),
                 "as_of": as_of_schema(),
                 "interval": interval_schema(),

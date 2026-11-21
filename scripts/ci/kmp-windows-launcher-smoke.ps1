@@ -76,7 +76,7 @@ fn main() {
     if ($LASTEXITCODE -eq 0) {
         Fail "launcher started without an engine matching its manifest"
     }
-    if ((Get-Content -Raw $MismatchError) -notmatch 'run kmp setup') {
+    if ((Get-Content -Raw $MismatchError) -notmatch 'run /kmp:setup or kmp-mcp setup') {
         Fail "version mismatch did not name the setup repair"
     }
 

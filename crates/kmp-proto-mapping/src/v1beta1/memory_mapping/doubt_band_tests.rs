@@ -7,6 +7,7 @@ use kmp_proto::v1beta1::{AnswerStatus, AskResponse, MemoryConfidence, UnknownRea
 
 use super::anchored_gate_tests::{cited, confidence, reason, status, store_related};
 use super::doubt_band::DoubtBand;
+use super::doubt_band_entries::DoubtBandEntries;
 use super::doubt_entry::DoubtEntry;
 use super::doubt_judgement::DoubtJudgement;
 use super::doubt_passage::DoubtPassage;
@@ -54,7 +55,7 @@ fn band_of(
             MemoryAnswerPolicy::EvidenceOrUnknown,
             &TemporalSelection::Frontier,
             &LexicalBridge::none(),
-            margin_below,
+            DoubtBandEntries::band(margin_below),
         )
         .expect("a band reading")
 }
@@ -179,7 +180,7 @@ fn an_absent_anchor_best_effort_or_no_gate_never_enter() {
             MemoryAnswerPolicy::BestEffort,
             &TemporalSelection::Frontier,
             &LexicalBridge::none(),
-            ALWAYS,
+            DoubtBandEntries::band(ALWAYS),
         )
         .expect("a reading");
     assert_eq!(band, None);

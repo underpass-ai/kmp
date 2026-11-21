@@ -45,7 +45,7 @@ pages instead of treating them as complete.
 ## Write the sources without anticipating the total
 
 ```json
-{"tool": "kmp_wake", "save_as": "initial", "arguments": {"about": "example:guide:quantities", "budget": {"max_bytes": 40000}}, "expect_error": "not_found"}
+{"tool": "kmp_wake", "save_as": "initial", "arguments": {"about": "example:guide:quantities", "budget": {"max_bytes": 40000}}}
 ```
 
 ```json

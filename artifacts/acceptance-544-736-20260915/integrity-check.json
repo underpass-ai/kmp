@@ -1,5 +1,0 @@
-{
-  "valid_journeys": 8,
-  "tampered_capture_rejected": true,
-  "error": "Capture integrity mismatch: copied-capture/semantic-batch.jsonl"
-}

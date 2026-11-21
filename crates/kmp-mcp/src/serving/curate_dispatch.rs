@@ -71,9 +71,7 @@ impl KernelMcpServer {
             .and_then(Value::as_str)
             .filter(|actor| !actor.trim().is_empty())
             .ok_or_else(|| {
-                ToolError::invalid_argument(
-                    "kmp_curate apply writes: name `actor`, or pass the context_id kmp_guide returned",
-                )
+                ToolError::invalid_argument("kmp_curate apply writes: name a non-empty `actor`")
             })?;
         let prepared = self
             .backend

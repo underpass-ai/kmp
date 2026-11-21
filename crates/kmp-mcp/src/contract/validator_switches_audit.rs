@@ -7,10 +7,9 @@
 use serde_json::{Value, json};
 
 use super::registry::tools_list_result;
-use super::validator::{reject_invalid_arguments, reject_invalid_write_arguments};
+use super::validator::reject_invalid_arguments;
 
-/// The tools that change memory. `kmp_guide` is checked before dispatch too
-/// but changes no memory; reads keep their current tolerance.
+/// The tools that change memory; the walk must reach their switches by name.
 const WRITE_TOOLS: [&str; 5] = [
     "kmp_write_memory",
     "kmp_ingest",
@@ -85,7 +84,7 @@ fn every_boolean_a_write_declares_is_refused_as_text() {
     for tool in WRITE_TOOLS {
         let schema = input_schema(tool);
         for (path, arguments) in mistyped_booleans(&schema, tool, &|value| value) {
-            let error = reject_invalid_write_arguments(tool, &arguments)
+            let error = reject_invalid_arguments(tool, &arguments)
                 .expect_err(&format!("{path} accepted \"true\": {arguments}"));
             assert!(
                 error.message.contains(&format!("`{path}`")) && error.message.contains("boolean"),
@@ -125,8 +124,8 @@ fn every_non_boolean_value_of_a_switch_is_refused() {
         json!({}),
     ] {
         let arguments = json!({"options": {"dry_run": value.clone()}});
-        let error = reject_invalid_write_arguments("kmp_write_memory", &arguments)
-            .expect_err("never coerced");
+        let error =
+            reject_invalid_arguments("kmp_write_memory", &arguments).expect_err("never coerced");
         assert!(
             error.message.contains("kmp_write_memory.options.dry_run"),
             "{value}: {}",
@@ -139,15 +138,33 @@ fn every_non_boolean_value_of_a_switch_is_refused() {
         );
     }
     for value in [true, false] {
+        // The rest of the packet is missing, so the call is still refused,
+        // but never for its switch.
         let arguments = json!({"options": {"dry_run": value}});
-        reject_invalid_write_arguments("kmp_write_memory", &arguments).expect("a boolean passes");
+        if let Err(error) = reject_invalid_arguments("kmp_write_memory", &arguments) {
+            assert!(!error.message.contains("dry_run"), "{}", error.message);
+        }
     }
 }
 
-/// Reads are out of scope: their tolerance is unchanged by this check.
+/// Reads are held to the same law since E1 of the 1.0 review: a switch of a
+/// read given as text used to be read as its default.
 #[test]
-fn the_read_check_is_unchanged() {
-    let arguments = json!({"options": {"dry_run": "true"}});
-    reject_invalid_arguments("kmp_write_memory", &arguments)
-        .expect("the general check does not type switches");
+fn every_boolean_a_read_declares_is_refused_as_text_too() {
+    for definition in tools_list_result()["tools"].as_array().expect("tools") {
+        let tool = definition["name"].as_str().expect("name");
+        if WRITE_TOOLS.contains(&tool) {
+            continue;
+        }
+        let schema = definition["inputSchema"].clone();
+        for (path, arguments) in mistyped_booleans(&schema, tool, &|value| value) {
+            let error = reject_invalid_arguments(tool, &arguments)
+                .expect_err(&format!("{path} accepted \"true\": {arguments}"));
+            assert!(
+                error.message.contains(&format!("`{path}`")) && error.message.contains("boolean"),
+                "{path}: {}",
+                error.message
+            );
+        }
+    }
 }

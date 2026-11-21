@@ -3,6 +3,9 @@
 /// did not hold the request (replay fails; record asks the provider), or the
 /// verdict book (every question answered by verdicts already judged).
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+// The cassette is an evaluation hook: a release build never constructs its
+// two origins.
+#[cfg_attr(not(any(debug_assertions, feature = "eval-hooks")), allow(dead_code))]
 pub(crate) enum JudgementOrigin {
     Remote,
     CassetteHit,

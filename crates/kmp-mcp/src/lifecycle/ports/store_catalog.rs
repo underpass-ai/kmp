@@ -19,6 +19,11 @@ pub trait StoreCatalog: Send + Sync {
     /// a path that is gone is its own bug, so callers prune on this answer.
     fn is_store(&self, path: &Path) -> bool;
 
+    /// Whether anything is at this path. A store being created has its
+    /// directory before its `FORMAT_VERSION`, so a registry that prunes
+    /// while other processes are opening stores prunes only what is gone.
+    fn exists(&self, path: &Path) -> bool;
+
     /// The facts a survey reports about one store.
     fn store_facts(&self, path: &Path) -> StoreFacts;
 }

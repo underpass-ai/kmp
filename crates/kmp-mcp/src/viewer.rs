@@ -4,7 +4,13 @@
 //! look. Those two must not be able to disagree, so both read the answer from
 //! here rather than each parsing the variable their own way.
 
+mod session_viewer;
+mod viewer_mount;
+
 use kmp_viewer::{DEFAULT_VIEWER_ADDR, VIEWER_ADDR_ENV};
+
+pub use session_viewer::SessionViewer;
+pub use viewer_mount::ViewerMount;
 
 /// How the viewer's address was chosen. The distinction is the whole point:
 /// an address the operator asked for must be honoured or fail loudly, because
@@ -53,9 +59,37 @@ pub fn classify_viewer_addr(raw: Option<&str>) -> ViewerAddr {
     ViewerAddr::Explicit(value.to_string())
 }
 
+/// Whether a value of `KMP_VIEWER_ADDR` is one the viewer can honour: a way
+/// to decline it, or a loopback `host:port`. Checked at startup with every
+/// other switch, so `banana` is refused before a session starts rather than
+/// when the bind fails.
+pub fn viewer_addr_accepted(value: &str) -> bool {
+    viewer_addr_refusal(value).is_none()
+}
+
+/// Why a value of `KMP_VIEWER_ADDR` cannot be served, or `None`.
+pub fn viewer_addr_refusal(value: &str) -> Option<String> {
+    match classify_viewer_addr(Some(value)) {
+        ViewerAddr::Off | ViewerAddr::Default(_) => None,
+        ViewerAddr::Explicit(addr) => kmp_viewer::loopback_socket_addr(&addr)
+            .err()
+            .map(|error| error.to_string()),
+    }
+}
+
 /// Reads `KMP_VIEWER_ADDR` from the process environment.
 pub fn viewer_addr_from_env() -> ViewerAddr {
     classify_viewer_addr(std::env::var(VIEWER_ADDR_ENV).ok().as_deref())
+}
+
+/// What a view open says when no browser can render the view it recorded:
+/// why the viewer could not start, or that this session has none.
+pub fn unrendered_view_notice(failure: Option<String>) -> String {
+    let why = failure.map_or_else(
+        || "ChronoLoom is unavailable in this session".to_string(),
+        |reason| format!("ChronoLoom could not start: {reason}"),
+    );
+    format!("{why}; the semantic view was recorded but no browser can render it")
 }
 
 #[cfg(test)]

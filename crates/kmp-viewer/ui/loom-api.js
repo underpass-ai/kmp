@@ -8,7 +8,9 @@
 globalThis.KMP_APP = globalThis.KMP_APP || {};
 
 KMP_APP.api = (() => {
-  async function call(path, params, method = "GET") {
+  /* `signal` lets a caller abandon a read it no longer wants: the browser
+     closes the connection and the server drops the read from its queue. */
+  async function call(path, params, method = "GET", { signal } = {}) {
     const finish = KMP_APP.loading?.beginRequest(path, params, method);
     try {
       if (globalThis.KMP_APP_API) return await globalThis.KMP_APP_API(path, params || {}, method);
@@ -19,11 +21,12 @@ KMP_APP.api = (() => {
             .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
             .join("&")
         : "";
-      const response = await fetch(path + query, { method });
+      const response = await fetch(path + query, { method, signal });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) {
         const error = new Error(body.error || `${path} failed with ${response.status}`);
         error.status = response.status;
+        if (response.status === 401) sessionEnded();
         throw error;
       }
       return body;
@@ -32,11 +35,22 @@ KMP_APP.api = (() => {
     }
   }
 
+  /* The capability belongs to one MCP process. A 401 means that process
+     restarted or stopped: nothing this page holds is live any more, and
+     only a new link opens the new session. */
+  function sessionEnded() {
+    KMP_APP.dom?.setNotice?.(
+      "session",
+      "This ChronoLoom session has ended; ask the agent to open the loom again for a new link",
+    );
+    KMP_APP.provenance?.idle?.("Session ended", "Open the new link to continue");
+  }
+
   /* The whole span the kernel could ever hold; the extent probe's frame. */
   const EXTENT_FROM = "1900-01-01T00:00:00Z";
   const EXTENT_TO = "2100-01-01T00:00:00Z";
 
-  async function fetchProjection(about, axis, from, to, lod = "atlas", bins = 128, labels = "") {
+  async function fetchProjection(about, axis, from, to, lod = "atlas", bins = 128, labels = "", signal) {
     const params = {
       about,
       from: from || EXTENT_FROM,
@@ -47,8 +61,11 @@ KMP_APP.api = (() => {
     };
     if (axis) params.axis = axis;
     if (labels) params.labels = labels;
-    return call("/api/projection", params);
+    return call("/api/projection", params, "GET", { signal });
   }
 
-  return { call, fetchProjection, EXTENT_FROM, EXTENT_TO };
+  /* A read the caller abandoned is not a failure to report. */
+  const aborted = (error) => error?.name === "AbortError";
+
+  return { call, fetchProjection, aborted, EXTENT_FROM, EXTENT_TO };
 })();

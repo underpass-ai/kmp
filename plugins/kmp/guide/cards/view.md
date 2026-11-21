@@ -5,8 +5,11 @@ Keep the returned view id and revision. Get shared state with
 
 The view is read-only with respect to memory. Use `kmp_view_apply_intent` for
 semantic framing, clock, zoom, selection and filters; consult its linked verb
-before constructing a new intent. Keep optimistic revisions: a stale view is
-a reason to refresh, not overwrite a human's framing.
+before constructing a new intent. An intent is atomic and idempotent under
+optimistic revisions: if the person at the loom moved first it conflicts, and
+you rebase rather than overwrite their framing. A ref the store lacks is dropped
+from the part that named it and listed in `unhonored`; when none exists the
+view does not move and `applied` is false. Never pixels, coordinates or code.
 
 Use the prism to compare clocks and dimensions, and inspect a selected memory's
 source evidence and relations. A current-record inspector can include changes

@@ -119,8 +119,9 @@ impl TemporalOptionsMapper {
                 "limit.entries",
             )?
             .unwrap_or_default(),
-            tokens: JsonFieldReader::optional_positive_u32_field(limit, "tokens", "limit.tokens")?
-                .unwrap_or_default(),
+            // `limit.tokens` left the contract at 1.0 (E11): it changed
+            // nothing but its own echo.
+            tokens: 0,
         }))
     }
 

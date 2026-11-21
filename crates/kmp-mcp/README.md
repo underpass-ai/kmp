@@ -1,11 +1,11 @@
 # kmp-mcp
 
 <!-- kmp:public-overview:begin -->
-KMP is local-first memory for coding agents. It runs beside Codex, Claude Code
-and Hermes Agent as one small binary with an embedded SQLite store, and it
-remembers what was decided, what the evidence was and when it happened. Never
-the transcript. No account, no service, no API key: memory stays on your
-machine.
+KMP is local-first memory for coding agents. It runs beside Claude Code,
+Codex, Hermes Agent or Pi as one small binary with an embedded SQLite store,
+and it remembers what was decided, what the evidence was and when it
+happened. Never the transcript. No account, no service, no API key: memory
+stays on your machine.
 
 Ask your agent **"Why did we choose SQLite?"** and it answers from stored
 evidence, or says `UNKNOWN` instead of guessing. Ask **"Show me the memory
@@ -25,12 +25,13 @@ cargo install kmp-mcp --locked
 
 For native installation, diagnosis and the worked `kmp-mcp demo`, see the
 [KMP plugin](https://github.com/underpass-ai/kmp/tree/main/plugins/kmp) for
-Codex, Claude Code and Hermes Agent.
+Claude Code, Codex, Hermes Agent and Pi.
 
 ## Local by default
 
 Run `kmp-mcp` with nothing configured and the kernel stays in this process,
-the memory stays on your disk and the viewer binds to loopback. There is no
+the memory stays on your disk and the viewer, once asked for, binds to
+loopback only. There is no
 KMP account, API key or service to contact. A remote kernel is used only when
 you configure one.
 
@@ -39,22 +40,24 @@ you configure one.
 | `KMP_MCP_BACKEND` | What it talks to | What it needs |
 |:--|:--|:--|
 | `embedded` (default) | the kernel in this process; SQLite memory and quality telemetry | nothing; `KMP_MCP_DATA_DIR` optionally selects the directory |
-| `grpc` | a deployed kernel | `KMP_KERNEL_GRPC_ENDPOINT`, optionally the `KMP_KERNEL_GRPC_TLS_*` variables |
-| `fixture` | the reference examples from the contract | nothing — it answers from embedded fixtures |
+| `grpc` (experimental) | a deployed kernel | `KMP_KERNEL_GRPC_ENDPOINT`, optionally the `KMP_KERNEL_GRPC_TLS_*` variables |
+| `fixture` (test builds only) | the reference examples from the contract | a debug build or the `eval-hooks` feature; a release binary refuses it |
 
 `tools/list` omits each tool's `outputSchema` by default; the answers still
 carry `structuredContent`. A host that validates structured output sets
-`KMP_MCP_OUTPUT_SCHEMAS=1` to have the schemas advertised (`0` or unset omits
-them).
+`KMP_MCP_OUTPUT_SCHEMAS=on` to have the schemas advertised (`off` or unset
+omits them).
 
 `embedded` is the one to start with: no server, no cluster, memory that
-survives the session on your own disk. It also brings its own
-[ChronoLoom visualizer](https://crates.io/crates/kmp-viewer) up at
-`http://127.0.0.1:7317/` over that same kernel — your memory as a graph,
-read-only and loopback only, no flag required. If another session owns 7317,
-this process binds a free per-session loopback port. The process prints a random
-one-session capability link; `kmp_view_open` and `kmp_view_get_state` return
-that same link when a host hides server output. The browser exchanges it for
+survives the session on your own disk. It also carries its own
+[ChronoLoom visualizer](https://crates.io/crates/kmp-viewer) over that same
+kernel — your memory as a graph, read-only and loopback only, no flag
+required. A session listens on no port until the viewer is asked for: the
+first `kmp_view_open` binds `http://127.0.0.1:7317/` (or a free per-session
+loopback port when another session owns 7317) and the viewer stays up for the
+rest of the session. The process prints a random one-session capability link
+when it binds; `kmp_view_open` returns that link, and `kmp_view_get_state`
+returns it once the viewer listens, when a host hides server output. The browser exchanges it for
 an HttpOnly cookie and removes the token from its URL. `KMP_VIEWER_ADDR` moves
 it to an explicit address; `off` declines it. `kmp_view_open` also reports
 `viewer_available`, so a semantic view can never masquerade as a browser the
@@ -64,8 +67,6 @@ Ask Codex or Claude to **“show me the memory behind this decision.”** The ag
 can open ChronoLoom at the relevant moment, select the evidence and light up
 the proof path. It declares semantic intent through `kmp_view_apply_intent`;
 the browser follows by long-poll, with the move explained and undoable.
-
-![Codex asks KMP about a decision and ChronoLoom answers with the live memory and proof path](https://raw.githubusercontent.com/underpass-ai/kmp/v0.3.0/docs/assets/kmp-agent-loom.gif)
 
 **The view is shared:** the agent can steer ChronoLoom for you; you can click,
 filter, pan, undo or take control yourself at any time.
@@ -77,9 +78,10 @@ Current status:
   `kmp_relate`, `kmp_trace`, `kmp_inspect`, `kmp_condense`, `kmp_relabel`,
   `kmp_summaries_audit`, `kmp_curate`,
   `kmp_guide`, `kmp_view_open`, `kmp_view_apply_intent`, and `kmp_view_get_state`;
-- can serve explicit fixture-backed KMP responses, embedded from the
-  contract's reference examples;
-- can use the live gRPC kernel when `KMP_KERNEL_GRPC_ENDPOINT` is set;
+- in debug and `eval-hooks` builds, can serve explicit fixture-backed KMP
+  responses, embedded from the contract's reference examples;
+- can use a gRPC kernel when `KMP_KERNEL_GRPC_ENDPOINT` is set
+  (experimental);
 - live mode calls the typed `KernelMemoryService` gRPC API directly;
 - live `kmp_ask` returns a deterministic citation-oriented answer or
   `UNKNOWN`, not a generated answer; complete bodies are canonical in
@@ -141,9 +143,8 @@ Current status:
   alone, are refused;
 - `kmp_ask` and `kmp_wake` preserve a stable core and fill a deterministic
   semantic prefix under `budget.max_bytes` (10,000 by default); expandable
-  proof returns `projection.page.next_cursor`, while `budget.tokens` remains a
-  reported compatibility hint and never filters canonical structured content;
-  `budget.max_bytes` is the cross-host hard ceiling;
+  proof returns `projection.page.next_cursor`; `budget.max_bytes` is the
+  cross-host hard ceiling;
 - `kmp_wake` returns `labels`, the catalogue of the abouts it read: each
   label the entries stand in, a coordinate's `dimension` kind as the key and
   its `scope_id` as the value, with how many entries stand in it and the
@@ -215,7 +216,9 @@ newline-delimited JSON-RPC responses to stdout.
 Run it with nothing set and it serves the embedded kernel. An endpoint in
 the environment chooses gRPC; `KMP_MCP_BACKEND=fixture` chooses the canned
 responses, and has to be asked for by name so that memory which is not real
-is never a default.
+is never a default. The fixture is a test hook: it exists in debug builds
+(`cargo run`, `cargo test`) and with the `eval-hooks` feature, never in a
+release binary.
 
 Minimal smoke request:
 
@@ -226,8 +229,7 @@ Minimal smoke request:
 Smoke an installed binary, with the script from the repository:
 
 ```bash
-KMP_MCP_BACKEND=fixture KMP_MCP_BIN=kmp-mcp \
-  bash scripts/mcp/kmp-stdio-smoke.sh
+KMP_MCP_BIN=kmp-mcp bash scripts/mcp/kmp-stdio-smoke.sh
 ```
 
 Tool call example:
@@ -238,7 +240,7 @@ Tool call example:
 
 When `projection.page.has_more` is true, repeat the same tool and bound
 arguments with `page.cursor` set to `projection.page.next_cursor`. Only
-`page.entries`, `budget.tokens`, and `budget.max_bytes` may change. The cursor
+`page.entries` and `budget.max_bytes` may change. The cursor
 is opaque and remains valid while the selected response snapshot is
 byte-identical; changed query/scope/detail or changed memory is rejected.
 
@@ -257,17 +259,18 @@ Live backend mapping:
 | `kmp_condense` | `KernelMemoryService.Condense` |
 | `kmp_summaries_audit` | MCP-local reading of the embedded store's event log; unavailable in live gRPC mode |
 | `kmp_curate` | MCP-local; its TypeSafe opt-in lives beside the embedded store; unavailable in live gRPC mode |
-| `kmp_guide` | MCP-local persistent agent identity and progressive guidance |
+| `kmp_guide` | Stateless topic lookup: a worked card and argument prose, compiled into the engine |
 | `kmp_relabel` | `KernelMemoryService.Relabel` |
 | ChronoLoom app data | `KernelMemoryService.ProjectVisual` (hidden from model tool discovery) |
 
 ## Language without flattening the evidence
 
 KMP never translates or rewrites stored evidence. With a lexical-bridge table
-beside the store (`<data dir>/lexical-bridge.kmpb`, built by the repository's
-`scripts/lexical-bridge/`), `kmp_ask` reaches memory written in another
-language on its own and names the word pairs that carried a citation, at
-medium confidence at most. A writer can attach an English rendering of a
+(installed for the machine by `kmp-mcp setup`, or `<data dir>/lexical-bridge.kmpb`
+for one store), `kmp_ask` reaches memory written in another language on its
+own and names the word pairs that carried a citation; an answer that stands
+only through a translation is medium confidence at most, and inside one
+language the table only ranks and never makes an answer. A writer can attach an English rendering of a
 memory as the reserved entry metadata key `summary_en`; `kmp_ask` searches it
 and never cites it, the kernel lints it, and `kmp_write_memory` takes it as
 `memories[].summary_en` (or attaches it to an older memory with

@@ -101,7 +101,7 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
             "kmp_wake",
             json!({"about":"project:parity-live","budget":{"detail":"compact","max_bytes":10000}}),
         ),
-        ("kmp_wake", json!({"about":"project:parity-live","depth":2})),
+        ("kmp_wake", json!({"about":"project:parity-live"})),
         (
             "kmp_wake",
             json!({"about":"project:parity-live","axis":"occurred",
@@ -194,8 +194,7 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
 
     let first_page_arguments = json!({
         "about":"project:parity-live",
-        "depth":5,
-        "budget":{"tokens":30000,"detail":"full","max_bytes":100000},
+        "budget":{"detail":"full","max_bytes":100000},
         "page":{"entries":4}
     });
     let mut unpaged_arguments = first_page_arguments.clone();
@@ -864,9 +863,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
                 "about": "question:mcp-ingest-smoke",
                 "role": "memory",
                 "intent": "read back the memory written through MCP",
-                "depth": 2,
                 "budget": {
-                    "tokens": 30000,
                     "max_bytes": 100000,
                     "detail": "full"
                 }
@@ -917,7 +914,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
                 "limit": {
                     "entries": 5
                 },
-                "depth": 3
+                "budget": {"depth": 3}
             }),
         )
         .await;
@@ -943,10 +940,6 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
                 "dimensions": {
                     "mode": "only",
                     "include": ["conversation"]
-                },
-                "depth": 3,
-                "budget": {
-                    "tokens": 2048
                 }
             }),
         )
@@ -979,11 +972,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
             json!({
                 "about": ROOT_NODE_ID,
                 "role": DEVELOPER_ROLE,
-                "intent": "continue from the seeded kernel memory",
-                "depth": 2,
-                "budget": {
-                    "tokens": 2048
-                }
+                "intent": "continue from the seeded kernel memory"
             }),
         )
         .await;
@@ -999,11 +988,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
             "kmp_ask",
             json!({
                 "about": ROOT_NODE_ID,
-                "question": "Which seeded decision should the next agent inspect?",
-                "depth": 2,
-                "budget": {
-                    "tokens": 2048
-                }
+                "question": "Which seeded decision should the next agent inspect?"
             }),
         )
         .await;
@@ -1028,11 +1013,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
             json!({
                 "about": ROOT_NODE_ID,
                 "from": ROOT_NODE_ID,
-                "to": TASK_ID,
-                "role": DEVELOPER_ROLE,
-                "budget": {
-                    "tokens": 1024
-                }
+                "to": TASK_ID
             }),
         )
         .await;

@@ -1345,6 +1345,8 @@ enum FactState {
   FACT_STATE_CURRENT = 1;
   FACT_STATE_SUPERSEDED = 2;
   FACT_STATE_EXPIRED = 3;
+  // Recorded, but its valid_from is still ahead of the read.
+  FACT_STATE_NOT_YET_IN_FORCE = 4;
 }
 
 // How two facts of different abouts stand to each other inside a scope

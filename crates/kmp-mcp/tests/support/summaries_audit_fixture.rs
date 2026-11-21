@@ -1,7 +1,10 @@
 //! Shared embedded-server fixture for summaries-audit integration tests.
 
+#[path = "isolated_home.rs"]
+mod isolated_home;
+
 use std::io::Write;
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 
 use kmp_mcp::{EmbeddedKernelMcpBackend, KernelMcpServer};
 use serde_json::{Value, json};
@@ -110,7 +113,7 @@ pub async fn seeded() -> (tempfile::TempDir, KernelMcpServer) {
 }
 
 pub fn run(envs: &[(&str, &str)], args: &[&str], stdin: &str) -> std::process::Output {
-    let mut command = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"));
+    let mut command = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"));
     command
         .args(args)
         .stdin(Stdio::piped())

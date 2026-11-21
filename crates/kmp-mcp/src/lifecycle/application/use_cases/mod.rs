@@ -17,6 +17,7 @@ pub mod select_store;
 pub mod setup_kmp;
 pub mod survey_engine_pieces;
 pub mod survey_engines;
+pub mod survey_hand_wiring;
 pub mod survey_holds;
 pub mod survey_installation;
 pub mod survey_leftovers;

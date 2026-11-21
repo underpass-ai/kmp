@@ -23,7 +23,8 @@ pub(crate) fn search_summary_finding(resolved: &ResolvedDataDir) -> Option<Lifec
     {
         return None;
     }
-    let bundle = kmp_embedded::EmbeddedKernelStore::open(resolved.path())
+    // Read-only: a diagnosis never stamps, adopts or creates anything (S8).
+    let bundle = kmp_embedded::EmbeddedKernelStore::open_read_only(resolved.path())
         .and_then(|store| store.export_bundle_excluding_abouts_blocking(&guide::abouts_owned()));
     let bundle = match bundle {
         Ok(bundle) => bundle,

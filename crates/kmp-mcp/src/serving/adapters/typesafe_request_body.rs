@@ -18,6 +18,14 @@ pub(super) fn typesafe_request_body(
                 JudgementQuestion::Noul { instructions } => {
                     json!({"type": "noul", "instructions": instructions})
                 }
+                JudgementQuestion::CriteriaNoul {
+                    instructions,
+                    criteria,
+                } => json!({
+                    "type": "noul",
+                    "instructions": instructions,
+                    "criteria": {"true": criteria.when_true, "false": criteria.when_false},
+                }),
                 JudgementQuestion::Choice {
                     instructions,
                     options,
@@ -72,12 +80,12 @@ mod tests {
                 },
             ),
         ]);
-        let body = typesafe_request_body("jev-1.13.0", &json!("state"), &questions);
+        let body = typesafe_request_body("jev-1.14.0", &json!("state"), &questions);
         assert_eq!(
             body,
             json!({
                 "state": "state",
-                "model": "jev-1.13.0",
+                "model": "jev-1.14.0",
                 "questions": {
                     "c0": {"type": "noul", "instructions": "Does it rain?"},
                     "c1": {"type": "choice", "instructions": {"question": "Which?"},

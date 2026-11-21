@@ -10,8 +10,10 @@ use super::answer_selection::was_reached_indirectly;
 use super::ask_retrieval_context::AskRetrievalContext;
 use super::ask_setup::AskSetup;
 use super::content_scores::ContentScores;
+use super::cross_language_band::{rescue_band, translated_answer_band};
 use super::decided_selection::DecidedSelection;
 use super::doubt_band::{DoubtBand, MAX_DOUBT_PASSAGES};
+use super::doubt_band_entries::DoubtBandEntries;
 use super::doubt_entry::DoubtEntry;
 use super::doubt_passage::DoubtPassage;
 use super::gate_verdict::GateVerdict;
@@ -42,13 +44,18 @@ pub(super) type DoubtReading = (
 /// in rank order: under an anchor, direct candidates naming the principal
 /// anchor (or standing in for it by a declared `same_entity_as`); without
 /// one, direct, live candidates that name no excluded anchor alone.
+///
+/// The cross-language judge's entries, when open, are read first
+/// ([`super::cross_language_band`]): an answer that stands only through a
+/// translation, and an unanchored UNKNOWN the bridge reached memories in
+/// another language for. Only the entries `entries` opens are read.
 pub(super) fn read_doubt_band(
     retrieval: &AskRetrievalContext,
     question: &str,
     policy: MemoryAnswerPolicy,
     temporal: &TemporalSelection,
     bridge: &LexicalBridge,
-    margin_below: i64,
+    entries: DoubtBandEntries,
 ) -> ProtoMappingResult<DoubtReading> {
     let Some(gate) = retrieval.gate else {
         return Ok((None, None, None));
@@ -86,19 +93,28 @@ pub(super) fn read_doubt_band(
             None,
         );
         let band = match &reading.verdict {
-            Some(verdict) => anchored_band(
-                verdict,
-                &reading.evidence,
-                &reading.scores,
-                &reading.promotable,
-                margin_below,
-            ),
+            Some(verdict) => entries
+                .translated()
+                .then(|| translated_answer_band(verdict, &reading.evidence))
+                .flatten()
+                .or_else(|| {
+                    entries.margin_below().and_then(|margin_below| {
+                        anchored_band(
+                            verdict,
+                            &reading.evidence,
+                            &reading.scores,
+                            &reading.promotable,
+                            margin_below,
+                        )
+                    })
+                }),
             None => unanchored_band(
                 &setup,
                 asked,
+                question,
                 &reading.evidence,
                 &reading.scores,
-                margin_below,
+                entries,
             ),
         };
         let decided = DecidedSelection::new(
@@ -115,7 +131,7 @@ pub(super) fn read_doubt_band(
         return Ok((band, Some(decided), None));
     }
     let (ranked, scores) = setup.ranker.rank_split(asked, policy, candidates);
-    let band = unanchored_band(&setup, asked, &ranked.evidence, &scores, margin_below);
+    let band = unanchored_band(&setup, asked, question, &ranked.evidence, &scores, entries);
     let ranked = RankedSelection::new(asked, policy, temporal, bridge, ranked);
     Ok((band, None, Some(ranked)))
 }
@@ -162,9 +178,10 @@ fn anchored_band(
 fn unanchored_band(
     setup: &AskSetup<'_>,
     asked: &str,
+    question: &str,
     ranked: &[MemoryEvidence],
     scores: &ContentScores,
-    margin_below: i64,
+    entries: DoubtBandEntries,
 ) -> Option<DoubtBand> {
     let citable = |item: &&MemoryEvidence| {
         !was_reached_indirectly(item) && !setup.negated_only(item) && setup.ranker.is_live(item)
@@ -180,6 +197,12 @@ fn unanchored_band(
         .collect::<Vec<_>>();
     let confidence = setup.ranker.confidence(asked, &core);
     if !core.is_empty() && confidence != MemoryConfidence::Low {
+        if entries.translated()
+            && let Some(band) = super::cross_language_band::translated_core_band(question, &core)
+        {
+            return Some(band);
+        }
+        let margin_below = entries.margin_below()?;
         let margin = scores.margin(core.iter().map(|item| item.id.as_str()));
         if !margin.is_narrow(margin_below) {
             return None;
@@ -201,11 +224,20 @@ fn unanchored_band(
             passages,
         });
     }
+    if !entries.rescue() && entries.margin_below().is_none() {
+        return None;
+    }
     let best_effort = setup.ranker.rank(
         asked,
         MemoryAnswerPolicy::BestEffort,
         setup.candidate_evidence.clone(),
     );
+    if entries.rescue()
+        && let Some(band) = rescue_band(setup, question, ranked, &best_effort)
+    {
+        return Some(band);
+    }
+    entries.margin_below()?;
     let passages = best_effort
         .iter()
         .filter(citable)
@@ -219,7 +251,7 @@ fn unanchored_band(
     })
 }
 
-fn passage(item: &MemoryEvidence, in_core: bool) -> DoubtPassage {
+pub(super) fn passage(item: &MemoryEvidence, in_core: bool) -> DoubtPassage {
     DoubtPassage {
         id: item.id.clone(),
         entry_ref: item

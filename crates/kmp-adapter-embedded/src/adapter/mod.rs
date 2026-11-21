@@ -4,6 +4,7 @@ mod about_import_plan;
 mod about_import_report;
 mod about_import_source;
 mod bounded_adjacency;
+mod bundle_fast_forward;
 mod consolidation;
 mod consolidation_source;
 mod context_events;
@@ -14,8 +15,10 @@ mod format_version;
 mod graph_point_snapshot;
 mod graph_read;
 mod head_stream;
+mod history_relation;
 mod lifecycle_chain_read;
 mod memory_about_index;
+mod memory_proof;
 mod memory_write_facts_read;
 mod migration;
 mod node_body_descriptor;
@@ -33,6 +36,7 @@ mod snapshot_store;
 mod store;
 mod telemetry;
 mod trace_snapshot;
+mod vanished_database;
 
 pub use about_import_outcome::AboutImportOutcome;
 pub use about_import_report::AboutImportReport;
@@ -41,6 +45,7 @@ pub use format_version::{
     read_stamped_version, store_file_path_for, validate_store_layout,
 };
 pub use head_stream::HeadStream;
+pub use history_relation::{HistoryRelation, compare_bundle_histories};
 pub use migration::StoreMigrationReceipt;
 pub use portability::{
     BUNDLE_FORMAT_VERSION, BundleEventRange, BundleHeader, ImportReport, bundle_excluding_abouts,
@@ -52,6 +57,7 @@ pub use telemetry::{
     QualityTelemetryRetention, SqliteQualityTelemetryReader, SqliteQualityTelemetryWriter,
     quality_telemetry_path,
 };
+pub use vanished_database::refuse_vanished_store_database;
 
 mod node_card_adoption;
 

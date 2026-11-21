@@ -10,7 +10,7 @@ use crate::queries::bundle_truncator::{TruncationMetadata, limit_sections_by_tie
 use crate::queries::cl100k_estimator::Cl100kEstimator;
 use crate::queries::mode_heuristic::resolve_mode;
 use crate::queries::render_demand::RenderDemand;
-use crate::queries::tier_section_classifier::classify_into_tiers;
+use crate::queries::tier_section_classifier::{classify_into_tiers, classify_summary};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RenderedSection {
@@ -97,6 +97,9 @@ pub(crate) fn render_graph_bundle_for_demand(
     if !demand.renders_text() {
         return RenderedContext::unrendered(resolved_mode);
     }
+    if demand == RenderDemand::Summary {
+        return RenderedContext::summary(bundle, options, resolved_mode, estimator);
+    }
     let measured = demand.is_measured();
 
     let detail_by_node_id = bundle
@@ -172,6 +175,27 @@ pub(crate) fn render_graph_bundle_for_demand(
 }
 
 impl RenderedContext {
+    /// The L0 summary tier alone, tiered under the same budget as a
+    /// structure render, so it equals that render's first tier: the summary
+    /// is always that tier's only section. Nothing else of the bundle is
+    /// rendered or counted.
+    fn summary(
+        bundle: &KmpBundle,
+        options: &ContextRenderOptions,
+        resolved_mode: KmpMode,
+        estimator: &dyn TokenEstimator,
+    ) -> Self {
+        let tier_budget = options
+            .token_budget
+            .map(|total| TierBudget::from_total_with_mode(total, resolved_mode))
+            .unwrap_or_else(TierBudget::unlimited);
+        Self {
+            tiers: build_rendered_tiers(classify_summary(bundle), &tier_budget, estimator, false),
+            demand: RenderDemand::Summary,
+            ..Self::unrendered(resolved_mode)
+        }
+    }
+
     /// A render nobody reads: no text, no tokens, no metrics.
     fn unrendered(resolved_mode: KmpMode) -> Self {
         Self {

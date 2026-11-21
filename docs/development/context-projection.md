@@ -20,7 +20,7 @@ two independent attestations. Passage names identify display text; citation name
 resolve record refs, never entity equivalence. Cite that canonical ref, and keep
 each packet with both of its response-local tables when paging.
 
-Sharing runs after native selection, budgets and contextual guidance. It never
+Sharing runs after native selection and budgets. It never
 increases a packet. Required/floor byte estimates still describe the native inline
 selection; recall used_bytes is recalculated for the actual output. No page is
 stored. Empty or unhelpful tables are not emitted. Errors, writes, guide commands

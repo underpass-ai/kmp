@@ -42,9 +42,8 @@ source. The canonical receipt and relation-quality detail retain the resolved
 class. This completion changes neither proof requirements nor the relation's
 direction and does not infer whether it is true.
 
-With `context_id`, actor defaults to the persistent agent name; an explicit
-actor overrides it. Without context, actor is required. Actor identifies the
-author. Omit `observed_at` or set it to null: KMP assigns the exact ingestion
+An omitted actor is the MCP client's name from `initialize` (or
+`mcp-client`); an explicit actor overrides it. Actor identifies the author. Omit `observed_at` or set it to null: KMP assigns the exact ingestion
 instant to this new observation and the packet's provenance. Supply an explicit
 observation time only when the source establishes it, with the actual UTC offset.
 KMP never chooses it from event dates or from a different record.
@@ -183,10 +182,9 @@ finish relevant pages.
 
 After reviewing, execute `next_actions[0]` to resume the unchanged packet, or
 correct it and submit again. The action is a `continuation` handle: the server
-retains the packet and its `review_token` (in the agent directory with
-`context_id`, in the serving process otherwise). A corrected packet is sent
-as a new call and returns a fresh review. Do not add arguments to a
-continuation. Tokens bind the exact
+retains the packet and its `review_token` beside the store. A corrected packet
+is sent as a new call and returns a fresh review. Do not add arguments to a
+continuation; resending the same `about` or `actor` is accepted. Tokens bind the exact
 logical proposal and complete selected source material, including omissions.
 A changed proposal or relevant context returns a fresh review without writing.
 A race at commit is safely retryable under the same idempotency key. An accepted
@@ -322,11 +320,12 @@ return `needs_review`; resume after reviewing. Independent observations stay one
 The relation guide documents explicit previews and validation before commit.
 
 Use one `idempotency_key` per logical write. Replaying the same accepted write
-returns its success rather than duplicating memory. A `conflict` can also mean
-the store advanced before this attempt committed: follow the error message,
-rebase, and retry the same logical write with the same key when it says the
-conflict is retryable. A key already accepted with different content must not
-be reused.
+returns its success rather than duplicating memory. When the store advances
+before a write commits, the server plans and commits it again itself; only if
+every attempt lost does the call answer `retryable_conflict`, and replaying the
+same logical write with the same key is then safe. `conflict` means do not
+replay unchanged: a key already accepted with different content must not be
+reused.
 
 For a relation, read `guide:kmp-agent:advanced:relations`. For event and observation timestamps read `guide:kmp-agent:verb:time`; for English search summaries read `guide:kmp-agent:advanced:summary`. Read the lifecycle and cross-about topics when the write uses those features. These are exact refs in `guide:kmp-agent`; reuse bodies already in context.
 

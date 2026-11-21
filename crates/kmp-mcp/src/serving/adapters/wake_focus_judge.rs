@@ -43,8 +43,8 @@ impl WakeFocusJudge {
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
             Err(_) => return Err("cannot read wake focus configuration".into()),
         };
-        let config: RerankConfig =
-            serde_json::from_slice(&bytes).map_err(|_| "invalid wake focus configuration")?;
+        let config: RerankConfig = serde_json::from_slice(&bytes)
+            .map_err(|error| format!("invalid wake focus configuration: {error}"))?;
         let (pool_size, excerpt_chars) = config.validate()?;
         match judgement {
             Ok(Some(model)) => Ok(Some(Arc::new(Self {

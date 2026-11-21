@@ -19,8 +19,8 @@ cutoff, then check that it still describes the selected body.
 3. Write `about`, `ref`, `language`, `scope:"node_body"`, `card`, `source` and
    `expect`. The candidate supplies `expect:{absent:true}` or the exact stored
    `card_revision` for a stale card. The text must be nonempty, at most 4096 UTF-8
-   bytes, and strictly shorter in bytes than its body. Include `actor` without
-   `context_id`; with a valid context, an omitted actor uses the persistent name.
+   bytes, and strictly shorter in bytes than its body. An omitted `actor` is
+   the MCP client's name.
 4. Start the same Trace selection afresh with
    `search.proof:true,compact:{language:...}`. **Remove `proof_refs`,
    `expect_selection` and the old `page.cursor`.** Otherwise named refs request

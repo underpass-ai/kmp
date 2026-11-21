@@ -71,7 +71,7 @@ which requires an image tag or digest and supports server-side dry runs.
   validation;
 - verify application behavior before switching agent endpoints.
 
-The chart's values and templates are authoritative. Archived runbooks are not.
+The chart's values and templates are authoritative.
 
 ## Data movement
 

@@ -17,15 +17,17 @@ answer from it before touching a file.
   embedded store as the default path.
 - **Documentation**: the canonical public-overview block; generated guides
   from one editorial source; no benchmark numbers in the README.
-- **Agent surface**: setup never writes memory; the guide used to need an
-  explicit sync and is now seeded on the first read; parameter prose moved
-  from `tools/list` to `kmp_guide` after a measurement named it as the cost.
+- **Agent surface**: setup never writes memory; the guide first needed an
+  explicit sync, was later seeded on the first read, and in 1.0 is served
+  from the engine by a stateless `kmp_guide`, because a read never writes
+  the store; parameter prose moved from `tools/list` to `kmp_guide` after a
+  measurement named it as the cost.
 - **Storage**: the 0.25.0 store selection order and the saved-selection
   behavior it replaced, with the observation that motivated the change.
 - **Release**: the catalog advances only after every asset is public; the
   crate publish chain waits for index visibility after the 0.25.0 failure.
 
-Two memories supersede older ones, so "what did we believe before 0.25.0?"
+Three memories supersede older ones, so "what did we believe before 0.25.0?"
 has an answer, and three decisions are `chosen_because` of an observation the
 repository recorded.
 
@@ -40,5 +42,8 @@ repository recorded.
 
 Every entry names the file, section, issue or workflow run it comes from.
 When a decision changes, add a memory that `supersedes` the old one rather
-than editing the old text: the history is the value. Edit `requests.json`,
-run the refresh, and commit both files together.
+than editing the old text: the history is the value. Append a new packet to
+`requests.json` (with its own idempotency key), run the refresh, and commit
+both files together. The refresh rebuilds on top of the committed
+`.kmp/memory.jsonl`, so the new packet becomes a new event and the history
+every checkout already holds stays its prefix.

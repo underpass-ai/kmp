@@ -9,13 +9,22 @@ pub(super) async fn run_viewer_command(args: &[&str]) -> i32 {
     if let Some(option) = args.first().filter(|argument| looks_like_option(argument)) {
         return unknown_option("viewer", option);
     }
-    // `viewer` with no argument honours the same env the MCP mode uses.
-    let addr = args
-        .first()
-        .copied()
-        .map(ToString::to_string)
-        .or_else(|| std::env::var(kmp_viewer::VIEWER_ADDR_ENV).ok())
-        .unwrap_or_else(|| kmp_viewer::DEFAULT_VIEWER_ADDR.to_string());
+    // `viewer` with no argument honours the same env the MCP mode uses, read
+    // the same way: `off` declines the viewer rather than naming an address.
+    let addr = match args.first() {
+        Some(addr) => (*addr).to_string(),
+        None => match kmp_mcp::viewer::viewer_addr_from_env().addr() {
+            Some(addr) => addr.to_string(),
+            None => {
+                eprintln!(
+                    "kmp-mcp: {} turns the viewer off; unset it or pass an address, for example `kmp-mcp viewer {}`",
+                    kmp_viewer::VIEWER_ADDR_ENV,
+                    kmp_viewer::DEFAULT_VIEWER_ADDR
+                );
+                return 2;
+            }
+        },
+    };
     let resolved = match kmp_mcp::lifecycle::resolve_memory_for_use() {
         Ok(resolved) => resolved,
         Err(error) => {
@@ -23,13 +32,7 @@ pub(super) async fn run_viewer_command(args: &[&str]) -> i32 {
             return 2;
         }
     };
-    let engine = match kmp_embedded::resolve_engine_for_data_dir_from_env(resolved.path()) {
-        Ok(engine) => engine,
-        Err(error) => {
-            eprintln!("kmp-mcp: {error}");
-            return 2;
-        }
-    };
+    let engine = kmp_embedded::default_engine_for_data_dir(resolved.path());
     let kernel = match kmp_embedded::EmbeddedKernel::open_with_engine(resolved.path(), engine) {
         Ok(kernel) => kernel,
         Err(error) => {

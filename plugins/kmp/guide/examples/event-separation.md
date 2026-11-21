@@ -24,7 +24,6 @@ value, never a reconstructed ref. Send only each call's arguments.
 {
   "tool": "kmp_wake",
   "save_as": "initial",
-  "expect_error": "not_found",
   "arguments": {
     "about": "example:guide:execution-verification",
     "budget": {

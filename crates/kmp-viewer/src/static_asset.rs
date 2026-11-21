@@ -109,6 +109,8 @@ mod tests {
             host: Some("127.0.0.1".to_string()),
             cookie: None,
             accept_encoding: accept_encoding.map(str::to_string),
+            origin: None,
+            fetch_site: None,
         }
     }
 

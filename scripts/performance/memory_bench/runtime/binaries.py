@@ -36,7 +36,7 @@ class KmpBinary:
     def locate(cls, path=None):
         path = Path(path) if path else DEFAULT_BINARY
         if not path.is_file():
-            raise BinaryFailed(f'{path} not found: cargo build --release -p kmp-mcp')
+            raise BinaryFailed(f'{path} not found: cargo build --release -p kmp-mcp --features eval-hooks')
         path = path.resolve()
         return cls(path, sha256_file(path))
 

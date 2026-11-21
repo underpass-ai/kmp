@@ -25,7 +25,13 @@ settled; act on it once instead of asking again in other words:
   - `out_of_window`: `proof.nearest_outside` lies outside the span; it is not
     evidence inside it. Widen the span only if the user's question allows.
 
-An honest UNKNOWN can end the task; do not sweep the graph to force an answer.
+Read `proof.evidence[].text` and judge whether it answers: `proof.confidence`
+measures lexical overlap, not correctness, and `reached_by` items support,
+they do not answer. Changing an optional argument is another selection, not a
+page; continue only through `projection.page.next_cursor` with the bound
+arguments unchanged. `page.entries` counts projection records, not memories.
+An honest UNKNOWN can end the task: do not inspect the
+root, widen scope or traverse the graph to force an answer.
 For a semantic question with a time, supply `as_of` or `interval` and the right
 axis. For “what changed”, “latest”, or a history, use temporal navigation.
 

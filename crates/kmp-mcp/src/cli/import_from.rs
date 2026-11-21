@@ -36,13 +36,7 @@ pub(super) async fn run(args: &[&str]) -> i32 {
             return 2;
         }
     };
-    let engine = match kmp_embedded::resolve_engine_for_data_dir_from_env(resolved.path()) {
-        Ok(engine) => engine,
-        Err(error) => {
-            eprintln!("kmp-mcp: {error}");
-            return 2;
-        }
-    };
+    let engine = kmp_embedded::default_engine_for_data_dir(resolved.path());
     let kernel = match kmp_embedded::EmbeddedKernel::open_with_engine(resolved.path(), engine) {
         Ok(kernel) => kernel,
         Err(error) => {
@@ -50,6 +44,22 @@ pub(super) async fn run(args: &[&str]) -> i32 {
             return 2;
         }
     };
+
+    // A project store is caught up with its committed bundle first, as any
+    // session would on open: importing into a fresh clone's empty store
+    // would otherwise turn the bundle it has not read yet into a divergence.
+    if let Some(bundle) = kmp_embedded::CommitNativeBundle::for_resolved_excluding_abouts(
+        &resolved,
+        kmp_mcp::local_abouts(),
+    ) && let Err(error) = bundle.reconcile_on_open(kernel.store())
+    {
+        eprintln!(
+            "kmp-mcp: import refused; nothing was written. This store could not be compared \
+             with `{}`: {error}",
+            bundle.path().display()
+        );
+        return 2;
+    }
 
     let pulse = kmp_mcp::pulse::Pulse::start("bringing those abouts in…");
     let imported = kernel
@@ -173,5 +183,13 @@ async fn read_source(from: &Path, abouts: &[String]) -> Result<String, String> {
     store
         .export_bundle_for_abouts(abouts)
         .await
-        .map_err(|error| error.to_string())
+        .map_err(|error| {
+            // The store's own refusal speaks of "this store"; here that store
+            // is the source, so name it.
+            let error = error.to_string();
+            match error.strip_prefix("this store ") {
+                Some(rest) => format!("The source `{}` {rest}", data_dir.display()),
+                None => error,
+            }
+        })
 }

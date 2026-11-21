@@ -43,23 +43,9 @@ async fn check_retained_grants(shared: bool) {
     let server = KernelMcpServer::embedded(dir.path())
         .expect("server")
         .with_shared_passages(shared);
-    let guide: Vec<Value> = serde_json::from_str(include_str!(
-        "../../../../plugins/kmp/guide/guide.requests.json"
-    ))
-    .expect("guide");
-    for args in guide {
-        assert_eq!(native(&server, "kmp_ingest", args).await["isError"], false);
-    }
-    let registered = native(
-        &server,
-        "kmp_guide",
-        json!({"registration_key":"http-retained"}),
-    )
-    .await;
-    let context = registered["structuredContent"]["context_id"].clone();
-    let written = native(&server, "kmp_write_memory", json!({"about":"project:kmp","context_id":context,"observed_at":"2026-09-09T10:00:00Z","idempotency_key":"http:retained:source","labels":{"task":["route"]},"memories":[{"id":"source","kind":"observation","summary":"The route opens on Tuesday.","evidence":"S1 records that the route opens on Tuesday. ".repeat(90)}]})).await;
+    let written = native(&server, "kmp_write_memory", json!({"about":"project:kmp","actor":"http-reader","observed_at":"2026-09-09T10:00:00Z","idempotency_key":"http:retained:source","labels":{"task":["route"]},"memories":[{"id":"source","kind":"observation","summary":"The route opens on Tuesday.","evidence":"S1 records that the route opens on Tuesday. ".repeat(90)}]})).await;
     assert_eq!(written["isError"], false, "{written}");
-    let first = native(&server, "kmp_inspect", json!({"about":"project:kmp","context_id":context,"ref":written["structuredContent"]["local_refs"]["source"],"include":{"raw":true},"budget":{"max_bytes":512}})).await;
+    let first = native(&server, "kmp_inspect", json!({"about":"project:kmp","ref":written["structuredContent"]["local_refs"]["source"],"include":{"raw":true},"budget":{"max_bytes":512}})).await;
     let action = first["structuredContent"]["next_actions"][0].clone();
     assert!(action["arguments"]["continuation"].is_string(), "{first}");
     let allowed = identity(&["kmp:read", "kmp:inspect:raw", "kmp:all-abouts"]);
@@ -87,7 +73,7 @@ async fn check_retained_grants(shared: bool) {
     );
 
     // A wake cursor also keeps scope/all-abouts requirements hidden by the handle.
-    let wake = native(&server, "kmp_wake", json!({"about":"project:kmp","context_id":context,"dimensions":{"scope":"all_abouts","scope_ids":["route"]},"budget":{"max_bytes":2048}})).await;
+    let wake = native(&server, "kmp_wake", json!({"about":"project:kmp","dimensions":{"scope":"all_abouts","scope_ids":["route"]},"budget":{"max_bytes":7100}})).await;
     let action = wake["structuredContent"]["projection"]["next_action"].clone();
     assert!(action["arguments"]["continuation"].is_string(), "{wake}");
     assert_eq!(

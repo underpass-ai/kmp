@@ -106,7 +106,7 @@ class VariantTest(unittest.TestCase):
         record = BASE.replace('jev = "off"', 'jev = "record"')
         cassette = '\n[env]\nKMP_TYPESAFE_CASSETTE = "files/cassette.json"\n'
         self.refuse(BASE + cassette, "jev='off'")
-        self.refuse(BASE + '\n[store_files]\n"typesafe.json" = { json = { model = "jev-1.13.0" } }\n', "jev='off'")
+        self.refuse(BASE + '\n[store_files]\n"typesafe.json" = { json = { model = "jev-1.14.0" } }\n', "jev='off'")
         self.refuse(replay + cassette + 'KMP_TYPESAFE_CASSETTE_MODE = "record"\n', 'cannot record')
         self.refuse(record + cassette + 'KMP_TYPESAFE_CASSETTE_MODE = "replay"\n', 'cannot replay')
         self.refuse(replay + '\n[env]\nKMP_TYPESAFE_CASSETTE = "files/none.json"\n', 'replay needs it')

@@ -28,7 +28,7 @@ from ..runtime.jev_fixture import (BOOK, CASSETTE, JevFixtureError, JevFixtureMi
 from ..runtime.layout import public_layout
 from ..runtime.session import BenchProcess, ProcessConfig
 
-MODEL = 'jev-1.13.0'
+MODEL = 'jev-1.14.0'
 HEX = {name: hashlib.sha256(name.encode()).hexdigest() for name in ('binary', 'store', 'questions')}
 
 

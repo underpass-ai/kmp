@@ -27,9 +27,9 @@ codex plugin add kmp@underpass
 
 For Codex, ask the agent to run `kmp-setup`. Restart the host once after a
 setup or plugin update, because a running session keeps the MCP inventory it
-started with. That is the whole installation: the first guide read on a fresh
-store seeds the installed guides from the assets that match the engine, and
-setup itself writes no memory. `kmp-guide` in Codex or `/kmp:guide` in Claude
+started with. That is the whole installation: `kmp_guide` serves every topic
+from the engine, a read never writes the store, and setup itself writes no
+memory. `kmp-guide` in Codex or `/kmp:guide` in Claude
 Code opens the human guide in ChronoLoom and refreshes the guides explicitly
 when a store needs it. A store with no matching assets anywhere reports
 `GUIDE_UNAVAILABLE`, naming where it looked and the explicit repair.
@@ -60,34 +60,36 @@ installs the `pi-runtime` package that carries KMP into Pi, and
 ## Verify
 
 ```bash
-kmp-mcp info
 kmp-mcp doctor
 ```
 
-`info` identifies the binary, selected backend, data directory, engine,
-durability state and viewer. `doctor` diagnoses the process-local setup. The
-plugin's `kmp-doctor` workflow also checks host wiring and duplicate ownership.
+`doctor` identifies the binary, backend, switches in effect, data directory,
+store format and optional files, then checks the host plugins and the engines
+on `PATH`, and ends with one verdict. `kmp-mcp info` states the installation
+without judging it, and also lists every store on this machine. [Troubleshooting](../troubleshooting.md) explains every
+`FAIL` and `warn`.
 
 `KMP_MCP_BACKEND=fixture` is only for deterministic protocol tests. It stores
-nothing and must never be mistaken for a real memory.
+nothing and must never be mistaken for a real memory, so it exists only in
+debug builds and builds with the `eval-hooks` cargo feature; a release binary
+refuses it ([environment switches](configuration.md#environment-switches)).
 
 ## Where memory lives
 
 The data directory is selected in this order:
 
-1. `KMP_MCP_DATA_DIR`, when explicitly set;
-2. the selection saved with `kmp-mcp config memory-store`;
-3. `.kernel/` at the nearest git root;
+1. `KMP_MCP_DATA_DIR`, when explicitly set (an absolute path);
+2. the nearest project root: `.kernel/` of a git checkout (a git worktree
+   opens its main checkout's store), or a directory that already holds a
+   `.kernel/` store;
+3. the selection saved with `kmp-mcp config memory-store`;
 4. the per-user local data directory: `$XDG_DATA_HOME/kmp/default` or
    `~/.local/share/kmp/default` on Unix, and `%LOCALAPPDATA%\kmp\default`
    on Windows (with `APPDATA` and `USERPROFILE` fallbacks).
 
-The environment variable stays first because it is the most explicit and most
-local thing anyone can say, and tests, baselines and reproduction scripts
-depend on it meaning exactly one process. A saved selection then beats
-automatic discovery, which is the point of saving one: a workspace with no git
-root reaches the memory its operator chose rather than whatever the per-user
-default happens to hold.
+`kmp-mcp config` and `kmp-mcp doctor` print which rule won (`chosen by:`).
+A project's memory stays with the project even when a machine-wide selection
+is saved; the saved selection applies where no project does.
 A valid environment override does not depend on the saved selection being
 readable. Config and doctor report an invalid unused selection with a repair;
 without the override, an invalid selection still stops startup. A `#` inside
@@ -114,16 +116,15 @@ and repair; the refused directory keeps every byte it had. Opening a supported
 format-3 store upgrades it to format 4, as described above; selecting its path
 alone does not perform that upgrade.
 
-SQLite permits multiple local agent hosts to share one store. To recover an
-unsupported store, stop its writers and preserve the directory. Use an explicitly
-archived compatible exporter to create a portable bundle, then import it into
-an empty current store. The recovery runbook defines that external contract.
+SQLite permits multiple local agent hosts to share one store. A store of an
+unsupported format (1 or 2) is refused and left untouched; no tested path
+brings it into 1.0. Formats, upgrade and rollback: [Store format](store-format.md).
 
 ### The lexical index beside the store
 
 `lexical-index.sqlite3` sits beside `store/` (not inside it: the format gate
 refuses files it does not know there). It is a derived index of what `kmp_ask`
-reads (DESIGN L6): for each about, every candidate's terms with their counts
+reads: for each about, every candidate's terms with their counts
 (`LexFwd`), postings of each term in blocks of 128 (`LexPost`), document
 frequencies (`LexKeyDf`), the about's totals and language signals
 (`LexStats`), the clocks of its relations and the words of its texts, under
@@ -148,11 +149,12 @@ whole about as the index describes it; the response is the one reading the
 whole about gives, byte for byte. When those memories are more than a third of
 the about, the about has fewer than 2,250 entries (never indexed), or the ask is
 any other kind, it reads the about as before; `lexical-index.json` beside the
-store tunes both limits. It is on by default; `KMP_LEXICAL_INDEX=off` closes it, `shadow` only compares it with
-every ask, and `verify` answers both ways and logs whether they agree. Among
+store tunes both limits. It is on by default; `KMP_LEXICAL_INDEX=off` closes it. The measurement modes
+`shadow` (only compares it with every ask) and `verify` (answers both ways and
+logs whether they agree) exist only in debug and `eval-hooks` builds. Among
 the memories the postings reach, those that cannot clear the ranker's floor
-under any reading of the question are not read at all (MaxScore, P14; on by
-default, `KMP_LEXICAL_MAXSCORE=off` reads them all). It can be
+under any reading of the question are not read at all (MaxScore; always on
+since 1.0, when its `KMP_LEXICAL_MAXSCORE` switch was removed). It can be
 deleted at any time: the next ask builds what it needs again. It is not part of
 a bundle.
 
@@ -160,29 +162,27 @@ a bundle.
 
 `kmp_ask` reads with the anchored ask gate unless the store opts out. Under
 `evidence_or_unknown` and `show_conflicts`, a question that names an
-identifier (`C6.4`, `#188`, `v0.7.0`, `corte 10`) is answered only from
+identifier (`C6.4`, `#188`, `v0.7.0`) is answered only from
 memories that name it and state what was asked beside it. Every response says
 how it settled in `answer_status` (`answered`, `partial` or `unknown`) and,
 when UNKNOWN, why in `unknown_reason`. `partial` is an enumerative question
 answered in part: `proof.missing` names the rest in the question's own words,
 and confidence is at most medium.
 
-The gate is the default since 26 September 2026. The previous rule, where
-UNKNOWN meant only that the best evidence shared too few of the question's
-words, is one file away. Put this `ask-gate.json` in the data directory and
-restart the host:
+The gate is the default. The rule without it, where UNKNOWN means only that
+the best evidence shared too few of the question's words, is one file away.
+Put this `ask-gate.json` in the data directory and restart the host:
 
 ```json
 {"mode":"off"}
 ```
 
-That store then answers byte for byte as v0.23.0 did, without
-`answer_status` or `unknown_reason`. `{"mode":"anchored","partial":false}`
+That store then answers without the gate, and without `answer_status` or
+`unknown_reason`. `{"mode":"anchored","partial":false}`
 keeps the gate and answers UNKNOWN wherever it would have answered PARTIAL.
 The engine reports the file in its `kmp_store_config` log line; one it cannot
 read or does not recognise is reported and the default applies. `kmp-mcp
-doctor` and `kmp-mcp info` on current `main` (after v0.24.0) also expose these
-verdicts in **Store config**. See [diagnostic states](configuration.md#read-the-diagnostics)
+doctor` and `kmp-mcp info` show these verdicts in **Store config**. See [diagnostic states](configuration.md#read-the-diagnostics)
 for `on`, `on, with its defaults`, `rejected` and `off (absent)`. An absent
 optional file leaves the feature’s default in effect; it does not necessarily
 disable the feature.
@@ -196,10 +196,19 @@ questions the table leaves 20 `high` answers, 19 of them right, and the
 one-sided Clopper-Pearson bound (δ = 0.1) is 0.82, short of the 0.95 it must
 reach before it is turned on.
 
+With a lexical-bridge table installed (`kmp-mcp setup` installs one), the
+gate and the ⌈2/3⌉ focus of a strict policy count a bridged word as stating
+what was asked only when the question and the memory are written in two
+different languages; inside one language a memory must state it in the
+reader's words. An answer the gate gives only because the table translated a
+concept is `medium` at most. Until this was fixed the table's same-language
+neighbours (`deadline≈final`) could answer a question whose attribute is not
+stored, at `high`; see [languages](languages.md).
+
 Two measured variants are off by default. `"attribute_check":true` holds a
 `high` the gate did not decide (no anchor) to a citation that states, in its
-own words, the attribute the question asks for (the word after «quién» /
-«who»); otherwise it reads `medium`. `"expansion_rescue_focus":false` lets a
+own words, the attribute the question asks for (the word after "who");
+otherwise it reads `medium`. `"expansion_rescue_focus":false` lets a
 memory reached only through its judged search expansions be rescued without
 answering the ⌈2/3⌉ focus of a strict policy.
 
@@ -226,11 +235,11 @@ verdict book (`judgements.sqlite3`), with a 1.5 s deadline on the first page;
 past it the deterministic answer stands, with a warning, and the verdict lands
 in the book for the next ask. A continuation never asks.
 
-- **Veto (B1).** A cited memory Jev finds at least `veto_at` likely not to
+- **Veto.** A cited memory Jev finds at least `veto_at` likely not to
   answer leaves the core. It stays in `proof.evidence` with `judged_out` (the
   model), `judged_permille` and `judged_template`. A veto only takes answers
   away.
-- **Promotion (B2)**, off unless `"promote": true`: an admitted memory that
+- **Promotion**, off unless `"promote": true`: an admitted memory that
   passed the anchored gate, judged at least `promote_at` likely to answer,
   joins the core or answers an UNKNOWN whose anchor was found, marked
   `judged_by`. Confidence stays the words' own and is never `high` for it. It
@@ -240,6 +249,59 @@ in the book for the next ask. A continuation never asks.
 `"question": "score"` asks a four-level grade instead of yes/no (an
 experiment). With the band on, an ask is a function of the store and the
 verdict book, not of the store alone.
+
+### The cross-language judge (opt-in, sends text to TypeSafe)
+
+A store that opted into TypeSafe Jev can also ask it about the answers the
+lexical bridge carries across a language. Put `ask-cross-language.json`
+beside the store; each effect is off unless the file names it:
+
+```json
+{"veto": true, "rescue": true}
+```
+
+Jev makes one judgement per passage, a Noul: "Does `passage` state the
+answer to `user_question`?", with the language the kernel read for each side
+given as a fact (`user_question_language`, `passage_language`) and criteria
+that name the confusing case ("the passage is about the same subject but does
+not state the asked fact"). Code decides: a Noul reads yes at or above its
+line, no at or below 0.3, and unsettled in between.
+
+- **Veto** (`keep_at`, default 0.7). An answer that stands only because the
+  table translated what its citations state in another language — an
+  anchored verdict the table lifted, or an unanchored core every citation of
+  which is in another language and carried by `bridged_terms` — is asked
+  about, one Noul per citation. A citation stays only on a yes; one judged
+  no or unsettled leaves the core, marked `judged_out`, and the gate decides
+  again over what is left. A veto only takes answers away.
+- **Rescue** (`rescue_at`, default 0.9). An UNKNOWN to a question that names
+  no required anchor, for which the table reached memories written in
+  another language (`reached_by: bridge` or `bridged_terms`), is asked about
+  up to eight of them, plus a companion Noul: "Can `user_question` be
+  answered from `passages`?". The likeliest passage is cited only when it
+  and the companion both read yes at `rescue_at`; anything else, unsettled
+  included, leaves the UNKNOWN. The citation is the stored
+  memory, marked `judged_by`, `judged_permille` and `judged_template`
+  (`cross_language.v1`); the confidence is never `high`; the summary says it
+  rests on Jev's judgement, not on the question's own words.
+
+The rescue relaxes one rule, and only inside this switch: an answer is
+otherwise built only from memories the question reached in its own words, and
+a memory the table reached stays in the proof. It never admits an absent
+anchor (an anchored question is never rescued) and never writes text.
+
+The judge asks through the verdict book under its own site
+(`cross_language`), with the 1.5 s deadline of the first page: past it, or
+when Jev fails, the deterministic answer stands with a warning (a missing
+answer is never read as a no) and the
+verdict lands in the book for the next ask. A continuation never asks. When
+both this file and `ask-judge.json` are present, an ask that enters one of
+these two entries is judged here and not by the doubt band; one judge is
+asked per ask. Measured lines and their limits are in
+[languages](languages.md#the-cross-language-judge). A store whose
+`ask-cross-language.json` cannot apply (no working `typesafe.json`, or a
+file that turns nothing on) answers deterministically with the warning
+`cross-language judge disabled: …`.
 
 ### Search expansions at write (opt-in, sends text to TypeSafe)
 
@@ -281,12 +343,12 @@ text. An expansion never names an anchor, never answers and never raises
 confidence. Readers other than inspect are shown the memory without its
 expansions.
 
-Measured (P15, three Jev samples, 27 Sept 2026): on synth 10^3 the gold
-memory of 7 of the 24 paraphrase and cross-language questions enters the
-first ten proofs (0 without), all of them cross-language; none of the 12
-zero-overlap paraphrases. The retrieval case `paraphrase-gap` is reached.
-No answer, UNKNOWN or false answer changes on B-real, the hard negatives
-(seeds 7, 11, 13) or synth. Jev reads 500 to 900 input tokens per memory
+Measured with three Jev samples on 27 September 2026: on the synthetic store
+of 1,000 memories the gold memory of 7 of the 24 paraphrase and
+cross-language questions enters the first ten proofs (0 without), all of
+them cross-language; none of the 12 zero-overlap paraphrases. The retrieval
+case `paraphrase-gap` is reached. No answer, UNKNOWN or false answer changes
+on the real store, the hard negatives or the synthetic store. Jev reads 500 to 900 input tokens per memory
 written ($0.00002–0.00004); the writer adds about 60 output tokens per
 memory.
 
@@ -310,14 +372,47 @@ proposes more pairs of notes written from one template
 `rare_term`, `confirm`) is measured but left off. A `curate.json` that
 cannot apply is reported and the defaults stand.
 
+## Authored card history
+
+`kmp_condense` appends a complete card revision to the `node_cards` event
+stream for its about. The source version checks, compare-and-set, event append,
+and card projections share one SQLite transaction. A rejected write appends
+nothing. Canonical bodies, their revisions, relations and proof stay unchanged.
+
+Rebuild, full export/import, about-filtered export and named snapshots retain
+card text, language, author, authorship time, source identity and card revision.
+A historical compact read selects the latest authored card at or before its
+cutoff using an indexed lookup, then applies the usual source-digest policy.
+A card that predates the cutoff can still be stale for the selected body.
+The event history records authorship; it does not certify the prose as evidence.
+
+The first open with card-event support adopts surviving pre-event cards as
+`BASELINE` events in one transaction. A migration receipt makes later opens
+constant-cost. No earlier overwritten card versions are manufactured. On a
+project store, export this extended history to its maintained `.kmp/memory.jsonl`
+before resuming guarded writes if the committed bundle is now behind; the
+bundle guard still refuses a stale checkout. New successful MCP Condense writes
+publish the maintained bundle before reporting success.
+
+The SQLite layout is format 4; upgrading format 3 retains the existing SQLite
+file. Portable event format 3 identifies bundles
+containing card history; memory-only exports retain event format 2. The current
+reader accepts both. Upgrade every writer and recovery tool before using card
+history; older engines reject the upgraded format stamp. Stop already-running
+older processes before upgrading a shared store. See
+[the card history design](../architecture/authored-card-history.md).
+
 ## Durability and recovery
 
 - writes are committed durably before success is returned;
 - embedded projection is synchronous, so successful writes are immediately
   readable;
 - project stores maintain `.kmp/memory.jsonl` as a portable event bundle;
-- import only restores into an empty store;
-- named snapshots are immutable recovery points;
+- `import <file>` restores only into an empty store; `import --from
+  <store|bundle> --about <about>` brings exact abouts into a store that
+  already holds memory;
+- named snapshots are immutable recovery points of project stores; on any
+  other store use `export <file>`;
 - format and engine mismatches fail instead of opening an empty neighboring
   store.
 
@@ -327,11 +422,15 @@ was written, so treat it with the same confidentiality as the store.
 
 ## Viewer and local telemetry
 
-An embedded session attempts to serve a read-only viewer rooted at
-`http://127.0.0.1:7317/`. It binds loopback only and prints a random,
-per-session capability link. `kmp_view_open` and `kmp_view_get_state` return
-the same link, so an agent can hand it over even when its host hides server
-output. Opening the link exchanges the capability for an HttpOnly, SameSite
+An embedded session can serve a read-only viewer rooted at
+`http://127.0.0.1:7317/`, but listens on no port until the viewer is
+requested: the first `kmp_view_open` binds it (a free loopback port when
+another session owns 7317) and it stays up for the session. It binds loopback
+only and prints a random, per-session capability link. `kmp_view_open`
+returns the same link, and `kmp_view_get_state` does once the viewer listens,
+so an agent can hand it over even when its host hides server output. A port
+that cannot be bound at that moment comes back in the `kmp_view_open` result,
+naming the address and the reason. Opening the link exchanges the capability for an HttpOnly, SameSite
 cookie and redirects to the clean URL; requests from other local processes
 receive `401`. Set `KMP_VIEWER_ADDR` to a different loopback address or `off`
 to disable it.
@@ -362,8 +461,7 @@ the host of that session, never another's) and whether the call is a page of
 an earlier one. A `kmp_ask` or `kmp_wake` line adds how it came out (answer
 status, UNKNOWN reason, stated confidence, whether the anchored gate decided,
 and cited passages per `reached_by`) and a keyed fingerprint of its question or
-intent; any call with a guidance `context_id` adds one of that id. A
-fingerprint is the whole HMAC-SHA256 under `telemetry-salt`, 32 random bytes
+intent. A fingerprint is the whole HMAC-SHA256 under `telemetry-salt`, 32 random bytes
 created with mode `0600` beside the store on the first wake, ask or write that
 succeeds, over the text in Unicode NFC, lower case and single spaces. A refused
 call lists the validation codes and field paths its `feedback` named
@@ -378,16 +476,18 @@ are listed in `scripts/performance/memory_bench/SCHEMAS.md` (`kmp_mcp_tool`).
 
 ## Maintenance commands
 
-Run `kmp-mcp --help` for the live command contract.
+Every verb, flag and exit code is in the [CLI reference](cli.md). The ones
+you reach for most:
 
 | Command | Purpose |
 |:--|:--|
-| `info`, `doctor`, `config` | Identify the installation, diagnose it and configure memory routing or store selection. |
-| `export [file] [--about <about>]...`, `import` | Checkpoint all events or exact opaque abouts, then restore a bundle. |
-| `snapshot create|list|verify|read|merge` | Create and inspect immutable recovery points. |
+| `doctor`, `info`, `config` | Diagnose the installation, identify it, choose memory routing and the saved store. |
+| `export [file] [--about <about>]...` | Checkpoint all events or exact abouts into a bundle. |
+| `import <file>`, `import --from <store\|bundle> --about <about>...` | Restore into an empty store, or bring exact abouts into this one. |
+| `snapshot create\|list\|verify\|read\|merge` | Immutable recovery points of a project store. |
 | `document <about>` | Render one about as deterministic Markdown. |
 | `viewer [addr]` | Serve the viewer without an MCP host session. |
-| `uninstall [--store <path> \| --engine <path>] [--apply]` | Preview the whole installation, one exact store or one exact engine; the preview marks pieces a live host still holds, apply refuses live owners, and it runs only when explicitly requested. |
+| `uninstall [--store <path> \| --engine <path>] [--apply] [--purge] [--keep-memory]` | Preview, then remove, the installation, one store or one engine. |
 
 The MCP tools are a separate surface advertised by the live `tools/list`
 catalogue; CLI verbs and model tools are not interchangeable inventories.
@@ -414,34 +514,3 @@ requirements.
 - [`crates/kmp-adapter-embedded`](../../crates/kmp-adapter-embedded/)
 - [`crates/kmp-viewer`](../../crates/kmp-viewer/)
 - [`plugins/kmp/capabilities.json`](../../plugins/kmp/capabilities.json)
-
-
-### Authored card history
-
-`kmp_condense` appends a complete card revision to the `node_cards` event
-stream for its about. The source version checks, compare-and-set, event append,
-and card projections share one SQLite transaction. A rejected write appends
-nothing. Canonical bodies, their revisions, relations and proof stay unchanged.
-
-Rebuild, full export/import, about-filtered export and named snapshots retain
-card text, language, author, authorship time, source identity and card revision.
-A historical compact read selects the latest authored card at or before its
-cutoff using an indexed lookup, then applies the usual source-digest policy.
-A card that predates the cutoff can still be stale for the selected body.
-The event history records authorship; it does not certify the prose as evidence.
-
-The first open with card-event support adopts surviving pre-event cards as
-`BASELINE` events in one transaction. A migration receipt makes later opens
-constant-cost. No earlier overwritten card versions are manufactured. On a
-project store, export this extended history to its maintained `.kmp/memory.jsonl`
-before resuming guarded writes if the committed bundle is now behind; the
-bundle guard still refuses a stale checkout. New successful MCP Condense writes
-publish the maintained bundle before reporting success.
-
-The SQLite layout is format 4; upgrading format 3 retains the existing SQLite
-file. Portable event format 3 identifies bundles
-containing card history; memory-only exports retain event format 2. The current
-reader accepts both. Upgrade every writer and recovery tool before using card
-history; older engines reject the upgraded format stamp. Stop already-running
-older processes before upgrading a shared store. See
-[the card history design](../architecture/authored-card-history.md).

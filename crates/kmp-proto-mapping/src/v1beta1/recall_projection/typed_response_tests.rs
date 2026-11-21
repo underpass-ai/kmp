@@ -9,7 +9,7 @@ use kmp_proto::v1beta1::{
 
 use super::request_arguments::{ask_arguments, wake_arguments};
 use super::response_value::{ask_value, wake_value};
-use super::test_support::{projected, typed_ask_fixture, typed_wake_fixture};
+use super::test_support::{projected, projected_wake, typed_ask_fixture, typed_wake_fixture};
 use super::typed_recall::{project_ask_response, project_wake_response};
 
 #[test]
@@ -282,7 +282,7 @@ fn bounded_wake_roundtrip_preserves_long_causal_rationales() {
             }),
             ..Default::default()
         };
-        let expected = projected(wake_value(&response), wake_arguments(&request));
+        let expected = projected_wake(wake_value(&response), wake_arguments(&request));
         let actual =
             wake_value(&project_wake_response(response.clone(), &request).expect("typed wake"));
         assert_eq!(

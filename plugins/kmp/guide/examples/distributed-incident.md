@@ -44,7 +44,8 @@ is not a generic evidential comparison.
 
 Envelopes below bind returned results with `save_as`. Send only `arguments`.
 `${name.generated_refs.0}` copies the exact returned ref. `expect_error`
-names an intentional failure. A fresh missing about returns `not_found`;
+names an intentional failure. A wake on a fresh missing about says nothing
+is recorded;
 if it already exists, recover its state and catalogue instead of replaying
 the missing-about assumption. Every logical write has its own idempotency key.
 
@@ -54,8 +55,7 @@ the missing-about assumption. Every logical write has its own idempotency key.
   "save_as": "support_empty",
   "arguments": {
     "about": "example:guide:incident-support"
-  },
-  "expect_error": "not_found"
+  }
 }
 ```
 
@@ -65,8 +65,7 @@ the missing-about assumption. Every logical write has its own idempotency key.
   "save_as": "project_empty",
   "arguments": {
     "about": "example:guide:incident-project"
-  },
-  "expect_error": "not_found"
+  }
 }
 ```
 

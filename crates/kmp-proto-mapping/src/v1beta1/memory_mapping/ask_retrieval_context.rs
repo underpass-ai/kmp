@@ -233,8 +233,10 @@ impl AskRetrievalContext {
     /// passages a judge would be asked about. `None` without the anchored
     /// gate, under `best_effort`, when a required anchor is absent, and when
     /// the deterministic reading settled clearly: answered with a first
-    /// citation leading the second by at least `margin_below` tenths of a
-    /// BM25 point, or UNKNOWN with nothing a `best_effort` reading would cite.
+    /// citation leading the second by at least the entries' margin in tenths
+    /// of a BM25 point, or UNKNOWN with nothing a `best_effort` reading would
+    /// cite. Only the entries `entries` opens are read; the cross-language
+    /// judge's come first.
     ///
     /// The reading taken here is kept: an answer given without verdicts
     /// stands on it instead of reading the question a second time.
@@ -244,15 +246,10 @@ impl AskRetrievalContext {
         policy: kmp_application::MemoryAnswerPolicy,
         temporal: &TemporalSelection,
         bridge: &super::lexical_bridge::LexicalBridge,
-        margin_below: i64,
+        entries: super::doubt_band_entries::DoubtBandEntries,
     ) -> super::scalars::ProtoMappingResult<Option<super::doubt_band::DoubtBand>> {
         let (band, decided, ranked) = super::doubt_band_reading::read_doubt_band(
-            self,
-            question,
-            policy,
-            temporal,
-            bridge,
-            margin_below,
+            self, question, policy, temporal, bridge, entries,
         )?;
         if decided.is_some() {
             self.decided = decided;

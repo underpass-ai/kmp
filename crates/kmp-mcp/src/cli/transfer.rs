@@ -4,14 +4,16 @@ use super::{looks_like_option, unknown_option};
 
 /// `export` and `import`: the whole event log, in order, as one file.
 pub(super) async fn run(command: &str, first_argument: Option<&str>, args: &[&str]) -> i32 {
-    let (path, repair_pending, abouts) = if command == "export" {
+    let (path, repair_pending, abouts, overwrite) = if command == "export" {
         let mut path = None;
         let mut repair_pending = false;
+        let mut overwrite = false;
         let mut abouts = Vec::new();
         let mut arguments = args.iter();
         while let Some(argument) = arguments.next() {
             match *argument {
                 "--repair-pending" => repair_pending = true,
+                kmp_embedded::OVERWRITE_COMMITTED_FLAG => overwrite = true,
                 "--about" => match arguments.next() {
                     Some(about) if !about.is_empty() => abouts.push((*about).to_string()),
                     Some(_) => {
@@ -30,14 +32,14 @@ pub(super) async fn run(command: &str, first_argument: Option<&str>, args: &[&st
                     if path.replace(other).is_some() {
                         eprintln!(
                             "kmp-mcp: export takes at most one file path, repeatable --about, and \
-                             optional --repair-pending"
+                             optional --repair-pending and --overwrite-committed"
                         );
                         return 2;
                     }
                 }
             }
         }
-        (path, repair_pending, abouts)
+        (path, repair_pending, abouts, overwrite)
     } else {
         if args.len() > 1 {
             eprintln!("kmp-mcp: import takes at most one file path");
@@ -48,7 +50,7 @@ pub(super) async fn run(command: &str, first_argument: Option<&str>, args: &[&st
         {
             return unknown_option("import", argument);
         }
-        (first_argument, false, Vec::new())
+        (first_argument, false, Vec::new(), false)
     };
 
     if command == "export"
@@ -109,13 +111,7 @@ pub(super) async fn run(command: &str, first_argument: Option<&str>, args: &[&st
         );
         return 2;
     }
-    let engine = match kmp_embedded::resolve_engine_for_data_dir_from_env(resolved.path()) {
-        Ok(engine) => engine,
-        Err(error) => {
-            eprintln!("kmp-mcp: {error}");
-            return 2;
-        }
-    };
+    let engine = kmp_embedded::default_engine_for_data_dir(resolved.path());
     let kernel = match kmp_embedded::EmbeddedKernel::open_with_engine(resolved.path(), engine) {
         Ok(kernel) => kernel,
         Err(error) => {
@@ -124,6 +120,39 @@ pub(super) async fn run(command: &str, first_argument: Option<&str>, args: &[&st
         }
     };
     let store = kernel.store();
+    // A full export of the project head opens the store as a session does:
+    // a bundle a pull brought ahead is caught up first, so the export keeps
+    // the teammate's memory instead of writing over it.
+    if command == "export"
+        && is_project_head
+        && abouts.is_empty()
+        && let Some(bundle) = kmp_embedded::CommitNativeBundle::for_resolved_excluding_abouts(
+            &resolved,
+            kmp_mcp::local_abouts(),
+        )
+    {
+        match bundle.reconcile_on_open(store) {
+            Ok(kmp_embedded::OpenReconciliation::FastForwarded { appended, .. }) => eprintln!(
+                "kmp-mcp: caught this store up with `{}` first: {} appended",
+                bundle.path().display(),
+                events(appended)
+            ),
+            Ok(kmp_embedded::OpenReconciliation::Recovered { events: count }) => eprintln!(
+                "kmp-mcp: an interrupted write was published to `{}` first ({})",
+                bundle.path().display(),
+                events(count)
+            ),
+            Ok(_) => {}
+            Err(error) => {
+                eprintln!(
+                    "kmp-mcp: export refused; nothing was written. The store could not be \
+                     compared with `{}`: {error}",
+                    bundle.path().display()
+                );
+                return 2;
+            }
+        }
+    }
 
     match command {
         "export" => {
@@ -167,6 +196,19 @@ pub(super) async fn run(command: &str, first_argument: Option<&str>, args: &[&st
                             return 2;
                         }
                     };
+                    if is_project_head
+                        && let Err(refusal) =
+                            super::committed_export_guard::refuse_shrinking_committed(
+                                path,
+                                resolved.path(),
+                                &bundle,
+                                !abouts.is_empty(),
+                                overwrite,
+                            )
+                    {
+                        eprintln!("kmp-mcp: {refusal}");
+                        return 2;
+                    }
                     if let Err(error) = kmp_embedded::write_bundle_atomically(path, &bundle) {
                         eprintln!("kmp-mcp: could not write `{}`: {error}", path.display());
                         return 2;
@@ -226,6 +268,22 @@ pub(super) async fn run(command: &str, first_argument: Option<&str>, args: &[&st
                     return 2;
                 }
             };
+            // A store that holds memory is refused before reading on, and the
+            // refusal names the verb that does bring abouts into one.
+            if let Ok((held, _)) = store.event_log_stats().await
+                && held > 0
+            {
+                eprintln!(
+                    "kmp-mcp: import refused; nothing was written. `kmp-mcp import <file>` \
+                     restores a bundle whole into an empty store, and this store already holds \
+                     {}. To bring exact abouts into it, run `kmp-mcp import --from {} --about \
+                     <about>`; to restore the whole bundle, point KMP_MCP_DATA_DIR at a new \
+                     directory and import there.",
+                    events(held),
+                    path.display()
+                );
+                return 2;
+            }
             let pulse = kmp_mcp::pulse::Pulse::start("bringing your memory back…");
             let imported = store
                 .import_bundle(

@@ -363,13 +363,10 @@ fn calls() -> Vec<(&'static str, Value)> {
                 "budget": {"max_bytes": 2500}
             }),
         ),
-        (
-            "kmp_relate",
-            json!({"about": ABOUT, "budget": {"depth": 3}}),
-        ),
+        ("kmp_relate", json!({"about": ABOUT})),
         (
             "kmp_trace",
-            json!({"about": ABOUT, "from": DETAIL, "to": CLAIM, "budget": {"depth": 3}}),
+            json!({"about": ABOUT, "from": DETAIL, "to": CLAIM}),
         ),
         ("kmp_view_open", json!({"about": ABOUT})),
         (
@@ -455,11 +452,9 @@ fn calls() -> Vec<(&'static str, Value)> {
         ),
         // A review writes nothing and, without a TypeSafe opt-in beside the
         // parity store, calls nothing remote: kernel pairs, untyped.
-        (
-            "kmp_curate",
-            json!({"mode": "review", "about": ABOUT, "budget": {"depth": 3}}),
-        ),
-        ("kmp_guide", json!({"registration_key":"parity-guide"})),
+        ("kmp_curate", json!({"mode": "review", "about": ABOUT})),
+        // The topic index: a pure lookup that reads no store.
+        ("kmp_guide", json!({})),
     ]
 }
 
@@ -820,18 +815,6 @@ async fn every_tool_answers_what_its_reviewed_fixture_says() {
     let mut full_answer = None;
     for (label, arguments) in calls() {
         let tool = label.split(':').next().expect("tool name");
-        if tool == "kmp_guide" {
-            // Guide is last so its installation cannot affect memory fixtures.
-            let requests: Vec<Value> = serde_json::from_str(include_str!(
-                "../../../plugins/kmp/guide/guide.requests.json"
-            ))
-            .expect("guide assets");
-            for arguments in requests {
-                let reply = server.handle_json_line(&json!({"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"kmp_ingest","arguments":arguments}}).to_string()).await.expect("sync");
-                let reply: Value = serde_json::from_str(&reply).expect("sync response");
-                assert_eq!(reply["result"]["isError"], false, "{reply}");
-            }
-        }
         let raw = server
             .handle_json_line(
                 &json!({
@@ -875,22 +858,6 @@ async fn every_tool_answers_what_its_reviewed_fixture_says() {
                     .is_some_and(|s| s.starts_with("sqlite-observer:"))
             );
             result["structuredContent"]["snapshot"] = json!("<SNAPSHOT>");
-        }
-        if tool == "kmp_guide" {
-            // Random identities and content revisions are tested across real
-            // restarts in persistent_guidance; pin their fields here.
-            let body = &result["structuredContent"];
-            let dynamic = [
-                (&body["agent"]["id"], "<AGENT_ID>"),
-                (&body["agent"]["name"], "<AGENT_NAME>"),
-                (&body["context_id"], "<CONTEXT_ID>"),
-                (&body["guide_revision"], "<GUIDE_REVISION>"),
-            ];
-            let mut text = result.to_string();
-            for (value, replacement) in dynamic {
-                text = text.replace(value.as_str().expect("identity string"), replacement);
-            }
-            result = serde_json::from_str(&text).expect("normalized guide");
         }
         let mut template = result.clone();
         redact(&mut template);

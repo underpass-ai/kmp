@@ -62,7 +62,7 @@ write a word. So Jev suggests a type and doubts a reason, and you write every
    can still be given one, so read each proposal against the fact.
 
 Jev is opt-in for each store: put `typesafe.json` beside it
-(`{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.13.0","timeout_ms":20000}`)
+(`{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.14.0","timeout_ms":20000}`)
 and set `TYPESAFE_API_KEY`. The text of the selected facts, cut to 2000
 characters each, leaves the machine. Without the opt-in the review still returns
 kernel pairs, untyped, with a warning. It runs against the embedded store only.

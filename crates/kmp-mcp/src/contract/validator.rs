@@ -1,49 +1,56 @@
 use serde_json::Value;
 
+use super::schema_law;
+use super::schema_violation::SchemaViolation;
 use crate::contract::registry::tools_list_result;
 use crate::contract::tools::{app_view_take_control, app_view_undo, app_visual_projection};
 use crate::serving::ToolError;
 
-/// Refuses an argument the tool does not declare. Structural only: a writer
-/// that owns field-level refusals runs this before its own planner.
-pub(crate) fn reject_unknown_arguments(tool: &str, arguments: &Value) -> Result<(), ToolError> {
-    let Some(schema) = tool_input_schema(tool) else {
-        return Ok(());
-    };
-    check_against_schema(schema, arguments, tool, Lexical::Skip)
-}
-
-/// Unknown arguments plus the lexical constraints (`minLength`,
-/// `uniqueItems`) the advertised catalogue omits (#850). A tool whose planner
-/// gives a more specific refusal runs this after that planner, as a backstop.
+/// Refuses a call the tool's input schema refuses, before anything reads it.
+///
+/// The schema is the law of the call (#921, E1): type, enum, numeric and
+/// array bounds, pattern, required arguments, unknown arguments and the
+/// conditional shapes. The checked schema is the full contract: what
+/// `tools/list` publishes, plus the closed-objects rule, the documented
+/// cross-field rules (`cross_field_rule`) and the bounds `tools/list` leaves
+/// out to save tokens (`contract::published_law`). A name this
+/// surface does not declare has no schema, and is refused as an unknown tool.
 pub(crate) fn reject_invalid_arguments(tool: &str, arguments: &Value) -> Result<(), ToolError> {
     let Some(schema) = tool_input_schema(tool) else {
-        return Ok(());
+        return Err(ToolError::unknown_tool(format!(
+            "`{tool}` is not a tool on this surface; tools/list names the tools it has."
+        )));
     };
-    check_against_schema(schema, arguments, tool, Lexical::Enforce)
+    schema_law::check(schema, arguments, tool).map_err(|violation| refusal(tool, violation))
 }
 
-/// Everything `reject_invalid_arguments` refuses, plus a declared boolean
-/// given as anything else. For the tools that write: their switches decide
-/// whether a call commits, and `"true"` read as the default `false` once
-/// turned a requested preview into a commit (QA, 13 nov 2026). Reads keep
-/// their current tolerance.
-pub(crate) fn reject_invalid_write_arguments(
-    tool: &str,
-    arguments: &Value,
-) -> Result<(), ToolError> {
-    let Some(schema) = tool_input_schema(tool) else {
-        return Ok(());
+/// Every schema refusal carries one feedback item naming the field, so a
+/// host can repair the call without parsing the sentence.
+fn refusal(tool: &str, violation: SchemaViolation) -> ToolError {
+    let error = ToolError::invalid_argument(violation.message.clone());
+    let mut feedback = if violation.unknown {
+        serde_json::json!({
+            "code": "UNKNOWN_ARGUMENT", "severity": "error", "field": violation.field,
+            "reason": if tool == "kmp_write_memory" && violation.rule.is_none() {
+                "This field is not part of the native writer contract; remove it or use a declared field.".to_string()
+            } else {
+                violation.message.clone()
+            },
+            "action": null
+        })
+    } else {
+        serde_json::json!({
+            "code": "SCHEMA_VIOLATION", "severity": "error", "field": violation.field,
+            "reason": violation.message, "action": null
+        })
     };
-    check_against_schema(schema, arguments, tool, Lexical::EnforceSwitches)
-}
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum Lexical {
-    Skip,
-    Enforce,
-    /// `Enforce`, and a declared boolean must be a JSON boolean.
-    EnforceSwitches,
+    if !violation.allowed.is_empty() {
+        feedback["allowed"] = Value::Array(violation.allowed);
+    }
+    if let Some(rule) = violation.rule {
+        feedback["rule"] = Value::String(rule);
+    }
+    error.with_feedback(feedback)
 }
 
 /// The schemas, built once.
@@ -52,7 +59,7 @@ enum Lexical {
 /// full tool document — relation vocabulary included — from scratch each time.
 /// Rebuilding a document that cannot change, per call, to read one field of
 /// it, is a cost with nothing on the other side of it.
-fn tool_input_schema(tool: &str) -> Option<&'static Value> {
+pub(crate) fn tool_input_schema(tool: &str) -> Option<&'static Value> {
     if tool == "kmp_view_read_nodes" {
         static SCHEMA: std::sync::OnceLock<Value> = std::sync::OnceLock::new();
         return Some(SCHEMA.get_or_init(|| {
@@ -92,156 +99,6 @@ fn tool_input_schema(tool: &str) -> Option<&'static Value> {
                 .collect()
         })
         .get(tool)
-}
-
-/// Walks an argument value beside its schema. Beyond unknown arguments it
-/// enforces the two lexical constraints the advertised catalogue leaves out to
-/// save tokens (#850): `minLength` and `uniqueItems` stay in this internal
-/// contract, so dropping them from `tools/list` never widens what is accepted.
-fn check_against_schema(
-    schema: &Value,
-    value: &Value,
-    path: &str,
-    lexical: Lexical,
-) -> Result<(), ToolError> {
-    let schema = union_branch(schema, value).unwrap_or(schema);
-    if lexical == Lexical::EnforceSwitches {
-        check_switch(schema, value, path)?;
-    }
-    match value {
-        Value::String(text) if lexical != Lexical::Skip => check_length(schema, text, path),
-        Value::Array(array) => {
-            if lexical != Lexical::Skip {
-                check_unique(schema, array, path)?;
-            }
-            if let Some(items) = schema.get("items") {
-                for (index, entry) in array.iter().enumerate() {
-                    check_against_schema(items, entry, &format!("{path}[{index}]"), lexical)?;
-                }
-            }
-            Ok(())
-        }
-        Value::Object(object) => check_object(schema, object, path, lexical),
-        _ => Ok(()),
-    }
-}
-
-fn check_object(
-    schema: &Value,
-    object: &serde_json::Map<String, Value>,
-    path: &str,
-    lexical: Lexical,
-) -> Result<(), ToolError> {
-    let properties = schema["properties"].as_object();
-    if let Some(properties) = properties
-        && schema["additionalProperties"] == Value::Bool(false)
-    {
-        for key in object.keys() {
-            if properties.contains_key(key) {
-                continue;
-            }
-            let known = properties.keys().cloned().collect::<Vec<_>>().join(", ");
-            let error = ToolError::invalid_argument(format!(
-                "`{path}` has no argument `{key}`. This call would otherwise have been answered \
-                 with that argument silently dropped. Accepted here: {known}."
-            ));
-            return Err(if path.starts_with("kmp_write_memory") {
-                error.with_feedback(serde_json::json!({
-                    "code": "UNKNOWN_ARGUMENT", "severity": "error",
-                    "field": format!("{}.{}", path.strip_prefix("kmp_write_memory.").unwrap_or_default(), key).trim_start_matches('.'),
-                    "reason": "This field is not part of the native writer contract; remove it or use a declared field.",
-                    "action": null
-                }))
-            } else {
-                error
-            });
-        }
-    }
-
-    let additional = schema
-        .get("additionalProperties")
-        .filter(|additional| additional.is_object());
-    for (key, nested) in object {
-        let nested_schema = properties.and_then(|properties| properties.get(key));
-        if let Some(nested_schema) = nested_schema.or(additional) {
-            check_against_schema(nested_schema, nested, &format!("{path}.{key}"), lexical)?;
-        }
-    }
-    Ok(())
-}
-
-/// The `oneOf`/`anyOf` branch declared for this value's JSON type, if any.
-/// Constraints live on the branch that can hold the value; a branch without a
-/// `type` only states requirements, which are checked elsewhere.
-fn union_branch<'a>(schema: &'a Value, value: &Value) -> Option<&'a Value> {
-    let kind = match value {
-        Value::String(_) => "string",
-        Value::Array(_) => "array",
-        Value::Object(_) => "object",
-        Value::Bool(_) => "boolean",
-        Value::Number(number) if number.is_i64() || number.is_u64() => "integer",
-        Value::Number(_) => "number",
-        Value::Null => "null",
-    };
-    ["oneOf", "anyOf"]
-        .into_iter()
-        .filter_map(|key| schema.get(key)?.as_array())
-        .flatten()
-        .find(|branch| match &branch["type"] {
-            Value::String(declared) => {
-                declared == kind || (declared == "number" && kind == "integer")
-            }
-            Value::Array(declared) => declared
-                .iter()
-                .any(|declared| declared == kind || (declared == "number" && kind == "integer")),
-            _ => false,
-        })
-}
-
-/// A declared boolean is read as given, never coerced from `"true"`, `1` or
-/// `null` and never replaced by its default.
-fn check_switch(schema: &Value, value: &Value, path: &str) -> Result<(), ToolError> {
-    if schema.get("type").and_then(Value::as_str) != Some("boolean") || value.is_boolean() {
-        return Ok(());
-    }
-    let received = match value {
-        Value::String(_) => "a string",
-        Value::Number(_) => "a number",
-        Value::Null => "null",
-        Value::Array(_) => "an array",
-        Value::Object(_) => "an object",
-        Value::Bool(_) => unreachable!("a boolean is accepted above"),
-    };
-    Err(ToolError::invalid_argument(format!(
-        "`{path}` must be a JSON boolean, true or false without quotes; received {received}: \
-         {value}. Nothing was written."
-    )))
-}
-
-fn check_length(schema: &Value, text: &str, path: &str) -> Result<(), ToolError> {
-    match schema.get("minLength").and_then(Value::as_u64) {
-        Some(minimum) if (text.chars().count() as u64) < minimum => {
-            Err(ToolError::invalid_argument(format!(
-                "`{path}` must not be empty: give it a value or leave the argument out."
-            )))
-        }
-        _ => Ok(()),
-    }
-}
-
-fn check_unique(schema: &Value, array: &[Value], path: &str) -> Result<(), ToolError> {
-    if schema.get("uniqueItems") != Some(&Value::Bool(true)) {
-        return Ok(());
-    }
-    for (index, entry) in array.iter().enumerate() {
-        if let Some(first) = array[..index].iter().position(|seen| seen == entry) {
-            return Err(ToolError::invalid_argument(format!(
-                "`{path}` lists the same value twice (items {first} and {index}): {entry}. \
-                 Give each value once."
-            )));
-        }
-    }
-    Ok(())
 }
 
 pub(crate) fn validate_required_arguments(
@@ -325,14 +182,6 @@ mod tests {
 
     #[test]
     fn an_empty_idempotency_key_is_refused_although_the_catalogue_omits_min_length() {
-        assert!(
-            reject_unknown_arguments(
-                "kmp_ingest",
-                &json!({"about": "question:x", "idempotency_key": ""})
-            )
-            .is_ok(),
-            "the structural check alone leaves lexical refusals to the backstop"
-        );
         let error = reject_invalid_arguments(
             "kmp_ingest",
             &json!({"about": "question:x", "idempotency_key": ""}),
@@ -355,7 +204,7 @@ mod tests {
             "steps":{"type":"array","items":{"oneOf":[{"type":"string","minLength":1},{"type":"object","properties":{"rel":{"type":"string","minLength":1}}}]}}
         }});
         let refused = |value: Value| {
-            check_against_schema(&schema, &value, "t", Lexical::Enforce)
+            schema_law::check(&schema, &value, "t")
                 .expect_err("refused")
                 .message
         };
@@ -369,11 +218,10 @@ mod tests {
         assert!(refused(json!({"steps":[""]})).contains("`t.steps[0]` must not be empty"));
         assert!(refused(json!({"steps":[{"rel":""}]})).contains("`t.steps[0].rel`"));
         assert!(
-            check_against_schema(
+            schema_law::check(
                 &schema,
                 &json!({"refs":["a"],"labels":{"topic":["a","b"]},"steps":["x",{"rel":"y"}]}),
                 "t",
-                Lexical::Enforce
             )
             .is_ok()
         );
@@ -382,24 +230,47 @@ mod tests {
     #[test]
     fn duplicate_items_are_refused_where_the_contract_declares_them_unique() {
         let schema = json!({"type":"array","uniqueItems":true,"items":{"type":"array"}});
-        assert!(
-            check_against_schema(
-                &schema,
-                &json!([["a", "b"], ["a", "b"]]),
-                "t",
-                Lexical::Enforce
-            )
-            .is_err()
-        );
-        assert!(
-            check_against_schema(
-                &schema,
-                &json!([["a", "b"], ["b", "a"]]),
-                "t",
-                Lexical::Enforce
-            )
-            .is_ok()
-        );
+        assert!(schema_law::check(&schema, &json!([["a", "b"], ["a", "b"]]), "t").is_err());
+        assert!(schema_law::check(&schema, &json!([["a", "b"], ["b", "a"]]), "t").is_ok());
+    }
+
+    #[test]
+    fn a_name_the_surface_does_not_declare_is_refused_as_an_unknown_tool() {
+        for name in [
+            "kernel_remember",
+            "kernel_ingest_context",
+            "kernel_wake",
+            "kmp_zz",
+        ] {
+            let error = reject_invalid_arguments(name, &json!({"about": "x"}))
+                .expect_err("an undeclared name has no schema and is refused");
+            assert_eq!(
+                error.code,
+                crate::serving::ToolErrorCode::UnknownTool,
+                "{name}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_write_refusal_carries_field_feedback() {
+        let error = reject_invalid_arguments(
+            "kmp_write_memory",
+            &json!({"about": "a:b", "actor": "t", "labels": {"t": ["x"]},
+                    "memories": [{"id": "m", "kind": "observation", "summary": "S.",
+                                  "evidence": "E.", "valid_until": 1798761600}]}),
+        )
+        .expect_err("a number for a timestamp is refused");
+        assert_eq!(error.feedback[0]["code"], "SCHEMA_VIOLATION");
+        assert_eq!(error.feedback[0]["field"], "memories[0].valid_until");
+        let error = reject_invalid_arguments(
+            "kmp_write_memory",
+            &json!({"about": "a:b", "actor": "t", "zz": 1, "labels": {"t": ["x"]},
+                    "memories": [{"id": "m", "kind": "observation", "summary": "S.", "evidence": "E."}]}),
+        )
+        .expect_err("an unknown argument is refused");
+        assert_eq!(error.feedback[0]["code"], "UNKNOWN_ARGUMENT");
+        assert_eq!(error.feedback[0]["field"], "zz");
     }
 
     #[test]

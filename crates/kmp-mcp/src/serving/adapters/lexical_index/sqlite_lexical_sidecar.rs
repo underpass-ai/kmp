@@ -35,11 +35,17 @@ CREATE TABLE IF NOT EXISTS lex_node(
 CREATE TABLE IF NOT EXISTS lex_relation(
     about TEXT NOT NULL, source TEXT NOT NULL, target TEXT NOT NULL, type TEXT NOT NULL,
     signals BLOB NOT NULL, PRIMARY KEY (about, source, target, type)) WITHOUT ROWID;
+-- An about's lifecycle relations, and what supports each end (lifecycle_docs).
+CREATE INDEX IF NOT EXISTS lex_relation_by_type ON lex_relation(about, type, target);
 CREATE TABLE IF NOT EXISTS lex_fwd(
     about TEXT NOT NULL, doc TEXT NOT NULL, ordinal INTEGER NOT NULL,
     fingerprint INTEGER NOT NULL, row BLOB NOT NULL,
     PRIMARY KEY (about, doc)) WITHOUT ROWID;
 CREATE UNIQUE INDEX IF NOT EXISTS lex_fwd_ordinal ON lex_fwd(about, ordinal);
+-- What each candidate's graph can lend its strict focus (P14, LexicalReach).
+CREATE TABLE IF NOT EXISTS lex_reach(
+    about TEXT NOT NULL, doc TEXT NOT NULL, reach BLOB NOT NULL,
+    PRIMARY KEY (about, doc)) WITHOUT ROWID;
 CREATE TABLE IF NOT EXISTS lex_post(
     about TEXT NOT NULL, term TEXT NOT NULL, block INTEGER NOT NULL, postings BLOB NOT NULL,
     PRIMARY KEY (about, term, block)) WITHOUT ROWID;
@@ -60,7 +66,7 @@ CREATE TABLE IF NOT EXISTS lex_key_df(
     PRIMARY KEY (about, term)) WITHOUT ROWID;
 ";
 
-pub(super) const TABLES: [&str; 9] = [
+pub(super) const TABLES: [&str; 10] = [
     "lex_stats",
     "lex_node",
     "lex_relation",
@@ -68,6 +74,7 @@ pub(super) const TABLES: [&str; 9] = [
     "lex_vocab",
     "lex_far",
     "lex_fwd",
+    "lex_reach",
     "lex_post",
     "lex_key_df",
 ];
@@ -86,13 +93,28 @@ impl SqliteLexicalSidecar {
         connection
             .execute_batch("PRAGMA synchronous = NORMAL;")
             .map_err(storage)?;
+        // Every statement here is cached and re-bound per row read. Without
+        // the planner stability guarantee SQLite re-plans a statement whose
+        // parameters it once compared against the join (`relation`'s
+        // `lex_clock` join), on every new binding: an ask spent a quarter of
+        // its time re-parsing that one statement. The plan is the same for
+        // every binding, so nothing read changes.
+        connection
+            .set_db_config(
+                rusqlite::config::DbConfig::SQLITE_DBCONFIG_ENABLE_QPSG,
+                true,
+            )
+            .map_err(storage)?;
         connection.execute_batch(SCHEMA).map_err(storage)?;
         Ok(Self {
             connection: Mutex::new(connection),
         })
     }
 
-    fn with<T>(&self, read: impl FnOnce(&Connection) -> Result<T, String>) -> Result<T, String> {
+    pub(super) fn with<T>(
+        &self,
+        read: impl FnOnce(&Connection) -> Result<T, String>,
+    ) -> Result<T, String> {
         let connection = self
             .connection
             .lock()
@@ -300,6 +322,7 @@ impl SqliteLexicalSidecar {
         })
     }
 
+    #[cfg(test)]
     pub(super) fn row(&self, about: &str, doc: &str) -> Result<Option<LexicalRow>, String> {
         self.with(|connection| {
             connection
@@ -446,25 +469,6 @@ impl SqliteLexicalSidecar {
                     .extend_from_slice(PostingBlock::decode(&block.map_err(storage)?)?.postings());
             }
             Ok(postings)
-        })
-    }
-
-    /// The candidate id of each ordinal.
-    pub(super) fn docs(&self, about: &str, ordinals: &[u64]) -> Result<Vec<String>, String> {
-        self.with(|connection| {
-            let mut statement = connection
-                .prepare_cached("SELECT doc FROM lex_fwd WHERE about = ?1 AND ordinal = ?2")
-                .map_err(storage)?;
-            ordinals
-                .iter()
-                .map(|ordinal| {
-                    statement
-                        .query_row(params![about, *ordinal as i64], |row| {
-                            row.get::<_, String>(0)
-                        })
-                        .map_err(storage)
-                })
-                .collect()
         })
     }
 

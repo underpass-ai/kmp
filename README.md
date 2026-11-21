@@ -16,11 +16,11 @@
 </p>
 
 <!-- kmp:public-overview:begin -->
-KMP is local-first memory for coding agents. It runs beside Codex, Claude Code
-and Hermes Agent as one small binary with an embedded SQLite store, and it
-remembers what was decided, what the evidence was and when it happened. Never
-the transcript. No account, no service, no API key: memory stays on your
-machine.
+KMP is local-first memory for coding agents. It runs beside Claude Code,
+Codex, Hermes Agent or Pi as one small binary with an embedded SQLite store,
+and it remembers what was decided, what the evidence was and when it
+happened. Never the transcript. No account, no service, no API key: memory
+stays on your machine.
 
 Ask your agent **"Why did we choose SQLite?"** and it answers from stored
 evidence, or says `UNKNOWN` instead of guessing. Ask **"Show me the memory
@@ -50,15 +50,18 @@ as a typed, temporal memory the next session asks instead of re-deriving:
 
 ## See it in two minutes
 
-Install KMP in your host (below), then in any project:
+Install KMP in your host (below), then, from a directory outside any project
+(your home directory will do):
 
 ```bash
 kmp-mcp demo
 ```
 
-It writes a worked example into that project's memory — a checkout service,
-an incident, the decision that replaced an earlier one and the measurement
-that verified it — opens ChronoLoom on it and prints the questions to ask:
+It writes a worked example into your user memory — a checkout service, an
+incident, the decision that replaced an earlier one and the measurement that
+verified it — opens ChronoLoom on it and prints the questions to ask an agent
+started there. It never writes a project's memory: run inside a project, it
+writes the same user store and says so.
 
 | You say | You get |
 |:--|:--|
@@ -73,8 +76,9 @@ including [KMP's own memory](examples/kmp-project/README.md).
 
 ## Install
 
-Install the plugin, run setup, restart the host once. The guides reach a fresh
-store on the first read; nothing else to run.
+Install the plugin, run setup, restart the host once. The guide is served
+from the engine itself; nothing else to run. Every host and platform:
+[Install](docs/install.md).
 
 ### Claude Code
 
@@ -93,13 +97,14 @@ codex plugin add kmp@underpass
 
 Then ask Codex to run `kmp-setup`.
 
-### Hermes Agent
+### Hermes Agent and Pi
 
-With `kmp-mcp` installed, register it and install the skills through the
-native lifecycle:
+With `kmp-mcp` and the Claude Code or Codex plugin installed (it carries the
+skills), register KMP through the native lifecycle:
 
 ```bash
 kmp-mcp setup --hermes
+kmp-mcp setup --pi      # after `underpass setup` installed the pi-runtime package
 ```
 
 ### Verify
@@ -108,12 +113,13 @@ kmp-mcp setup --hermes
 kmp-mcp doctor
 ```
 
-or run `/kmp:doctor`. The plugin owns the MCP registration, so do not add a
-second KMP server by hand. `cargo install kmp-mcp --locked` is the fallback
-for a platform with no published engine; MCPB packages, release tarballs and
-the Pi coding agent are covered in the
-[plugin installation guide](plugins/kmp/README.md). Store selection and
-repair live in [Embedded KMP](docs/embedded/README.md).
+or run `/kmp:doctor`. It ends with `Usable.` when all is well. The plugin
+owns the MCP registration, so do not add a second KMP server by hand.
+`cargo install kmp-mcp --locked` is the fallback for a platform with no
+published engine (Windows included); MCPB packages and release tarballs are
+covered in [Install](docs/install.md). Store selection and repair live in
+[Embedded KMP](docs/embedded/README.md); when something is wrong, see
+[Troubleshooting](docs/troubleshooting.md).
 
 ## Talk to it like a human
 
@@ -150,7 +156,7 @@ comes back in yours. [How that works](docs/embedded/languages.md).
 
 ```mermaid
 flowchart LR
-    U[You] --> H[Codex or Claude]
+    U[You] --> H[Agent host]
     H --> S[KMP skill]
     S -->|chooses a move| M[kmp-mcp]
     M --> K[embedded kernel]
@@ -179,11 +185,11 @@ KMP, turns returned evidence into conversational prose.
 |:--|:--|
 | Memory | Stored on your machine, normally in the repository's `.kernel/`. |
 | MCP transport | Local stdio between the agent host and `kmp-mcp`. |
-| Viewer | Read-only loopback HTTP, normally rooted at `http://127.0.0.1:7317/`, behind a random per-session capability. |
-| External services | None required; optional TypeSafe Jev integrations send selected text to the configured service. |
+| Viewer | Read-only loopback HTTP, normally rooted at `http://127.0.0.1:7317/`, behind a random per-session capability; nothing listens until the viewer is requested. |
+| External services | None required; optional TypeSafe Jev integrations, opted into per store, send selected text to TypeSafe. [What each sends](docs/security-privacy.md). |
 | Underpass | Receives no memory and operates no service in this path. |
-| Updates | Setup and updates contact GitHub Releases for checksummed packages; the Claude session hook can check releases daily. |
-| Local metadata | Agent identities and guide delivery records live outside memory retrieval; quality diagnostics use a separate local journal. |
+| Updates | Setup and updates download checksummed packages from GitHub Releases; the Claude Code session hook checks for a new release at most once a day (`KMP_VERSION_CHECK=off` stops it). It sends no memory. |
+| Local metadata | Retained reads, a search index, logs and a quality journal live beside the store; logs never hold stored text, questions or answers. |
 | Cloud agents | Evidence returned to a cloud agent follows that host's data policy. |
 
 `.kernel/` is machine state and is ignored by git. A project-scoped store also
@@ -207,15 +213,17 @@ topology backed by Neo4j, Valkey and NATS JetStream. It is still free, open
 source and self-operated. "Enterprise" describes the operational shape, not a
 paid tier or an Underpass-hosted product. It also means owning infrastructure,
 TLS, identity, authorization and observability. Keep it local until those
-responsibilities buy you something. Then read
-[Enterprise KMP](docs/enterprise/README.md).
+responsibilities buy you something. It is experimental in 1.x, outside the
+compatibility promise. Then read [Enterprise KMP](docs/enterprise/README.md).
 
 ## Project status
 
-KMP is pre-1.0: useful today, actively evolving, and explicit about sharp
-edges. Release automation builds `kmp-mcp` for Linux x86_64/arm64, macOS
-arm64/x86_64 and Windows x86_64. The embedded path is the default; the remote
-API is versioned `v1beta1` and expects an operator.
+The 1.x series promises local use: the MCP tools over stdio, the CLI, the
+store format, export and import, and the viewer. It is supported for one
+year from 1.0.0. The shared service, the gRPC API (`v1beta1`), MCP over HTTP
+and semantic retrieval are experimental. What is promised, what may change
+and the known limits: [Stability and support](docs/stability.md). Coming from
+0.27: [Upgrading](docs/upgrading.md).
 
 We do not paste old benchmark numbers into the README. Reproducible, current
 evidence belongs in [Research](docs/research/README.md) before it becomes a
@@ -239,8 +247,8 @@ service.
 No generative model is required for the default embedded path. KMP validates,
 stores and retrieves evidence; your agent writes the final answer and the
 English search summary. Optional TypeSafe Jev features send selected text to
-an external model for judgments, and optional semantic retrieval uses a local
-encoder. These integrations require explicit configuration. See
+an external model for judgments, and experimental semantic retrieval uses a
+local encoder you operate. Both require explicit configuration per store. See
 [retrieval defaults and opt-ins](docs/embedded/configuration.md).
 
 ### Can Codex and Claude share the same memory?
@@ -256,7 +264,8 @@ question. That is safer than a confident invention.
 
 ### The tools disappeared. What now?
 
-Run the host's `kmp-doctor` workflow and follow the
+Run `kmp-mcp doctor` (or the host's `kmp-doctor` workflow), then see
+[Troubleshooting](docs/troubleshooting.md) and the
 [missing-tools runbook](docs/runbooks/mcp-tools-missing.md). The usual suspects
 are a stale host session, duplicate MCP ownership, a missing binary or an
 unsupported store format.
@@ -269,12 +278,13 @@ choose to run.
 <details>
 <summary><strong>The MCP moves</strong></summary>
 
-Over memory, over the view a person is looking at, and one for persistent
-agent identity and progressive guidance. `tools/list` is the authority.
+Over memory, over the view a person is looking at, and one guide lookup.
+`tools/list` is the authority; [Concepts](docs/concepts.md) explains the
+words.
 
 | Tool | Purpose |
 |:--|:--|
-| `kmp_guide` | Open a capability map, preserve agent identity and expand one worked card. |
+| `kmp_guide` | Explain one topic: a worked card and the arguments of its tools. |
 | `kmp_wake` | Recover compact state before continuing work. |
 | `kmp_ask` | Retrieve evidence for a semantic question, or `UNKNOWN`. |
 | `kmp_relate` | Read what the memories of several abouts have to do with each other in a span, off the scopes and clocks they share. |
@@ -306,11 +316,15 @@ not extra memory verbs. The machine-checked ownership map is
 ## Docs and project links
 
 - [Documentation home](docs/index.md)
-- [Embedded KMP](docs/embedded/README.md)
+- [Install](docs/install.md) · [Concepts](docs/concepts.md) ·
+  [Troubleshooting](docs/troubleshooting.md)
+- [Stability and support](docs/stability.md) · [Upgrading](docs/upgrading.md) ·
+  [Security and privacy](docs/security-privacy.md)
+- [Embedded KMP](docs/embedded/README.md) · [CLI reference](docs/embedded/cli.md)
 - [Retrieval defaults and store configuration](docs/embedded/configuration.md)
 - [Languages](docs/embedded/languages.md)
 - [Examples](examples/README.md)
-- [Enterprise KMP](docs/enterprise/README.md)
+- [Enterprise KMP](docs/enterprise/README.md) (experimental)
 - [Technical architecture](docs/architecture/README.md)
 - [Runbooks](docs/runbooks/README.md)
 - [Development](docs/development/README.md)

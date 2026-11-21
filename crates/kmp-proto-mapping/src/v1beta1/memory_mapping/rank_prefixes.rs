@@ -9,11 +9,15 @@ use super::answer_selection::{RESTATED_FROM_KEY, was_reached_indirectly};
 use super::indexed_ask::IndexedAsk;
 use super::lexical_bridge::LexicalBridge;
 use super::lexical_collection::LexicalCollection;
+use super::lexical_reach::LexicalReach;
 use super::lexical_row::LexicalRow;
 use super::lexicon::Lexicon;
 use super::morphology::Morphology;
 use super::question_contract::QuestionContract;
-use super::search_terms::{informative_terms, matching_term_count, strict_answer_focus_terms};
+use super::row_field::RowField;
+use super::search_terms::{
+    concept_count, concept_key, informative_terms, strict_answer_focus_terms,
+};
 
 /// The leading part of a candidate's `RelevanceKey`: focus matches in its
 /// content, then its content and direct BM25, in tenths. Everything below
@@ -39,6 +43,10 @@ pub type RankPrefix = (usize, i64, i64);
 pub struct RankPrefixes {
     prefixes: BTreeMap<String, RankPrefix>,
     anchors: BTreeSet<String>,
+    /// The candidates no reading of the question can find eligible: below
+    /// the floor, or short of the focus a strict policy requires even with
+    /// every word their graph can lend them ([`LexicalReach`]).
+    ineligible: BTreeSet<String>,
 }
 
 impl RankPrefixes {
@@ -52,6 +60,7 @@ impl RankPrefixes {
         indexed: &IndexedAsk,
         bridge: &LexicalBridge,
         rows: impl Iterator<Item = (&'r String, &'r LexicalRow)>,
+        reach: &BTreeMap<String, LexicalReach>,
     ) -> Option<Self> {
         let morphology = Morphology::for_language(indexed.language.as_deref());
         let contract = gated.then(|| QuestionContract::read(question, &morphology));
@@ -69,6 +78,7 @@ impl RankPrefixes {
         // names an anchor is read (`anchors`): the gate cites among them in
         // rank order, and its proof keeps them.
         let mut anchors = BTreeSet::new();
+        let mut anchored = false;
         let asked = match contract
             .as_ref()
             .filter(|contract| contract.requires_anchors())
@@ -85,6 +95,7 @@ impl RankPrefixes {
                     collection.content.documents(),
                 ) {
                     AnchorSelection::Anchored { .. } => {
+                        anchored = true;
                         contract.anchored_asked().unwrap_or(question)
                     }
                     _ => asked,
@@ -103,7 +114,7 @@ impl RankPrefixes {
             bridge,
             collection,
             indexed.vocabulary.as_deref().map(Vec::as_slice),
-            seed.as_deref().map(Vec::as_slice),
+            seed.as_deref(),
         );
         let focus = match policy {
             MemoryAnswerPolicy::EvidenceOrUnknown | MemoryAnswerPolicy::ShowConflicts => {
@@ -111,27 +122,82 @@ impl RankPrefixes {
             }
             MemoryAnswerPolicy::BestEffort => None,
         };
+        // The focus a strict policy requires, as the ranker counts it: two
+        // thirds of the focus concepts, none once an anchor decides.
+        let required = focus
+            .as_ref()
+            .filter(|_| !anchored)
+            .map(|focus| (concept_count(focus) * 2).div_ceil(3))
+            .unwrap_or(0);
+        let mut ineligible = BTreeSet::new();
+        // The focus concepts, to count a candidate's matches without
+        // collecting its terms (`matching_term_count` over its content).
+        let concepts = focus.as_ref().map(|focus| {
+            focus
+                .iter()
+                .map(|term| concept_key(term))
+                .collect::<BTreeSet<_>>()
+        });
         let prefixes = rows
             .map(|(doc, row)| {
-                let content = row.content_counts(gated);
-                let focus_matches = focus.as_ref().map_or(0, |focus| {
-                    matching_term_count(focus, &content.terms().cloned().collect::<BTreeSet<_>>())
+                // Read in place: the counts `content_counts` and
+                // `direct_counts` collect, without collecting them.
+                let content = RowField::content(row, gated);
+                let direct = RowField::direct(row, gated);
+                let focus_matches = concepts.as_ref().map_or(0, |concepts| {
+                    content
+                        .terms()
+                        .map(|term| concept_key(term))
+                        .filter(|key| concepts.contains(key))
+                        .collect::<BTreeSet<_>>()
+                        .len()
                 });
+                // Eligibility asks the floor of the direct field, and of a
+                // strict policy its focus over the direct field, the claims
+                // and the relations; a reach bounds the last two.
+                let can_answer = lexicon.clears_floor_of(&direct)
+                    && (required == 0
+                        || focus.as_ref().is_none_or(|focus| match reach.get(doc) {
+                            Some(reach) => {
+                                // The reach leaves out the plain direct
+                                // field's words, so those are counted too.
+                                let plain = RowField::direct(row, false);
+                                lexicon.focus_bound(
+                                    focus,
+                                    direct.terms().chain(plain.terms()).chain(reach.terms()),
+                                    &direct,
+                                ) >= required
+                            }
+                            None => true,
+                        }));
+                if !can_answer {
+                    ineligible.insert(doc.clone());
+                }
                 let prefix = (
                     focus_matches,
                     lexicon.content_score_of(&content),
-                    lexicon.direct_score_of(&row.direct_counts(gated)),
+                    lexicon.direct_score_of(&direct),
                 );
                 (doc.clone(), prefix)
             })
             .collect();
-        Some(Self { prefixes, anchors })
+        Some(Self {
+            prefixes,
+            anchors,
+            ineligible,
+        })
     }
 
     /// The question's anchor terms, when the gate may decide by one: every
     /// candidate carrying one is read.
     pub fn anchors(&self) -> &BTreeSet<String> {
         &self.anchors
+    }
+
+    /// Whether no reading of the question can find `doc` eligible: top-k
+    /// need not read it for the ranking, and its prefix bounds nothing.
+    pub fn cannot_answer(&self, doc: &str) -> bool {
+        self.ineligible.contains(doc)
     }
 
     /// A candidate's prefix.
@@ -160,6 +226,33 @@ impl RankPrefixes {
     /// alone: an unread candidate can then only fall after all of them,
     /// beyond the depth read, and the head (built from the window) is the
     /// same. A rescue walks from the window and is read with it.
+    /// How many eligible candidates read `response` carried (the window and
+    /// the tail it read, never a rescue): a reading that carried the whole
+    /// ranking of what it read found no more than that many.
+    pub fn carried(response: &AskResponse) -> usize {
+        Self::eligible_ids(response).count()
+    }
+
+    /// The eligible candidates `response` carried (the window and the tail
+    /// it read, never a rescue), by id.
+    pub fn eligible_ids(response: &AskResponse) -> impl Iterator<Item = &str> {
+        response
+            .proof
+            .as_ref()
+            .map(|proof| proof.evidence.as_slice())
+            .unwrap_or_default()
+            .iter()
+            .filter(|item| {
+                !was_reached_indirectly(item) && !item.metadata.contains_key(RESTATED_FROM_KEY)
+            })
+            .map(|item| item.id.as_str())
+    }
+
+    /// Every candidate no reading of the question can find eligible.
+    pub fn unanswerable(&self) -> &BTreeSet<String> {
+        &self.ineligible
+    }
+
     pub fn certifies(&self, response: &AskResponse, unread: Option<RankPrefix>) -> bool {
         let Some(unread) = unread else {
             return true;

@@ -148,6 +148,21 @@ pub fn wake_response_with_focus(
     temporal: &TemporalSelection,
     focus: Option<&super::judged_selection::JudgedSelection>,
 ) -> ProtoMappingResult<WakeResponse> {
+    wake_response_rendering(intent, max_entries, result, temporal, focus, None)
+}
+
+/// [`wake_response_with_focus`] for a wake read with a summary render
+/// ([`kmp_application::RenderDemand::Summary`]): `sections_render` renders
+/// the flat sections from the bundle when its current state needs them, so
+/// the packet is the one a structure render gives.
+pub fn wake_response_rendering(
+    intent: &str,
+    max_entries: Option<usize>,
+    result: GetContextResult,
+    temporal: &TemporalSelection,
+    focus: Option<&super::judged_selection::JudgedSelection>,
+    sections_render: Option<super::wake_current_state::WakeSectionsRender<'_>>,
+) -> ProtoMappingResult<WakeResponse> {
     // A packet bounded in time stands on the selection: its evidence, its
     // spine, its cursor and its proof are the selection's. The rendered
     // prose is the about's, because it is rendered before this reads it.
@@ -174,7 +189,12 @@ pub fn wake_response_with_focus(
         .into_iter()
         .filter(|item| admission.admits(item))
         .collect::<Vec<_>>();
-    let current_state = rendered_current_state(&result.rendered, &result.bundle, &lifecycle);
+    let current_state = rendered_current_state(
+        &result.rendered,
+        &result.bundle,
+        &lifecycle,
+        sections_render,
+    );
     let summary = rendered_summary(&result.rendered);
     // The L0 summary already selects one blocker and one next action. Leaving
     // the typed lists empty made the same packet assert `Blocker:` / `Next:`
@@ -327,7 +347,10 @@ fn prioritize_wake_evidence(
             .any(|item_ref| lifecycle.is_superseded(item_ref))
         {
             0
-        } else if refs.iter().any(|item_ref| lifecycle.is_expired(item_ref)) {
+        } else if refs
+            .iter()
+            .any(|item_ref| lifecycle.is_expired(item_ref) || lifecycle.is_pending(item_ref))
+        {
             1
         } else {
             2
@@ -616,6 +639,17 @@ pub fn ask_response_from_result(
     } else {
         confidence
     };
+    // Nor is one the lexical bridge had to carry: the gate answered only
+    // because the table translated what a cited memory states in another
+    // language, and the coverage above counted the anchors it named in the
+    // reader's words, never the concept the table stood in for.
+    let confidence = if verdict.as_ref().is_some_and(|verdict| verdict.translated)
+        && confidence == MemoryConfidence::High
+    {
+        MemoryConfidence::Medium
+    } else {
+        confidence
+    };
     // A store that asked for it (`attribute_check`) holds an unanchored
     // `high` to a citation that states the asked attribute itself.
     let confidence = match (retrieval.gate, &verdict) {
@@ -862,6 +896,20 @@ pub fn ask_response_from_result(
     } else {
         format!("; not found: {}", not_found.join(", "))
     };
+    // A cross-language rescue cites a memory on a judge's word, not on the
+    // question's: the summary says so, so the answer reads as a judgement.
+    let judged_note = match doubt {
+        Some(doubt)
+            if !unknown
+                && doubt.entry() == super::doubt_entry::DoubtEntry::CrossLanguageUnknown =>
+        {
+            format!(
+                "; cited on {}'s judgement that it states the answer in another language, not on the question's own words",
+                doubt.model()
+            )
+        }
+        _ => String::new(),
+    };
 
     let mut warnings = question_rendering_warnings(question, asked_as);
     if let Some(ranking) = &retrieval.rerank {
@@ -880,7 +928,12 @@ pub fn ask_response_from_result(
                 .count()
         };
         warnings.push(format!(
-            "doubt band ({}) asked {} about {} passages: {} citations vetoed, {} promoted; its verdicts are frozen in the store's verdict book",
+            "{} ({}) asked {} about {} passages: {} citations vetoed, {} promoted; its verdicts are frozen in the store's verdict book",
+            if doubt.entry().is_cross_language() {
+                "cross-language judge"
+            } else {
+                "doubt band"
+            },
             doubt.entry().as_str(),
             doubt.model(),
             doubt.len(),
@@ -921,7 +974,7 @@ pub fn ask_response_from_result(
             }
         } else {
             format!(
-                "Retrieved {} memory {} for{}: {question}{not_found_note}",
+                "Retrieved {} memory {} for{}: {question}{not_found_note}{judged_note}",
                 because.len(),
                 if because.len() == 1 { "item" } else { "items" },
                 if answer_status == AnswerStatus::Partial {

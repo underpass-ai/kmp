@@ -10,9 +10,11 @@ use serde_json::{Value, json};
 
 mod asset_locator;
 mod asset_search;
+mod guide_topic;
 
 pub use asset_locator::{GuideAssetLocator, PLUGIN_ROOT_ENV};
 pub use asset_search::GuideAssetSearch;
+pub(crate) use guide_topic::GuideTopic;
 
 pub const ABOUTS: [&str; 2] = ["guide:kmp", "guide:kmp-agent"];
 

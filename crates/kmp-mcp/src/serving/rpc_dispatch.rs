@@ -5,11 +5,10 @@ use std::time::Instant;
 
 use serde_json::Value;
 
-use super::lexical_order::{LexicalOrder, is_tool_error};
+use super::write_retry;
 use crate::contract::{
-    advertised_input_schemas, canonical_tool_name, initialize_result_with_apps,
-    reject_invalid_arguments, reject_invalid_write_arguments, reject_unknown_arguments,
-    resource_read_result, resources_list_result, tools_list_result_with_apps,
+    advertised_input_schemas, initialize_result_with_apps, reject_invalid_arguments,
+    resource_read_result, resources_list_result, tools_list_result_with_apps, with_open_world,
 };
 use crate::serving::json_rpc::{jsonrpc_error, jsonrpc_result};
 use crate::serving::kernel_mcp_server::KernelMcpServer;
@@ -24,6 +23,30 @@ impl KernelMcpServer {
     /// One message of this process's own session (stdio).
     pub async fn handle_json_line(&self, line: &str) -> Option<String> {
         self.handle_json_line_in(line, &self.session).await
+    }
+
+    /// One message from a host, the way the stdio loop and the HTTP gateway
+    /// serve it: a request that panics is answered with a JSON-RPC error and
+    /// the session goes on (B2). The guard sits here, outside the server's
+    /// own calls back into `handle_json_line`.
+    pub async fn serve_json_line(&self, line: &str, session: &McpSession) -> Option<String> {
+        match super::panic_guard::PanicGuard::new(self.handle_json_line_in(line, session)).await {
+            Ok(response) => response,
+            Err(panic) => {
+                tracing::error!(panic = %panic, "a request panicked; the session continues");
+                let id = serde_json::from_str::<Value>(line)
+                    .ok()
+                    .and_then(|request| request.get("id").cloned())?;
+                Some(jsonrpc_error(
+                    id,
+                    -32603,
+                    &format!(
+                        "internal error: this request failed inside the server ({panic}); the \
+                         session continues and later calls are served"
+                    ),
+                ))
+            }
+        }
     }
 
     /// One message of `session`: what it negotiated decides the tool
@@ -60,12 +83,17 @@ impl KernelMcpServer {
                 )
             }),
             Some("notifications/initialized") => None,
+            // MCP's liveness check: an empty result, nothing else (E23).
+            Some("ping") => id.map(|id| jsonrpc_result(id, serde_json::json!({}))),
             Some("tools/list") => id.map(|id| {
                 jsonrpc_result(
                     id,
-                    self.output_schema_tools(self.passage_tools(advertised_input_schemas(
-                        tools_list_result_with_apps(session.apps()),
-                    ))),
+                    with_open_world(
+                        self.output_schema_tools(self.passage_tools(advertised_input_schemas(
+                            tools_list_result_with_apps(session.apps()),
+                        ))),
+                        &self.open_world_tools(),
+                    ),
                 )
             }),
             Some("resources/list") if session.apps() => {
@@ -111,7 +139,7 @@ impl KernelMcpServer {
     /// it does not terminate the stdio session or discard later requests.
     pub async fn handle_json_bytes(&self, line: &[u8]) -> Option<String> {
         match std::str::from_utf8(line) {
-            Ok(line) => self.handle_json_line(line).await,
+            Ok(line) => self.serve_json_line(line, &self.session).await,
             Err(error) => Some(jsonrpc_error(
                 Value::Null,
                 -32700,
@@ -132,8 +160,11 @@ impl KernelMcpServer {
         let Some(requested_name) = params.get("name").and_then(Value::as_str) else {
             return jsonrpc_error(id, -32602, "tools/call requires params.name");
         };
-        let name = canonical_tool_name(requested_name);
-        let arguments = params.get("arguments").unwrap_or(&Value::Null);
+        let name = requested_name;
+        // A call without `arguments` is a call with none: MCP lets a host
+        // omit them for a tool that requires nothing.
+        let no_arguments = Value::Object(serde_json::Map::new());
+        let arguments = params.get("arguments").unwrap_or(&no_arguments);
         let start = Instant::now();
         let origin = CallOrigin::read(arguments, session.client());
 
@@ -175,21 +206,20 @@ impl KernelMcpServer {
             );
         }
 
-        // Before anything reads them: the schemas declare
-        // `additionalProperties: false`, so an argument the tool does not have
-        // is refused here rather than dropped and answered anyway. Empty and
-        // repeated values are refused too (#850), but a tool that names the
-        // problem more precisely goes first: the writer's planner and the
-        // read projections run their own checks, and this one follows them as
-        // a backstop. Every other write is checked here, before it commits,
-        // and a declared boolean of another type is refused with it.
-        let lexical_first = LexicalOrder::of(name) == LexicalOrder::BeforeDispatch;
-        let checked = if lexical_first {
-            reject_invalid_write_arguments(name, arguments)
-        } else {
-            reject_unknown_arguments(name, arguments)
-        };
-        if let Err(error) = checked {
+        // Before anything reads them: the published input schema is the law
+        // of the call (#921, E1). A value it refuses — a mistyped guard, an
+        // out-of-range number, an argument the tool does not have, a name the
+        // surface does not declare — is refused here, so no parser ever reads
+        // it as "absent" and goes ahead, and nothing commits on it.
+        if let Err(error) = reject_invalid_arguments(name, arguments) {
+            let error = if name == "kmp_write_memory" {
+                // The planner reads the actor the session would supply.
+                let defaulted = super::default_actor::with_default_actor(name, arguments, session);
+                self.word_write_refusal(defaulted.as_ref().unwrap_or(arguments), error)
+                    .await
+            } else {
+                error
+            };
             record_call_error(
                 self.call_source(&origin, false),
                 self.backend_name(),
@@ -208,52 +238,34 @@ impl KernelMcpServer {
             return self.handle_kmp_guide(id, arguments, start, &origin).await;
         }
 
+        // A bidirectional trace's one `to` sent as a list of one is that ref:
+        // everything past here reads the call it means.
+        let single = (name == "kmp_trace")
+            .then(|| crate::contract::tools::trace::single_destination(arguments))
+            .flatten();
+        let arguments = single.as_ref().unwrap_or(arguments);
+
         let resolved = match self.resolve_read_arguments(name, arguments) {
             Ok(resolved) => resolved,
             Err(error) => return jsonrpc_result(id, tool_error_result(name, arguments, &error)),
         };
         let arguments = resolved.as_ref().unwrap_or(arguments);
-        let guidance = match super::call_guidance::CallGuidance::prepare(self, arguments) {
-            Ok(guidance) => guidance,
-            Err(error) => return jsonrpc_result(id, tool_error_result(name, arguments, &error)),
-        };
-        let memory_arguments = guidance
-            .as_ref()
-            .map(|g| g.memory_arguments(name, arguments));
-        let reply_id = id.clone();
-        let result = self
-            .dispatch_memory_call(
-                id,
-                name,
-                memory_arguments.as_ref().unwrap_or(arguments),
-                start,
-                &origin,
-            )
+        let defaulted = super::default_actor::with_default_actor(name, arguments, session);
+        let memory_arguments = defaulted.as_ref().unwrap_or(arguments);
+        let mut result = self
+            .dispatch_memory_call(id.clone(), name, memory_arguments, start, &origin)
             .await;
-        let result = match guidance {
-            Some(guidance) => {
-                let result = self.shorten_read_actions(Some(&guidance), result);
-                self.complete_work_guidance(name, arguments, &guidance, result)
-            }
-            None => self.shorten_read_actions(None, result),
-        };
-        if LexicalOrder::of(name) == LexicalOrder::AfterRead
-            && !is_tool_error(&result)
-            && let Err(error) = reject_invalid_arguments(name, arguments)
-        {
-            record_call_error(
-                self.call_source(&origin, false),
-                self.backend_name(),
-                self.grpc_tls_mode_name(),
-                name,
-                arguments,
-                ToolErrorKind::Validation,
-                &error.message,
-                &error.feedback,
-                start.elapsed(),
-            );
-            return jsonrpc_result(reply_id, tool_error_result(name, arguments, &error));
+        // A write that lost the race for its about applied nothing; it is
+        // planned and committed again against the revision that won (S1).
+        let mut attempt = 1;
+        while attempt < write_retry::ATTEMPTS && write_retry::lost_the_race(&result) {
+            tokio::time::sleep(write_retry::pause_before(attempt)).await;
+            attempt += 1;
+            result = self
+                .dispatch_memory_call(id.clone(), name, memory_arguments, start, &origin)
+                .await;
         }
+        let result = self.shorten_read_actions(result);
         self.project_read_passages(name, result)
     }
 
@@ -322,25 +334,21 @@ impl KernelMcpServer {
             .as_ref()
             .map(|client| (client.name.as_str(), client.version.as_str()));
         let mut outcome = self.backend.call_tool_for(name, arguments, caller).await;
-        // A guide node a human or an agent reads directly is seeded the same
-        // way kmp_guide seeds it, and read once more; a store that still has
-        // no guide answers with the repair and where this session looked.
+        // A guide node absent from this store is answered with the repair and
+        // nothing else: a read never writes the store (kmp_inspect is
+        // read-only), and kmp_guide serves every topic from the engine.
         if name == "kmp_inspect"
             && let Err(error) = &outcome
             && super::guide_repair::GuideRepair::is_missing_guide_read(arguments, error)
         {
-            let seed = self.seed_installed_guide().await;
-            if seed.seeded() {
-                outcome = self.backend.call_tool_for(name, arguments, caller).await;
-            }
-            if let Err(error) = outcome {
-                let node_ref = arguments["ref"].as_str().unwrap_or_default();
-                outcome = Err(super::guide_repair::GuideRepair::missing(
-                    node_ref,
-                    error,
-                    &seed.searched(),
-                ));
-            }
+            let node_ref = arguments["ref"].as_str().unwrap_or_default();
+            outcome = Err(super::guide_repair::GuideRepair::unavailable(
+                node_ref,
+                error.clone(),
+            ));
+        }
+        if let Err(error) = outcome {
+            outcome = Err(self.name_unknown_about(name, arguments, error).await);
         }
         match outcome {
             Ok(result) => {
@@ -359,6 +367,21 @@ impl KernelMcpServer {
                 jsonrpc_result(id, self.disclose_store(name, result))
             }
             Err(error) => {
+                if let Some(result) =
+                    super::wake_unrecorded::unrecorded_wake(name, arguments, &error)
+                {
+                    record_call_success(
+                        self.call_source(origin, false),
+                        self.backend_name(),
+                        self.grpc_tls_mode_name(),
+                        name,
+                        arguments,
+                        &result,
+                        start.elapsed(),
+                    );
+                    let result = self.disclose_store(name, result);
+                    return jsonrpc_result(id, self.disclose_store_in_text(result));
+                }
                 record_call_error(
                     self.call_source(origin, false),
                     self.backend_name(),

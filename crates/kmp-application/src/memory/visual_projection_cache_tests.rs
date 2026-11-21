@@ -47,6 +47,11 @@ fn projection() -> VisualProjectionResult {
             has_more: false,
             next_cursor: None,
         },
+        source: VisualSource {
+            total: 0,
+            read: 0,
+            earliest: None,
+        },
         truncated: false,
         missing: vec![],
     }

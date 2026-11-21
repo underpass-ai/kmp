@@ -92,6 +92,41 @@ pub fn rfc3339_to_seconds(value: &str) -> Option<i64> {
     )
 }
 
+/// Epoch seconds for a clock argument, or the refusal that names it.
+///
+/// A time with no zone used to be accepted and read as UTC, so a writer in
+/// CET who meant 08:30Z was stored at 09:30Z (S4 of the 1.0 review). RFC3339
+/// requires the zone; since 1.0 a clock argument without one is refused.
+pub fn require_rfc3339(value: &str, path: &str) -> Result<i64, String> {
+    if let Some(seconds) = rfc3339_to_seconds(value) {
+        return Ok(seconds);
+    }
+    if lacks_zone(value) {
+        return Err(format!(
+            "argument `{path}` must be an RFC3339 timestamp with a zone — `Z` for UTC or an \
+             offset such as `+01:00`: `{value}` has none, and reading it as UTC would move it by \
+             the writer's own offset. Example: `2026-11-10T09:30:00Z`."
+        ));
+    }
+    Err(format!(
+        "argument `{path}` must be an RFC3339 timestamp such as `2026-11-10T09:30:00Z` or \
+         `2026-11-10T09:30:00+01:00`; received `{value}`."
+    ))
+}
+
+/// Whether a would-be timestamp names no zone at all: a bare date, or a date
+/// and time with nothing after the seconds and their fraction.
+fn lacks_zone(value: &str) -> bool {
+    let value = value.trim();
+    let Some(tail) = value.get(19..) else {
+        return true;
+    };
+    let tail = tail.strip_prefix('.').map_or(tail, |fraction| {
+        fraction.trim_start_matches(|c: char| c.is_ascii_digit())
+    });
+    tail.is_empty()
+}
+
 /// Days since 1970-01-01 — Howard Hinnant's days-from-civil, the inverse of
 /// the civil-from-days the viewer uses to render.
 fn days_from_civil(year: i64, month: i64, day: i64) -> i64 {
@@ -105,6 +140,32 @@ fn days_from_civil(year: i64, month: i64, day: i64) -> i64 {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn a_clock_argument_without_a_zone_is_refused_and_says_so() {
+        for value in [
+            "2026-11-10T09:30:00",
+            "2026-11-10",
+            "2026-11-10 09:30:00",
+            "2026-11-10T09:30:00.5",
+        ] {
+            let refused = require_rfc3339(value, "observed_at").expect_err(value);
+            assert!(refused.contains("with a zone"), "{value}: {refused}");
+            assert!(refused.contains("`Z`"), "{value}: {refused}");
+        }
+        for value in [
+            "2026-11-10T09:30:00+0100",
+            "2026-11-10T24:00:00Z",
+            "2026-13-10T10:00:00Z",
+        ] {
+            let refused = require_rfc3339(value, "observed_at").expect_err(value);
+            assert!(!refused.contains("with a zone"), "{value}: {refused}");
+        }
+        assert_eq!(
+            require_rfc3339("2026-11-10T09:30:00+01:00", "x"),
+            require_rfc3339("2026-11-10T08:30:00Z", "x")
+        );
+    }
+
     use super::*;
 
     #[test]

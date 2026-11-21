@@ -14,10 +14,12 @@ if [[ ! -x "${binary}" ]]; then
 fi
 
 bundle() {
-  python3 -I scripts/examples/bundle.py --binary "${binary}" --requests "$1" --out "$2"
+  python3 -I scripts/examples/bundle.py --binary "${binary}" --requests "$1" --out "$2" "${@:3}"
 }
 
 # What `kmp-mcp demo` writes, as a bundle a reader can import.
 bundle crates/kmp-mcp/fixtures/demo/kmp-demo.requests.json examples/retry-budget/memory.jsonl
-# KMP's own memory: the decisions behind this repository.
-bundle examples/kmp-project/requests.json .kmp/memory.jsonl
+# KMP's own memory: the decisions behind this repository. It is committed
+# history that checkouts have rebuilt their stores from, so it only grows: the
+# packets are sent on top of the committed bundle, and a new packet appends.
+bundle examples/kmp-project/requests.json .kmp/memory.jsonl --base .kmp/memory.jsonl

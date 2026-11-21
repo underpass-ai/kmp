@@ -204,8 +204,9 @@ impl LifecycleRescue<'_> {
             .filter(|(item, _)| {
                 self.context.temporal_state(item) != CandidateTemporalState::CurrentOrUnspecified
             })
-            .filter(|(_, terms)| {
-                names_an_anchor(terms) && reached_by_the_question(self.focus, self.lexicon, terms)
+            .filter(|(item, terms)| {
+                names_an_anchor(terms)
+                    && reached_by_the_question(self.focus, self.lexicon, item, terms)
             })
             .map(|(item, terms)| (self.lexicon.direct_score(terms), item))
             .collect::<Vec<_>>();
@@ -255,7 +256,7 @@ impl LifecycleRescue<'_> {
     }
 
     fn stands(&self, node: &str) -> bool {
-        !self.context.lifecycle.is_superseded(node) && !self.context.lifecycle.is_expired(node)
+        self.context.lifecycle.stands(node)
     }
 
     /// Marks a rescued memory with its route. Every page may repeat the

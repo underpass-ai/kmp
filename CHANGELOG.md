@@ -9,6 +9,739 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Changed — breaking
+
+The catalogue states the law of a call once (second token reduction, on the
+way to 1.0). `tools/list` drops from 11,856 to 7,468 tokens
+(o200k_base).
+
+- `tools/list` publishes types, enums and `required` (the first-call
+  `required` under `if continuation … else`), and the `pattern` of
+  `memories[].id`. It no longer publishes `additionalProperties: false`,
+  `if`/`then`/`else`/`allOf`/`not`/`propertyNames`, conditional
+  `anyOf`/`oneOf`, `default`, `title`, or the bounds and patterns
+  (`minLength`, `maxLength`, `minItems`, `maxItems`, `uniqueItems`,
+  `minimum`, `maximum`, `minProperties`, `maxProperties`). A union of
+  distinct JSON types is published as `type: [..]`. Every one of them is still
+  refused exactly as before.
+- Unknown keys are refused in every input object by default: an object
+  schema without `additionalProperties` is closed. The server instructions
+  say so once.
+- Cross-field rules have ids (`write.labels`, `write.evidence`,
+  `write.one-form`, `write.link-class`, `write.relations-form`,
+  `write.summaries-form`, `write.summary-content`, `time.cursor`,
+  `trace.mode`, `trace.search-mode`, `ingest.observed`, `ingest.links-only`,
+  `condense.expect`, `continuation-alone`). A refusal names the rule and its
+  fix (`Rule \`id\`: … Fix: …`) and carries `feedback[].rule`; a writer
+  refusal keeps the planner's code and message and adds `rule`. Each
+  `kmp_guide` card lists its topic's rules under `rules`.
+- Tool descriptions are one sentence. What they said beyond it moved to the
+  guide cards; a description points at its topic (`Guide topic: …`) only when
+  the topic is not named after the verb. Argument defaults appear in the
+  card's `parameters` lines.
+- New guide topic `review` (resume a write that answered `needs_review`): the
+  `continuation`, `read_context` and `review_token` prose of
+  `kmp_write_memory` moved there from `write`.
+- `tools/list` no longer carries `_meta."kmp/errorCodes"`; the closed set of
+  error codes, with what to do about each, is `error_codes` in
+  `kmp_guide {"topic":"guide"}`.
+- Annotations are true: `kmp_wake`, `kmp_ask`, `kmp_time`, `kmp_trace`,
+  `kmp_relate`, `kmp_summaries_audit`, `kmp_view_get_state` and `kmp_guide`
+  declare `readOnlyHint: true`; `openWorldHint` is false on every tool
+  unless the session's store opted into TypeSafe Jev (`typesafe.json` and a
+  key), and then true on exactly the tools that send text to TypeSafe:
+  `kmp_curate` and `kmp_summaries_audit`, plus `kmp_wake` with
+  `wake-focus.json`, `kmp_ask` with `rerank.json` or `ask-judge.json`, and
+  `kmp_write_memory` with `write-relations.json` or `write-expansions.json`.
+  The hint is computed from the configuration the session opened its store
+  with; a session never changes store, and a change to those files takes
+  effect, hint included, from the next session (no
+  `notifications/tools/list_changed` is sent). `idempotentHint: true` on
+  `kmp_ingest`, `kmp_write_memory`, `kmp_relabel`, `kmp_inspect` and
+  `kmp_view_apply_intent`; `destructiveHint` and `idempotentHint` are omitted
+  where they equal the MCP default. `kmp_inspect` stays `readOnlyHint: false`:
+  a read of a node of the installed guide on a store without it seeds the
+  guide.
+- Wake and Ask proofs state each ref fewer times: a hop's `evidence_refs`
+  no longer repeat its endpoints' detail evidence (`detail:<from>`,
+  `detail:<to>`), a detail evidence item that supports only its own ref has no
+  `supports`, and `metadata` that only says `proof_role: stored_evidence` is
+  omitted. Ids are unchanged.
+
+The guide is a stateless topic lookup (slim guide, on the way to 1.0).
+
+- `kmp_guide` takes only `{ "topic": <enum> }`; without a topic it returns the
+  topic index. `registration_key`, `agent_id`, `context_id`, `context_key` and
+  `fold` are gone and are refused as unknown arguments, together with agent
+  identities, contexts, guide revisions and the `served`/`used` delivery
+  records. Its result is `{summary, topic, ref, text, parameters}` (plus
+  `relation_vocabulary` for topic `relations`), or `{summary, topics}`.
+- The cards ship inside the engine. `kmp_guide` reads no store, never seeds
+  the stored guide and answers the same way on every install, with or without
+  a plugin tree or `KMP_PLUGIN_ROOT`.
+- The topics are `wake`, `write`, `relations`, `ingest`, `relabel`, `ask`,
+  `time`, `audit`, `trace`, `condense`, `relate`, `curate`, `view` and `guide`
+  (and `review`, added above).
+  The old `write` card is split into `write`, `relations`, `ingest` and
+  `relabel`, and `audit` into `audit` and `trace`; each card serves only the
+  arguments it owns, so every argument is explained by exactly one topic and
+  no card response exceeds about 2,000 tokens.
+- `context_id` and `purpose` are removed from every tool and are refused as
+  unknown arguments. The `kmp_guidance` text block appended to work results,
+  with its usage counters and purpose-steered recommendations, is gone.
+- `actor` is optional on `kmp_write_memory`, `kmp_relabel`, `kmp_condense`
+  and `kmp_curate` apply. When omitted, the writer is the MCP client's name
+  from `initialize` (`clientInfo.name`), or `mcp-client` when the session
+  declared none.
+- A refusal no longer carries `structuredContent.help` or the `Usage help`
+  JSON in its text. Its text ends with one line, `Help: kmp_guide
+  {"topic":"…"}`, naming the topic of the first refused argument.
+- A first `kmp_wake` on an about with nothing recorded is no longer an error:
+  it answers `isError: false` with a short summary saying nothing is recorded
+  there, and still names the store it read.
+- A continuation resent with the same `about` or `actor` it was bound to is
+  accepted; a different value, or any other argument beside the handle except
+  Wake/Ask's `page.repeat_core`, is refused.
+- Retained continuations move from `agent-users.sqlite3` to
+  `continuations.sqlite3` beside the store (for gRPC,
+  `agent-users/<endpoint>.continuations.sqlite3` under the user data home).
+  A 0.27.0 `agent-users.sqlite3` is no longer opened and is left untouched;
+  handles it retained are reported as `CONTINUATION_UNAVAILABLE`.
+- The call log drops `context_fingerprint`.
+
+### Changed — breaking (a call does what it says, a switch means what it says)
+
+- **Environment switches are strict.** A value kmp-mcp does not accept is
+  refused at startup, naming the accepted values: the server does not start
+  and every CLI verb but `info`, `doctor`, `--help` and `--version` exits 2.
+  `KMP_KERNEL_GRPC_TLS_MODE=mutal` no longer runs plaintext,
+  `KMP_LEXICAL_INDEX=0` turns the index off instead of leaving it on, and
+  `KMP_VERSION_CHECK=OFF` no longer calls GitHub. On/off switches accept one
+  spelling set (`on/off/true/false/1/0/yes/no`) in any case; a blank value
+  means unset everywhere but `KMP_VIEWER_ADDR`. `KMP_MCP_OUTPUT_SCHEMAS`
+  accepts the on/off set instead of only `0`/`1`; `KMP_MCP_PASSAGES` is
+  case-insensitive and blank means unset. `KMP_KERNEL_GRPC_TLS_MODE` accepts
+  the words the kernel's `KMP_GRPC_TLS_MODE` accepts (`disabled`/`plaintext`,
+  `server`/`tls`, `mutual`/`mtls`); `disable`, `off`, `false`, `none` and
+  `m-tls` are refused. A relative `KMP_MCP_DATA_DIR` is refused.
+- `kmp-server` (experimental) refuses an unknown `KMP_EVENT_STORE_BACKEND`
+  (`valkey`, `nats`) or `KMP_LOG_FORMAT` (`compact`, `json`, `pretty`)
+  instead of falling back to Valkey or compact logs, and prints a startup
+  failure on stderr.
+- `doctor` and `info` list the switches in effect; `doctor` fails on a
+  refused value and warns about a `KMP_*` name this build reads nowhere. The
+  reference table is in `docs/embedded/configuration.md`.
+- **Removed switches:** `KMP_MCP_ENGINE` (it could only say `sqlite`; the
+  `kmp-embedded` items `ENGINE_ENV`, `parse_engine`,
+  `resolve_engine_from_env` and `resolve_engine_for_data_dir_from_env` go
+  with it, use `default_engine_for_data_dir`), `KMP_LEXICAL_MAXSCORE`
+  (MaxScore is always on) and the `KMP_MCP_BACKEND` aliases `live` and
+  `fixtures`.
+- **Test and evaluation hooks leave the release binary.** The `fixture`
+  backend (with `KernelMcpServer::fixture`, `Default`,
+  `from_optional_endpoint*`, `FixtureKernelMcpBackend` and
+  `KernelMcpBackend::Fixture`), `KMP_LEXICAL_INDEX=shadow|verify`,
+  `KMP_TYPESAFE_CASSETTE`, `KMP_TYPESAFE_CASSETTE_MODE`,
+  `KMP_EVAL_PARTNER_FACTS`, `KMP_JUDGEMENT_DEADLINES` and
+  `KMP_LATEST_VERSION` exist only in debug builds and with the new
+  `eval-hooks` cargo feature, which the memory bench builds. The crash-test
+  driver `embedded_crash_writer` is no longer packaged in
+  `kmp-adapter-embedded`.
+- **Local commands refuse a remote kernel.** With `KMP_KERNEL_GRPC_ENDPOINT`
+  set (or `KMP_MCP_BACKEND=grpc`), `export`, `import`, `document`,
+  `snapshot`, `summaries`, `memories`, `demo`, `viewer` and `consolidation` exit 2 saying they work on the local store, instead of
+  answering from a store the session never uses; `info` and `doctor` say the
+  memory is not on this machine.
+- **Budgets declare only what each read honours.** `budget.tokens` (echoed,
+  never filtering) is gone from every tool, and `limit.tokens` from
+  `kmp_time`. `depth` (top-level and `budget.depth`) is gone from `kmp_wake`,
+  `kmp_ask` and `kmp_relate`: every entry sits one hop from its scope, and
+  1, 2 and 25 answered the same, across abouts and under a dimension filter;
+  `kmp_time` keeps `budget.depth` and loses its top-level `depth` alias.
+  `kmp_trace.budget` keeps only `max_bytes`, `kmp_relate.budget` only
+  `max_bytes`, and `kmp_curate` has no `budget`. `kmp_trace.goal` and its
+  `role` alias are gone: traces with different goals answered byte for byte
+  the same. Each is refused as an unknown argument; returned actions no
+  longer repeat them. The two removals pay for the `date-time` formats below
+  within the 7,500-token `tools/list` ceiling. The memory bench, the testkit scorecards
+  and the real-kernel integration test no longer send them.
+- **A read never writes the store.** `kmp_inspect` of a guide node the store
+  lacks answers `GUIDE_UNAVAILABLE` with the repair instead of seeding the
+  guide; `kmp_guide` serves every topic from the engine and `kmp-mcp guide
+  sync` installs the longer guide. `kmp_inspect` is now `readOnlyHint: true`.
+- **An omitted relation confidence is recorded as `unknown`**, not `high`,
+  on `kmp_write_memory` (`memories[].connect_to[]`, `relations[]`) and
+  `kmp_curate` apply; the schema declares `default: "unknown"`. Under
+  `strict: false` a rich relation of unknown confidence is graded `suspect`.
+- An idempotency-key conflict says the key was accepted with different
+  content, possibly in another about: keys are global to the store, as the
+  key's description now states.
+
+### Changed — surface honesty
+
+- **A continuation accepts an argument resent with the value its call
+  already has.** Beside `continuation`, any argument of the retained call
+  (`about`, `move`, `page.entries`, …) may be repeated unchanged and is
+  ignored: the answer is the continuation's own, byte for byte. A value the
+  call does not have is refused under `continuation-alone`, naming the
+  argument (`feedback[].field`, code `CONTINUATION_ARGUMENT_DIFFERS`) and
+  saying that the original arguments with `page.cursor` start a different
+  read. It used to refuse every argument but `about`/`actor` (and Wake/Ask's
+  `page.repeat_core`) by name, even with the same value. Every verb that
+  returns a handle retains its whole call, so the comparison holds for all of
+  them. `tools/list` is unchanged.
+
+- `memory_bench`: a frozen question's first call is brought to the 1.0
+  contract (`Question.first_call` through `current_arguments`): a field 1.0
+  retired because the read ignored it (`budget.tokens`, recall `depth`, the
+  trace `goal`, `limit.tokens`, any budget on `kmp_curate`) is left out, and
+  `kmp_time`'s top-level `depth` moves into `budget.depth`. The frozen data is
+  untouched. A section with a journey that ended in an error is now `failed`
+  with no headline (verdict `captura_fallida`, reason `journeys not scored`),
+  instead of `ran` with a score over the rest.
+
+- **Timestamp arguments publish `"format": "date-time"`** in `tools/list`,
+  so an agent sees that a clock wants an RFC 3339 instant with its zone
+  before it sends a bare date. It is an annotation: the reader of the
+  argument still refuses `2026-08-01`, with the same wording. A test drives
+  the validator over every string of a probe call per tool and holds the
+  tagged set equal to the set it reads as timestamps.
+- **A bidirectional trace that breaks its shape is refused under the rule
+  `trace.bidirectional`** at the boundary, naming the argument the call sent
+  that it does not take (`search.paths_per_target`, a `to` array, `as_of`,
+  another search option), with the fix and `feedback[].rule`. It used to
+  restate the whole shape from deep in the request mapping.
+- `page.entries` on `kmp_wake`, `kmp_ask` and `kmp_time` counts projection
+  records (a label, a path step, an evidence item, a state line), not
+  memories; the field and the three guide cards say so.
+
+- An about the store does not hold is refused the same way by every read
+  rooted at it (`kmp_ask`, `kmp_relate`, `kmp_time`, `kmp_trace`,
+  `kmp_inspect`, `kmp_curate`, `kmp_view_open`): `not_found`, "`x` is not an
+  about in this store", with the next steps. It used to say "node 'x' not
+  found", or that a ref did not belong to it.
+- A writer clock that is not RFC 3339 is refused at the path the caller
+  wrote (`memories[0].valid_until`), not at the compiled ingest's
+  `memory.entries[].coordinates[]`.
+- A startup failure names the variable at fault; the "unset
+  KMP_MCP_BACKEND" hint appears only when a remote backend was asked for.
+- The "run kmp setup" texts name `/kmp:setup` or `kmp-mcp setup`;
+  `kmp-doctor.sh` names the plugin's installer instead of `cargo install`.
+- Schemas declare the defaults the code applies: `kmp_ask.answer_policy`
+  (`evidence_or_unknown`), `source_kind` (`agent`), `options.strict`
+  (`true`) and `kmp_relabel`'s `dry_run` (`false`).
+- `kmp_wake` labels a memory whose `valid_from` is still ahead "not yet in
+  force", and `kmp_relate` gives it the state `not_yet_in_force`
+  (`FACT_STATE_NOT_YET_IN_FORCE` on the wire) instead of `current`.
+- `kmp_view_open` with a stale `expected_revision` on the about the view
+  already shows says in `unhonored` that the guard was not checked.
+- The stdio server answers `ping`. `kmp_curate`'s output schema declares
+  `jev` nullable.
+- `--help` names `demo --dry-run`, `uninstall --purge|--keep-memory` and
+  where the switches are documented, and no longer says `plugin notice`
+  leaves the machine unchanged.
+
+### Changed
+
+- TypeSafe Jev is pinned at `jev-1.14.0` (was `jev-1.13.0`) in the judged
+  scorecards, the memory bench, the guide's `typesafe.json` example and the
+  test fixtures. Both judged cassettes (`jev.cassette.json`,
+  `retrieval.jev.cassette.json`) are re-recorded with it. An existing store
+  keeps the model its own `typesafe.json` names until its owner edits that
+  file; KMP never rewrites it. The verdict book keys every verdict by model,
+  so a store that switches re-judges once and then answers from the book
+  again; the old `jev-1.13.0` verdicts stay until `max_bytes` evicts them.
+  Measured on the judged corpora (three samples of each model, recorded the
+  same day, `docs/development/jev-evaluation.md`): retrieval and Ask
+  re-ranking unchanged; write-time typing and label "none" better;
+  `proposed_hops_right` 0.9130 in the committed sample. As a reviewed
+  change, its floor in `jev-baseline.tsv` is lowered from 0.9411 to 0.9130:
+  over three same-day samples it is 0.913 / 0.947 / 0.9375 on 1.14 against
+  0.941 / 0.95 / 0.95 on 1.13, the committed sample was chosen before any
+  score was read, its extra wrong hop (`p01 → b06`) sits at 0.33 just over
+  the never-tuned path step line of 0.3, and the old floor had no margin
+  over a single sample (16/17). `write_typed_with_jev` (0.7272) and
+  `labels_none_kept` (1.0) rise, being above their old floors in all three
+  samples. Not re-verified on 1.14: the ask-judge (P10) and write-expansion
+  (P15) thresholds; sample 3 of 1.14 fell under eight floors for a cause not
+  traced.
+  Latency and input tokens per request are unchanged. The bench bills
+  `jev-1.14.0` at the same 0.042 USD per million input tokens, a figure from
+  third-party listings that TypeSafe does not publish.
+- Reads of a large about cost less, with unchanged answers (one about of
+  10,000 memories: first wake 2.1 → 1.0 s, ask 6.3 → 2.0 s, rewind
+  0.63 → 0.49 s; of 100,000: wake 22.6 → 11.1 s, ask 92 → 28 s). A wake
+  renders only the summary tier of its prose (and the flat sections only
+  when fewer than five live memories leave room for them) instead of
+  tokenizing the whole about; the store and the lexical sidecar keep SQLite
+  from re-planning a cached statement on every binding
+  (`SQLITE_DBCONFIG_ENABLE_QPSG`), which an ask spent a quarter of its time
+  on; the top-k rounds of one ask share their point reads and a round that
+  found too few eligible candidates reads enough for its depth at once; the
+  ranker takes an indexed candidate's counts from its sidecar row instead of
+  tokenizing it again; the sidecar indexes relations by type, so an about's
+  lifecycle is not found by scanning all its relations; a node header is
+  read in one statement. The sidecar gains that index on open; its format
+  is unchanged.
+- Reads of a large about skip what they cannot return, with unchanged answers
+  (one about of 10,000 memories: ask 2,039 → 357 ms, first wake
+  1,032 → 742 ms, rewind 506 → 153 ms; of 100,000: ask 28.0 → 3.0 s, wake
+  11.0 → 8.0 s).
+  Every candidate in the lexical sidecar now carries its reach: the words the
+  refs it supports, their details and the explanatory relations kept at them
+  can lend a strict focus. Top-k leaves out every candidate that cannot clear
+  the floor or reach two thirds of the question's focus even with them, so a
+  question with few eligible candidates certifies in one round instead of
+  reading all it planned, and fewer asks fall back to reading the whole about.
+  The plan reads the df of the words the ask weighs and of the words a
+  question word pairs with, not of every word the reached candidates hold,
+  counts those pairs once per ask, and reads the prefixes from the rows in
+  place. A node header is decoded from the stored JSON instead of seven
+  `json_extract` calls; a wake or ask with no dimensions of its own reads each
+  node once; the temporal index of an about up to 16,384 nodes is kept between
+  calls; label references are parsed once per thread; the cl100k table loads
+  beside startup. The sidecar index version is `lexical-index-6`: a sidecar
+  written before is emptied and built again on its next ask (4 s at 10,000
+  memories, 51 s at 100,000), and a binary that
+  predates it does the same to one written after. The store format is
+  unchanged.
+- The viewer address is no longer reachable until the viewer is requested.
+  A stdio session starts with no listener; the first `kmp_view_open` binds
+  `KMP_VIEWER_ADDR` (or `127.0.0.1:7317`, falling forward to a free loopback
+  port when it is busy) and the viewer stays up for the session.
+  `kmp_view_get_state` and the first-write invitation hand out the link only
+  once the viewer listens. An explicit address that is unparsable or not
+  loopback is still refused at startup; one that is busy now comes back in
+  the `kmp_view_open` result (address and reason) instead of ending the
+  session. `kmp-mcp viewer` and `kmp-mcp demo` bind as before.
+- `KMP_VIEWER_ADDR=off kmp-mcp viewer` says the variable turns the viewer off
+  instead of trying to bind an address named `off`.
+- `kmp-mcp export` to the project head refuses to replace a committed bundle
+  whose events it would not keep (a bundle ahead or divergent); the new
+  `--overwrite-committed` flag replaces it anyway. A full export to the
+  project head first catches the store up with a bundle that is ahead.
+- Opening a project store may append to it (the catch-up above) and may
+  rewrite `.kmp/memory.jsonl` (the recovery above).
+- A store whose database file is missing or empty, beside files that prove it
+  held memory (the telemetry salt, a write-ahead log, an indexed lexical
+  index), is refused on open and by `doctor` instead of being restarted
+  empty; the message names the way out.
+- **The published input schema is the law of every call.** Before any tool
+  reads its arguments, the server checks them against the schema it
+  publishes in `tools/list`: `type`, `enum`/`const`, `minimum`/`maximum`,
+  `minLength`/`maxLength`, `pattern`, `minItems`/`maxItems`/`uniqueItems`,
+  `required`, `additionalProperties`, `propertyNames`, `min`/`maxProperties`
+  and the `if`/`then`/`else`, `oneOf`/`anyOf`/`allOf`/`not` shapes. Before,
+  only unknown arguments, empty strings, repeats and booleans on writes were
+  checked there, and a mistyped guard was read as "absent" by its parser:
+  `label_policy: ["refuse"]` wrote, `expected_revision: "1"` skipped the
+  revision guard, a numeric `valid_until` committed with no bound,
+  `source_kind: ["human"]` was recorded as `agent`. Behaviour changes:
+  - such calls are now refused as `invalid_argument`, reads included (a read
+    switch given as `"true"` is refused too, no longer read as its default);
+  - every schema refusal carries one `feedback` item naming the `field`
+    (`SCHEMA_VIOLATION`, or `UNKNOWN_ARGUMENT`, with `allowed` for an enum).
+    Read refusals that used to carry tool codes such as `TIME_INVALID_MOVE`
+    or `READ_INVALID_FIELDS` for those cases now carry `SCHEMA_VIOLATION`;
+    `kmp_write_memory` keeps its planner's field codes when the planner
+    refuses the same packet;
+  - an integer written with a decimal point (`1.0`) is refused where an
+    integer is declared;
+  - `budget.max_bytes: 0` is refused (the schema minimum is 512) instead of
+    meaning the default;
+  - an explicit `null` is refused where the schema does not allow `null`;
+  - a refused call never takes effect: `kmp_view_apply_intent` could change
+    the view and then answer `invalid_argument`;
+  - `kmp_write_memory` refuses an empty `occurred_at`, `valid_from` or
+    `valid_until` and a `rank` past 4294967295, which the schema admits but
+    the writer used to drop.
+- A call without `arguments` is checked as a call with `{}`.
+- Raw `kmp_ingest` closes `memory`, `dimensions[]`, `entries[]`,
+  `relations[]`, `evidence[]` and every coordinate to undeclared keys
+  (`additionalProperties: false`). A misspelled field such as `metdata` or
+  `valid_untill` is refused instead of silently dropped; each object keeps
+  its declared free-form `metadata` map.
+- **Clock arguments need a zone.** A timestamp with no zone
+  (`2026-11-10T09:30:00`, `2026-11-10`) is refused with a message saying a
+  zone or `Z` is required; before, it was accepted and read as UTC, so a
+  writer in CET who meant 08:30Z was stored at 09:30Z. An offset without a
+  colon (`+0100`) is refused too.
+- **A write that lost the race for its about is retried by the server.**
+  Several agents writing one about used to get `conflict` back for most
+  writes. The server now re-plans and commits such a write again, up to 12
+  attempts with a short jittered pause, and answers only when it commits or
+  every attempt lost. In a project store a write also waits up to 10 s for
+  another session's write to publish the committed bundle instead of being
+  refused at once (`unavailable` past the wait); 75 of 90 such writes were
+  refused before.
+- **New error code `retryable_conflict`** for that case (the store moved and
+  nothing was applied; replaying with the same idempotency key is safe).
+  `conflict` now means "do not replay unchanged" only: an idempotency key
+  already accepted with different content, a moved view, a guard that needs
+  a decision. The gRPC backend still reports both as `conflict`.
+- The former tool names `kernel_ingest`, `kernel_write_memory`,
+  `kernel_wake`, `kernel_ask`, `kernel_trace`, `kernel_inspect`,
+  `kernel_remember` and `kernel_ingest_context` are no longer callable; they
+  answer `unknown_tool`. Two of them skipped argument validation. The HTTP
+  gateway's alias table is gone with them.
+- `kmp_curate` refuses its internal modes (`write_proposals`,
+  `judge_expansions`, `prepare_apply`); only the four published modes are
+  callable.
+- The lexical sidecar index version moves to `lexical-index-5`: a sidecar
+  written before is rebuilt on the next ask.
+
+### Added
+
+- **Jev as the cross-language judge of `kmp_ask`**, behind its own opt-in
+  `ask-cross-language.json` (needs `typesafe.json`; `veto` and `rescue` are
+  each off unless named). Jev answers one Noul per passage, "Does `passage`
+  state the answer to `user_question`?", with both languages stated as facts;
+  code holds the truth table (yes at or above the line, no at or below 0.3,
+  unsettled between). The veto keeps a citation of an answer that stands only
+  on the lexical bridge's translation only on a yes at `keep_at` 0.7; the
+  rescue asks about up to eight memories the bridge reached in the other
+  language for an unanchored UNKNOWN, plus a companion Noul "can
+  `user_question` be answered from `passages`?", and cites the likeliest only
+  when both read yes at `rescue_at` 0.9 — never `high`, marked `judged_by`
+  (`cross_language.v1`), with a summary that says it rests on a judgement.
+  The rescue is the one place a memory the bridge reached may be cited, and
+  only inside this switch; it never admits an absent anchor. Same verdict
+  book, 1.5 s first-page deadline and failure handling as the doubt band
+  (a missing answer is never read as a no), under its own telemetry site
+  `cross_language`. On synthetic sets (`jev-1.14.0`, three samples,
+  majority), tuning / held-out seeds: cross-language answers right 11 → 28
+  and 6 → 29 (EN→ES), 16 → 26 and 7 → 23 (ES→EN); 0 rescues of a wrong
+  memory; false answers on Spanish renderings of the stress negatives 6 → 0
+  and 13 → 2, on matched negatives 2 → 0 and 0 → 0, 0 on the stress and
+  judged negatives with or without it.
+  `crates/kmp-mcp/tests/cross_language_judge.rs` replays recorded verdicts in
+  CI with no key. Without the file the ask is byte-identical.
+- TypeSafe nouls with `criteria` (a new question variant), so a question
+  can say what yes and no mean; every existing request body and verdict key
+  is unchanged.
+- `tools/list` carries one short description on the arguments agents were
+  refused over without the guide: `about` (on `kmp_write_memory` and
+  `kmp_wake`), `actor` (on the four writers), and on `kmp_write_memory`
+  `labels`, `memories[].labels`, `memories[].evidence` and `continuation`.
+- Server instructions drop the registration ceremony and say that
+  `kmp_guide {topic}` explains a verb's arguments before its first use.
+
+### Removed
+
+- Dead ChronoLoom code: unused `KMP_LOOM` exports (`extent`, `axisTicks`,
+  `screenAxisTicks`, `arcStyle`, `withSelector`, `CLOCKS`), unused state and
+  viewport helpers, the hidden **Fit** button and CSS that matched nothing.
+- **Breaking (`kmp-viewer` crate API):** the viewer's `/api/graph` and
+  `/api/timeline` routes, which no page called
+  (one answered 80 MB on a 20,000-entry about), with the public
+  `kmp_viewer::views::{graph_view, GraphView, timeline_view, TimelineView}`
+  they used.
+
+### Security
+
+- The viewer's accept loop survives accept errors, serves at most 64
+  connections at once and gives a silent socket 5 s to send its request head
+  (`408` after that). Idle sockets no longer switch the viewer off for the
+  rest of the session.
+- `POST /api/view/*` refuses requests whose `Origin` is not the viewer's own
+  or whose `Sec-Fetch-Site` names another site (`403`); a client that sends
+  neither still needs the session cookie. At most 64 views stay open; a new
+  one forgets the least recently touched.
+- The session cookie is named after the viewer's port, carries
+  `Max-Age=86400` and is renewed by every authenticated answer, so cookies of
+  ended sessions no longer pile up until every request is refused with `431`.
+- Every viewer answer adds `frame-ancestors 'none'; base-uri 'none';
+  form-action 'none'` to its CSP, plus `X-Frame-Options: DENY`,
+  `Cross-Origin-Resource-Policy: same-origin` and
+  `Cross-Origin-Opener-Policy: same-origin`.
+- The Host check refuses `[::1]` followed by anything but a port, and
+  accepts the loopback address the viewer is bound to, so
+  `kmp-mcp viewer 127.0.0.2:7420` answers its own link.
+
+### Fixed
+
+- KMP's own memory (`.kmp/memory.jsonl`, from
+  `examples/kmp-project/requests.json`) records the 1.0 decision that a read
+  never writes and `kmp_guide` serves the guide from the engine, superseding
+  "guide seeded on first read", which it still held as current. It is a new
+  event appended to the committed history: `scripts/examples/bundle.py
+  --base` sends the packets on top of the committed bundle, which
+  `refresh.sh` now uses for this bundle, so existing project stores stay a
+  prefix of it.
+- `kmp-mcp demo` never writes a project's store. Run inside a git project it
+  put `example:kmp-demo` into the project store, so `snapshot create`
+  copied it into `.kmp/snapshots/`, and it created an empty `.kmp/memory.jsonl`.
+  There it now writes the store a directory outside any project would open
+  (the saved selection, else the per-user default), says so (`Not in this
+  project's store …`), and tells which session can ask about it.
+  `KMP_MCP_DATA_DIR` still decides when set, and `--dry-run` names the same
+  destination.
+- Top-level `kmp-mcp --help` indents every description under one column,
+  including those on the line after a long usage (a string continuation had
+  eaten their indent), and `doctor` with `KMP_MCP_BACKEND=grpc` and no
+  endpoint says `set KMP_KERNEL_GRPC_ENDPOINT, or unset …` without a stray
+  space before the comma.
+- A format-1 or format-2 store says what it is and what to do: the refusal
+  names it (a redb store written by KMP 0.3.x or earlier; a SQLite store
+  with the old label identity, written by 0.2.0 to 0.14.x), says no
+  migration exists and that its releases' bundles are refused too, and asks
+  to keep the directory and give this engine another store. It said "This
+  redesign requires a fresh store", and `doctor` listed `engine on disk:
+  sqlite` beneath it.
+- The viewer's refusal of a non-loopback address states the rule it
+  applies: it binds a loopback address, any of 127.0.0.0/8 (such as
+  `127.0.0.1`) or `[::1]`. It said "only binds 127.0.0.1 or [::1]" while
+  `127.0.0.2:7420` was accepted.
+- A missing TypeSafe key names the file that was looked for
+  (`$XDG_CONFIG_HOME/typesafe.env`, else `~/.config/typesafe.env`) instead of
+  always `~/.config/typesafe.env`. An incomplete `typesafe.json` or a
+  `rerank.json` holding `{}` is rejected naming the field it lacks
+  (``invalid TypeSafe configuration: missing field `endpoint` …``).
+  `ask-cross-language.json`, `ask-judge.json`, `wake-focus.json`,
+  `write-expansions.json` and `semantic-retrieval.json` follow the same rule
+  (``invalid ask cross-language configuration: unknown field `vetoo`, expected
+  one of …``).
+- `kmp-mcp import <file>` into a store that holds memory names the way
+  forward: it says the store "already holds 1 event", and that
+  `kmp-mcp import --from <file> --about <about>` brings exact abouts into it
+  while a new `KMP_MCP_DATA_DIR` takes the whole bundle. It used to say
+  "merging bundles is not supported" and "1 events".
+  `import --from <store> --about <missing>` says the source holds no such
+  about instead of "cannot export missing about".
+- `scripts/performance/proof_batch_physical_run.py` and
+  `scripts/performance/sqlite_clients.py` no longer default to inputs under
+  the untracked `artifacts/` folder. The patch directory is a required
+  `PATCH_DIR` argument and `--checkpoint-only` requires `--clients-input`;
+  without them each refuses before creating anything and names the
+  `v0.27.0` path to restore them from.
+- `kmp-mcp doctor` gives one cause one failure. A database lost beside proof
+  of memory is the Memory section's `FAIL` alone: the Database section no
+  longer adds a second one ("injected schema objects") for the same empty
+  file, and Memory no longer ends with `no store yet — it is created on first
+  write` after a refusal. A 0-byte `kernel.sqlite3` with no proof of memory is
+  what the server opens as a new store, and doctor now says so (`ok  the
+  database file is empty, and nothing shows it held memory`) instead of
+  failing it.
+- A store leaves its proof of memory however it was first written. The first
+  commit that appends an event writes `held-memory` beside `FORMAT_VERSION`
+  (and a writable open of a store that already holds events writes it too).
+  A store filled only by `kmp-mcp demo`, `kmp-mcp import` or a project
+  rebuild had no `telemetry-salt`, so deleting its `kernel.sqlite3` made
+  `doctor` say `Usable` and the next session start an empty store over it;
+  that is now refused as `lost its database`.
+- `kmp-mcp doctor` reports a second MCP owner. It reads the same files as
+  the `kmp-mcp uninstall` preview: a hand-written `[mcp_servers.kmp]` in
+  Codex's `config.toml` (or `claude mcp add kmp`) beside an installed plugin
+  is `warn  <host>: a second MCP owner is wired by hand beside the plugin`,
+  and a retired `kernel-memory` registration is reported wherever it is; both
+  name the edit that removes them. Doctor used to read only the host's
+  inventory and the first server named `kmp`. Both verbs now read Codex's
+  configuration from `$CODEX_HOME` (default `~/.codex`); `uninstall` read
+  `$HOME/.codex` whatever `CODEX_HOME` said.
+- A bidirectional `kmp_trace` takes its one destination as a list holding
+  that ref (`"to": ["ref"]`), as small models send it, and answers it byte for
+  byte as `"to": "ref"`. It was refused under `trace.bidirectional`; two or
+  more refs still are. A list of one without `bidirectional` stays the bounded
+  search it asks for. `tools/list` is unchanged.
+- ChronoLoom without WebGL no longer covers its "3D scene cannot start"
+  message with the loading indicator. Every scene read raised the indicator
+  over the message, and it cleared only after two animation frames meant to
+  follow a scene paint. Once the renderer is unavailable the scene loader
+  goes at once, without waiting for a frame, and stays away; the detail
+  loader still works.
+- `kmp-release` guide runs report why an engine failed when it stopped
+  before reading its requests (a store it could not open, for example)
+  instead of "could not write guide requests: Broken pipe". The broken pipe
+  is no longer an error of its own: the engine's exit status, stderr and
+  missing responses say what happened. This was also the cause of a flaky
+  `scratch_store_runs_keep_the_data_home_beside_the_store`, whose fake
+  engine exits without reading.
+- The `guide_engine_path_contract` tests pass with `CARGO_TARGET_DIR` or
+  `CARGO_BUILD_TARGET_DIR` exported, and no longer build their stub
+  `kmp-mcp` into that directory over the developer's engine. The release
+  build already honoured the variable; the fixture builds inherited it.
+- `kmp_ask` no longer answers what is not stored when the lexical-bridge table
+  `kmp-mcp setup` installs is present. The table is built from a multilingual
+  embedding, so besides translations it pairs neighbours inside one language
+  (`deadline≈final`, `prefix≈prefer`, `deploy≈job`), and the anchored gate and
+  the ⌈2/3⌉ focus of `evidence_or_unknown` counted such a pair as stating what
+  the question asked. With the shipped table, 13 of 360 synthetic questions
+  whose attribute is not stored were answered at `high` (none without it), on
+  the frozen real store 2 of 64 negatives were answered, and every zero-overlap
+  paraphrase the table answered cited the wrong memory. Now a bridged pair
+  counts as stating a concept only when the question and the memory are
+  written in two different languages, each read from its function words, and
+  never when either word of the pair is a function word (`sobre≈about`). An
+  answer the anchored gate gives only because the table translated a concept
+  is `medium` at most, as the languages page always said. A question that
+  leans in no language (bare keywords) is no longer translated into an answer:
+  the table still ranks the memory it reaches, which arrives in the proof
+  marked `reached_by: bridge`. The languages are read from Spanish and
+  English function words only, from as few as one: a question in another
+  language is not translated at all, and a keyword question with one stray
+  Spanish function word (`la deadline #10132 svc-013`) still reads as Spanish
+  and can be answered at `medium` from an English memory. Without a table
+  nothing changes.
+  `scripts/ci/retrieval-baseline.sh` now also scores the judged collection
+  and a set of synthetic stress cases with the shipped table, and a
+  `kmp-mcp` test asks the stress negatives with it on every run.
+- `typesafe.json` accepts only a pinned release, `<family>-<major>.<minor>.<patch>`.
+  An alias such as `jev-preview` used to validate and then fail every
+  answer, because the provider answers with the release the alias resolves
+  to; it is now refused as an invalid `typesafe.json`, like `jev-latest`.
+- The viewer runs one projection read at a time, and a read whose browser
+  abandoned it (the page now aborts superseded reads) leaves the queue.
+  Eight overlapping reads on a 20,000-entry about no longer hold eight copies
+  of the about at once.
+- Viewer parameters that are not numbers (`/api/trace` `entries`, `cursor`;
+  `/api/view` `since`) and projection times the calendar cannot place
+  (`0000-00-00T00:00:00Z`) are refused with `400` instead of being ignored.
+  An unknown about in `/api/projection` is named as an about.
+- A memory whose kind is `constructor`, `toString` or `__proto__` no longer
+  breaks the ChronoLoom scene: every lookup keyed by stored text checks its
+  own keys.
+- `/api/projection` sends the placeholder snapshot hash as `null`, like the
+  other viewer answers.
+- ChronoLoom without WebGL no longer hangs on "Joining the view…": the stage
+  says the 3D scene cannot start, and layers, labels, search, the time window
+  and memory detail load and work.
+- ChronoLoom keeps a state message (no renderer, an empty store, a partial
+  read, a lost connection) in the status bar until the state changes; only
+  one-off errors fade. A tab whose session ended (any `401`) stops polling and
+  says to open the new link.
+- Above 65,536 entries per about the oldest entries are reachable again: a
+  visual projection reports its source (`source.total`, `source.read`,
+  `source.earliest`, also when the read left the earliest entry out), "All
+  time" spans it, and the status bar says "Showing the newest 65,536 of N"
+  for as long as a window is cut.
+- ChronoLoom's window shortcuts ignore Ctrl, Alt and Meta combinations and
+  keys inside an open dialog, so Ctrl+F, Ctrl+plus/minus and Alt+left no
+  longer move the time window.
+- ChronoLoom's search says it reads the memories the window has loaded (and
+  that grouped levels load none), and Enter frames its hits as the README
+  promised.
+- The ChronoLoom header shows which store the viewer serves.
+- `THIRD_PARTY_NOTICES.md` lists the vendored three.js 0.180.0 (it named
+  pixi.js 8.19.0, which no longer ships) and carries the MIT license text,
+  which the MCPB package ships with it.
+- The memory store selection order is stated correctly in the shipped guide
+  and the plugin README: environment, project root, saved selection, user
+  default.
+- A project store catches up with its committed `.kmp/memory.jsonl` when it
+  opens. After a fresh clone or a `git pull` the bundle's new events are
+  appended in the bundle's own order, so reads see the teammate's memory and
+  writes work; a write in a session opened before the pull catches up first.
+  Before, reads were stale or empty with no warning and every write was
+  refused.
+- `doctor` and `info` tell a committed bundle ahead of the store from one
+  behind it, by comparing events rather than counts. A bundle ahead is
+  reported as such and `kmp-mcp export` is never advised for it; before, it
+  was called "behind" and following the advice deleted the teammate's memory
+  from the bundle.
+- A write killed between its commit and its publish no longer leaves a
+  project memory read-only: the next open (or a full `export`) publishes the
+  store and clears the marker when no other session holds the lock and the
+  bundle is an exact prefix of the store.
+- When the store and the bundle are different histories, every read carries
+  a notice in `warnings` and in its text, and the write refusal, `doctor` and
+  `export` name both ways out.
+- `uninstall` no longer destroys the memory copy it promised to keep. The
+  copy is never written over: a second uninstall of the same path saves
+  under a numbered name beside the first. It is read back and verified
+  (digest and event count) before anything is removed. An uninstall run from
+  inside a directory it would remove is refused before anything is written
+  or removed. A store with no events leaves no copy and prints `empty`.
+- A `setup` that fails, and `doctor`, no longer delete plugin versions from
+  the Claude Code and Codex caches. The engine proof they run now uses a
+  throwaway home, so it also stops adding a scratch store to
+  `known-stores.jsonl` and taking a lease in the real data home. A serve
+  start still collects the versions an earlier update superseded, but keeps
+  one that a live session marks `.in_use` (Claude Code) or that a running
+  process executes from or was launched from (`KMP_PLUGIN_ROOT`, Linux).
+- `doctor` no longer writes to the store. It reads the live memory through
+  the read-only opener, so it no longer re-stamps `FORMAT_VERSION`, runs
+  card adoption or creates a missing database. SQLite may still create empty
+  `-wal`/`-shm` files beside the database.
+- `doctor` opens the database read-only and runs SQLite's `quick_check`
+  before it calls the memory usable. A database replaced by other bytes or
+  cut short is now a FAIL in a new `Database` section, not "Usable".
+- `doctor` run by an engine older than the installed plugin no longer calls
+  a healthy host "Not usable" or advises `kmp-mcp update`. When the plugin
+  and its engine report the same newer release, it warns that this doctor
+  is older and names the installed engine's own `doctor`.
+- Hermes on PATH with no MCP server configured no longer breaks `setup`,
+  `update` and `doctor`. Empty or null output means KMP is not registered
+  there. A host whose inventory cannot be read is reported for that host
+  alone: `doctor` fails that host and still diagnoses the others, and a
+  `setup` or `update` that names no host skips it with the reason. Naming
+  it explicitly still fails.
+- `setup` says "completed" only after the result is on disk. A Claude Code
+  or Codex plugin whose directory holds no manifest is reinstalled rather
+  than kept as "unchanged", and fails if it is still empty. Hermes and Pi
+  must hold every `kmp-*` skill of the plugin tree. That tree is now also
+  found in the Claude Code and Codex caches of the release, and through
+  `KMP_PLUGIN_ROOT`, not only beside a development build. With no tree on
+  the machine, `setup --hermes` and `setup --pi` fail and say where they
+  looked. `doctor` reports both cases.
+- A stale plugin's bootstrap script no longer downgrades the shared engine.
+  When the installed `kmp-mcp` is newer than the plugin's release, the
+  script runs that engine for its own release and downloads nothing.
+- Stores opened at the same moment no longer go missing from
+  `known-stores.jsonl`. Rewrites of the note take a lock
+  (`store-leases/known-stores.lock`, removed with the lease directory by a
+  full `uninstall`), and a note that cannot be read is never rewritten from
+  nothing.
+- `scripts/install/install.sh` ends with `kmp-mcp setup` and `kmp-mcp
+  doctor` instead of the retired standalone wiring (`claude mcp add kmp`,
+  `[mcp_servers.kmp]`).
+- The test suites and `kmp-release guide assets` no longer reach the
+  developer's own KMP home (#910). Every `kmp-mcp` a test spawns runs in a
+  throwaway home with `CODEX_HOME`, `CLAUDE_CONFIG_DIR`, `HERMES_HOME`,
+  `PI_CODING_AGENT_DIR`, `XDG_CACHE_HOME`, `XDG_STATE_HOME` and the store and
+  engine selectors removed, so `cargo test` no longer prunes the real Claude
+  Code and Codex plugin caches nor writes into `known-stores.jsonl`. The
+  guide engine that `kmp-release` runs gets its own `HOME` beside the store
+  it is pointed at. A guard test reruns the spawn shapes under a sentinel
+  developer home and fails if one byte of it changes.
+- A memory whose `valid_from` lies ahead no longer moves the about's
+  "now". The store's present is the latest `observed_at` or `ingested_at`
+  (an `occurred_at` only where a relation carries neither), never a
+  `valid_from`; an entry whose `valid_from` is still ahead is not yet in
+  force and is not served as current by `kmp_ask` or `kmp_wake`. Before, one
+  future `valid_from` served the memory in force as expired with `high`
+  confidence. Answers change where an about held such a memory.
+- A request that panics answers a JSON-RPC error (`-32603`) and the session
+  goes on; `"page": 1` on `kmp_time` or `kmp_inspect` used to end the stdio
+  server with exit 101.
+- `kmp-mcp demo --dry-run` writes nothing: it no longer creates the store
+  skeleton or records the store in the machine's index.
+
+### Documentation
+
+- New pages for 1.0: [stability and support](docs/stability.md) (what 1.x
+  promises, what is experimental, deprecation, the support window),
+  [upgrading from 0.27](docs/upgrading.md), [install](docs/install.md) (hosts
+  and platforms), [concepts](docs/concepts.md), the
+  [CLI reference](docs/embedded/cli.md), [store format](docs/embedded/store-format.md),
+  [security and privacy](docs/security-privacy.md) and
+  [troubleshooting](docs/troubleshooting.md). The configuration reference
+  lists the twelve optional files beside the store and the user config file.
+- Dated development and architecture records move to `docs/archive/`, with an
+  index; the three executed Jev implementation plans and
+  `docs/documentation-inventory.tsv` are deleted. The agent-surface
+  procedure and the remaining Spanish notes are in English.
+- Generated test evidence under `artifacts/` is no longer tracked (957
+  files); documents cite it at the `v0.27.0` tag.
+  `scripts/performance/proof_batch_physical_run.py` (`PATCH_DIR`) and
+  `scripts/performance/sqlite_clients.py --checkpoint-only`
+  (`--clients-input`) take their inputs restored from that tag as an
+  explicit argument.
+- Shipped guide text: the `guide` verb lesson no longer says a read seeds the
+  stored guide, the `errors` topic says a refusal ends with a `Help:` line
+  instead of offering `structuredContent.help`, and the `repository` topic
+  names `import --from`. The `kmp-setup` skill describes every host, and
+  `/kmp:setup` hints `--hermes` and `--pi`.
+
 ## [0.27.1] - 2026-11-20
 
 ### Changed
@@ -1287,7 +2020,7 @@ The initial agent schema that expands with use and persistent consultation profi
   `VisualBin.scope_id`, `VisualCluster.scope_id`,
   `TemporalCoordinate.method / why / motivation`). ChronoLoom uses this
   catalogue for ordinary label filters within about planes; the projection map is
-  [docs/architecture/chronoloom-labels.md](docs/architecture/chronoloom-labels.md).
+  [docs/architecture/chronoloom-labels.md](docs/archive/architecture/chronoloom-labels.md).
 
 - The view speaks the whole selection. `/api/projection` takes `scope_ids`
   and `labels` — the latter as `key op value|value`, joined by `;`, with the

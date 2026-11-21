@@ -144,8 +144,10 @@ impl EmbeddedKernelStore {
         let (log_length, _) = self.event_log_stats().await?;
         if log_length != 0 {
             return Err(PortError::Conflict(format!(
-                "import requires an empty store; this store already holds {log_length} events \
-                 (merging bundles is not supported)"
+                "import requires an empty store; this store already holds {log_length} event{}: \
+                 a bundle is restored whole into an empty store, never merged into one that \
+                 holds memory",
+                if log_length == 1 { "" } else { "s" }
             )));
         }
 
@@ -357,7 +359,7 @@ fn abouts(events: &[ContextUpdatedEvent]) -> Vec<String> {
         .collect()
 }
 
-fn filter_events_excluding_abouts(
+pub(super) fn filter_events_excluding_abouts(
     events: Vec<ContextUpdatedEvent>,
     excluded_abouts: &[String],
 ) -> Vec<ContextUpdatedEvent> {
@@ -388,8 +390,10 @@ fn filter_events_for_abouts(
         .collect::<BTreeSet<_>>();
     let missing = requested.difference(&found).cloned().collect::<Vec<_>>();
     if !missing.is_empty() {
+        // Read by `export --about` and by `import --from <store>` alike, so
+        // it says what the store lacks, not which verb asked.
         return Err(PortError::InvalidState(format!(
-            "cannot export missing about{}: {}",
+            "this store holds no about{} {}",
             if missing.len() == 1 { "" } else { "s" },
             missing
                 .iter()

@@ -11,12 +11,16 @@ mod committed_tail_tests;
 mod data_dir;
 mod engine;
 mod file_stamp;
+mod history_advice;
 mod kernel;
 mod log_tail;
 mod memory_api;
 pub mod memory_selection;
 mod memory_selection_refusal;
 mod migration;
+mod open_reconciliation;
+#[cfg(test)]
+mod open_reconciliation_tests;
 mod project_marker;
 mod read_head;
 mod tail_memo;
@@ -28,21 +32,20 @@ pub use commit_bundle::{
 };
 pub use data_dir::{
     DATA_DIR_ENV, OrphanedProjectBundle, PROJECT_BUNDLE_PATH, ResolvedDataDir,
-    ensure_data_dir_skeleton, locate_data_dir_from_env, project_bundle_path, resolve_data_dir,
-    resolve_data_dir_from_env, user_data_home,
+    data_dir_override_refusal, ensure_data_dir_skeleton, locate_data_dir_from_env,
+    project_bundle_path, resolve_data_dir, resolve_data_dir_from_env, user_data_home,
 };
-pub use engine::{
-    ENGINE_ENV, default_engine_for_data_dir, parse_engine, resolve_engine_for_data_dir_from_env,
-    resolve_engine_from_env,
-};
+pub use engine::default_engine_for_data_dir;
+pub use history_advice::{OVERWRITE_COMMITTED_FLAG, diverged_advice, store_ahead_advice};
 pub use kernel::{EmbeddedKernel, EmbeddedMemoryService};
 pub use kmp_adapter_embedded::{
     AboutImportOutcome, AboutImportReport, BUNDLE_FORMAT_VERSION, BundleEventRange, BundleHeader,
-    EmbeddedKernelStore, SUPPORTED_FORMAT_VERSION, SqliteQualityTelemetryReader, StorageEngine,
-    StoreMigrationReceipt, bundle_excluding_abouts, format_version_path, merge_bundles,
-    quality_telemetry_path, read_stamped_version, store_file_path_for, validate_store_layout,
-    verify_bundle,
+    EmbeddedKernelStore, HistoryRelation, SUPPORTED_FORMAT_VERSION, SqliteQualityTelemetryReader,
+    StorageEngine, StoreMigrationReceipt, bundle_excluding_abouts, compare_bundle_histories,
+    format_version_path, merge_bundles, quality_telemetry_path, read_stamped_version,
+    refuse_vanished_store_database, store_file_path_for, validate_store_layout, verify_bundle,
 };
 pub use memory_selection::SelectedMemory;
 pub use memory_selection_refusal::SelectionRefusal;
 pub use migration::{migrate_data_dir, migrate_data_dir_to, open_or_migrate_data_dir};
+pub use open_reconciliation::OpenReconciliation;

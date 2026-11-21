@@ -1,16 +1,15 @@
+#[path = "support/isolated_home.rs"]
+mod isolated_home;
 use kmp_domain::{NodeDetailProjection, NodeProjection, ProjectionMutation, ProjectionWriter};
 use serde_json::{Value, json};
-use std::{
-    io::Write,
-    process::{Command, Stdio},
-};
+use std::{io::Write, process::Stdio};
 
 fn run(store: &std::path::Path, verb: &str, input: &Value) -> std::process::Output {
     run_raw(store, verb, input.to_string().as_bytes())
 }
 
 fn run_raw(store: &std::path::Path, verb: &str, input: &[u8]) -> std::process::Output {
-    let mut child = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+    let mut child = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"))
         .args(["consolidation", verb])
         .env("KMP_MCP_DATA_DIR", store)
         .stdin(Stdio::piped())

@@ -44,13 +44,24 @@ async fn seed(server: &KernelMcpServer) -> Value {
     })).await["local_refs"].clone()
 }
 
+/// The refs the evidence supports. A detail item (`detail:<ref>`) without
+/// `supports` supports its own ref.
 fn claims(packet: &Value) -> Vec<&str> {
     packet["proof"]["evidence"]
         .as_array()
         .expect("evidence")
         .iter()
-        .flat_map(|e| e["supports"].as_array().expect("supports"))
-        .filter_map(Value::as_str)
+        .flat_map(|e| match e["supports"].as_array() {
+            Some(supports) => supports
+                .iter()
+                .filter_map(Value::as_str)
+                .collect::<Vec<_>>(),
+            None => e["id"]
+                .as_str()
+                .and_then(|id| id.strip_prefix("detail:"))
+                .into_iter()
+                .collect(),
+        })
         .collect()
 }
 
@@ -194,8 +205,9 @@ async fn dimensional_context_survives_an_empty_historical_selection() {
         json!({"about":"project:wake-scope-missing"}),
     )
     .await;
-    assert_eq!(absent["isError"], true);
-    assert_eq!(absent["structuredContent"]["error"]["code"], "not_found");
+    // An about nothing was written to is the start of new work, not an error.
+    assert_eq!(absent["isError"], false, "{absent}");
+    assert!(absent["structuredContent"].get("proof").is_none());
 }
 
 #[tokio::test]

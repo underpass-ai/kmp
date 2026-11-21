@@ -32,8 +32,8 @@ impl LoopbackSemanticRetriever {
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
             Err(_) => return Err("cannot read semantic configuration".into()),
         };
-        let config: SemanticRetrieverConfig =
-            serde_json::from_slice(&bytes).map_err(|_| "invalid semantic configuration")?;
+        let config: SemanticRetrieverConfig = serde_json::from_slice(&bytes)
+            .map_err(|error| format!("invalid semantic configuration: {error}"))?;
         let endpoint = config.validate()?;
         let client = reqwest::Client::builder()
             .no_proxy()

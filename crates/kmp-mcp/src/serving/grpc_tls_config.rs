@@ -107,12 +107,16 @@ pub(crate) fn endpoint_uri_for_tls_mode(endpoint: &str, mode: KernelMcpGrpcTlsMo
         .unwrap_or_else(|| endpoint.to_string())
 }
 
-fn parse_tls_mode(value: &str) -> Option<KernelMcpGrpcTlsMode> {
+/// The mode a value of `KMP_KERNEL_GRPC_TLS_MODE` names, in the words the
+/// kernel's own `KMP_GRPC_TLS_MODE` accepts, so one value works on both
+/// sides. An unknown value is refused at startup
+/// ([`crate::environment::check_environment`]); it used to be ignored, and
+/// `mutal` ran plaintext.
+pub(crate) fn parse_tls_mode(value: &str) -> Option<KernelMcpGrpcTlsMode> {
     match value.trim().to_ascii_lowercase().as_str() {
-        "" => None,
-        "disabled" | "disable" | "off" | "false" | "none" => Some(KernelMcpGrpcTlsMode::Disabled),
+        "disabled" | "plaintext" => Some(KernelMcpGrpcTlsMode::Disabled),
         "server" | "tls" => Some(KernelMcpGrpcTlsMode::Server),
-        "mutual" | "mtls" | "m-tls" => Some(KernelMcpGrpcTlsMode::Mutual),
+        "mutual" | "mtls" => Some(KernelMcpGrpcTlsMode::Mutual),
         _ => None,
     }
 }

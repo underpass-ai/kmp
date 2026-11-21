@@ -1,0 +1,12 @@
+`kmp_guide {"topic":"write"}` returns one worked card and, in `parameters`,
+the meaning of each argument of the tools that topic teaches. `tools/list`
+carries their types, enums and `required`; the card adds `rules`, the
+cross-field rules a refusal names with its fix, and `parameters` give each
+argument's default. Call it before a verb's first use;
+`kmp_guide {}` lists the topics. It is a lookup: nothing is recorded, and a
+refusal's `Help:` line names the topic to read.
+
+The cards ship inside the engine. The longer guide (`guide:kmp-agent`) is
+memory in the store, installed only by `kmp-mcp guide sync`: a read never
+writes the store. On a store without it a direct read of one of its nodes
+answers `GUIDE_UNAVAILABLE` with that repair.

@@ -17,14 +17,23 @@ impl CodexRuntimeStatusMapper {
         let servers = body.as_array().ok_or_else(|| {
             LifecycleError::InvalidHostResponse("Codex MCP inventory is not an array".to_string())
         })?;
-        let Some(kmp) = servers.iter().find(|server| server["name"] == "kmp") else {
+        // Every entry named `kmp` counts, not the first one listed: a second
+        // owner may sit ahead of the plugin's own, and either being enabled
+        // is a registration that serves the tools.
+        let mut named_kmp = servers
+            .iter()
+            .filter(|server| server["name"] == "kmp")
+            .peekable();
+        if named_kmp.peek().is_none() {
             return Ok(HostRuntimeStatus::Missing);
-        };
-        Ok(if kmp["enabled"].as_bool().unwrap_or(false) {
-            HostRuntimeStatus::Registered
-        } else {
-            HostRuntimeStatus::Disabled
-        })
+        }
+        Ok(
+            if named_kmp.any(|server| server["enabled"].as_bool().unwrap_or(false)) {
+                HostRuntimeStatus::Registered
+            } else {
+                HostRuntimeStatus::Disabled
+            },
+        )
     }
 }
 
@@ -39,5 +48,20 @@ mod tests {
         )
         .expect("runtime status");
         assert_eq!(status, HostRuntimeStatus::Registered);
+    }
+
+    #[test]
+    fn a_disabled_entry_listed_first_does_not_hide_an_enabled_one() {
+        let status = CodexRuntimeStatusMapper::map(
+            r#"[{"name":"kmp","enabled":false},{"name":"kmp","enabled":true}]"#,
+        )
+        .expect("runtime status");
+        assert_eq!(status, HostRuntimeStatus::Registered);
+        let disabled =
+            CodexRuntimeStatusMapper::map(r#"[{"name":"other","enabled":true},{"name":"kmp"}]"#)
+                .expect("runtime status");
+        assert_eq!(disabled, HostRuntimeStatus::Disabled);
+        let missing = CodexRuntimeStatusMapper::map(r#"[]"#).expect("runtime status");
+        assert_eq!(missing, HostRuntimeStatus::Missing);
     }
 }

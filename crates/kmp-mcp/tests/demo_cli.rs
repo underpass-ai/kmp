@@ -1,12 +1,16 @@
 //! `kmp-mcp demo` writes the worked example once, where the store resolves,
-//! and keeps it out of the project's committed bundle.
+//! and never into a project's store: a team's committed memory and its
+//! snapshots must not carry it.
+#[path = "support/isolated_home.rs"]
+mod isolated_home;
+
 use std::path::Path;
 use std::process::{Command, Output};
 
 use serde_json::Value;
 
 fn kmp(scratch: &Path, project: &Path) -> Command {
-    let mut command = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"));
+    let mut command = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"));
     command
         .current_dir(project)
         .env_remove("KMP_MCP_DATA_DIR")
@@ -39,9 +43,10 @@ fn project(scratch: &Path) -> std::path::PathBuf {
 }
 
 #[test]
-fn demo_writes_the_example_once_and_keeps_it_out_of_the_project_bundle() {
+fn demo_in_a_project_writes_the_user_store_and_never_the_project_store() {
     let scratch = tempfile::tempdir().expect("scratch");
     let project = project(scratch.path());
+    let user_store = scratch.path().join("home/.local/share/kmp/default");
 
     let dry = run(kmp(scratch.path(), &project).args(["demo", "--dry-run"]));
     let dry = String::from_utf8_lossy(&dry.stdout);
@@ -49,36 +54,53 @@ fn demo_writes_the_example_once_and_keeps_it_out_of_the_project_bundle() {
         dry.contains("would write 7 memories about example:kmp-demo"),
         "{dry}"
     );
+    assert!(dry.contains(&user_store.display().to_string()), "{dry}");
     assert!(
-        !project.join(".kernel/FORMAT_VERSION").exists(),
-        "a dry run creates no store"
+        dry.contains("the demo never writes a project's memory"),
+        "{dry}"
+    );
+    assert!(
+        !project.join(".kernel").exists(),
+        "a dry run creates no store skeleton (N1)"
+    );
+    assert!(
+        !user_store.exists(),
+        "a dry run creates no user store either"
+    );
+    assert!(
+        !scratch
+            .path()
+            .join("home/.local/share/kmp/known-stores.jsonl")
+            .exists(),
+        "a dry run records nothing in the machine's index (N1)"
     );
 
     for _ in 0..2 {
         let output = run(kmp(scratch.path(), &project).args(["demo", "--no-viewer"]));
         let text = String::from_utf8_lossy(&output.stdout);
         assert!(text.contains("7 memories about example:kmp-demo"), "{text}");
-        assert!(text.contains("(chosen by project)"), "{text}");
+        assert!(text.contains("(chosen by user)"), "{text}");
+        assert!(text.contains(&user_store.display().to_string()), "{text}");
+        assert!(text.contains("Not in this project's store"), "{text}");
+        assert!(
+            text.contains(&format!("KMP_MCP_DATA_DIR={}", user_store.display())),
+            "an agent in the project would not find it, and the output says so: {text}"
+        );
         assert!(
             text.contains("Why are retries to the payment provider capped at two?"),
             "{text}"
         );
     }
+    assert!(
+        !project.join(".kernel").exists() && !project.join(".kmp").exists(),
+        "the project holds no store and no bundle"
+    );
 
-    let memories = run(kmp(scratch.path(), &project).args(["memories", "--json"]));
-    let memories: Value = serde_json::from_slice(&memories.stdout).expect("memories JSON");
-    let text = memories.to_string();
-    assert!(text.contains("example:kmp-demo"), "{text}");
-
-    // The project head leaves the example out, like the guides.
-    let head = run(kmp(scratch.path(), &project).arg("export"));
-    let receipt: Value = serde_json::from_slice(&head.stdout).expect("export receipt");
-    assert_eq!(receipt["abouts"], serde_json::json!([]));
-    assert_eq!(receipt["event_count"], 0);
-
-    // An explicit export of the about still carries it, for the examples.
+    // The example is where the demo said, and a snapshot of the project
+    // cannot carry it.
     let explicit = scratch.path().join("demo.jsonl");
-    run(kmp(scratch.path(), &project)
+    run(kmp(scratch.path(), scratch.path())
+        .env("KMP_MCP_DATA_DIR", &user_store)
         .arg("export")
         .arg(&explicit)
         .args(["--about", "example:kmp-demo"]));
@@ -90,15 +112,31 @@ fn demo_writes_the_example_once_and_keeps_it_out_of_the_project_bundle() {
 }
 
 #[test]
+fn an_explicit_data_dir_still_decides_where_the_demo_goes() {
+    let scratch = tempfile::tempdir().expect("scratch");
+    let project = project(scratch.path());
+    let chosen = scratch.path().join("chosen");
+    let output = run(kmp(scratch.path(), &project)
+        .env("KMP_MCP_DATA_DIR", &chosen)
+        .args(["demo", "--no-viewer"]));
+    let text = String::from_utf8_lossy(&output.stdout);
+    assert!(text.contains("(chosen by env)"), "{text}");
+    assert!(text.contains("Ask your agent"), "{text}");
+    assert!(chosen.join("FORMAT_VERSION").is_file());
+    assert!(!project.join(".kernel").exists());
+}
+
+#[test]
 fn demo_refuses_a_backend_that_is_not_the_local_store() {
     let scratch = tempfile::tempdir().expect("scratch");
     let project = project(scratch.path());
     let output = kmp(scratch.path(), &project)
-        .env("KMP_MCP_BACKEND", "fixture")
+        .env("KMP_MCP_BACKEND", "grpc")
+        .env("KMP_KERNEL_GRPC_ENDPOINT", "http://127.0.0.1:9")
         .args(["demo", "--no-viewer"])
         .output()
         .expect("kmp-mcp runs");
-    assert!(!output.status.success());
+    assert_eq!(output.status.code(), Some(2));
     let stderr = String::from_utf8_lossy(&output.stderr);
-    assert!(stderr.contains("fixture backend"), "{stderr}");
+    assert!(stderr.contains("works on the local store"), "{stderr}");
 }

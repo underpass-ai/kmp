@@ -160,6 +160,26 @@ where
         })
     }
 
+    /// [`Self::read_context_catalogue_with_timing`] with every node read
+    /// whole (still without bodies).
+    pub(crate) async fn read_whole_context_catalogue_with_timing(
+        &self,
+        request: &NeighborhoodRequest,
+        role: &str,
+    ) -> Result<(KmpBundle, QueryTimingBreakdown), ApplicationError> {
+        let reader = crate::queries::NodeCentricProjectionReader::new(
+            std::sync::Arc::clone(&self.graph_reader),
+            std::sync::Arc::clone(&self.detail_reader),
+        );
+        let catalogue = NeighborhoodRequest::new(request.root_node_id(), request.depth());
+        let (bundle, timing) = reader
+            .load_whole_catalogue_for(&catalogue, role, self.generator_version)
+            .await?;
+        bundle.map(|bundle| (bundle, timing)).ok_or_else(|| {
+            ApplicationError::NotFound(format!("node '{}' not found", request.root_node_id()))
+        })
+    }
+
     pub(crate) async fn materialize_selected_details(
         &self,
         bundle: KmpBundle,

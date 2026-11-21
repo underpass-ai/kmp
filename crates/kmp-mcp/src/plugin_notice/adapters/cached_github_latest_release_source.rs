@@ -8,6 +8,9 @@ use serde_json::Value;
 use crate::lifecycle::domain::release_version::ReleaseVersion;
 use crate::plugin_notice::ports::latest_release_source::LatestReleaseSource;
 
+/// The switch that turns the version check off.
+pub const VERSION_CHECK_ENV: &str = "KMP_VERSION_CHECK";
+
 /// GitHub adapter with a one-day, fail-open machine-local cache.
 pub struct CachedGithubLatestReleaseSource {
     client: Option<Client>,
@@ -34,10 +37,21 @@ impl CachedGithubLatestReleaseSource {
         }
     }
 
+    /// The release a test injects in place of GitHub's (a debug or
+    /// `eval-hooks` build only; a release binary has no such hook).
     fn injected() -> Option<Option<ReleaseVersion>> {
-        std::env::var("KMP_LATEST_VERSION")
-            .ok()
+        crate::environment::eval_hooks::latest_version()
             .map(|value| ReleaseVersion::parse(&value).ok())
+    }
+
+    /// `KMP_VERSION_CHECK` off: no call to GitHub. It reads the on/off words
+    /// every switch reads, case-insensitively; an unknown value never gets
+    /// here, because the verb refuses it at startup.
+    fn check_disabled() -> bool {
+        crate::serving::environment::optional_env_string(VERSION_CHECK_ENV)
+            .as_deref()
+            .and_then(crate::environment::on_off::parse_on_off)
+            == Some(false)
     }
 
     fn cached(&self, now: u64) -> Option<ReleaseVersion> {
@@ -82,7 +96,7 @@ impl LatestReleaseSource for CachedGithubLatestReleaseSource {
         if let Some(injected) = Self::injected() {
             return injected;
         }
-        if std::env::var("KMP_VERSION_CHECK").is_ok_and(|value| value == "off") {
+        if Self::check_disabled() {
             return None;
         }
         let now = SystemTime::now()

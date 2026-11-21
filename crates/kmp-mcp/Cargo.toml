@@ -10,12 +10,26 @@ readme = "README.md"
 keywords = ["kmp", "mcp", "memory", "context", "agents"]
 categories = ["command-line-utilities", "development-tools"]
 publish = true
+# The shipped-bridge stress cases (~1 MB) gate this repository's table, and
+# the cross-language judge's recorded verdicts are judgements of those cases;
+# they mean nothing without distribution/, which the package does not carry.
+exclude = [
+  "tests/fixtures/lexical_bridge_stress/",
+  "tests/fixtures/cross_language_judge/",
+]
 
 [features]
 # Compatibility feature name retained for downstream manifests. SQLite is
 # always present.
 default = ["sqlite"]
 sqlite = ["kmp-embedded/sqlite"]
+# Test and evaluation hooks in a release build: the fixture backend, the
+# TypeSafe judgement cassette, KMP_EVAL_PARTNER_FACTS,
+# KMP_JUDGEMENT_DEADLINES, KMP_LATEST_VERSION and the lexical index's
+# measurement modes. Debug builds (what `cargo test` runs) carry them
+# anyway; a release build carries them only with this feature, which the
+# memory bench enables and a shipped binary never does.
+eval-hooks = []
 
 [dependencies]
 getrandom.workspace = true
@@ -23,6 +37,8 @@ rusqlite = { version = "0.41.1", features = ["bundled"] }
 opentelemetry.workspace = true
 prost-types.workspace = true
 prost.workspace = true
+# The `pattern` keyword of the published input schemas (contract::schema_law).
+regex = "1.12.3"
 kmp-domain.workspace = true
 kmp-application.workspace = true
 kmp-embedded.workspace = true

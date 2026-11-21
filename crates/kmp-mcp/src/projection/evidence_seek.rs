@@ -49,10 +49,8 @@ pub(super) fn attach_review(value: &mut Value, arguments: &Value) {
     };
     let mut read = json!({"about":arguments["about"],"at":at,"refs":[arguments["from"]],
         "include":{"relations":true,"evidence":true},"budget":{"max_bytes":10000}});
-    for key in ["axis", "context_id", "purpose"] {
-        if let Some(v) = arguments.get(key) {
-            read[key] = v.clone();
-        }
+    if let Some(axis) = arguments.get("axis") {
+        read["axis"] = axis.clone();
     }
     value["seek"]["review_context"] = crate::contract::TimeMove::Goto.action(read);
 }

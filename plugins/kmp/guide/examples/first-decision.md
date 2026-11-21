@@ -10,7 +10,7 @@ D1 to C1 is chosen_because/motivational: the source states the reason. It does
 not prove that SQLite has passed an offline test.
 
 Use an isolated teaching store. For this deliberately new about, the first
-Wake returns `not_found`; recover real existing work before writing. Send only each envelope's arguments.
+Wake says nothing is recorded there; recover real existing work before writing. Send only each envelope's arguments.
 The `${...}` notation means copy the exact value returned by the named call.
 These source timestamps are UTC; KMP assigns the real ingestion clock.
 
@@ -19,7 +19,7 @@ These source timestamps are UTC; KMP assigns the real ingestion clock.
 Read the requirement before writing a decision that refers to it.
 
 ```json
-{"tool":"kmp_wake","save_as":"initial","expect_error":"not_found","arguments":{"about":"example:guide:first-decision","budget":{"detail":"compact","max_bytes":20000}}}
+{"tool":"kmp_wake","save_as":"initial","arguments":{"about":"example:guide:first-decision","budget":{"detail":"compact","max_bytes":20000}}}
 ```
 
 ```json

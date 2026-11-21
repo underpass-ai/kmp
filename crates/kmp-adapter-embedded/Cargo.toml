@@ -10,6 +10,10 @@ readme = "README.md"
 keywords = ["kmp", "sqlite", "embedded", "storage", "memory"]
 categories = ["database"]
 publish = true
+# The crash-test workload driver (and its KMP_TEST_ATOMIC_PROJECTION hook)
+# builds for this repository's tests only: it is left out of the published
+# crate, so `cargo install kmp-adapter-embedded` installs no test binary.
+exclude = ["src/bin/embedded_crash_writer.rs"]
 
 [features]
 default = ["sqlite"]

@@ -13,6 +13,11 @@ pub(super) struct GateVerdict {
     /// What the question asked and the cited memories do not state, in the
     /// reader's words.
     pub(super) missing: Vec<String>,
+    /// Whether the status stands only because the lexical bridge translated
+    /// a concept a cited memory states in another language: in the
+    /// reader's own words it would have settled lower. Such a verdict is
+    /// never read as surer than `medium`.
+    pub(super) translated: bool,
 }
 
 impl GateVerdict {
@@ -22,6 +27,7 @@ impl GateVerdict {
             reason,
             core: Vec::new(),
             missing,
+            translated: false,
         }
     }
 

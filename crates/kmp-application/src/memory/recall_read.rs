@@ -25,17 +25,27 @@ where
         let mut catalogues = Vec::with_capacity(roots.len());
         let mut timing = QueryTimingBreakdown::not_found(Duration::ZERO);
         timing.role_count = roots.len();
+        // A read of one about with no dimensions of its own admits what its
+        // own coordinates keep: nearly every node it reaches. Its catalogue
+        // reads them whole once rather than a header now and the node again
+        // once admitted; what is admitted is the same, read at one snapshot.
+        let whole = roots.len() == 1
+            && *dimensions
+                == kmp_domain::DimensionSelection::default().resolve_current_about(about);
         for root in roots {
-            let (catalogue, read) = self
-                .query_application
-                .read_context_catalogue_with_timing(
-                    &kmp_domain::NeighborhoodRequest::new(
-                        root,
-                        crate::queries::clamp_native_graph_traversal_depth(depth),
-                    ),
-                    role,
-                )
-                .await?;
+            let request = kmp_domain::NeighborhoodRequest::new(
+                root,
+                crate::queries::clamp_native_graph_traversal_depth(depth),
+            );
+            let (catalogue, read) = if whole {
+                self.query_application
+                    .read_whole_context_catalogue_with_timing(&request, role)
+                    .await?
+            } else {
+                self.query_application
+                    .read_context_catalogue_with_timing(&request, role)
+                    .await?
+            };
             timing.graph_load += read.graph_load;
             timing.bundle_assembly += read.bundle_assembly;
             catalogues.push(catalogue);
@@ -50,10 +60,13 @@ where
         timing.bundle_assembly += selection_start.elapsed();
         timing.batch_size = ids.len();
         let nodes_start = Instant::now();
-        let selected = self
-            .query_application
-            .materialize_selected_nodes(selected, &ids)
-            .await?;
+        let selected = if whole {
+            selected
+        } else {
+            self.query_application
+                .materialize_selected_nodes(selected, &ids)
+                .await?
+        };
         timing.graph_load += nodes_start.elapsed();
         let details_start = Instant::now();
         let bundle = self

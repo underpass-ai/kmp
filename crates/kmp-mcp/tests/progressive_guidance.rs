@@ -1,6 +1,4 @@
-//! Refusal -> targeted lesson -> source-backed correction, through native MCP.
-#[path = "support/bound_action.rs"]
-mod bound_action;
+//! Refusal -> guide topic -> source-backed correction, through native MCP.
 #[path = "support/reviewed_writer.rs"]
 mod reviewed_writer;
 use kmp_adapter_embedded::{EmbeddedKernelStore, verify_bundle};
@@ -32,45 +30,23 @@ async fn guide(server: &KernelMcpServer) {
     }
 }
 
-async fn read_help(server: &KernelMcpServer, result: &Value) {
-    let help = &result["structuredContent"]["help"];
+/// Reads the one pointer line a refusal carries and opens that topic: the
+/// card must exist and explain the refused tool's arguments.
+async fn read_help(server: &KernelMcpServer, tool: &str, result: &Value) -> String {
+    assert!(result["structuredContent"].get("help").is_none());
     let text = result["content"][0]["text"].as_str().expect("fallback");
-    for action in
-        std::iter::once(&help["guide"]).chain(help["examples"].as_array().expect("lessons"))
-    {
-        let tool = action["tool"].as_str().expect("tool");
-        let args = action["arguments"].clone();
-        assert!(text.contains(args["ref"].as_str().expect("ref")));
-        let lesson = call(server, tool, args.clone()).await;
-        assert_eq!(lesson["isError"], false, "{lesson}");
-        assert_eq!(lesson["structuredContent"]["object"]["ref"], args["ref"]);
-        assert!(
-            !lesson["structuredContent"]["object"]["text"]
-                .as_str()
-                .expect("lesson body")
-                .is_empty()
-        );
-        let mut page = lesson["structuredContent"].clone();
-        let mut pages = 1;
-        while page["page"]["has_more"] == true {
-            pages += 1;
-            assert!(pages <= 32, "lesson continuation must finish: {page}");
-            let continuation = &page["next_actions"][0];
-            let bound = bound_action::bound_arguments(server, continuation);
-            assert_eq!(bound["ref"], args["ref"]);
-            assert_eq!(bound["about"], args["about"]);
-            let next = call(
-                server,
-                continuation["tool"].as_str().expect("continuation tool"),
-                continuation["arguments"].clone(),
-            )
-            .await;
-            assert_eq!(next["isError"], false, "{next}");
-            page = next["structuredContent"].clone();
-            assert!(page["page"]["returned"].as_u64().expect("progress") > 0);
-        }
-        assert_eq!(page["page"]["has_more"], false);
-    }
+    let line = text
+        .lines()
+        .find_map(|line| line.strip_prefix("Help: kmp_guide "))
+        .unwrap_or_else(|| panic!("{tool}: no help pointer in {text}"));
+    let arguments: Value = serde_json::from_str(line).expect("pointer arguments");
+    let card = call(server, "kmp_guide", arguments.clone()).await;
+    assert_eq!(card["isError"], false, "{card}");
+    let body = &card["structuredContent"];
+    assert_eq!(body["topic"], arguments["topic"]);
+    assert!(!body["text"].as_str().expect("card text").is_empty());
+    assert!(body["parameters"][tool].is_array(), "{tool}: {body}");
+    arguments["topic"].as_str().expect("topic").to_string()
 }
 
 #[tokio::test]
@@ -84,14 +60,16 @@ async fn every_public_verb_offers_executable_help_after_a_shape_refusal() {
         .expect("tools");
     let list: Value = serde_json::from_str(&list).expect("JSON");
     for tool in list["result"]["tools"].as_array().expect("tools") {
-        let rejected = call(
-            &server,
-            tool["name"].as_str().expect("name"),
-            json!({"misspelled_argument":true}),
-        )
-        .await;
+        let name = tool["name"].as_str().expect("name");
+        let rejected = call(&server, name, json!({"misspelled_argument":true})).await;
         assert_eq!(rejected["isError"], true, "{rejected}");
-        read_help(&server, &rejected).await;
+        if name == "kmp_guide" {
+            // The guide does not point at itself.
+            let text = rejected["content"][0]["text"].as_str().expect("text");
+            assert!(!text.contains("Help:"), "{text}");
+            continue;
+        }
+        read_help(&server, name, &rejected).await;
     }
 }
 
@@ -121,10 +99,9 @@ async fn targeted_lessons_preserve_atomic_refusal_and_do_not_supply_missing_proo
     assert_eq!(feedback["code"], "RELATION_PROOF_REQUIRED");
     assert!(feedback["action"].is_null(), "no invented evidence");
     assert_eq!(
-        refused["structuredContent"]["help"]["examples"][0]["arguments"]["ref"],
-        "guide:kmp-agent:example:decision-history"
+        read_help(&server, "kmp_write_memory", &refused).await,
+        "relations"
     );
-    read_help(&server, &refused).await;
     assert_eq!(
         store
             .export_bundle()
@@ -161,6 +138,7 @@ async fn failed_guide_reads_do_not_create_a_recursive_read_or_write() {
     )
     .await;
     assert_eq!(result["isError"], true);
-    assert!(result["structuredContent"].get("help").is_none());
+    let text = result["content"][0]["text"].as_str().expect("text");
+    assert!(!text.contains("Help:"), "{text}");
     assert_eq!(store.export_bundle().await.expect("after"), before);
 }

@@ -1,6 +1,6 @@
 use serde_json::{Value, json};
 
-use crate::contract::schema::definition::tool_definition_with_output;
+use crate::contract::schema::definition::{ToolEffect, tool_definition_with_output};
 use crate::contract::schema::paging::page_schema;
 #[allow(unused_imports)]
 use crate::contract::schema::primitives::*;
@@ -12,8 +12,11 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_curate",
-        false,
-        "Review the relations of one or several abouts with the calling agent as author and TypeSafe Jev as a second reader. `mode: review` reads the selection the way kmp_relate does and writes nothing. It returns `missing`: pairs of current facts nothing declares yet — paired by the kernel from checkable signals (rare identifiers, summaries, names, shared labels), inside one about or across abouts, or picked by Jev for facts nothing else paired — each with the relation type Jev would choose, or `contradicts` when the two cannot both be true; and `suspect`: declared relations whose why and evidence Jev does not find supporting, or that Jev would type differently. Jev only chooses among offered options and judges text; it never writes a relation or a word of one, so every why and evidence you declare is yours, and a suggested type is a suggestion. Across abouts only same_event_as and same_entity_as are ever suggested. Jev is opt-in per store: `typesafe.json` beside the store and `TYPESAFE_API_KEY` in the environment; fact text of the selection is sent to TypeSafe. Without it the review returns kernel pairs untyped and audits nothing. The review is frozen under `review_token`; page it with that token and `page.cursor`. `mode: apply` takes items of a frozen review with your why and evidence; Jev reads your text once more, and which way round the relation runs, and withholds what it doubts until you correct or confirm it; the rest goes through kmp_write_memory's own plan, neighbourhood review and idempotency, and a needs_review answer resumes here. Only items whose `from` belongs to `about` are written by a call. `mode: paths` reads a whole selection — one about or several — keeps the facts Jev judges on the way from `from` to `to` (with `to`, only among at most 22 facts linked within four hops of either end), asks it for each one's direct consequence, and joins those steps to the declared relations into whole chains; proposed steps are frozen under `review_token` like missing relations. Embedded store only.",
+        ToolEffect::Write {
+            destructive: false,
+            idempotent: false,
+        },
+        "Find missing and doubtful relations with TypeSafe Jev as second reader (`review`, `paths`, `labels`), then declare those you confirm (`apply`).",
         curate_schema(),
         curate_output_schema(),
     )
@@ -30,7 +33,6 @@ pub(crate) fn curate_schema() -> Value {
             "dimensions": dimensions_schema(),
             "interval": interval_schema(),
             "axis": recall_axis_schema(),
-            "budget": budget_schema(2_400, 2),
             "max_pairs": {"type": "integer", "minimum": 1, "maximum": 40, "description": "Most missing relations to return, strongest Jev confidence first. Default 12."},
             "review_token": {"type": "string", "pattern": "^[0-9a-f]{64}$", "description": "A token a review returned. With it, the call pages that frozen review and reads or judges nothing again."},
             "page": page_schema("Maximum number of items from missing then suspect to return in this page; default 8, at most 20."),
@@ -42,14 +44,14 @@ pub(crate) fn curate_schema() -> Value {
                 "item_id": string_schema("An id `m<n>` from this review."),
                 "why": string_schema("Your one checkable sentence for the link. Jev never writes it."),
                 "evidence": string_schema("What in the sources shows the link."),
-                "confidence": {"type": "string", "enum": ["high", "medium", "low", "unknown"]},
+                "confidence": {"type": "string", "enum": ["high", "medium", "low", "unknown"], "default": "unknown"},
                 "rel": string_schema("Overrides the suggested type; a relation a writer may declare, and across abouts only same_event_as or same_entity_as."),
                 "reverse": {"type": "boolean", "description": "Declare it from `to` to `from`."},
                 "confirm_doubted": {"type": "boolean", "description": "Write it although Jev doubted it in an earlier apply of these items."}
             }}},
-            "actor": string_schema("apply: writer name; defaults to the persistent agent name when context_id is supplied."),
+            "actor": string_schema("apply: writer name. Omitted: the MCP client name from initialize."),
             "write_review_token": {"type": "string", "description": "apply: the neighbourhood review token a needs_review answer returned; its next action carries it."},
-            "idempotency_key": string_schema("apply: logical write identity; a needs_review answer's next action carries the one to reuse.")
+            "idempotency_key": string_schema("apply: logical write identity; a needs_review answer's next action carries the one to reuse. Keys are global to the store, not per about.")
         }
     })
 }
@@ -64,7 +66,7 @@ fn curate_output_schema() -> Value {
         "review_token": described("string", "review: the frozen review's token; pass it back to page or apply this review."),
         "missing": described("array", "review: pairs nothing declares: `item_id`, `from` and `to` as {ref, about, excerpt}, `suggested_rel` (Jev's choice among the types a writer may declare, or null without Jev), `proposed_by` (`kernel` or `jev`), the kernel `signals` and its `pairing_why` (null for Jev pairs), and `jev` {confidence, top three options}."),
         "suspect": described("array", "review: declared relations Jev doubts: `item_id`, `from`, `to`, the declared `rel`, `support` (Jev's probability that its why and evidence hold), `reasons` (`support`, `type`), `suggested_rel` and `jev`. Reported only; relations are never retracted here."),
-        "jev": described("object", "review: model, requests and input tokens spent; null when Jev was not used."),
+        "jev": nullable_described("object", "review: model, requests and input tokens spent; null when Jev was not used."),
         "page": described("object", "review: `entries`, `total` items in the review and `next_cursor`, null on the last page."),
         "paths": described("array", "paths: up to three chains, fewest proposed steps first: `hops` of {`from`, `to` as {ref, about, excerpt} in walking order, `rel`, `declared`, `reversed` when walked against its stored direction, `confidence`, and `item_id` for a proposed step, applicable with `mode: apply`}, plus `proposed` and `confidence`."),
         "proposed_labels": described("array", "labels: proposed memberships, strongest first: {`ref`, `key`, `value` among the values the about already uses, `confidence`, `excerpt`}. Apply the ones you confirm with kmp_relabel."),

@@ -28,6 +28,14 @@ pub trait EngineStore: Send + Sync {
         target: &ReleaseVersion,
     ) -> Result<EngineProof, LifecycleError>;
 
+    /// The release an executable says it is, from `--version` alone. This
+    /// proves nothing about its tools; it lets an older engine recognise an
+    /// installation newer than itself instead of judging it (S10).
+    fn reported_version(
+        &self,
+        executable: &EngineExecutable,
+    ) -> Result<ReleaseVersion, LifecycleError>;
+
     fn prove(
         &self,
         executable: &EngineExecutable,

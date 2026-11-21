@@ -1,5 +1,5 @@
 //! Every retained read family reconstructs the same complete selected proof.
-#[path = "support/guidance_fixture.rs"]
+#[path = "support/route_fixture.rs"]
 mod fixture;
 #[path = "support/reviewed_writer.rs"]
 mod reviewed_writer;
@@ -12,8 +12,7 @@ use std::collections::BTreeMap;
 async fn short_recall_temporal_trace_and_relate_preserve_complete_evidence() {
     let dir = tempfile::tempdir().expect("store");
     let server = KernelMcpServer::embedded(dir.path()).expect("server");
-    let agent = open(&server, "all-read-families").await;
-    let mut write = packet(&agent["context_id"]);
+    let mut write = packet();
     write["memories"][0]["evidence"] =
         json!("S1 records the route opening on Tuesday. ".repeat(30));
     write["memories"].as_array_mut().expect("memories").push(json!({"id":"decision","kind":"decision",
@@ -27,7 +26,7 @@ async fn short_recall_temporal_trace_and_relate_preserve_complete_evidence() {
     assert_eq!(written["isError"], false, "{written}");
     let refs = &written["structuredContent"]["local_refs"];
     let interval = json!({"start":"2026-09-09T00:00:00Z","end":"2026-09-10T00:00:00Z"});
-    let dimensions = json!({"selectors":[{"key":"task","op":"in","values":["context-check"]}]});
+    let dimensions = json!({"selectors":[{"key":"task","op":"in","values":["route-check"]}]});
     let mut queries = vec![
         (
             "kmp_wake",
@@ -39,7 +38,7 @@ async fn short_recall_temporal_trace_and_relate_preserve_complete_evidence() {
         ),
         (
             "kmp_trace",
-            json!({"about":ABOUT,"from":refs["decision"],"to":refs["source"],"goal":"audit the stated reason","role":"reader"}),
+            json!({"about":ABOUT,"from":refs["decision"],"to":refs["source"],}),
         ),
         (
             "kmp_relate",
@@ -58,7 +57,12 @@ async fn short_recall_temporal_trace_and_relate_preserve_complete_evidence() {
         queries.push(("kmp_time", args));
     }
     for (tool, mut args) in queries {
-        args["budget"] = json!({"max_bytes":1000000,"detail":"full","depth":4});
+        // Each read declares only the budget fields it honours (E11).
+        args["budget"] = match tool {
+            "kmp_trace" => json!({"max_bytes":1000000}),
+            "kmp_relate" => json!({"max_bytes":1000000}),
+            _ => json!({"max_bytes":1000000,"detail":"full"}),
+        };
         let full = call(&server, tool, args.clone()).await;
         assert_eq!(full["isError"], false, "{tool}: {full}");
         let full = &full["structuredContent"];
@@ -82,8 +86,6 @@ async fn short_recall_temporal_trace_and_relate_preserve_complete_evidence() {
         let mut recovered: BTreeMap<String, Vec<Value>> =
             sections.iter().map(|s| (s.clone(), Vec::new())).collect();
         args["budget"]["max_bytes"] = json!(512);
-        args["context_id"] = agent["context_id"].clone();
-        args["purpose"] = json!("continue");
         let mut result = call(&server, tool, args).await;
         let mut collected_core = false;
         let mut pages = 0;
@@ -130,12 +132,20 @@ async fn short_recall_temporal_trace_and_relate_preserve_complete_evidence() {
             }
             pages += 1;
             assert!(pages < 40, "{tool} must advance");
+            if action["arguments"]["page"].get("cursor").is_none()
+                && action["arguments"].get("continuation").is_none()
+            {
+                // A restart (a shortened core) is a choice, not a
+                // continuation: it stays a complete readable call.
+                assert!(action["arguments"]["about"].is_string(), "{tool}: {action}");
+                result = call(&server, tool, action["arguments"].clone()).await;
+                continue;
+            }
             assert_eq!(action["arguments"].as_object().expect("args").len(), 1);
             assert!(
                 action["arguments"]["continuation"].is_string(),
                 "{tool}: {action}"
             );
-            assert_eq!(guidance(&result)["recommendation"]["action"], *action);
             let expanded = server.resolve_read_request(json!({"method":"tools/call","params":{"name":tool,"arguments":action["arguments"]}})).expect("resolve");
             let next = call(&server, tool, action["arguments"].clone()).await;
             let explicit = call(&server, tool, expanded["params"]["arguments"].clone()).await;

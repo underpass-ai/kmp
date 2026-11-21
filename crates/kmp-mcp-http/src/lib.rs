@@ -214,7 +214,7 @@ async fn handle_mcp(State(state): State<AppState>, headers: HeaderMap, body: Byt
     };
     let result = tokio::time::timeout(
         state.config.request_timeout,
-        state.server.handle_json_line_in(&serialized, &session),
+        state.server.serve_json_line(&serialized, &session),
     )
     .await;
     let response = match result {

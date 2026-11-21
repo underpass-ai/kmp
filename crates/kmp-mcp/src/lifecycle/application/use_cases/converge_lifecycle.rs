@@ -49,10 +49,25 @@ impl<'a> ConvergeLifecycle<'a> {
     }
 
     pub fn execute(&self, request: LifecycleRequest) -> Result<LifecycleReceipt, LifecycleError> {
-        let installed = self.hosts.inventory()?;
+        let inventory = self.hosts.inventory();
+        let installed = inventory.installed().to_vec();
         let target = self.target_for(&request)?;
         let found = self.hosts.available_hosts();
-        let unusable = self.unusable_hosts(&request, &installed, &found)?;
+        let mut unusable = self.unusable_hosts(&request, &installed, &found)?;
+        // A host whose inventory could not be read is left alone with its
+        // reason when nobody asked for it, and is the failure when somebody
+        // did; it never stops the hosts that answered (S11).
+        for (host, reason) in inventory.unreadable() {
+            if request.requested_hosts().contains(host) {
+                return Err(LifecycleError::InvalidHostResponse(format!(
+                    "{host} could not be inspected: {reason}"
+                )));
+            }
+            unusable.push(HostSkipReason::InventoryFailed {
+                host: *host,
+                detail: reason.clone(),
+            });
+        }
         let usable = |host: &Host| !unusable.iter().any(|reason| reason.host() == *host);
         let available: Vec<Host> = found.into_iter().filter(|host| usable(host)).collect();
         let converging: Vec<HostInstallation> = installed
@@ -110,9 +125,16 @@ impl<'a> ConvergeLifecycle<'a> {
             let installation = match plan.action() {
                 LifecycleAction::Update => self.hosts.refresh(*host, plan.target())?,
                 LifecycleAction::Setup => match previous.as_ref() {
+                    // Kept as it is only when it is really there: a registry
+                    // entry whose directory is gone, or a registration with
+                    // no skills, is refreshed instead (S13).
                     Some(installation)
                         if installation.participates_in_convergence()
-                            && installation.require_release(plan.target()).is_ok() =>
+                            && installation.require_release(plan.target()).is_ok()
+                            && self
+                                .hosts
+                                .verify_on_disk(installation, plan.target())
+                                .is_ok() =>
                     {
                         installation.clone()
                     }
@@ -121,6 +143,8 @@ impl<'a> ConvergeLifecycle<'a> {
                 },
             };
             installation.require_release(plan.target())?;
+            // "Completed" is said only of what is on disk (S12, S13).
+            self.hosts.verify_on_disk(&installation, plan.target())?;
             if host.owns_plugin_engine() {
                 let destination = EngineInstallDir::new(installation.root().engine_dir())?;
                 let executable = self.engines.install(&artifact, &destination)?;

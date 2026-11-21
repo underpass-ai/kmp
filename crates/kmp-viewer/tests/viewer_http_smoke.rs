@@ -197,29 +197,11 @@ async fn every_viewer_route_serves_the_ingested_memory() {
         "ingested about is listed, got {abouts_list:?}"
     );
 
-    let (status, graph) = get(port, &format!("/api/graph?about={}", urlencode(ABOUT))).await;
-    assert_eq!(status, 200, "graph failed: {graph}");
-    let nodes = graph["nodes"].as_array().expect("nodes");
-    assert!(
-        nodes.len() >= 3,
-        "root + two decisions, got {}",
-        nodes.len()
-    );
-    let edges = graph["edges"].as_array().expect("edges");
-    assert!(
-        edges.iter().any(|e| e["rel"] == "follows"
-            && e["why"]
-                .as_str()
-                .is_some_and(|w| w.contains("in-process viewer"))),
-        "typed relation with its why survives to the wire, got {edges}",
-        edges = serde_json::to_string(&edges).expect("edges serialize")
-    );
-    assert!(
-        graph["rendered"]["content"]
-            .as_str()
-            .is_some_and(|c| !c.is_empty())
-    );
-    assert!(graph["quality"]["compression_ratio"].as_f64().is_some());
+    // The two reads no page made are not served: one answered 80 MB.
+    for retired in ["/api/graph", "/api/timeline"] {
+        let (status, _) = get(port, &format!("{retired}?about={}", urlencode(ABOUT))).await;
+        assert_eq!(status, 404, "{retired} is not served");
+    }
 
     let (status, node) = get(
         port,
@@ -284,24 +266,6 @@ async fn every_viewer_route_serves_the_ingested_memory() {
         assert_eq!(bounded["nodes"][0], batch["nodes"][0]);
     }
 
-    let (status, timeline) = get(
-        port,
-        &format!(
-            "/api/timeline?about={}&direction=goto&time={}",
-            urlencode(ABOUT),
-            urlencode("2026-07-03T00:00:00Z")
-        ),
-    )
-    .await;
-    assert_eq!(status, 200, "timeline failed: {timeline}");
-    let entries = timeline["entries"].as_array().expect("entries");
-    assert!(
-        entries
-            .iter()
-            .any(|e| e["ref_id"] == "project:viewer-smoke:decision:second"),
-        "known-at-time read reaches the later decision, got {timeline}"
-    );
-
     let (status, projection) = get(
         port,
         &format!(
@@ -319,6 +283,47 @@ async fn every_viewer_route_serves_the_ingested_memory() {
         projection["bins"]
             .as_array()
             .is_some_and(|bins| !bins.is_empty())
+    );
+    let relations = projection["relations"].as_array().expect("relations");
+    assert!(
+        relations.iter().any(|relation| relation["rel"] == "follows"
+            && relation["why"]
+                .as_str()
+                .is_some_and(|why| why.contains("in-process viewer"))),
+        "typed relation with its why survives to the wire, got {projection}"
+    );
+    // The source a projection read from, past its own range: a window that
+    // starts after the first decision still names it as the earliest.
+    let (status, later) = get(
+        port,
+        &format!(
+            "/api/projection?about={}&axis=occurred&from={}&to={}&lod=episode",
+            urlencode(ABOUT),
+            urlencode("2026-07-02T00:00:00Z"),
+            urlencode("2026-07-03T00:00:00Z")
+        ),
+    )
+    .await;
+    assert_eq!(status, 200, "{later}");
+    assert_eq!(later["source"]["total"], 2, "{later}");
+    assert_eq!(later["source"]["read"], 2, "{later}");
+    assert_eq!(
+        later["source"]["earliest"], "2026-07-01T10:00:00Z",
+        "{later}"
+    );
+    // A placeholder snapshot hash is no hash; it travels as null.
+    assert!(projection["content_hash"].is_null() || projection["content_hash"] != "pending");
+    let (status, error) = get(
+        port,
+        "/api/projection?about=about:missing&from=2026-07-01T00:00:00Z&to=2026-07-03T00:00:00Z",
+    )
+    .await;
+    assert_eq!(status, 404, "unknown about maps to 404: {error}");
+    assert!(
+        error["error"]
+            .as_str()
+            .is_some_and(|message| message.contains("about `about:missing`")),
+        "the refusal names the about: {error}"
     );
 
     let (status, unavailable) = get(
@@ -427,8 +432,6 @@ async fn every_viewer_route_serves_the_ingested_memory() {
     // made-up view.
     let (status, _) = get(port, "/api/view?id=nobody-opened-this").await;
     assert_eq!(status, 404, "a view nobody opened is not invented");
-    let (status, error) = get(port, "/api/graph?about=about:missing").await;
-    assert_eq!(status, 404, "unknown about maps to 404: {error}");
 }
 
 /// A declaration belongs to its writing memory. Its target can be drawn
@@ -1165,101 +1168,6 @@ async fn observability_unavailability_reports_its_actual_reason() {
 /// defaulted to the same direction and rendered nothing at all. Neither
 /// failure was visible from the server side, because a cursor that resolves
 /// nothing is a 200 with an empty page — so this pins the shapes instead.
-#[tokio::test(flavor = "multi_thread")]
-async fn the_cursors_the_ui_issues_return_the_entries_they_should() {
-    let data_dir = tempfile::tempdir().expect("temp data dir");
-    let kernel = EmbeddedKernel::open(data_dir.path()).expect("kernel opens");
-    kernel
-        .service()
-        .ingest(corpus())
-        .await
-        .expect("memory ingests");
-
-    let viewer = Arc::new(
-        MemoryViewerServer::new(
-            kernel.service(),
-            Some(data_dir.path().display().to_string()),
-        )
-        .expect("viewer creates capability"),
-    );
-    let listener = bind_loopback("127.0.0.1:0").await.expect("ephemeral bind");
-    let port = listener.local_addr().expect("local addr").port();
-    let invitation = viewer.capability_url(&format!("http://127.0.0.1:{port}/"));
-    tokio::spawn(viewer.serve(listener));
-    authorize(port, &invitation).await;
-
-    // What Replay asks for: `near`, wide in both directions, anchored on a
-    // time. It needs nothing selected and must return the whole line.
-    let (status, replay) = get(
-        port,
-        &format!(
-            "/api/timeline?about={}&direction=near&time={}&before=256&after=256",
-            urlencode(ABOUT),
-            urlencode("2026-07-03T00:00:00Z")
-        ),
-    )
-    .await;
-    assert_eq!(status, 200, "replay query failed: {replay}");
-    let returned = replay["page"]["returned"].as_u64().expect("returned count");
-    assert_eq!(
-        returned,
-        replay["page"]["total"].as_u64().expect("total count"),
-        "a wide `near` window must return the whole line, got {replay}"
-    );
-    assert!(
-        returned > 0,
-        "replay would report an empty memory: {replay}"
-    );
-
-    // `goto` walks by temporal position. A ref hands it one directly, so it
-    // answers whatever the entries look like.
-    let (status, at_entry) = get(
-        port,
-        &format!(
-            "/api/timeline?about={}&direction=goto&ref={}&before=8&after=8",
-            urlencode(ABOUT),
-            urlencode("project:viewer-smoke:decision:first")
-        ),
-    )
-    .await;
-    assert_eq!(status, 200, "goto-by-ref failed: {at_entry}");
-    assert!(
-        at_entry["page"]["returned"].as_u64().is_some_and(|n| n > 0),
-        "`goto` with a ref must answer, got {at_entry}"
-    );
-
-    // The same direction with only a timestamp works *here* because this
-    // corpus writes a `sequence` on every coordinate. `sequence` is optional
-    // at ingest, and on memory written without it these directions answer
-    // 0/0 — which is the case the UI has to explain rather than render blank.
-    let (status, at_time) = get(
-        port,
-        &format!(
-            "/api/timeline?about={}&direction=goto&time={}&before=8&after=8",
-            urlencode(ABOUT),
-            urlencode("2026-07-03T00:00:00Z")
-        ),
-    )
-    .await;
-    assert_eq!(status, 200, "goto-by-time failed: {at_time}");
-    assert!(
-        at_time["page"]["returned"].as_u64().is_some_and(|n| n > 0),
-        "sequenced entries must be reachable by time as well: {at_time}"
-    );
-    assert!(
-        at_time["entries"]
-            .as_array()
-            .expect("entries")
-            .iter()
-            .all(|entry| entry["coordinates"]
-                .as_array()
-                .expect("coordinates")
-                .iter()
-                .any(|c| c["sequence"].is_number())),
-        "the property that makes it work is the sequence on the coordinate: {at_time}"
-    );
-}
-
 /// A parameter the caller got wrong is answered, not absorbed.
 ///
 /// `depth=abc` used to come back 200 as though it read `depth=2`, while
@@ -1290,16 +1198,23 @@ async fn a_parameter_that_is_not_a_number_is_refused_rather_than_defaulted() {
     tokio::spawn(viewer.serve(listener));
     authorize(port, &invitation).await;
 
-    for (query, key) in [
-        ("depth=abc", "depth"),
-        ("budget=lots", "budget"),
-        ("depth=2.5", "depth"),
+    let projection = format!("/api/projection?about={}", urlencode(ABOUT));
+    let trace = format!(
+        "/api/trace?about={}&from={}&to={}",
+        urlencode(ABOUT),
+        urlencode("project:viewer-smoke:decision:second"),
+        urlencode("project:viewer-smoke:decision:first")
+    );
+    for (route, query, key) in [
+        (&projection, "depth=abc", "depth"),
+        (&projection, "depth=2.5", "depth"),
+        (&projection, "bins=many", "bins"),
+        (&projection, "limit=-1", "limit"),
+        (&trace, "budget=lots", "budget"),
+        (&trace, "entries=abc", "entries"),
+        (&trace, "cursor=xyz", "cursor"),
     ] {
-        let (status, body) = get(
-            port,
-            &format!("/api/graph?about={}&{query}", urlencode(ABOUT)),
-        )
-        .await;
+        let (status, body) = get(port, &format!("{route}&{query}")).await;
         assert_eq!(status, 400, "`{query}` was absorbed: {body}");
         assert!(
             body["error"].as_str().is_some_and(|e| e.contains(key)),
@@ -1307,17 +1222,29 @@ async fn a_parameter_that_is_not_a_number_is_refused_rather_than_defaulted() {
         );
     }
 
-    // Out of range is still a policy, not a mistake: it clamps and answers.
-    let (status, wide) = get(
+    // A time the calendar cannot place is not a time.
+    let (status, body) = get(
         port,
-        &format!("/api/graph?about={}&depth=9999", urlencode(ABOUT)),
+        &format!("{projection}&from={}", urlencode("0000-00-00T00:00:00Z")),
     )
     .await;
+    assert_eq!(status, 400, "an impossible date was absorbed: {body}");
+
+    // The long poll's revision is a number too.
+    let (status, _) = post(port, "/api/view/open?id=numbers&about=about:numbers").await;
+    assert_eq!(status, 200);
+    let (status, body) = get(port, "/api/view?id=numbers&since=abc").await;
+    assert_eq!(status, 400, "`since=abc` was read as no revision: {body}");
+
+    // Out of range is still a policy, not a mistake: it clamps and answers.
+    let (status, wide) = get(port, &format!("{projection}&depth=9999")).await;
     assert_eq!(status, 200, "an out-of-range depth clamps: {wide}");
 
     // And an absent parameter still means "use the default".
-    let (status, plain) = get(port, &format!("/api/graph?about={}", urlencode(ABOUT))).await;
+    let (status, plain) = get(port, &projection).await;
     assert_eq!(status, 200, "no parameters at all must still work: {plain}");
+    let (status, plain) = get(port, &trace).await;
+    assert_eq!(status, 200, "no paging parameters must still work: {plain}");
 }
 
 /// HEAD is GET without the body (RFC 9110 §9.3.2). It answered 405, so a

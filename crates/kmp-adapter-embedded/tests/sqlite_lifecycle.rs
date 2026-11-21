@@ -58,3 +58,45 @@ fn corrupt_kernel_input_is_refused_before_use() {
         "error identifies the rejected SQLite input: {error}"
     );
 }
+
+/// A store leaves its proof of memory on the first append, whoever appended
+/// (a session, `demo`, `import`, a project rebuild): losing the database
+/// afterwards is refused instead of reopening empty. An opened but never
+/// written store leaves none, so its database may be recreated.
+#[tokio::test]
+async fn the_first_append_leaves_a_proof_and_a_lost_database_is_then_refused() {
+    let data_dir = tempfile::tempdir().expect("data dir");
+    let proof = data_dir.path().join("held-memory");
+    let database = data_dir.path().join("store/kernel.sqlite3");
+
+    drop(EmbeddedKernelStore::open(data_dir.path()).expect("fresh store opens"));
+    assert!(!proof.exists(), "an empty store holds no memory to prove");
+    fs::remove_file(&database).expect("drop the empty database");
+    let store = EmbeddedKernelStore::open(data_dir.path()).expect("an unwritten store reopens");
+
+    store.append(event(1), 0).await.expect("first commit");
+    assert!(proof.is_file(), "the first append leaves the proof");
+    drop(store);
+
+    fs::remove_file(&database).expect("lose the database");
+    let error = EmbeddedKernelStore::open(data_dir.path())
+        .expect_err("a store that held memory is not restarted empty")
+        .to_string();
+    assert!(error.contains("lost its database"), "{error}");
+    assert!(error.contains("held-memory"), "{error}");
+}
+
+/// A store that already held events before proofs existed gets one on its
+/// next writable open.
+#[tokio::test]
+async fn a_store_written_before_proofs_gets_one_on_open() {
+    let data_dir = tempfile::tempdir().expect("data dir");
+    let proof = data_dir.path().join("held-memory");
+    let store = EmbeddedKernelStore::open(data_dir.path()).expect("store opens");
+    store.append(event(1), 0).await.expect("first commit");
+    drop(store);
+    fs::remove_file(&proof).expect("as written by an older engine");
+
+    drop(EmbeddedKernelStore::open(data_dir.path()).expect("store reopens"));
+    assert!(proof.is_file(), "a writable open backfills the proof");
+}

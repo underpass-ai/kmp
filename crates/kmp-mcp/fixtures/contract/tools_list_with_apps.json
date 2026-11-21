@@ -1,66 +1,21 @@
 {
-  "_meta": {
-    "kmp/errorCodes": [
-      {
-        "code": "invalid_argument",
-        "means": "the arguments cannot produce a call; fix them — retrying unchanged cannot work"
-      },
-      {
-        "code": "not_found",
-        "means": "the memory asked for is not in this store"
-      },
-      {
-        "code": "conflict",
-        "means": "the operation conflicted with current state; follow the message — a retryable write conflict is safely replayed with the same idempotency key, while a key already accepted with different content must not be reused"
-      },
-      {
-        "code": "unavailable",
-        "means": "the kernel could not be reached; the same call may work later"
-      },
-      {
-        "code": "unknown_tool",
-        "means": "no such tool on this surface"
-      },
-      {
-        "code": "backend_error",
-        "means": "the kernel failed for a reason the arguments cannot fix"
-      }
-    ]
-  },
   "tools": [
     {
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
       "annotations": {
-        "destructiveHint": true,
+        "idempotentHint": true,
         "openWorldHint": false,
         "readOnlyHint": false
       },
-      "description": "Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape. Arguments explained: kmp_guide topic write.",
+      "description": "Low-level writer of one exact canonical memory graph; prefer kmp_write_memory unless you produce that graph yourself.",
       "inputSchema": {
-        "additionalProperties": false,
-        "if": {
-          "not": {
-            "properties": {
-              "default_observation_to_ingestion": {
-                "const": true
-              }
-            },
-            "required": [
-              "default_observation_to_ingestion"
-            ]
-          }
-        },
         "properties": {
           "about": {
             "type": "string"
           },
-          "context_id": {
-            "type": "string"
-          },
           "default_observation_to_ingestion": {
-            "default": false,
             "type": "boolean"
           },
           "dry_run": {
@@ -77,18 +32,9 @@
             "type": "string"
           },
           "memory": {
-            "additionalProperties": true,
-            "if": {
-              "properties": {
-                "entries": {
-                  "maxItems": 0
-                }
-              }
-            },
             "properties": {
               "dimensions": {
                 "items": {
-                  "additionalProperties": true,
                   "properties": {
                     "id": {
                       "type": "string"
@@ -116,16 +62,15 @@
               },
               "entries": {
                 "items": {
-                  "additionalProperties": true,
                   "properties": {
                     "coordinates": {
                       "items": {
-                        "additionalProperties": true,
                         "properties": {
                           "dimension": {
                             "type": "string"
                           },
                           "ingested_at": {
+                            "format": "date-time",
                             "type": "string"
                           },
                           "metadata": {
@@ -135,26 +80,28 @@
                             "type": "object"
                           },
                           "observed_at": {
+                            "format": "date-time",
                             "type": "string"
                           },
                           "occurred_at": {
+                            "format": "date-time",
                             "type": "string"
                           },
                           "rank": {
-                            "minimum": 1,
                             "type": "integer"
                           },
                           "scope_id": {
                             "type": "string"
                           },
                           "sequence": {
-                            "minimum": 1,
                             "type": "integer"
                           },
                           "valid_from": {
+                            "format": "date-time",
                             "type": "string"
                           },
                           "valid_until": {
+                            "format": "date-time",
                             "type": "string"
                           }
                         },
@@ -164,7 +111,6 @@
                         ],
                         "type": "object"
                       },
-                      "minItems": 1,
                       "type": "array"
                     },
                     "id": {
@@ -181,10 +127,8 @@
                     },
                     "search_expansions": {
                       "items": {
-                        "maxLength": 120,
                         "type": "string"
                       },
-                      "maxItems": 6,
                       "type": "array"
                     },
                     "text": {
@@ -203,7 +147,6 @@
               },
               "evidence": {
                 "items": {
-                  "additionalProperties": true,
                   "properties": {
                     "id": {
                       "type": "string"
@@ -218,12 +161,13 @@
                       "type": "string"
                     },
                     "support_clocks": {
-                      "additionalProperties": false,
                       "properties": {
                         "ingested_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "observed_at": {
+                          "format": "date-time",
                           "type": "string"
                         }
                       },
@@ -239,6 +183,7 @@
                       "type": "string"
                     },
                     "time": {
+                      "format": "date-time",
                       "type": "string"
                     }
                   },
@@ -252,7 +197,6 @@
               },
               "relations": {
                 "items": {
-                  "additionalProperties": true,
                   "properties": {
                     "caused_by_node_id": {
                       "type": "string"
@@ -269,21 +213,25 @@
                       "type": "string"
                     },
                     "clocks": {
-                      "additionalProperties": false,
                       "properties": {
                         "ingested_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "observed_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "occurred_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "valid_from": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "valid_until": {
+                          "format": "date-time",
                           "type": "string"
                         }
                       },
@@ -299,12 +247,12 @@
                       "type": "string"
                     },
                     "coordinate": {
-                      "additionalProperties": true,
                       "properties": {
                         "dimension": {
                           "type": "string"
                         },
                         "ingested_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "metadata": {
@@ -314,26 +262,28 @@
                           "type": "object"
                         },
                         "observed_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "occurred_at": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "rank": {
-                          "minimum": 1,
                           "type": "integer"
                         },
                         "scope_id": {
                           "type": "string"
                         },
                         "sequence": {
-                          "minimum": 1,
                           "type": "integer"
                         },
                         "valid_from": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "valid_until": {
+                          "format": "date-time",
                           "type": "string"
                         }
                       },
@@ -362,7 +312,6 @@
                       "type": "string"
                     },
                     "sequence": {
-                      "minimum": 1,
                       "type": "integer"
                     },
                     "to": {
@@ -387,20 +336,9 @@
               "dimensions",
               "entries"
             ],
-            "then": {
-              "properties": {
-                "relations": {
-                  "minItems": 1
-                }
-              },
-              "required": [
-                "relations"
-              ]
-            },
             "type": "object"
           },
           "provenance": {
-            "additionalProperties": false,
             "properties": {
               "causation_id": {
                 "type": "string"
@@ -409,6 +347,7 @@
                 "type": "string"
               },
               "observed_at": {
+                "format": "date-time",
                 "type": "string"
               },
               "source_agent": {
@@ -429,15 +368,6 @@
               "source_agent"
             ],
             "type": "object"
-          },
-          "purpose": {
-            "enum": [
-              "continue",
-              "audit",
-              "history",
-              "answer"
-            ],
-            "type": "string"
           }
         },
         "required": [
@@ -445,15 +375,6 @@
           "memory",
           "idempotency_key"
         ],
-        "then": {
-          "properties": {
-            "provenance": {
-              "required": [
-                "observed_at"
-              ]
-            }
-          }
-        },
         "type": "object"
       },
       "name": "kmp_ingest"
@@ -463,227 +384,16 @@
         "anthropic/maxResultSizeChars": 10000
       },
       "annotations": {
-        "destructiveHint": true,
+        "idempotentHint": true,
         "openWorldHint": false,
         "readOnlyHint": false
       },
-      "description": "Write memory with evidence. Use memories for one or more records with local ids, labels and justified links, validated as one packet before canonical ingest. Use relations to link memories that already exist: the kernel validates the stored endpoints and writes only the link and its evidence. Never resubmit a stored memory as a record just to connect it. Omit options.dry_run for normal writes. Rich links, including local links, return needs_review with brief stored context before commit. Review it and use the returned continuation; changed context refreshes the review. Independent observations and honest fallback links remain one call. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself. Arguments explained: kmp_guide topic write.",
+      "description": "Record facts with evidence and labels (`memories`), link stored memories (`relations`) or attach search renderings (`search_summaries`): the usual writer. Guide topic: write.",
       "inputSchema": {
-        "additionalProperties": false,
         "else": {
-          "allOf": [
-            {
-              "if": {
-                "required": [
-                  "memories"
-                ]
-              },
-              "then": {
-                "anyOf": [
-                  {
-                    "required": [
-                      "labels"
-                    ]
-                  },
-                  {
-                    "properties": {
-                      "memories": {
-                        "items": {
-                          "required": [
-                            "labels"
-                          ]
-                        }
-                      }
-                    }
-                  }
-                ],
-                "if": {
-                  "not": {
-                    "properties": {
-                      "options": {
-                        "properties": {
-                          "strict": {
-                            "const": false
-                          }
-                        },
-                        "required": [
-                          "strict"
-                        ]
-                      }
-                    },
-                    "required": [
-                      "options"
-                    ]
-                  }
-                },
-                "then": {
-                  "properties": {
-                    "memories": {
-                      "items": {
-                        "required": [
-                          "evidence"
-                        ]
-                      }
-                    }
-                  }
-                }
-              }
-            },
-            {
-              "if": {
-                "required": [
-                  "search_summaries"
-                ]
-              },
-              "then": {
-                "not": {
-                  "anyOf": [
-                    {
-                      "required": [
-                        "labels"
-                      ]
-                    },
-                    {
-                      "required": [
-                        "occurred_at"
-                      ]
-                    },
-                    {
-                      "required": [
-                        "valid_from"
-                      ]
-                    },
-                    {
-                      "required": [
-                        "valid_until"
-                      ]
-                    },
-                    {
-                      "required": [
-                        "rank"
-                      ]
-                    },
-                    {
-                      "required": [
-                        "read_context"
-                      ]
-                    },
-                    {
-                      "required": [
-                        "review_token"
-                      ]
-                    }
-                  ]
-                },
-                "properties": {
-                  "options": {
-                    "not": {
-                      "anyOf": [
-                        {
-                          "required": [
-                            "sequence"
-                          ]
-                        },
-                        {
-                          "required": [
-                            "labels_new"
-                          ]
-                        }
-                      ]
-                    }
-                  }
-                }
-              }
-            },
-            {
-              "if": {
-                "required": [
-                  "relations"
-                ]
-              },
-              "then": {
-                "not": {
-                  "anyOf": [
-                    {
-                      "required": [
-                        "labels"
-                      ]
-                    },
-                    {
-                      "required": [
-                        "occurred_at"
-                      ]
-                    },
-                    {
-                      "required": [
-                        "valid_from"
-                      ]
-                    },
-                    {
-                      "required": [
-                        "valid_until"
-                      ]
-                    },
-                    {
-                      "required": [
-                        "rank"
-                      ]
-                    }
-                  ]
-                },
-                "properties": {
-                  "options": {
-                    "not": {
-                      "anyOf": [
-                        {
-                          "required": [
-                            "sequence"
-                          ]
-                        },
-                        {
-                          "required": [
-                            "labels_new"
-                          ]
-                        }
-                      ]
-                    }
-                  }
-                }
-              }
-            }
-          ],
-          "if": {
-            "not": {
-              "required": [
-                "actor"
-              ]
-            }
-          },
-          "oneOf": [
-            {
-              "required": [
-                "memories"
-              ]
-            },
-            {
-              "required": [
-                "search_summaries"
-              ]
-            },
-            {
-              "required": [
-                "relations"
-              ]
-            }
-          ],
           "required": [
             "about"
-          ],
-          "then": {
-            "required": [
-              "context_id"
-            ]
-          }
+          ]
         },
         "if": {
           "required": [
@@ -692,16 +402,15 @@
         },
         "properties": {
           "about": {
+            "description": "Copy exactly from the task or a returned result.",
             "type": "string"
           },
           "actor": {
-            "type": "string"
-          },
-          "context_id": {
+            "description": "Writer name. Omitted: the MCP client name.",
             "type": "string"
           },
           "continuation": {
-            "pattern": "^read_[0-9a-fA-F]{32}$",
+            "description": "Send alone, exactly as returned.",
             "type": "string"
           },
           "idempotency_key": {
@@ -712,33 +421,16 @@
               "items": {
                 "type": "string"
               },
-              "minItems": 1,
               "type": "array"
             },
-            "minProperties": 1,
+            "description": "At least one key with one value, here or per memory: {\"topic\":[\"x\"]}.",
             "type": "object"
           },
           "memories": {
             "items": {
-              "additionalProperties": false,
               "properties": {
                 "connect_to": {
                   "items": {
-                    "additionalProperties": false,
-                    "if": {
-                      "properties": {
-                        "rel": {
-                          "enum": [
-                            "chosen_because",
-                            "authorizes",
-                            "confirms_selection"
-                          ]
-                        }
-                      },
-                      "required": [
-                        "rel"
-                      ]
-                    },
                     "properties": {
                       "class": {
                         "enum": [
@@ -810,16 +502,12 @@
                       "ref",
                       "rel"
                     ],
-                    "then": {
-                      "required": [
-                        "class"
-                      ]
-                    },
                     "type": "object"
                   },
                   "type": "array"
                 },
                 "evidence": {
+                  "description": "Required: the source text or observation behind this memory.",
                   "type": "string"
                 },
                 "id": {
@@ -846,26 +534,26 @@
                     "items": {
                       "type": "string"
                     },
-                    "minItems": 1,
                     "type": "array"
                   },
-                  "minProperties": 1,
+                  "description": "At least one key with one value, here or on the packet.",
                   "type": "object"
                 },
                 "observed_at": {
+                  "format": "date-time",
                   "type": [
                     "string",
                     "null"
                   ]
                 },
                 "occurred_at": {
+                  "format": "date-time",
                   "type": [
                     "string",
                     "null"
                   ]
                 },
                 "rank": {
-                  "minimum": 1,
                   "type": "integer"
                 },
                 "ref": {
@@ -873,10 +561,8 @@
                 },
                 "search_expansions": {
                   "items": {
-                    "maxLength": 120,
                     "type": "string"
                   },
-                  "maxItems": 6,
                   "type": "array"
                 },
                 "summary": {
@@ -886,9 +572,11 @@
                   "type": "string"
                 },
                 "valid_from": {
+                  "format": "date-time",
                   "type": "string"
                 },
                 "valid_until": {
+                  "format": "date-time",
                   "type": "string"
                 }
               },
@@ -899,23 +587,23 @@
               ],
               "type": "object"
             },
-            "minItems": 1,
             "type": "array"
           },
           "observed_at": {
+            "format": "date-time",
             "type": [
               "string",
               "null"
             ]
           },
           "occurred_at": {
+            "format": "date-time",
             "type": [
               "string",
               "null"
             ]
           },
           "options": {
-            "additionalProperties": false,
             "properties": {
               "dry_run": {
                 "type": "boolean"
@@ -927,7 +615,6 @@
                 "type": "array"
               },
               "sequence": {
-                "minimum": 1,
                 "type": "integer"
               },
               "strict": {
@@ -936,21 +623,10 @@
             },
             "type": "object"
           },
-          "purpose": {
-            "enum": [
-              "continue",
-              "audit",
-              "history",
-              "answer"
-            ],
-            "type": "string"
-          },
           "rank": {
-            "minimum": 1,
             "type": "integer"
           },
           "read_context": {
-            "additionalProperties": false,
             "properties": {
               "ask_refs": {
                 "items": {
@@ -966,7 +642,6 @@
               },
               "relate_proposals": {
                 "items": {
-                  "additionalProperties": false,
                   "properties": {
                     "from": {
                       "type": "string"
@@ -980,7 +655,6 @@
                         ],
                         "type": "string"
                       },
-                      "minItems": 1,
                       "type": "array"
                     },
                     "to": {
@@ -1004,7 +678,6 @@
               },
               "trace_paths": {
                 "items": {
-                  "additionalProperties": false,
                   "properties": {
                     "from": {
                       "type": "string"
@@ -1038,21 +711,6 @@
           },
           "relations": {
             "items": {
-              "additionalProperties": false,
-              "if": {
-                "properties": {
-                  "rel": {
-                    "enum": [
-                      "chosen_because",
-                      "authorizes",
-                      "confirms_selection"
-                    ]
-                  }
-                },
-                "required": [
-                  "rel"
-                ]
-              },
               "properties": {
                 "class": {
                   "enum": [
@@ -1081,6 +739,7 @@
                   "type": "string"
                 },
                 "observed_at": {
+                  "format": "date-time",
                   "type": [
                     "string",
                     "null"
@@ -1136,14 +795,8 @@
                 "why",
                 "evidence"
               ],
-              "then": {
-                "required": [
-                  "class"
-                ]
-              },
               "type": "object"
             },
-            "minItems": 1,
             "type": "array"
           },
           "review_token": {
@@ -1151,29 +804,14 @@
           },
           "search_summaries": {
             "items": {
-              "additionalProperties": false,
-              "anyOf": [
-                {
-                  "required": [
-                    "summary_en"
-                  ]
-                },
-                {
-                  "required": [
-                    "search_expansions"
-                  ]
-                }
-              ],
               "properties": {
                 "ref": {
                   "type": "string"
                 },
                 "search_expansions": {
                   "items": {
-                    "maxLength": 120,
                     "type": "string"
                   },
-                  "maxItems": 6,
                   "type": "array"
                 },
                 "summary_en": {
@@ -1185,7 +823,6 @@
               ],
               "type": "object"
             },
-            "minItems": 1,
             "type": "array"
           },
           "source_kind": {
@@ -1198,14 +835,13 @@
             "type": "string"
           },
           "valid_from": {
+            "format": "date-time",
             "type": "string"
           },
           "valid_until": {
+            "format": "date-time",
             "type": "string"
           }
-        },
-        "then": {
-          "maxProperties": 1
         },
         "type": "object"
       },
@@ -1216,13 +852,11 @@
         "anthropic/maxResultSizeChars": 10000
       },
       "annotations": {
-        "destructiveHint": false,
         "openWorldHint": false,
-        "readOnlyHint": false
+        "readOnlyHint": true
       },
-      "description": "Return a compact Kernel Memory Protocol wake packet for continuing work. scope distinguishes selected proof from about context: time bounds apply to the selection, while summary, current_state, semantic next actions and labels can include other times. Requested dimensions apply to both. Arguments explained: kmp_guide topic wake.",
+      "description": "Resume known work on an about: its current state, causal spine, labels and proof; the first read of a session.",
       "inputSchema": {
-        "additionalProperties": false,
         "else": {
           "required": [
             "about"
@@ -1235,15 +869,16 @@
         },
         "properties": {
           "about": {
+            "description": "Copy exactly from the task or a returned result.",
             "type": "string"
           },
           "as_of": {
-            "additionalProperties": false,
             "properties": {
               "ref": {
                 "type": "string"
               },
               "time": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -1259,15 +894,8 @@
             "type": "string"
           },
           "budget": {
-            "additionalProperties": false,
             "properties": {
-              "depth": {
-                "default": 2,
-                "minimum": 1,
-                "type": "integer"
-              },
               "detail": {
-                "default": "balanced",
                 "enum": [
                   "compact",
                   "balanced",
@@ -1276,35 +904,18 @@
                 "type": "string"
               },
               "max_bytes": {
-                "default": 10000,
-                "minimum": 512,
                 "type": "integer"
               },
               "max_entries": {
-                "minimum": 1,
-                "type": "integer"
-              },
-              "tokens": {
-                "default": 1600,
-                "minimum": 1,
                 "type": "integer"
               }
             },
             "type": "object"
           },
-          "context_id": {
-            "type": "string"
-          },
           "continuation": {
-            "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
-          },
-          "depth": {
-            "minimum": 1,
-            "type": "integer"
           },
           "dimensions": {
-            "additionalProperties": false,
             "properties": {
               "abouts": {
                 "items": {
@@ -1348,7 +959,6 @@
               },
               "selectors": {
                 "items": {
-                  "additionalProperties": false,
                   "properties": {
                     "key": {
                       "type": "string"
@@ -1384,25 +994,24 @@
             "type": "string"
           },
           "interval": {
-            "additionalProperties": false,
             "properties": {
               "end": {
+                "format": "date-time",
                 "type": "string"
               },
               "start": {
+                "format": "date-time",
                 "type": "string"
               }
             },
             "type": "object"
           },
           "page": {
-            "additionalProperties": false,
             "properties": {
               "cursor": {
                 "type": "string"
               },
               "entries": {
-                "minimum": 1,
                 "type": "integer"
               },
               "repeat_core": {
@@ -1411,21 +1020,9 @@
             },
             "type": "object"
           },
-          "purpose": {
-            "enum": [
-              "continue",
-              "audit",
-              "history",
-              "answer"
-            ],
-            "type": "string"
-          },
           "role": {
             "type": "string"
           }
-        },
-        "then": {
-          "maxProperties": 2
         },
         "type": "object"
       },
@@ -1436,13 +1033,11 @@
         "anthropic/maxResultSizeChars": 10000
       },
       "annotations": {
-        "destructiveHint": false,
         "openWorldHint": false,
-        "readOnlyHint": false
+        "readOnlyHint": true
       },
-      "description": "Retrieve cited stored text and evidence, or UNKNOWN; never generate an answer. Read proof.evidence[].text and judge whether it answers. A dated semantic question uses as_of or a half-open UTC interval and axis; proof records the selection and nearest_outside on a bounded UNKNOWN. If the first English question finds UNKNOWN or irrelevant evidence, re-ask at most once in the user's own words. Changing optional arguments is another selection, not pagination; continue only through projection.page.next_cursor with bound arguments unchanged. After those selections, reclassify the original goal: history/current state uses temporal navigation; genuinely semantic UNKNOWN is terminal. Do not inspect the root, widen scope or traverse the graph to bypass it. proof.confidence measures lexical overlap, not answer correctness or relation-writer certainty; reached_by items are supporting proof, not direct answers. See proof fields for language-bridge and summary provenance. Arguments explained: kmp_guide topic ask.",
+      "description": "Answer a semantic question from cited stored text and evidence, or say UNKNOWN; for history, change or current state use kmp_time.",
       "inputSchema": {
-        "additionalProperties": false,
         "else": {
           "required": [
             "about",
@@ -1467,12 +1062,12 @@
             "type": "string"
           },
           "as_of": {
-            "additionalProperties": false,
             "properties": {
               "ref": {
                 "type": "string"
               },
               "time": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -1491,15 +1086,8 @@
             "type": "string"
           },
           "budget": {
-            "additionalProperties": false,
             "properties": {
-              "depth": {
-                "default": 2,
-                "minimum": 1,
-                "type": "integer"
-              },
               "detail": {
-                "default": "balanced",
                 "enum": [
                   "compact",
                   "balanced",
@@ -1508,35 +1096,18 @@
                 "type": "string"
               },
               "max_bytes": {
-                "default": 10000,
-                "minimum": 512,
                 "type": "integer"
               },
               "max_entries": {
-                "minimum": 1,
-                "type": "integer"
-              },
-              "tokens": {
-                "default": 2400,
-                "minimum": 1,
                 "type": "integer"
               }
             },
             "type": "object"
           },
-          "context_id": {
-            "type": "string"
-          },
           "continuation": {
-            "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
-          },
-          "depth": {
-            "minimum": 1,
-            "type": "integer"
           },
           "dimensions": {
-            "additionalProperties": false,
             "properties": {
               "abouts": {
                 "items": {
@@ -1580,7 +1151,6 @@
               },
               "selectors": {
                 "items": {
-                  "additionalProperties": false,
                   "properties": {
                     "key": {
                       "type": "string"
@@ -1613,25 +1183,24 @@
             "type": "object"
           },
           "interval": {
-            "additionalProperties": false,
             "properties": {
               "end": {
+                "format": "date-time",
                 "type": "string"
               },
               "start": {
+                "format": "date-time",
                 "type": "string"
               }
             },
             "type": "object"
           },
           "page": {
-            "additionalProperties": false,
             "properties": {
               "cursor": {
                 "type": "string"
               },
               "entries": {
-                "minimum": 1,
                 "type": "integer"
               },
               "repeat_core": {
@@ -1640,21 +1209,9 @@
             },
             "type": "object"
           },
-          "purpose": {
-            "enum": [
-              "continue",
-              "audit",
-              "history",
-              "answer"
-            ],
-            "type": "string"
-          },
           "question": {
             "type": "string"
           }
-        },
-        "then": {
-          "maxProperties": 2
         },
         "type": "object"
       },
@@ -1665,13 +1222,11 @@
         "anthropic/maxResultSizeChars": 10000
       },
       "annotations": {
-        "destructiveHint": false,
         "openWorldHint": false,
-        "readOnlyHint": false
+        "readOnlyHint": true
       },
-      "description": "Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Coordinate comparisons read the dimension scopes two abouts both use and where on one clock each memory stands inside them; they do not declare links. A writer may separately declare only `same_event_as` or `same_entity_as` across abouts, with a returned proposal and explicit proof, without merging their ownership. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the declared relations in the selection, including permitted cross-about equivalences, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may use a returned proposal to declare an equivalence only when source evidence justifies identity. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order. Arguments explained: kmp_guide topic relate.",
+      "description": "Compare explicitly selected abouts: shared scopes, declared relations, tensions and proposed cross-about equivalences.",
       "inputSchema": {
-        "additionalProperties": false,
         "else": {
           "required": [
             "about"
@@ -1696,48 +1251,17 @@
             "type": "string"
           },
           "budget": {
-            "additionalProperties": false,
             "properties": {
-              "depth": {
-                "default": 2,
-                "minimum": 1,
-                "type": "integer"
-              },
-              "detail": {
-                "default": "balanced",
-                "enum": [
-                  "compact",
-                  "balanced",
-                  "full"
-                ],
-                "type": "string"
-              },
               "max_bytes": {
-                "default": 10000,
-                "minimum": 512,
-                "type": "integer"
-              },
-              "max_entries": {
-                "minimum": 1,
-                "type": "integer"
-              },
-              "tokens": {
-                "default": 2400,
-                "minimum": 1,
                 "type": "integer"
               }
             },
             "type": "object"
           },
-          "context_id": {
-            "type": "string"
-          },
           "continuation": {
-            "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
           "dimensions": {
-            "additionalProperties": false,
             "properties": {
               "abouts": {
                 "items": {
@@ -1781,7 +1305,6 @@
               },
               "selectors": {
                 "items": {
-                  "additionalProperties": false,
                   "properties": {
                     "key": {
                       "type": "string"
@@ -1814,42 +1337,29 @@
             "type": "object"
           },
           "interval": {
-            "additionalProperties": false,
             "properties": {
               "end": {
+                "format": "date-time",
                 "type": "string"
               },
               "start": {
+                "format": "date-time",
                 "type": "string"
               }
             },
             "type": "object"
           },
           "page": {
-            "additionalProperties": false,
             "properties": {
               "cursor": {
                 "type": "string"
               },
               "entries": {
-                "minimum": 1,
                 "type": "integer"
               }
             },
             "type": "object"
-          },
-          "purpose": {
-            "enum": [
-              "continue",
-              "audit",
-              "history",
-              "answer"
-            ],
-            "type": "string"
           }
-        },
-        "then": {
-          "maxProperties": 1
         },
         "type": "object"
       },
@@ -1860,58 +1370,12 @@
         "anthropic/maxResultSizeChars": 10000
       },
       "annotations": {
-        "destructiveHint": false,
         "openWorldHint": false,
-        "readOnlyHint": false
+        "readOnlyHint": true
       },
-      "description": "Navigate memory history on one clock. move: rewind reads newest first, strictly before `from` or within `interval`; forward reads oldest first, strictly after `from` or within `interval`; goto returns the state at `at`; near returns the neighbourhood around `around`. Cursors take time, sequence or ref. Execute next_actions unchanged: they finish this packet's response pages first, then continue history with the same clock, dimensions and interval. page.has_more counts packet expansion; selection.has_more reports history outside it. Arguments explained: kmp_guide topic time.",
+      "description": "Navigate an about's history on one clock (rewind, forward, goto, near): what changed, the latest, or the state at a date.",
       "inputSchema": {
-        "additionalProperties": false,
         "else": {
-          "anyOf": [
-            {
-              "anyOf": [
-                {
-                  "required": [
-                    "from"
-                  ]
-                },
-                {
-                  "required": [
-                    "interval"
-                  ]
-                }
-              ],
-              "properties": {
-                "move": {
-                  "enum": [
-                    "rewind",
-                    "forward"
-                  ]
-                }
-              }
-            },
-            {
-              "properties": {
-                "move": {
-                  "const": "goto"
-                }
-              },
-              "required": [
-                "at"
-              ]
-            },
-            {
-              "properties": {
-                "move": {
-                  "const": "near"
-                }
-              },
-              "required": [
-                "around"
-              ]
-            }
-          ],
           "required": [
             "about",
             "move"
@@ -1927,32 +1391,30 @@
             "type": "string"
           },
           "around": {
-            "additionalProperties": false,
             "properties": {
               "ref": {
                 "type": "string"
               },
               "sequence": {
-                "minimum": 1,
                 "type": "integer"
               },
               "time": {
+                "format": "date-time",
                 "type": "string"
               }
             },
             "type": "object"
           },
           "at": {
-            "additionalProperties": false,
             "properties": {
               "ref": {
                 "type": "string"
               },
               "sequence": {
-                "minimum": 1,
                 "type": "integer"
               },
               "time": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -1968,15 +1430,11 @@
             "type": "string"
           },
           "budget": {
-            "additionalProperties": false,
             "properties": {
               "depth": {
-                "default": 3,
-                "minimum": 1,
                 "type": "integer"
               },
               "detail": {
-                "default": "balanced",
                 "enum": [
                   "compact",
                   "balanced",
@@ -1985,35 +1443,18 @@
                 "type": "string"
               },
               "max_bytes": {
-                "default": 10000,
-                "minimum": 512,
                 "type": "integer"
               },
               "max_entries": {
-                "minimum": 1,
-                "type": "integer"
-              },
-              "tokens": {
-                "default": 2400,
-                "minimum": 1,
                 "type": "integer"
               }
             },
             "type": "object"
           },
-          "context_id": {
-            "type": "string"
-          },
           "continuation": {
-            "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
-          },
-          "depth": {
-            "minimum": 1,
-            "type": "integer"
           },
           "dimensions": {
-            "additionalProperties": false,
             "properties": {
               "abouts": {
                 "items": {
@@ -2057,7 +1498,6 @@
               },
               "selectors": {
                 "items": {
-                  "additionalProperties": false,
                   "properties": {
                     "key": {
                       "type": "string"
@@ -2103,23 +1543,21 @@
             "type": "array"
           },
           "from": {
-            "additionalProperties": false,
             "properties": {
               "ref": {
                 "type": "string"
               },
               "sequence": {
-                "minimum": 1,
                 "type": "integer"
               },
               "time": {
+                "format": "date-time",
                 "type": "string"
               }
             },
             "type": "object"
           },
           "include": {
-            "additionalProperties": false,
             "properties": {
               "dependencies": {
                 "type": "boolean"
@@ -2137,33 +1575,28 @@
             "type": "object"
           },
           "interval": {
-            "additionalProperties": false,
-            "minProperties": 1,
             "properties": {
               "end": {
+                "format": "date-time",
                 "type": "string"
               },
               "start": {
+                "format": "date-time",
                 "type": "string"
               }
             },
             "type": "object"
           },
           "limit": {
-            "additionalProperties": false,
             "properties": {
               "entries": {
-                "minimum": 1,
-                "type": "integer"
-              },
-              "tokens": {
-                "minimum": 1,
                 "type": "integer"
               }
             },
             "type": "object"
           },
           "move": {
+            "description": "rewind/forward take from or interval; goto takes at; near takes around.",
             "enum": [
               "rewind",
               "forward",
@@ -2173,51 +1606,33 @@
             "type": "string"
           },
           "page": {
-            "additionalProperties": false,
             "properties": {
               "cursor": {
                 "type": "string"
               },
               "entries": {
-                "minimum": 1,
                 "type": "integer"
               }
             },
             "type": "object"
-          },
-          "purpose": {
-            "enum": [
-              "continue",
-              "audit",
-              "history",
-              "answer"
-            ],
-            "type": "string"
           },
           "refs": {
             "items": {
               "type": "string"
             },
-            "minItems": 1,
             "type": "array"
           },
           "window": {
-            "additionalProperties": false,
             "properties": {
               "after_entries": {
-                "minimum": 0,
                 "type": "integer"
               },
               "before_entries": {
-                "minimum": 0,
                 "type": "integer"
               }
             },
             "type": "object"
           }
-        },
-        "then": {
-          "maxProperties": 1
         },
         "type": "object"
       },
@@ -2228,50 +1643,12 @@
         "anthropic/maxResultSizeChars": 10000
       },
       "annotations": {
-        "destructiveHint": false,
         "openWorldHint": false,
-        "readOnlyHint": false
+        "readOnlyHint": true
       },
-      "description": "Choose one mode: to connects known destination refs; search.seek discovers compatible evidence paths from a seed without destinations. Never combine their search options. A to array, search or temporal selection enables a bounded shared search through same-about entries. One shortest discovered route per destination by default; search can retain alternatives and follow each relation type in its chosen direction; paths do not establish answer completeness. A single to without search or temporal selection traces equivalence-aware over every stored relation with a bounded bidirectional search; a work cutoff returns no path, the stop in search and an optional search.widen. Arguments explained: kmp_guide topic audit.",
+      "description": "Find the evidenced path from a stored memory to known destinations (`to`), or the evidence for required roles from that seed (`search.seek`). Guide topic: audit.",
       "inputSchema": {
-        "additionalProperties": false,
         "else": {
-          "oneOf": [
-            {
-              "not": {
-                "properties": {
-                  "search": {
-                    "required": [
-                      "seek"
-                    ]
-                  }
-                },
-                "required": [
-                  "search"
-                ]
-              },
-              "required": [
-                "to"
-              ]
-            },
-            {
-              "not": {
-                "required": [
-                  "to"
-                ]
-              },
-              "properties": {
-                "search": {
-                  "required": [
-                    "seek"
-                  ]
-                }
-              },
-              "required": [
-                "search"
-              ]
-            }
-          ],
           "required": [
             "about",
             "from"
@@ -2287,12 +1664,12 @@
             "type": "string"
           },
           "as_of": {
-            "additionalProperties": false,
             "properties": {
               "ref": {
                 "type": "string"
               },
               "time": {
+                "format": "date-time",
                 "type": "string"
               }
             },
@@ -2308,141 +1685,46 @@
             "type": "string"
           },
           "budget": {
-            "additionalProperties": false,
             "properties": {
-              "depth": {
-                "default": 1,
-                "minimum": 1,
-                "type": "integer"
-              },
-              "detail": {
-                "default": "balanced",
-                "enum": [
-                  "compact",
-                  "balanced",
-                  "full"
-                ],
-                "type": "string"
-              },
               "max_bytes": {
-                "default": 10000,
-                "minimum": 512,
-                "type": "integer"
-              },
-              "max_entries": {
-                "minimum": 1,
-                "type": "integer"
-              },
-              "tokens": {
-                "default": 1600,
-                "minimum": 1,
                 "type": "integer"
               }
             },
             "type": "object"
           },
-          "context_id": {
-            "type": "string"
-          },
           "continuation": {
-            "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
           "from": {
             "type": "string"
           },
-          "goal": {
-            "type": "string"
-          },
           "interval": {
-            "additionalProperties": false,
             "properties": {
               "end": {
+                "format": "date-time",
                 "type": "string"
               },
               "start": {
+                "format": "date-time",
                 "type": "string"
               }
             },
             "type": "object"
           },
           "page": {
-            "additionalProperties": false,
             "properties": {
               "cursor": {
                 "type": "string"
               },
               "entries": {
-                "minimum": 1,
                 "type": "integer"
               }
             },
             "type": "object"
           },
-          "purpose": {
-            "enum": [
-              "continue",
-              "audit",
-              "history",
-              "answer"
-            ],
-            "type": "string"
-          },
-          "role": {
-            "type": "string"
-          },
           "search": {
-            "additionalProperties": false,
-            "oneOf": [
-              {
-                "propertyNames": {
-                  "enum": [
-                    "compact",
-                    "dimensions",
-                    "direction",
-                    "expect_selection",
-                    "follow",
-                    "max_body_record_bytes",
-                    "max_depth",
-                    "max_edges",
-                    "max_nodes",
-                    "max_states",
-                    "paths_per_target",
-                    "prefer_dimensions",
-                    "proof",
-                    "proof_refs",
-                    "relations",
-                    "select"
-                  ]
-                },
-                "title": "Known destinations"
-              },
-              {
-                "propertyNames": {
-                  "enum": [
-                    "compact",
-                    "expect_selection",
-                    "max_body_record_bytes",
-                    "max_depth",
-                    "max_edges",
-                    "max_nodes",
-                    "max_states",
-                    "proof",
-                    "proof_refs",
-                    "same_labels",
-                    "same_ref",
-                    "seek"
-                  ]
-                },
-                "required": [
-                  "seek"
-                ],
-                "title": "Evidence from seed"
-              }
-            ],
             "properties": {
               "compact": {
-                "additionalProperties": false,
                 "properties": {
                   "language": {
                     "type": "string"
@@ -2454,20 +1736,17 @@
                 "type": "object"
               },
               "dimensions": {
-                "additionalProperties": false,
                 "properties": {
                   "exclude": {
                     "items": {
                       "type": "string"
                     },
-                    "maxItems": 64,
                     "type": "array"
                   },
                   "include": {
                     "items": {
                       "type": "string"
                     },
-                    "maxItems": 64,
                     "type": "array"
                   },
                   "mode": {
@@ -2488,12 +1767,10 @@
                     "items": {
                       "type": "string"
                     },
-                    "maxItems": 64,
                     "type": "array"
                   },
                   "selectors": {
                     "items": {
-                      "additionalProperties": false,
                       "properties": {
                         "key": {
                           "type": "string"
@@ -2511,7 +1788,6 @@
                           "items": {
                             "type": "string"
                           },
-                          "maxItems": 64,
                           "type": "array"
                         }
                       },
@@ -2521,14 +1797,12 @@
                       ],
                       "type": "object"
                     },
-                    "maxItems": 16,
                     "type": "array"
                   }
                 },
                 "type": "object"
               },
               "direction": {
-                "default": "outgoing",
                 "enum": [
                   "outgoing",
                   "incoming",
@@ -2541,7 +1815,6 @@
               },
               "follow": {
                 "items": {
-                  "additionalProperties": false,
                   "properties": {
                     "direction": {
                       "enum": [
@@ -2560,59 +1833,38 @@
                   ],
                   "type": "object"
                 },
-                "maxItems": 16,
-                "minItems": 1,
                 "type": "array"
               },
               "max_body_record_bytes": {
-                "minimum": 1,
                 "type": "integer"
               },
               "max_depth": {
-                "default": 128,
-                "maximum": 1024,
-                "minimum": 1,
                 "type": "integer"
               },
               "max_edges": {
-                "default": 2048,
-                "maximum": 32768,
-                "minimum": 1,
                 "type": "integer"
               },
               "max_nodes": {
-                "default": 256,
-                "maximum": 4096,
-                "minimum": 1,
                 "type": "integer"
               },
               "max_states": {
-                "default": 4096,
-                "maximum": 32768,
-                "minimum": 1,
                 "type": "integer"
               },
               "paths_per_target": {
-                "default": 1,
-                "maximum": 8,
-                "minimum": 1,
                 "type": "integer"
               },
               "prefer_dimensions": {
-                "additionalProperties": false,
                 "properties": {
                   "exclude": {
                     "items": {
                       "type": "string"
                     },
-                    "maxItems": 64,
                     "type": "array"
                   },
                   "include": {
                     "items": {
                       "type": "string"
                     },
-                    "maxItems": 64,
                     "type": "array"
                   },
                   "mode": {
@@ -2633,12 +1885,10 @@
                     "items": {
                       "type": "string"
                     },
-                    "maxItems": 64,
                     "type": "array"
                   },
                   "selectors": {
                     "items": {
-                      "additionalProperties": false,
                       "properties": {
                         "key": {
                           "type": "string"
@@ -2656,7 +1906,6 @@
                           "items": {
                             "type": "string"
                           },
-                          "maxItems": 64,
                           "type": "array"
                         }
                       },
@@ -2666,21 +1915,18 @@
                       ],
                       "type": "object"
                     },
-                    "maxItems": 16,
                     "type": "array"
                   }
                 },
                 "type": "object"
               },
               "proof": {
-                "default": false,
                 "type": "boolean"
               },
               "proof_refs": {
                 "items": {
                   "type": "string"
                 },
-                "maxItems": 64,
                 "type": "array"
               },
               "relations": {
@@ -2693,184 +1939,141 @@
                 "items": {
                   "type": "string"
                 },
-                "maxItems": 16,
                 "type": "array"
               },
               "same_ref": {
                 "items": {
                   "items": {
-                    "oneOf": [
-                      {
-                        "type": "string"
+                    "properties": {
+                      "at": {
+                        "enum": [
+                          "anchor",
+                          "witness"
+                        ]
                       },
-                      {
-                        "additionalProperties": false,
-                        "properties": {
-                          "at": {
-                            "enum": [
-                              "anchor",
-                              "witness"
-                            ]
-                          },
-                          "role": {
-                            "type": "string"
-                          }
-                        },
-                        "required": [
-                          "role",
-                          "at"
-                        ],
-                        "type": "object"
+                      "role": {
+                        "type": "string"
                       }
+                    },
+                    "required": [
+                      "role",
+                      "at"
+                    ],
+                    "type": [
+                      "string",
+                      "object"
                     ]
                   },
-                  "maxItems": 16,
-                  "minItems": 2,
                   "type": "array"
                 },
-                "maxItems": 8,
                 "type": "array"
               },
               "seek": {
                 "items": {
-                  "oneOf": [
-                    {
+                  "properties": {
+                    "after": {
+                      "items": {
+                        "properties": {
+                          "direction": {
+                            "enum": [
+                              "outgoing",
+                              "incoming"
+                            ],
+                            "type": "string"
+                          },
+                          "rel": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "rel"
+                        ],
+                        "type": [
+                          "string",
+                          "object"
+                        ]
+                      },
+                      "type": "array"
+                    },
+                    "direction": {
+                      "enum": [
+                        "outgoing",
+                        "incoming"
+                      ],
                       "type": "string"
                     },
-                    {
-                      "additionalProperties": false,
-                      "properties": {
-                        "after": {
+                    "labels": {
+                      "additionalProperties": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "type": "object"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "rel": {
+                      "type": "string"
+                    },
+                    "via": {
+                      "oneOf": [
+                        {
                           "items": {
-                            "oneOf": [
-                              {
+                            "properties": {
+                              "direction": {
+                                "enum": [
+                                  "outgoing",
+                                  "incoming"
+                                ],
                                 "type": "string"
                               },
-                              {
-                                "additionalProperties": false,
-                                "properties": {
-                                  "direction": {
-                                    "default": "outgoing",
-                                    "enum": [
-                                      "outgoing",
-                                      "incoming"
-                                    ],
-                                    "type": "string"
-                                  },
-                                  "rel": {
-                                    "type": "string"
-                                  }
-                                },
-                                "required": [
-                                  "rel"
-                                ],
-                                "type": "object"
+                              "rel": {
+                                "type": "string"
                               }
+                            },
+                            "required": [
+                              "rel"
+                            ],
+                            "type": [
+                              "string",
+                              "object"
                             ]
                           },
-                          "maxItems": 1023,
                           "type": "array"
                         },
-                        "direction": {
-                          "default": "outgoing",
-                          "enum": [
-                            "outgoing",
-                            "incoming"
-                          ],
-                          "type": "string"
-                        },
-                        "labels": {
-                          "additionalProperties": {
-                            "items": {
-                              "type": "string"
-                            },
-                            "maxItems": 64,
-                            "minItems": 1,
-                            "type": "array"
-                          },
-                          "maxProperties": 16,
-                          "type": "object"
-                        },
-                        "name": {
-                          "type": "string"
-                        },
-                        "rel": {
-                          "type": "string"
-                        },
-                        "via": {
-                          "oneOf": [
-                            {
-                              "items": {
-                                "oneOf": [
-                                  {
-                                    "type": "string"
-                                  },
-                                  {
-                                    "additionalProperties": false,
-                                    "properties": {
-                                      "direction": {
-                                        "default": "outgoing",
-                                        "enum": [
-                                          "outgoing",
-                                          "incoming"
-                                        ],
-                                        "type": "string"
-                                      },
-                                      "rel": {
-                                        "type": "string"
-                                      }
-                                    },
-                                    "required": [
-                                      "rel"
-                                    ],
-                                    "type": "object"
-                                  }
-                                ]
-                              },
-                              "maxItems": 1023,
-                              "type": "array"
-                            },
-                            {
-                              "const": "context"
-                            }
-                          ]
+                        {
+                          "const": "context"
                         }
-                      },
-                      "required": [
-                        "rel"
-                      ],
-                      "type": "object"
+                      ]
                     }
+                  },
+                  "required": [
+                    "rel"
+                  ],
+                  "type": [
+                    "string",
+                    "object"
                   ]
                 },
-                "maxItems": 8,
-                "minItems": 1,
                 "type": "array"
               },
               "select": {
-                "additionalProperties": false,
                 "properties": {
                   "groups": {
                     "items": {
-                      "additionalProperties": false,
                       "properties": {
                         "alternatives": {
                           "items": {
                             "items": {
                               "type": "string"
                             },
-                            "maxItems": 8,
-                            "minItems": 1,
                             "type": "array"
                           },
-                          "maxItems": 8,
-                          "minItems": 1,
                           "type": "array"
                         },
                         "weight": {
-                          "default": 1,
-                          "maximum": 1000,
-                          "minimum": 1,
                           "type": "integer"
                         }
                       },
@@ -2879,18 +2082,12 @@
                       ],
                       "type": "object"
                     },
-                    "maxItems": 8,
                     "type": "array"
                   },
                   "max_material_nodes": {
-                    "maximum": 4096,
-                    "minimum": 1,
                     "type": "integer"
                   },
                   "max_paths": {
-                    "default": 4,
-                    "maximum": 8,
-                    "minimum": 1,
                     "type": "integer"
                   }
                 },
@@ -2903,23 +2100,14 @@
             "type": "object"
           },
           "to": {
-            "oneOf": [
-              {
-                "type": "string"
-              },
-              {
-                "items": {
-                  "type": "string"
-                },
-                "maxItems": 8,
-                "minItems": 1,
-                "type": "array"
-              }
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "string",
+              "array"
             ]
           }
-        },
-        "then": {
-          "maxProperties": 1
         },
         "type": "object"
       },
@@ -2930,13 +2118,11 @@
         "anthropic/maxResultSizeChars": 10000
       },
       "annotations": {
-        "destructiveHint": false,
         "openWorldHint": false,
-        "readOnlyHint": false
+        "readOnlyHint": true
       },
-      "description": "Inspect one stored memory object or accepted write receipt inside an explicit about boundary. Receipt object.text is immutable command-detail JSON, not current memory. Evidence, links and raw records page under the byte ceiling; continuations can reuse the first page's object. Arguments explained: kmp_guide topic audit.",
+      "description": "Read one stored memory or write receipt in full, with its evidence and links, before relying on it. Guide topic: audit.",
       "inputSchema": {
-        "additionalProperties": false,
         "else": {
           "required": [
             "about",
@@ -2953,28 +2139,19 @@
             "type": "string"
           },
           "budget": {
-            "additionalProperties": false,
             "properties": {
               "max_bytes": {
-                "default": 10000,
-                "minimum": 512,
                 "type": "integer"
               }
             },
             "type": "object"
           },
-          "context_id": {
-            "type": "string"
-          },
           "continuation": {
-            "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
           "expect": {
-            "additionalProperties": false,
             "properties": {
               "revision": {
-                "minimum": 1,
                 "type": "integer"
               }
             },
@@ -2984,55 +2161,36 @@
             "type": "object"
           },
           "include": {
-            "additionalProperties": false,
             "properties": {
               "details": {
-                "default": true,
                 "type": "boolean"
               },
               "incoming": {
-                "default": true,
                 "type": "boolean"
               },
               "outgoing": {
-                "default": true,
                 "type": "boolean"
               },
               "raw": {
-                "default": false,
                 "type": "boolean"
               }
             },
             "type": "object"
           },
           "page": {
-            "additionalProperties": false,
             "properties": {
               "cursor": {
                 "type": "string"
               },
               "repeat_object": {
-                "default": true,
                 "type": "boolean"
               }
             },
             "type": "object"
           },
-          "purpose": {
-            "enum": [
-              "continue",
-              "audit",
-              "history",
-              "answer"
-            ],
-            "type": "string"
-          },
           "ref": {
             "type": "string"
           }
-        },
-        "then": {
-          "maxProperties": 1
         },
         "type": "object"
       },
@@ -3043,25 +2201,18 @@
         "anthropic/maxResultSizeChars": 10000
       },
       "annotations": {
-        "destructiveHint": true,
+        "idempotentHint": true,
         "openWorldHint": false,
         "readOnlyHint": false
       },
-      "description": "Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing. Arguments explained: kmp_guide topic write.",
+      "description": "Add or take off the labels of one stored memory without rewriting its text.",
       "inputSchema": {
-        "additionalProperties": false,
-        "if": {
-          "not": {
-            "required": [
-              "actor"
-            ]
-          }
-        },
         "properties": {
           "about": {
             "type": "string"
           },
           "actor": {
+            "description": "Writer name. Omitted: the MCP client name.",
             "type": "string"
           },
           "add": {
@@ -3069,22 +2220,18 @@
               "items": {
                 "type": "string"
               },
-              "minItems": 1,
               "type": "array"
             },
             "type": "object"
-          },
-          "context_id": {
-            "type": "string"
           },
           "idempotency_key": {
             "type": "string"
           },
           "observed_at": {
+            "format": "date-time",
             "type": "string"
           },
           "options": {
-            "additionalProperties": false,
             "properties": {
               "dry_run": {
                 "type": "boolean"
@@ -3101,15 +2248,6 @@
             },
             "type": "object"
           },
-          "purpose": {
-            "enum": [
-              "continue",
-              "audit",
-              "history",
-              "answer"
-            ],
-            "type": "string"
-          },
           "ref": {
             "type": "string"
           },
@@ -3118,7 +2256,6 @@
               "items": {
                 "type": "string"
               },
-              "minItems": 1,
               "type": "array"
             },
             "type": "object"
@@ -3142,11 +2279,6 @@
           "observed_at",
           "why"
         ],
-        "then": {
-          "required": [
-            "context_id"
-          ]
-        },
         "type": "object"
       },
       "name": "kmp_relabel"
@@ -3156,75 +2288,35 @@
         "anthropic/maxResultSizeChars": 10000
       },
       "annotations": {
-        "destructiveHint": true,
         "openWorldHint": false,
         "readOnlyHint": false
       },
-      "description": "Write your own compact card for one stored body, so later reads of the same paths can show the card instead of the whole body. Entries and the evidence sources of the same about can both be condensed, which matters because a source shared by several paths is usually the largest record on them. The card is your derived view, never canonical memory and never proof: it stands only for the body version you declare, and a later write makes it stale rather than wrong. Accepted revisions are preserved in event history and survive export/import and rebuild without changing the canonical body. Declare the revision and record digest the read gave you; a body that moved under you is refused with both versions named. Arguments explained: kmp_guide topic condense.",
+      "description": "Store your own compact card for one stored body, so later reads can show the card instead of the whole body.",
       "inputSchema": {
-        "additionalProperties": false,
-        "if": {
-          "not": {
-            "required": [
-              "actor"
-            ]
-          }
-        },
         "properties": {
           "about": {
             "type": "string"
           },
           "actor": {
+            "description": "Writer name. Omitted: the MCP client name.",
             "type": "string"
           },
           "card": {
-            "maxLength": 4096,
-            "type": "string"
-          },
-          "context_id": {
             "type": "string"
           },
           "expect": {
-            "additionalProperties": false,
-            "else": {
-              "required": [
-                "card_revision"
-              ]
-            },
-            "if": {
-              "required": [
-                "absent"
-              ]
-            },
             "properties": {
               "absent": {
                 "const": true,
                 "type": "boolean"
               },
               "card_revision": {
-                "minimum": 1,
                 "type": "integer"
-              }
-            },
-            "then": {
-              "not": {
-                "required": [
-                  "card_revision"
-                ]
               }
             },
             "type": "object"
           },
           "language": {
-            "type": "string"
-          },
-          "purpose": {
-            "enum": [
-              "continue",
-              "audit",
-              "history",
-              "answer"
-            ],
             "type": "string"
           },
           "ref": {
@@ -3235,7 +2327,6 @@
             "type": "string"
           },
           "source": {
-            "additionalProperties": false,
             "properties": {
               "content_hash": {
                 "type": "string"
@@ -3244,7 +2335,6 @@
                 "type": "string"
               },
               "revision": {
-                "minimum": 1,
                 "type": "integer"
               }
             },
@@ -3264,11 +2354,6 @@
           "source",
           "expect"
         ],
-        "then": {
-          "required": [
-            "context_id"
-          ]
-        },
         "type": "object"
       },
       "name": "kmp_condense"
@@ -3278,39 +2363,29 @@
         "anthropic/maxResultSizeChars": 10000
       },
       "annotations": {
-        "destructiveHint": false,
         "openWorldHint": false,
-        "readOnlyHint": false
+        "readOnlyHint": true
       },
-      "description": "Read where this store's memories stand with respect to their English search summaries, so the one writer that can produce a summary can see what to repair. Deterministic and repeatable: it reads the store's own event log, generates no text, changes nothing and never rejects a memory. Each entry returns a state — missing, refused, stands, not_required — with the lint's own faults when a summary is refused, and deterministic weakness signals when one stands and still retrieves little. Both feed kmp_write_memory search_summaries unchanged: render the text again and attach it. Scope defaults to one about; dimensions.scope abouts reads a named set and all_abouts sweeps every anchor, at a real cost. Page with page.cursor and the same bound arguments; totals describe the whole selection, not the page. It judges form, never meaning: a fluent, wrong summary passes, exactly as the lint does, unless the store opted into TypeSafe Jev, which reads each standing summary on the page against its memory and flags it `unfaithful`. Arguments explained: kmp_guide topic condense.",
+      "description": "List memories whose English search summary is missing, refused or weak, to repair with kmp_write_memory `search_summaries`. Guide topic: condense.",
       "inputSchema": {
-        "additionalProperties": false,
         "properties": {
           "about": {
             "type": "string"
           },
           "budget": {
-            "additionalProperties": false,
             "properties": {
               "max_bytes": {
-                "default": 10000,
-                "minimum": 512,
                 "type": "integer"
               }
             },
             "type": "object"
           },
-          "context_id": {
-            "type": "string"
-          },
           "dimensions": {
-            "additionalProperties": false,
             "properties": {
               "abouts": {
                 "items": {
                   "type": "string"
                 },
-                "minItems": 1,
                 "type": "array"
               },
               "scope": {
@@ -3325,26 +2400,15 @@
             "type": "object"
           },
           "page": {
-            "additionalProperties": false,
             "properties": {
               "cursor": {
                 "type": "string"
               },
               "entries": {
-                "minimum": 1,
                 "type": "integer"
               }
             },
             "type": "object"
-          },
-          "purpose": {
-            "enum": [
-              "continue",
-              "audit",
-              "history",
-              "answer"
-            ],
-            "type": "string"
           },
           "states": {
             "items": {
@@ -3356,7 +2420,6 @@
               ],
               "type": "string"
             },
-            "minItems": 1,
             "type": "array"
           }
         },
@@ -3373,16 +2436,14 @@
         "openWorldHint": false,
         "readOnlyHint": false
       },
-      "description": "Review the relations of one or several abouts with the calling agent as author and TypeSafe Jev as a second reader. `mode: review` reads the selection the way kmp_relate does and writes nothing. It returns `missing`: pairs of current facts nothing declares yet — paired by the kernel from checkable signals (rare identifiers, summaries, names, shared labels), inside one about or across abouts, or picked by Jev for facts nothing else paired — each with the relation type Jev would choose, or `contradicts` when the two cannot both be true; and `suspect`: declared relations whose why and evidence Jev does not find supporting, or that Jev would type differently. Jev only chooses among offered options and judges text; it never writes a relation or a word of one, so every why and evidence you declare is yours, and a suggested type is a suggestion. Across abouts only same_event_as and same_entity_as are ever suggested. Jev is opt-in per store: `typesafe.json` beside the store and `TYPESAFE_API_KEY` in the environment; fact text of the selection is sent to TypeSafe. Without it the review returns kernel pairs untyped and audits nothing. The review is frozen under `review_token`; page it with that token and `page.cursor`. `mode: apply` takes items of a frozen review with your why and evidence; Jev reads your text once more, and which way round the relation runs, and withholds what it doubts until you correct or confirm it; the rest goes through kmp_write_memory's own plan, neighbourhood review and idempotency, and a needs_review answer resumes here. Only items whose `from` belongs to `about` are written by a call. `mode: paths` reads a whole selection — one about or several — keeps the facts Jev judges on the way from `from` to `to` (with `to`, only among at most 22 facts linked within four hops of either end), asks it for each one's direct consequence, and joins those steps to the declared relations into whole chains; proposed steps are frozen under `review_token` like missing relations. Embedded store only. Arguments explained: kmp_guide topic curate.",
+      "description": "Find missing and doubtful relations with TypeSafe Jev as second reader (`review`, `paths`, `labels`), then declare those you confirm (`apply`).",
       "inputSchema": {
-        "additionalProperties": false,
         "properties": {
           "about": {
             "type": "string"
           },
           "accepted": {
             "items": {
-              "additionalProperties": false,
               "properties": {
                 "confidence": {
                   "enum": [
@@ -3419,10 +2480,10 @@
               ],
               "type": "object"
             },
-            "minItems": 1,
             "type": "array"
           },
           "actor": {
+            "description": "Writer name. Omitted: the MCP client name.",
             "type": "string"
           },
           "axis": {
@@ -3434,45 +2495,7 @@
             ],
             "type": "string"
           },
-          "budget": {
-            "additionalProperties": false,
-            "properties": {
-              "depth": {
-                "default": 2,
-                "minimum": 1,
-                "type": "integer"
-              },
-              "detail": {
-                "default": "balanced",
-                "enum": [
-                  "compact",
-                  "balanced",
-                  "full"
-                ],
-                "type": "string"
-              },
-              "max_bytes": {
-                "default": 10000,
-                "minimum": 512,
-                "type": "integer"
-              },
-              "max_entries": {
-                "minimum": 1,
-                "type": "integer"
-              },
-              "tokens": {
-                "default": 2400,
-                "minimum": 1,
-                "type": "integer"
-              }
-            },
-            "type": "object"
-          },
-          "context_id": {
-            "type": "string"
-          },
           "dimensions": {
-            "additionalProperties": false,
             "properties": {
               "abouts": {
                 "items": {
@@ -3516,7 +2539,6 @@
               },
               "selectors": {
                 "items": {
-                  "additionalProperties": false,
                   "properties": {
                     "key": {
                       "type": "string"
@@ -3552,8 +2574,6 @@
             "items": {
               "type": "string"
             },
-            "maxItems": 8,
-            "minItems": 1,
             "type": "array"
           },
           "from": {
@@ -3563,25 +2583,22 @@
             "type": "string"
           },
           "interval": {
-            "additionalProperties": false,
             "properties": {
               "end": {
+                "format": "date-time",
                 "type": "string"
               },
               "start": {
+                "format": "date-time",
                 "type": "string"
               }
             },
             "type": "object"
           },
           "max_hops": {
-            "maximum": 12,
-            "minimum": 1,
             "type": "integer"
           },
           "max_pairs": {
-            "maximum": 40,
-            "minimum": 1,
             "type": "integer"
           },
           "mode": {
@@ -3594,29 +2611,17 @@
             "type": "string"
           },
           "page": {
-            "additionalProperties": false,
             "properties": {
               "cursor": {
                 "type": "string"
               },
               "entries": {
-                "minimum": 1,
                 "type": "integer"
               }
             },
             "type": "object"
           },
-          "purpose": {
-            "enum": [
-              "continue",
-              "audit",
-              "history",
-              "answer"
-            ],
-            "type": "string"
-          },
           "review_token": {
-            "pattern": "^[0-9a-f]{64}$",
             "type": "string"
           },
           "to": {
@@ -3649,28 +2654,14 @@
         "openWorldHint": false,
         "readOnlyHint": false
       },
-      "description": "Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record. Arguments explained: kmp_guide topic view.",
+      "description": "Open a ChronoLoom view over an about so a human sees the memory you work on, with its link when the viewer is mounted. Guide topic: view.",
       "inputSchema": {
-        "additionalProperties": false,
         "properties": {
           "about": {
             "type": "string"
           },
-          "context_id": {
-            "type": "string"
-          },
           "expected_revision": {
-            "minimum": 1,
             "type": "integer"
-          },
-          "purpose": {
-            "enum": [
-              "continue",
-              "audit",
-              "history",
-              "answer"
-            ],
-            "type": "string"
           },
           "view_id": {
             "type": "string"
@@ -3689,28 +2680,23 @@
       },
       "annotations": {
         "destructiveHint": false,
+        "idempotentHint": true,
         "openWorldHint": false,
         "readOnlyHint": false
       },
-      "description": "Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace, whole paths. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase. Absence degrades rather than failing: a ref this store does not hold is dropped from the part that named it and listed in `unhonored`, and if none of the refs an intent names exist the view does not move at all and `applied` is false. Read `unhonored` — what is missing is always named there, never silently drawn. Arguments explained: kmp_guide topic view.",
+      "description": "Move an open view by declaring what it should show: focus, clock, zoom, dimensions, relation classes, selection, trace or paths. Guide topic: view.",
       "inputSchema": {
-        "additionalProperties": false,
         "properties": {
           "actor": {
             "type": "string"
           },
-          "context_id": {
-            "type": "string"
-          },
           "expected_revision": {
-            "minimum": 1,
             "type": "integer"
           },
           "explanation": {
             "type": "string"
           },
           "focus": {
-            "additionalProperties": false,
             "properties": {
               "refs": {
                 "items": {
@@ -3719,7 +2705,6 @@
                 "type": "array"
               },
               "time_range": {
-                "additionalProperties": false,
                 "properties": {
                   "axis": {
                     "enum": [
@@ -3731,9 +2716,11 @@
                     "type": "string"
                   },
                   "from": {
+                    "format": "date-time",
                     "type": "string"
                   },
                   "to": {
+                    "format": "date-time",
                     "type": "string"
                   }
                 },
@@ -3746,14 +2733,11 @@
             "type": "string"
           },
           "paths": {
-            "additionalProperties": false,
             "properties": {
               "from": {
                 "type": "string"
               },
               "max_hops": {
-                "maximum": 12,
-                "minimum": 1,
                 "type": "integer"
               },
               "to": {
@@ -3769,13 +2753,11 @@
             ]
           },
           "projection": {
-            "additionalProperties": false,
             "properties": {
               "abouts": {
                 "items": {
                   "type": "string"
                 },
-                "maxItems": 5,
                 "type": "array"
               },
               "dimensions": {
@@ -3786,7 +2768,6 @@
               },
               "labels": {
                 "items": {
-                  "additionalProperties": false,
                   "properties": {
                     "key": {
                       "type": "string"
@@ -3846,15 +2827,6 @@
             },
             "type": "object"
           },
-          "purpose": {
-            "enum": [
-              "continue",
-              "audit",
-              "history",
-              "answer"
-            ],
-            "type": "string"
-          },
           "search": {
             "type": [
               "string",
@@ -3868,7 +2840,6 @@
             ]
           },
           "target": {
-            "additionalProperties": false,
             "properties": {
               "about": {
                 "type": "string"
@@ -3877,7 +2848,6 @@
             "type": "object"
           },
           "trace": {
-            "additionalProperties": false,
             "properties": {
               "from": {
                 "type": "string"
@@ -3907,26 +2877,12 @@
         "anthropic/maxResultSizeChars": 10000
       },
       "annotations": {
-        "destructiveHint": false,
         "openWorldHint": false,
-        "readOnlyHint": false
+        "readOnlyHint": true
       },
-      "description": "Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels. Arguments explained: kmp_guide topic view.",
+      "description": "Read an open view's semantic state and who last moved it. Guide topic: view.",
       "inputSchema": {
-        "additionalProperties": false,
         "properties": {
-          "context_id": {
-            "type": "string"
-          },
-          "purpose": {
-            "enum": [
-              "continue",
-              "audit",
-              "history",
-              "answer"
-            ],
-            "type": "string"
-          },
           "view_id": {
             "type": "string"
           }
@@ -3940,36 +2896,24 @@
         "anthropic/maxResultSizeChars": 10000
       },
       "annotations": {
-        "destructiveHint": false,
         "openWorldHint": false,
-        "readOnlyHint": false
+        "readOnlyHint": true
       },
-      "description": "Open the brief capability map and persistent agent context. Start once with a unique registration_key; preserve the returned agent_id and context_id. Resume or expand a topic using context_id. After compaction use agent_id plus a new context_key, retaining the same agent. fold hides a topic without erasing its delivery record. This records served guidance, not understanding or authorization. Missing installed assets return explicit guide-sync repair instructions; preserve the selected store when applying them. Arguments explained: kmp_guide topic guide.",
+      "description": "Explain one topic before its first use: a worked card, its rules and its arguments; without a topic, list the topics.",
       "inputSchema": {
-        "additionalProperties": false,
         "properties": {
-          "agent_id": {
-            "type": "string"
-          },
-          "context_id": {
-            "type": "string"
-          },
-          "context_key": {
-            "type": "string"
-          },
-          "fold": {
-            "type": "boolean"
-          },
-          "registration_key": {
-            "type": "string"
-          },
           "topic": {
             "enum": [
               "wake",
               "write",
+              "relations",
+              "review",
+              "ingest",
+              "relabel",
               "ask",
               "time",
               "audit",
+              "trace",
               "condense",
               "relate",
               "curate",
@@ -4000,7 +2944,6 @@
       },
       "description": "Read one bounded, paginated ChronoLoom data chunk. This tool is available to the sandboxed MCP App only; its structured payload is not a model prompt.",
       "inputSchema": {
-        "additionalProperties": false,
         "properties": {
           "about": {
             "type": "string"
@@ -4015,20 +2958,15 @@
             "type": "string"
           },
           "bins": {
-            "maximum": 512,
-            "minimum": 1,
             "type": "integer"
           },
           "cursor": {
             "type": "string"
           },
           "depth": {
-            "maximum": 6,
-            "minimum": 1,
             "type": "integer"
           },
           "dimensions": {
-            "additionalProperties": false,
             "properties": {
               "abouts": {
                 "items": {
@@ -4072,7 +3010,6 @@
               },
               "selectors": {
                 "items": {
-                  "additionalProperties": false,
                   "properties": {
                     "key": {
                       "type": "string"
@@ -4105,11 +3042,10 @@
             "type": "object"
           },
           "from": {
+            "format": "date-time",
             "type": "string"
           },
           "limit": {
-            "maximum": 2048,
-            "minimum": 1,
             "type": "integer"
           },
           "lod": {
@@ -4121,6 +3057,7 @@
             "type": "string"
           },
           "to": {
+            "format": "date-time",
             "type": "string"
           }
         },
@@ -4150,7 +3087,6 @@
       },
       "description": "Read bounded node headers and coordinates from one snapshot for ChronoLoom framing. No canonical bodies or evidence are loaded. Available only to the MCP App.",
       "inputSchema": {
-        "additionalProperties": false,
         "properties": {
           "about": {
             "type": "string"
@@ -4159,17 +3095,12 @@
             "type": "string"
           },
           "max_edges": {
-            "default": 2048,
-            "maximum": 32768,
-            "minimum": 1,
             "type": "integer"
           },
           "refs": {
             "items": {
               "type": "string"
             },
-            "maxItems": 64,
-            "minItems": 1,
             "type": "array"
           }
         },
@@ -4198,7 +3129,6 @@
       },
       "description": "Undo the latest semantic view move. This is an app-only transport adapter over the same reversible view aggregate used by the loopback renderer.",
       "inputSchema": {
-        "additionalProperties": false,
         "properties": {
           "view_id": {
             "type": "string"
@@ -4225,10 +3155,8 @@
       },
       "description": "Take human control of the current frame without moving it. Refuses a stale revision. App-only adapter over the shared view aggregate.",
       "inputSchema": {
-        "additionalProperties": false,
         "properties": {
           "expected_revision": {
-            "minimum": 1,
             "type": "integer"
           },
           "view_id": {
