@@ -411,6 +411,14 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
 
 ### Fixed
 
+- `kmp-mcp doctor` gives one cause one failure. A database lost beside proof
+  of memory is the Memory section's `FAIL` alone: the Database section no
+  longer adds a second one ("injected schema objects") for the same empty
+  file, and Memory no longer ends with `no store yet — it is created on first
+  write` after a refusal. A 0-byte `kernel.sqlite3` with no proof of memory is
+  what the server opens as a new store, and doctor now says so (`ok  the
+  database file is empty, and nothing shows it held memory`) instead of
+  failing it.
 - A store leaves its proof of memory however it was first written. The first
   commit that appends an event writes `held-memory` beside `FORMAT_VERSION`
   (and a writable open of a store that already holds events writes it too).
