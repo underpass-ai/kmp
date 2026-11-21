@@ -60,6 +60,7 @@ its store.
 | `rerank.json` | Off | Re-rank Ask candidates with Jev (`pool_size` 1–400 is required). [Configuration](../development/evidence-rerank.md). | Yes |
 | `wake-focus.json` | Off | Focus a Wake with an `intent` through Jev. Same shape as `rerank.json`. | Yes |
 | `ask-judge.json` | Off | The doubt band: Jev judges asks the gate settled in doubt. `{}` takes the defaults. [Doubt band](README.md#the-doubt-band-opt-in-sends-text-to-typesafe). | Yes |
+| `ask-cross-language.json` | Off | Jev as the cross-language judge of Ask: `veto` (keep a translated citation only on a yes at `keep_at`, 0.7) and `rescue` (cite one memory the lexical bridge reached in another language for an unanchored UNKNOWN, at `rescue_at`, 0.9), each off unless named. [Cross-language judge](README.md#the-cross-language-judge-opt-in-sends-text-to-typesafe). | Yes |
 | `write-relations.json` | Off | Jev proposes relations for memories just written. | Yes |
 | `write-expansions.json` | Off | Keep writer-proposed search expansions that Jev accepts. [Write expansions](README.md#search-expansions-at-write-opt-in-sends-text-to-typesafe). | Yes |
 | `judgement-book.json` | Verdict book on, 64 MiB | `max_bytes` (1 MiB – 4 GiB) for `judgements.sqlite3`, or `{"mode":"off"}`. It never turns judging on by itself. | Yes |

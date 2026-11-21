@@ -260,21 +260,27 @@ beside the store; each effect is off unless the file names it:
 {"veto": true, "rescue": true}
 ```
 
-- **Veto** (`veto_at`, default 0.5). An answer that stands only because the
+Jev makes one judgement per passage, a Noul: "Does `passage` state the
+answer to `user_question`?", with the language the kernel read for each side
+given as a fact (`user_question_language`, `passage_language`) and criteria
+that name the confusing case ("the passage is about the same subject but does
+not state the asked fact"). Code decides: a Noul reads yes at or above its
+line, no at or below 0.3, and unsettled in between.
+
+- **Veto** (`keep_at`, default 0.7). An answer that stands only because the
   table translated what its citations state in another language — an
   anchored verdict the table lifted, or an unanchored core every citation of
   which is in another language and carried by `bridged_terms` — is asked
-  about: one noul per citation, "Does `passage` state the answer to the
-  question in the state? It may be written in another language." A citation
-  Jev finds at least `veto_at` likely not to state it leaves the core,
-  marked `judged_out`, and the gate decides again over what is left. A veto
-  only takes answers away.
+  about, one Noul per citation. A citation stays only on a yes; one judged
+  no or unsettled leaves the core, marked `judged_out`, and the gate decides
+  again over what is left. A veto only takes answers away.
 - **Rescue** (`rescue_at`, default 0.9). An UNKNOWN to a question that names
   no required anchor, for which the table reached memories written in
   another language (`reached_by: bridge` or `bridged_terms`), is asked about
-  up to eight of them, plus a companion noul: "Can the question in the state
-  be answered from `passages`?". The likeliest passage is cited only when it
-  and the companion both reach `rescue_at`. The citation is the stored
+  up to eight of them, plus a companion Noul: "Can `user_question` be
+  answered from `passages`?". The likeliest passage is cited only when it
+  and the companion both read yes at `rescue_at`; anything else, unsettled
+  included, leaves the UNKNOWN. The citation is the stored
   memory, marked `judged_by`, `judged_permille` and `judged_template`
   (`cross_language.v1`); the confidence is never `high`; the summary says it
   rests on Jev's judgement, not on the question's own words.
@@ -286,7 +292,8 @@ anchor (an anchored question is never rescued) and never writes text.
 
 The judge asks through the verdict book under its own site
 (`cross_language`), with the 1.5 s deadline of the first page: past it, or
-when Jev fails, the deterministic answer stands with a warning and the
+when Jev fails, the deterministic answer stands with a warning (a missing
+answer is never read as a no) and the
 verdict lands in the book for the next ask. A continuation never asks. When
 both this file and `ask-judge.json` are present, an ask that enters one of
 these two entries is judged here and not by the doubt band; one judge is
