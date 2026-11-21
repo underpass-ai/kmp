@@ -416,6 +416,11 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
   byte as `"to": "ref"`. It was refused under `trace.bidirectional`; two or
   more refs still are. A list of one without `bidirectional` stays the bounded
   search it asks for. `tools/list` is unchanged.
+- ChronoLoom without WebGL no longer covers its "3D scene cannot start"
+  message with the loading indicator. The scene loader settled only after
+  the next scene paint, and a scene that cannot draw has none: once the
+  renderer is unavailable the scene loader goes at once and stays away,
+  while the detail loader still works.
 - `kmp_ask` no longer answers what is not stored when the lexical-bridge table
   `kmp-mcp setup` installs is present. The table is built from a multilingual
   embedding, so besides translations it pairs neighbours inside one language

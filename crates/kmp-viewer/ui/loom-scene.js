@@ -81,6 +81,7 @@ KMP_APP.scene = (() => {
     $("scene-empty").hidden = true;
     $("scene-unavailable-reason").textContent = reason ? `The browser said: ${reason}` : "";
     $("scene-unavailable").hidden = false;
+    KMP_APP.loadingView?.halt("scene");
   }
   async function setup() {
     renderer?.dispose();
