@@ -6,6 +6,8 @@
 //! relative path, `./`, a symlinked directory or a store pinned by
 //! `KMP_MCP_DATA_DIR` (as a host that manages its store does) replaced a
 //! committed bundle holding other abouts with one holding only the named one.
+//! Nothing else may land there either: no local about (the shipped guide, the
+//! demo) from a pinned store, and no `document --out`.
 #[path = "support/isolated_home.rs"]
 mod isolated_home;
 
@@ -307,4 +309,134 @@ fn a_symlink_to_the_committed_file_or_its_directory_is_the_committed_file() {
     let reported: Value = serde_json::from_slice(&output.stdout).expect("export JSON");
     assert_eq!(reported["exported_to"], "link.jsonl");
     assert_eq!(committed(&project), both_abouts());
+}
+
+fn pinned(project: &Path) -> PathBuf {
+    project.join(".kernel")
+}
+
+#[test]
+fn a_pinned_whole_export_leaves_the_local_abouts_out_and_an_unpinned_session_sees_no_diff() {
+    let fixture = Fixture::new();
+    let project = fixture.case(&fixture.both, "pinned-local");
+    let store = pinned(&project);
+    let pin = [("KMP_MCP_DATA_DIR", store.as_path())];
+    let demo = kmp(&project, &fixture.home, &["demo", "--no-viewer"], &pin, "");
+    assert!(demo.status.success(), "{demo:?}");
+
+    // Another file keeps today's behaviour: everything the store holds.
+    let output = fixture.export_pinned(&project, &["backup.jsonl"]);
+    assert!(output.status.success(), "{output:?}");
+    let backup = std::fs::read_to_string(project.join("backup.jsonl")).expect("backup");
+    let backup = kmp_embedded::verify_bundle(&backup).expect("verifies");
+    assert!(
+        backup
+            .abouts
+            .iter()
+            .any(|about| about == "example:kmp-demo"),
+        "{:?}",
+        backup.abouts
+    );
+
+    // The committed file never takes a local about, whoever chose the store.
+    let head = project.join(".kmp/memory.jsonl");
+    let head_arg = head.to_str().expect("utf-8 path");
+    let output = fixture.export_pinned(&project, &[head_arg]);
+    assert!(output.status.success(), "{output:?}");
+    assert_eq!(committed(&project), both_abouts());
+    let output = fixture.export_pinned(&project, &[head_arg, "--about", "example:kmp-demo"]);
+    assert_eq!(output.status.code(), Some(2), "{output:?}");
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("belongs to this machine"), "{stderr}");
+    assert_eq!(committed(&project), both_abouts());
+
+    // The project's own store opens the same `.kernel/` unpinned: neither a
+    // session nor an export changes a byte of the committed file.
+    let before = std::fs::read(&head).expect("committed bytes");
+    let wake = json!({"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+        "params": {"name": "kmp_wake", "arguments": {"about": "project:a"}}});
+    let session = kmp(&project, &fixture.home, &[], &[], &format!("{wake}\n"));
+    assert!(session.status.success(), "{session:?}");
+    assert_eq!(std::fs::read(&head).expect("after session"), before);
+    let output = fixture.export(&project, &[]);
+    assert!(output.status.success(), "{output:?}");
+    assert_eq!(std::fs::read(&head).expect("after export"), before);
+}
+
+#[test]
+fn document_never_writes_over_the_committed_file() {
+    let fixture = Fixture::new();
+    let project = fixture.case(&fixture.both, "document");
+    let head = project.join(".kmp/memory.jsonl");
+    let before = std::fs::read(&head).expect("committed bytes");
+    let mut paths = vec![
+        ".kmp/memory.jsonl".to_string(),
+        "./.kmp/memory.jsonl".to_string(),
+        head.to_str().expect("utf-8 path").to_string(),
+    ];
+    #[cfg(unix)]
+    {
+        std::os::unix::fs::symlink(&head, project.join("link.md")).expect("file link");
+        std::os::unix::fs::symlink(project.join(".kmp"), project.join("alias")).expect("dir link");
+        paths.extend(["link.md".to_string(), "alias/memory.jsonl".to_string()]);
+    }
+    let store = pinned(&project);
+    for path in &paths {
+        for env in [&[][..], &[("KMP_MCP_DATA_DIR", store.as_path())][..]] {
+            let output = kmp(
+                &project,
+                &fixture.home,
+                &["document", "project:a", "--out", path],
+                env,
+                "",
+            );
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            assert_eq!(output.status.code(), Some(2), "{path}: {stderr}");
+            assert!(stderr.contains("committed"), "{path}: {stderr}");
+            assert!(stderr.contains(path.as_str()), "{path}: {stderr}");
+            assert_eq!(std::fs::read(&head).expect("untouched"), before, "{path}");
+        }
+    }
+
+    // Any other file, and stdout, still take the document.
+    let output = kmp(
+        &project,
+        &fixture.home,
+        &["document", "project:a", "--out", "notes.md"],
+        &[],
+        "",
+    );
+    assert!(output.status.success(), "{output:?}");
+    let notes = std::fs::read_to_string(project.join("notes.md")).expect("notes");
+    assert!(notes.contains("project:a"), "{notes}");
+    let output = kmp(&project, &fixture.home, &["document", "project:a"], &[], "");
+    assert!(output.status.success(), "{output:?}");
+}
+
+#[test]
+fn snapshot_create_leaves_the_committed_file_untouched() {
+    let fixture = Fixture::new();
+    let project = fixture.case(&fixture.both, "snapshot");
+    let head = project.join(".kmp/memory.jsonl");
+    let before = std::fs::read(&head).expect("committed bytes");
+    let output = kmp(
+        &project,
+        &fixture.home,
+        &["snapshot", "create", "before-1.0"],
+        &[],
+        "",
+    );
+    assert!(output.status.success(), "{output:?}");
+    assert!(project.join(".kmp/snapshots/before-1.0.jsonl").is_file());
+    assert_eq!(std::fs::read(&head).expect("after snapshot"), before);
+    // A name cannot reach the committed file.
+    let output = kmp(
+        &project,
+        &fixture.home,
+        &["snapshot", "create", "../memory"],
+        &[],
+        "",
+    );
+    assert_eq!(output.status.code(), Some(2), "{output:?}");
+    assert_eq!(std::fs::read(&head).expect("after refusal"), before);
 }

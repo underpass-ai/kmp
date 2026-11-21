@@ -48,7 +48,7 @@ listed by the server's `tools/list` and explained by `kmp_guide`.
 | `kmp-mcp demo [--no-viewer] [--dry-run]` | Writes the worked example (about `example:kmp-demo`) into the store selected here and opens ChronoLoom on it. Idempotent. It never writes a project's store: inside a project it writes the store a directory outside any project would open (the saved selection, else the per-user default) and says so, so it stays out of the committed bundle and snapshots. `KMP_MCP_DATA_DIR` still decides when set. `--dry-run` only says where it would write. |
 | `kmp-mcp memories [--json]` | Every store this machine knows, how it is reached, its format, size and abouts. Opens nothing for use. |
 | `kmp-mcp memories register <absolute-path>` | Adds an existing store directory to that list. |
-| `kmp-mcp document <about> [--out FILE]` | Renders one about as Markdown. |
+| `kmp-mcp document <about> [--out FILE]` | Renders one about as Markdown. Refuses an `--out` that is a committed `.kmp/memory.jsonl`, however it is named. |
 | `kmp-mcp summaries pending [<about>…] [--json]` | Lists memories that owe an English search summary (`summary_en`). |
 | `kmp-mcp viewer [addr]` | Serves ChronoLoom without an agent session, on a loopback address (default `127.0.0.1:7317`). |
 
@@ -81,7 +81,15 @@ the ways out:
 | The store and the file are different histories | The steps the refusal prints. |
 
 `--overwrite-committed` replaces the file anyway. An export to any other file
-is written as asked. `--about` over a committed file that holds only the named
+is written as asked.
+
+A committed `.kmp/memory.jsonl` holds only the project's own memory. Whatever
+`export` writes there leaves out the abouts that belong to this machine (the
+shipped guide and `example:kmp-demo`), also from a store pinned by
+`KMP_MCP_DATA_DIR`, and `--about` naming one of them is refused there. An
+export to any other file keeps them. No other verb writes the file:
+`document --out` refuses it, and `snapshot create` writes under
+`.kmp/snapshots/`. `--about` over a committed file that holds only the named
 abouts, each a prefix of what the store holds, is an ordinary save.
 
 Bundles and formats: [Store format](store-format.md).

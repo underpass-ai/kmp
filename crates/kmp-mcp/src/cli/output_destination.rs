@@ -1,17 +1,19 @@
-//! Where `export` writes, decided from the file itself and not from how the
+//! Where a verb writes, decided from the file itself and not from how the
 //! path was spelled or how the store was chosen.
 //!
 //! `.kmp/memory.jsonl` is committed memory whichever way it is named: with no
 //! file, as `.kmp/memory.jsonl`, as an absolute path, through a symlinked
 //! directory, or with the store pinned by `KMP_MCP_DATA_DIR` (as a host that
 //! manages its own store does). Comparing the spelling let every form but the
-//! exact absolute one skip the guard that keeps a teammate's events.
+//! exact absolute one skip the guard that keeps a teammate's events. Every
+//! verb that takes an output file (`export`, `document --out`) resolves it
+//! here, so none of them writes over committed memory by another name.
 
 use std::path::{Component, Path, PathBuf};
 
-/// One `export` destination, resolved once.
+/// One output file, resolved once.
 #[derive(Debug)]
-pub(super) struct ExportDestination {
+pub(super) struct OutputDestination {
     /// The path as the operator gave it (or the project head when none was):
     /// reported back unchanged, so a caller reads what it asked for.
     pub(super) given: PathBuf,
@@ -21,11 +23,12 @@ pub(super) struct ExportDestination {
     /// The store's own committed file: the catch-up, the guide exclusion and
     /// `--repair-pending` apply.
     pub(super) is_project_head: bool,
-    /// Any `.kmp/memory.jsonl`, this store's or not: the guard applies.
+    /// Any `.kmp/memory.jsonl`, this store's or not: only a bundle that
+    /// keeps its events and leaves out the local abouts may land there.
     pub(super) is_committed: bool,
 }
 
-impl ExportDestination {
+impl OutputDestination {
     pub(super) fn resolve(given: PathBuf, project_head: Option<&Path>) -> Self {
         let real = real_location(&given);
         let is_project_head = project_head.is_some_and(|head| real_location(head) == real);
@@ -105,18 +108,18 @@ mod tests {
         let head = root.join(".kmp/memory.jsonl");
 
         // Absent: a first save resolves to the head as well.
-        let absent = ExportDestination::resolve(root.join("./.kmp/memory.jsonl"), Some(&head));
+        let absent = OutputDestination::resolve(root.join("./.kmp/memory.jsonl"), Some(&head));
         assert!(absent.is_project_head && absent.is_committed, "{absent:?}");
 
         std::fs::create_dir_all(root.join(".kmp")).expect("bundle dir");
         std::fs::write(&head, "x").expect("bundle");
-        let dotted = ExportDestination::resolve(root.join("sub/../.kmp/memory.jsonl"), Some(&head));
+        let dotted = OutputDestination::resolve(root.join("sub/../.kmp/memory.jsonl"), Some(&head));
         assert!(dotted.is_project_head, "{dotted:?}");
 
-        let elsewhere = ExportDestination::resolve(root.join("backup.jsonl"), Some(&head));
+        let elsewhere = OutputDestination::resolve(root.join("backup.jsonl"), Some(&head));
         assert!(!elsewhere.is_project_head && !elsewhere.is_committed);
 
-        let pinned = ExportDestination::resolve(head.clone(), None);
+        let pinned = OutputDestination::resolve(head.clone(), None);
         assert!(!pinned.is_project_head && pinned.is_committed, "{pinned:?}");
         assert_eq!(pinned.write_to, head);
     }
@@ -132,12 +135,12 @@ mod tests {
         std::os::unix::fs::symlink(&head, root.join("link.jsonl")).expect("file link");
         std::os::unix::fs::symlink(root.join(".kmp"), root.join("alias")).expect("dir link");
 
-        let link = ExportDestination::resolve(root.join("link.jsonl"), Some(&head));
+        let link = OutputDestination::resolve(root.join("link.jsonl"), Some(&head));
         assert!(link.is_project_head, "{link:?}");
         assert_eq!(link.write_to, head);
         assert_eq!(link.given, root.join("link.jsonl"));
 
-        let alias = ExportDestination::resolve(root.join("alias/memory.jsonl"), Some(&head));
+        let alias = OutputDestination::resolve(root.join("alias/memory.jsonl"), Some(&head));
         assert!(alias.is_project_head, "{alias:?}");
         assert_eq!(alias.write_to, root.join("alias/memory.jsonl"));
     }

@@ -460,6 +460,15 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
 
 ### Fixed
 
+- Nothing but the project's own memory lands in a committed
+  `.kmp/memory.jsonl`. A whole `kmp-mcp export` to it from a store pinned by
+  `KMP_MCP_DATA_DIR` wrote the shipped guide and `example:kmp-demo` into the
+  committed file, because only the store's own head left the local abouts
+  out; now every committed destination does, and `--about` naming a local
+  about is refused there. An export to another file keeps them.
+  `kmp-mcp document <about> --out .kmp/memory.jsonl` (in any spelling,
+  through a symlink) replaced the committed memory with Markdown; it is now
+  refused, naming the file and why.
 - `kmp-mcp export` no longer drops committed memory when the committed
   `.kmp/memory.jsonl` is named instead of left implicit. The guard compared
   the spelling of the path with the project head, so `export
