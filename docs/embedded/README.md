@@ -196,6 +196,15 @@ questions the table leaves 20 `high` answers, 19 of them right, and the
 one-sided Clopper-Pearson bound (δ = 0.1) is 0.82, short of the 0.95 it must
 reach before it is turned on.
 
+With a lexical-bridge table installed (`kmp-mcp setup` installs one), the
+gate and the ⌈2/3⌉ focus of a strict policy count a bridged word as stating
+what was asked only when the question and the memory are written in two
+different languages; inside one language a memory must state it in the
+reader's words. An answer the gate gives only because the table translated a
+concept is `medium` at most. Until this was fixed the table's same-language
+neighbours (`deadline≈final`) could answer a question whose attribute is not
+stored, at `high`; see [languages](languages.md).
+
 Two measured variants are off by default. `"attribute_check":true` holds a
 `high` the gate did not decide (no anchor) to a citation that states, in its
 own words, the attribute the question asks for (the word after «quién» /

@@ -7,6 +7,7 @@ use super::gate_verdict::GateVerdict;
 use super::question_anchor::QuestionAnchor;
 use super::question_contract::QuestionContract;
 use super::question_form::QuestionForm;
+use super::stated_by::StatedBy;
 use super::subject_concept::SubjectConcept;
 
 /// The anchored decision of `evidence_or_unknown` and `show_conflicts`.
@@ -47,16 +48,22 @@ impl<'a> AnchoredGate<'a> {
     }
 
     /// Decides over the candidates the question reached in its own words, in
-    /// rank order. `answers(concept, terms)` is the match the focus rule
-    /// makes — stem, concept key or the lexical bridge — over the
-    /// candidate's content alone.
+    /// rank order. `answers(concept, item, terms)` is the match the focus
+    /// rule makes over the candidate's content alone: in the reader's words
+    /// (stem or concept key), or through the lexical bridge onto a memory
+    /// written in another language, or not at all.
+    ///
+    /// The reader's words decide first. Only when they leave the question
+    /// short does a translated concept count, and a verdict it lifts says so
+    /// (`translated`), so the response never reads it as `high`. Without a
+    /// table nothing is translated and this is the decision it always was.
     pub(super) fn decide<'e>(
         &self,
         principal: &QuestionAnchor,
         others: &[QuestionAnchor],
         ranked: impl IntoIterator<Item = (&'e MemoryEvidence, &'e AnswerCandidateTerms)>,
         rescue: &AnchorRescue,
-        answers: impl Fn(&SubjectConcept, &AnswerCandidateTerms) -> bool,
+        answers: impl Fn(&SubjectConcept, &MemoryEvidence, &AnswerCandidateTerms) -> Option<StatedBy>,
     ) -> GateVerdict {
         let core = ranked
             .into_iter()
@@ -67,17 +74,16 @@ impl<'a> AnchoredGate<'a> {
             return GateVerdict::unknown(UnknownReason::NoBearing, Vec::new());
         }
         let subject = self.contract.subject();
-        let stated = |terms: &AnswerCandidateTerms| {
-            subject
-                .iter()
-                .map(|concept| answers(concept, terms))
-                .collect::<Vec<_>>()
-        };
-        let per_item = core
+        let statements = core
             .iter()
-            .map(|(_, terms)| stated(terms))
+            .map(|(item, terms)| {
+                subject
+                    .iter()
+                    .map(|concept| answers(concept, item, terms))
+                    .collect::<Vec<_>>()
+            })
             .collect::<Vec<_>>();
-        let mut missing = others
+        let missing = others
             .iter()
             .filter(|anchor| {
                 !core
@@ -86,6 +92,42 @@ impl<'a> AnchoredGate<'a> {
             })
             .map(|anchor| anchor.written.clone())
             .collect::<Vec<_>>();
+        let cited = core
+            .iter()
+            .map(|(item, _)| item.id.clone())
+            .collect::<Vec<_>>();
+        let read = |counts: fn(Option<StatedBy>) -> bool| {
+            statements
+                .iter()
+                .map(|item| {
+                    item.iter()
+                        .map(|stated| counts(*stated))
+                        .collect::<Vec<_>>()
+                })
+                .collect::<Vec<_>>()
+        };
+        let own_words = read(|stated| stated == Some(StatedBy::OwnWords));
+        let translated = read(|stated| stated.is_some());
+        let in_own_words = self.settle(&own_words, missing.clone(), cited.clone());
+        if in_own_words.status == AnswerStatus::Answered || own_words == translated {
+            return in_own_words;
+        }
+        let through_table = self.settle(&translated, missing, cited);
+        let lifted = through_table.status != in_own_words.status;
+        GateVerdict {
+            translated: lifted,
+            ..through_table
+        }
+    }
+
+    /// The verdict over which subject concepts each cited memory states.
+    fn settle(
+        &self,
+        per_item: &[Vec<bool>],
+        mut missing: Vec<String>,
+        cited: Vec<String>,
+    ) -> GateVerdict {
+        let subject = self.contract.subject();
         let enumerative = self.contract.form() == QuestionForm::Enumerative;
         let found = if enumerative {
             // Each concept in some cited memory.
@@ -118,13 +160,13 @@ impl<'a> AnchoredGate<'a> {
             .filter(|(_, stated)| !**stated)
             .map(|(concept, _)| concept.written.clone())
             .collect::<Vec<_>>();
-        let cited = core.iter().map(|(item, _)| item.id.clone()).collect();
         if missing.is_empty() && stated_count >= required {
             return GateVerdict {
                 status: AnswerStatus::Answered,
                 reason: UnknownReason::Unspecified,
                 core: cited,
                 missing,
+                translated: false,
             };
         }
         missing.extend(subject_missing);
@@ -138,6 +180,7 @@ impl<'a> AnchoredGate<'a> {
                 reason: UnknownReason::Unspecified,
                 core: cited,
                 missing,
+                translated: false,
             };
         }
         GateVerdict::unknown(UnknownReason::AttributeNotFound, missing)

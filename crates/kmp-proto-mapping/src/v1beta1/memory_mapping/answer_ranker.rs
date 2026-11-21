@@ -22,6 +22,7 @@ use super::bridged_term::BridgedTerm;
 use super::candidate_temporal_state::CandidateTemporalState;
 use super::concept_coverage::ConceptCoverage;
 use super::content_scores::ContentScores;
+use super::cross_language::CrossLanguage;
 use super::doubt_verdicts::DoubtVerdicts;
 use super::expansion_rescue::ExpansionRescue;
 use super::gate_doubt::GateDoubt;
@@ -42,6 +43,7 @@ use super::search_terms::{
     concept_count, informative_term_counts, informative_terms, informative_tokens, matching_terms,
     search_key, strict_answer_focus_terms,
 };
+use super::stated_by::StatedBy;
 
 pub(super) const ANSWER_CORE_LIMIT: usize = 5;
 
@@ -792,12 +794,14 @@ impl<'a> AnswerEvidenceRanker<'a> {
                     .filter(|(item, _)| within.is_none_or(|ids| ids.contains(&item.id)))
                     .map(|(item, terms)| (*item, terms)),
                 &rescue,
-                |concept, terms| {
+                |concept, item, terms| {
                     if concept.literal {
-                        terms.content.contains(&concept.key)
+                        terms
+                            .content
+                            .contains(&concept.key)
+                            .then_some(StatedBy::OwnWords)
                     } else {
-                        lexicon.content_focus_matches(&BTreeSet::from([concept.key.clone()]), terms)
-                            > 0
+                        lexicon.content_statement(&concept.key, item, terms)
                     }
                 },
             )
@@ -1169,7 +1173,8 @@ impl<'a> AnswerEvidenceRanker<'a> {
     }
 
     /// The best share of the question any retained item covers, counting a
-    /// concept the table bridged as covered.
+    /// concept the table bridged onto a memory written in another language
+    /// as covered ([`CrossLanguage`]).
     fn bridged_coverage(&self, question: &str, evidence: &[MemoryEvidence]) -> f64 {
         if self.bridge.is_silent() {
             return 0.0;
@@ -1182,11 +1187,17 @@ impl<'a> AnswerEvidenceRanker<'a> {
             evidence.iter().map(|item| item.text.as_str()),
             self.bridge,
         );
+        let crossing = CrossLanguage::of_question(question);
         evidence
             .iter()
             .map(|item| {
+                let translated = if crossing.crosses_to(&item.text) {
+                    bridged.as_slice()
+                } else {
+                    &[]
+                };
                 BridgedKey::coverage(
-                    &bridged,
+                    translated,
                     &question_counts,
                     &AnswerCandidateTerms::from_evidence(item, &self.context),
                 )
