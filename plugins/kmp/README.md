@@ -1,11 +1,11 @@
 # KMP plugin — discovery for agents and humans
 
 <!-- kmp:public-overview:begin -->
-KMP is local-first memory for coding agents. It runs beside Codex, Claude Code
-and Hermes Agent as one small binary with an embedded SQLite store, and it
-remembers what was decided, what the evidence was and when it happened. Never
-the transcript. No account, no service, no API key: memory stays on your
-machine.
+KMP is local-first memory for coding agents. It runs beside Claude Code,
+Codex, Hermes Agent or Pi as one small binary with an embedded SQLite store,
+and it remembers what was decided, what the evidence was and when it
+happened. Never the transcript. No account, no service, no API key: memory
+stays on your machine.
 
 Ask your agent **"Why did we choose SQLite?"** and it answers from stored
 evidence, or says `UNKNOWN` instead of guessing. Ask **"Show me the memory
@@ -18,8 +18,9 @@ surface.
 <!-- kmp:public-overview:end -->
 
 The native plugin supplies skills, host discovery and one MCP registration
-for Codex and Claude Code. Setup installs the matching engine. Hermes Agent
-uses the native lifecycle described below. Project instructions can opt into
+for Claude Code and Codex. Setup installs the matching engine. Hermes Agent
+and the Pi coding agent use the native lifecycle described below. The host
+and platform matrix is in [Install](../../docs/install.md). Project instructions can opt into
 memory routing; setup does not edit `AGENTS.md` or `CLAUDE.md`.
 
 ## Install
@@ -152,21 +153,18 @@ The Pi agent home is resolved the way Pi resolves it: `$PI_CODING_AGENT_DIR`
 The package's extension runs `kmp-mcp` from `PATH`, so `kmp-mcp doctor`
 inventories Pi as a peer host with the same engine proof as Codex and Hermes.
 
-### The guide arrives on its own
+### The guide needs no step
 
-Setup installs the assets without writing a store. `kmp_guide` needs none of
-them: its cards ship inside the engine. The first read of a guide node on a
-fresh embedded store seeds both
-installed guides from the assets that match the engine: the plugin root the
-launcher names in `KMP_PLUGIN_ROOT`, the plugin a bundled engine lives in, or
-the Claude or Codex plugin cache for this version. It happens once per session,
-through the ordinary writer, and the guide abouts never enter a project's
-committed bundle. `/kmp:guide` in Claude Code, or `kmp-guide` in Codex, still
-opens the human guide in ChronoLoom and forces a refresh when an upgraded guide
-must replace a partial or older one. A store with no matching assets anywhere
-returns `GUIDE_UNAVAILABLE`, naming where it looked and the explicit
-`kmp-mcp guide sync` repair; a shared gRPC kernel always uses that explicit
-sync.
+`kmp_guide {topic}` serves every topic from cards compiled into the engine.
+It reads no store and writes none, and answers the same on every install.
+Setup installs the plugin's guide assets without writing a store.
+
+The longer stored guides (`guide:kmp-agent` for agents, `guide:kmp` for
+people) are installed into a store only on request: `/kmp:guide` in Claude
+Code, `kmp-guide` in Codex, or `kmp-mcp guide sync --plugin-root <dir>`. A read
+never installs them: `kmp_inspect` of a guide node on a store without them
+answers `GUIDE_UNAVAILABLE`, naming that repair. The guide abouts never enter
+a project's committed bundle.
 
 ### See something in the first minute
 
@@ -269,9 +267,8 @@ with the kernel. The skill teaches the shape; the schema carries the truth.
 `kmp_guide` is a plain topic lookup served by the engine itself: one worked
 card per topic, with the meaning of each argument of the tools it teaches.
 Nothing is registered or recorded, and a refusal ends with one line naming the
-topic to read. The longer versioned lessons reach a fresh store on the first
-guide read;
-`/kmp:guide` refreshes them explicitly when needed. The separate `guide:kmp` is
+topic to read. The longer versioned lessons are installed into a store only
+by `/kmp:guide` (or `kmp-mcp guide sync`). The separate `guide:kmp` is
 for people and opens visually in ChronoLoom.
 
 The payoff appears on the read path: `kmp_wake` reconstructs the causal
@@ -312,8 +309,8 @@ look identical from inside a session — the `kmp_*` tools are simply not
 there. It separates them:
 
 - **binary** — installed, on `PATH`, and its version;
-- **backend** — embedded, grpc or fixture. It flags `fixture` loudly: those
-  responses look real and are canned;
+- **backend** — embedded or grpc. A release binary refuses `fixture`, the
+  canned test backend;
 - **data directory** — which one wins under the resolution order
   (`KMP_MCP_DATA_DIR` → project `.kernel/` → the selection saved with
   `kmp-mcp config memory-store` → XDG fallback), and why;
@@ -324,16 +321,16 @@ there. It separates them:
   ran, it says *unverified* rather than usable — a registration in an
   inventory is not a conversation that can call a tool.
 
-For Codex it also detects obsolete global wiring. If an enabled plugin and a
-global `mcp_servers.kmp` table both claim the server, Doctor names both owners
-and the global store-affecting environment instead of declaring the setup
-healthy.
+It reads each host's own inventory (for Codex, `codex plugin list` and
+`codex mcp list`). A hand-written `[mcp_servers.kmp]` table in
+`~/.codex/config.toml` beside the plugin may not show there; the
+`kmp-mcp uninstall` preview names it. Do not add one.
 
 Two failures it names rather than leaving you to guess: an unsupported store
-format, which current KMP detects but deliberately does not open — Doctor
-points to the external archive-export contract and leaves the bytes untouched
-— and a session that started before the registration changed and is still
-carrying the old inventory. The second one cannot be fixed from inside the
+format, which current KMP detects but deliberately does not open, leaving the
+bytes untouched ([Store format](../../docs/embedded/store-format.md)), and a
+session that started before the registration changed and is still carrying
+the old inventory. The second one cannot be fixed from inside the
 session; you have to restart it.
 
 Run it directly, without a host:
@@ -348,9 +345,11 @@ The plugin registers the **embedded** backend: the kernel runs inside the
 binary, with a local SQLite store selected by the precedence described above.
 For a shared deployed kernel, select the gRPC backend and configure
 `KMP_KERNEL_GRPC_ENDPOINT` and the deployment credentials. Core memory calls
-share the public contract, but backend support has limits: the summaries audit
-is unavailable over gRPC, and the embedded loopback viewer requires the local
-backend. See the [enterprise guide](../../docs/enterprise/README.md).
+share the public contract, but backend support has limits: `kmp_curate` and
+`kmp_summaries_audit` are unavailable over gRPC, the local-store commands
+refuse to run, and the embedded loopback viewer requires the local backend.
+The gRPC backend is experimental. See the
+[enterprise guide](../../docs/enterprise/README.md).
 
 See [Embedded KMP](https://github.com/underpass-ai/kmp/blob/main/docs/embedded/README.md)
 for the current local mode, storage and maintenance contract.

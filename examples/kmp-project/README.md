@@ -17,9 +17,11 @@ answer from it before touching a file.
   embedded store as the default path.
 - **Documentation**: the canonical public-overview block; generated guides
   from one editorial source; no benchmark numbers in the README.
-- **Agent surface**: setup never writes memory; the guide used to need an
-  explicit sync and is now seeded on the first read; parameter prose moved
-  from `tools/list` to `kmp_guide` after a measurement named it as the cost.
+- **Agent surface**: setup never writes memory; the guide first needed an
+  explicit sync and was later seeded on the first read (1.0 replaces that
+  with a stateless `kmp_guide` served from the engine, a decision this
+  memory does not record yet); parameter prose moved from `tools/list` to
+  `kmp_guide` after a measurement named it as the cost.
 - **Storage**: the 0.25.0 store selection order and the saved-selection
   behavior it replaced, with the observation that motivated the change.
 - **Release**: the catalog advances only after every asset is public; the

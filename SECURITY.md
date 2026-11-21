@@ -2,9 +2,11 @@
 
 ## Supported versions
 
-Security fixes land on the actively maintained `main` branch and are shipped
-in the next release. Only the latest published release is supported; older
-versions should be upgraded before reporting a version-specific issue.
+The 1.x series receives security fixes for one year from the release of
+1.0.0. Fixes ship in the next 1.x release and are not backported to earlier
+ones: upgrade to the latest 1.x release before reporting a version-specific
+issue. Surfaces marked experimental in
+[Stability and support](docs/stability.md) get fixes on a best-effort basis.
 
 ## Reporting a vulnerability
 
@@ -46,6 +48,8 @@ gitignored. The optional `.kmp/memory.jsonl` recovery bundle is plain,
 reviewable project data intended to be committed; never write credentials or
 secrets to memory.
 
-The local viewer binds to loopback by default. Treat an unexpected outbound
+The local viewer listens only once it is requested, and only on loopback: a
+non-loopback address is refused. What can leave the machine, and when, is in
+[Security and privacy](docs/security-privacy.md). Treat an unexpected outbound
 connection, a non-loopback viewer exposure, cross-project memory access or a
 write outside the selected store as a security issue.

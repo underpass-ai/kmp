@@ -2,8 +2,8 @@
 set -eu
 
 plugin_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-# The engine seeds a fresh store's guide from the plugin that started it,
-# so it has to know where that plugin is. An explicit value wins.
+# The engine finds the plugin it belongs to (for `guide sync` and engine
+# resolution) through KMP_PLUGIN_ROOT. An explicit value wins.
 KMP_PLUGIN_ROOT=${KMP_PLUGIN_ROOT:-$plugin_root}
 export KMP_PLUGIN_ROOT
 if [ -n "${KMP_MCP_BIN:-}" ]; then

@@ -1,6 +1,6 @@
 ---
 description: Install or update KMP through its native Rust lifecycle
-argument-hint: "[--codex] [--claude] [--dry-run]"
+argument-hint: "[--claude] [--codex] [--hermes] [--pi] [--dry-run]"
 ---
 
 Use the `kmp-setup` skill for `$ARGUMENTS`. The Rust lifecycle binary owns
