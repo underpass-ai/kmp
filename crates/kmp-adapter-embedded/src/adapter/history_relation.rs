@@ -6,6 +6,8 @@
 //! decide what to do with a committed `.kmp/memory.jsonl` — open, the write
 //! guard, `export`, `doctor` — asks this, so they cannot disagree.
 
+use std::collections::{BTreeMap, HashMap};
+
 use kmp_domain::{ContextUpdatedEvent, PortError};
 
 use super::portability::parse_bundle;
@@ -103,6 +105,33 @@ pub fn compare_bundle_histories(
     Ok(HistoryRelation::classify(&store.events, &committed.events))
 }
 
+/// The committed events `store_bundle` does not hold, counted by about: what
+/// writing it over `committed_bundle` would drop. Matched by the events
+/// themselves, so a filtered bundle's local positions do not matter.
+pub fn committed_events_not_kept(
+    store_bundle: &str,
+    committed_bundle: &str,
+) -> Result<BTreeMap<String, u64>, PortError> {
+    let store = parse_bundle(store_bundle)?;
+    let committed = parse_bundle(committed_bundle)?;
+    let mut held: HashMap<(&str, u64), Vec<&ContextUpdatedEvent>> = HashMap::new();
+    for event in &store.events {
+        held.entry((event.root_node_id.as_str(), event.revision))
+            .or_default()
+            .push(event);
+    }
+    let mut dropped = BTreeMap::new();
+    for event in &committed.events {
+        let kept = held
+            .get(&(event.root_node_id.as_str(), event.revision))
+            .is_some_and(|candidates| candidates.contains(&event));
+        if !kept {
+            *dropped.entry(event.root_node_id.clone()).or_insert(0) += 1;
+        }
+    }
+    Ok(dropped)
+}
+
 #[cfg(test)]
 mod tests {
     use std::time::{Duration, UNIX_EPOCH};
@@ -155,6 +184,39 @@ mod tests {
                 store_events: 0,
                 bundle_events: 3
             }
+        );
+    }
+
+    #[test]
+    fn what_a_narrower_bundle_would_drop_is_counted_by_about() {
+        let bundle = |events: &[ContextUpdatedEvent]| {
+            super::super::HeadStream::of(events)
+                .expect("stream")
+                .encode_as(None)
+                .expect("bundle")
+        };
+        let a1 = event("project:a", 1, "a1");
+        let b1 = event("project:b", 1, "b1");
+        let a2 = event("project:a", 2, "a2");
+        let b2 = event("project:b", 2, "b2");
+        let committed = bundle(&[a1.clone(), b1.clone(), a2.clone(), b2.clone()]);
+
+        let only_a = bundle(&[a1.clone(), a2.clone()]);
+        let dropped = committed_events_not_kept(&only_a, &committed).expect("compare");
+        assert_eq!(dropped, BTreeMap::from([("project:b".to_string(), 2)]));
+
+        let short = bundle(&[a1.clone(), b1.clone()]);
+        let dropped = committed_events_not_kept(&short, &committed).expect("compare");
+        assert_eq!(
+            dropped,
+            BTreeMap::from([("project:a".to_string(), 1), ("project:b".to_string(), 1)])
+        );
+
+        let longer = bundle(&[a1, b1, a2, b2, event("project:c", 1, "c1")]);
+        assert!(
+            committed_events_not_kept(&longer, &committed)
+                .expect("compare")
+                .is_empty()
         );
     }
 

@@ -48,7 +48,7 @@ listed by the server's `tools/list` and explained by `kmp_guide`.
 | `kmp-mcp demo [--no-viewer] [--dry-run]` | Writes the worked example (about `example:kmp-demo`) into the store selected here and opens ChronoLoom on it. Idempotent. It never writes a project's store: inside a project it writes the store a directory outside any project would open (the saved selection, else the per-user default) and says so, so it stays out of the committed bundle and snapshots. `KMP_MCP_DATA_DIR` still decides when set. `--dry-run` only says where it would write. |
 | `kmp-mcp memories [--json]` | Every store this machine knows, how it is reached, its format, size and abouts. Opens nothing for use. |
 | `kmp-mcp memories register <absolute-path>` | Adds an existing store directory to that list. |
-| `kmp-mcp document <about> [--out FILE]` | Renders one about as Markdown. |
+| `kmp-mcp document <about> [--out FILE]` | Renders one about as Markdown. Refuses an `--out` that is a committed `.kmp/memory.jsonl`, however it is named. |
 | `kmp-mcp summaries pending [<about>…] [--json]` | Lists memories that owe an English search summary (`summary_en`). |
 | `kmp-mcp viewer [addr]` | Serves ChronoLoom without an agent session, on a loopback address (default `127.0.0.1:7317`). |
 
@@ -56,12 +56,41 @@ listed by the server's `tools/list` and explained by `kmp_guide`.
 
 | Command | What it does |
 |:--|:--|
-| `kmp-mcp export [file] [--about <about>]...` | Writes a bundle of the whole log or of exact abouts. With no file in a project, writes the committed `.kmp/memory.jsonl`, first catching the store up with a bundle a pull brought ahead. |
-| `kmp-mcp export --overwrite-committed` | Replaces a committed bundle whose events the export would not keep (ahead or divergent). |
+| `kmp-mcp export [file] [--about <about>]...` | Writes a bundle of the whole log or of exact abouts. With no file in a project, writes the committed `.kmp/memory.jsonl`, first catching the store up with a bundle a pull brought ahead. The same holds when the file is named: `.kmp/memory.jsonl`, `./.kmp/memory.jsonl`, an absolute path or a symlink to it is the committed file. |
+| `kmp-mcp export --overwrite-committed` | Replaces a committed bundle whose events the export would not keep. |
 | `kmp-mcp export --repair-pending` | Publishes and acknowledges a write whose bundle publish was cut short. Stop other sessions first. |
 | `kmp-mcp import <file>` | Replays a bundle into an **empty** store. |
 | `kmp-mcp import --from <store-dir\|bundle-file> --about <about>...` | Brings exact abouts into the store selected here: imported, unchanged, or extended. A different history refuses the whole import and writes nothing. Running it again is a no-op. |
 | `kmp-mcp snapshot create\|list\|verify\|read\|merge ...` | Named, immutable recovery points. Project stores only; elsewhere use `export <file>`. |
+
+### What `export` refuses
+
+`export` refuses, writes nothing and exits 2 when its destination is an
+existing `.kmp/memory.jsonl` and the export would not keep every event that
+file holds. It does not matter how the file is named (no file, relative,
+absolute, through a symlink), whether `--about` filters the export, or which
+rule chose the store (the project's own, or one pinned by `KMP_MCP_DATA_DIR`).
+The refusal says how many events would be dropped and of which abouts, and
+the ways out:
+
+| Case | Way out |
+|:--|:--|
+| `--about` over a committed file that holds other abouts | Export without `--about`, or export the subset to another file. |
+| A pull brought the committed file ahead of the project's store | `kmp-mcp export` with no filter catches the store up first. |
+| A store pinned by `KMP_MCP_DATA_DIR` lacks committed events | `kmp-mcp import --from .kmp/memory.jsonl --about <about>`, then export again. |
+| The store and the file are different histories | The steps the refusal prints. |
+
+`--overwrite-committed` replaces the file anyway. An export to any other file
+is written as asked.
+
+A committed `.kmp/memory.jsonl` holds only the project's own memory. Whatever
+`export` writes there leaves out the abouts that belong to this machine (the
+shipped guide and `example:kmp-demo`), also from a store pinned by
+`KMP_MCP_DATA_DIR`, and `--about` naming one of them is refused there. An
+export to any other file keeps them. No other verb writes the file:
+`document --out` refuses it, and `snapshot create` writes under
+`.kmp/snapshots/`. `--about` over a committed file that holds only the named
+abouts, each a prefix of what the store holds, is an ordinary save.
 
 Bundles and formats: [Store format](store-format.md).
 

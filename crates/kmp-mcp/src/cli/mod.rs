@@ -13,6 +13,7 @@ mod import_from;
 mod lifecycle_verbs;
 mod memories_verb;
 mod memory_store_config;
+mod output_destination;
 mod pending_summary;
 mod plugin_verb;
 mod snapshot_verb;
@@ -294,9 +295,11 @@ fn print_subcommand_help(command: &str) {
         );
         println!(
             "\nWith no file, export writes the project's committed `.kmp/memory.jsonl`. A full \
-             export first catches the store up with a committed file a pull brought ahead, and \
-             export refuses to replace a committed file whose events it would not keep; \
-             --overwrite-committed replaces it anyway."
+             export first catches the store up with a committed file a pull brought ahead. \
+             Export refuses to replace any committed `.kmp/memory.jsonl` whose events it would \
+             not keep — with no file or the file named in any form, with or without --about, \
+             whichever rule chose the store — and names what it would drop; \
+             --overwrite-committed replaces it anyway. Any other file is written as asked."
         );
     }
 }

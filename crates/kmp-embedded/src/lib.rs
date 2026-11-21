@@ -41,9 +41,10 @@ pub use kernel::{EmbeddedKernel, EmbeddedMemoryService};
 pub use kmp_adapter_embedded::{
     AboutImportOutcome, AboutImportReport, BUNDLE_FORMAT_VERSION, BundleEventRange, BundleHeader,
     EmbeddedKernelStore, HistoryRelation, SUPPORTED_FORMAT_VERSION, SqliteQualityTelemetryReader,
-    StorageEngine, StoreMigrationReceipt, bundle_excluding_abouts, compare_bundle_histories,
-    format_version_path, merge_bundles, quality_telemetry_path, read_stamped_version,
-    refuse_vanished_store_database, store_file_path_for, validate_store_layout, verify_bundle,
+    StorageEngine, StoreMigrationReceipt, bundle_excluding_abouts, committed_events_not_kept,
+    compare_bundle_histories, format_version_path, merge_bundles, quality_telemetry_path,
+    read_stamped_version, refuse_vanished_store_database, store_file_path_for,
+    validate_store_layout, verify_bundle,
 };
 pub use memory_selection::SelectedMemory;
 pub use memory_selection_refusal::SelectionRefusal;
