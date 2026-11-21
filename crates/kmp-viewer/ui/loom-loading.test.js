@@ -203,6 +203,58 @@ test("DOM feedback waits for paint and coalesces chained reads without a flash",
   assert.equal(node("scene-loading").attrs["aria-hidden"], "true");
 });
 
+/* Without WebGL the stage says so; a read must not cover that message, and
+   there is no scene paint to settle after, so the loader goes at once. */
+test("a scene that cannot draw drops its loader at once and keeps it away", () => {
+  for (const readFirst of [true, false]) {
+    const nodes = new Map(),
+      frames = new Map();
+    let next = 0;
+    const node = (id) => {
+      if (!nodes.has(id))
+        nodes.set(id, {
+          hidden: true,
+          dataset: {},
+          attrs: {},
+          textContent: "",
+          setAttribute(key, value) {
+            this.attrs[key] = value;
+          },
+        });
+      return nodes.get(id);
+    };
+    const context = vm.createContext({
+      document: { getElementById: node },
+      requestAnimationFrame: (fn) => {
+        frames.set(++next, fn);
+        return next;
+      },
+      cancelAnimationFrame: (id) => frames.delete(id),
+      KMP_APP: { state: { model: {}, view: {} }, dom: { $: node } },
+    });
+    for (const name of ["loom-loading.js", "loom-loading-view.js", "loom-scene.js"])
+      vm.runInContext(fs.readFileSync(path.join(__dirname, name), "utf8"), context);
+    const app = context.KMP_APP;
+    const finish = readFirst
+      ? app.loading.beginRequest("/api/projection", { about: "a", axis: "occurred" })
+      : null;
+    if (readFirst) assert.equal(node("stage").dataset.loading, "true");
+    app.scene.unavailable("Error creating WebGL context.");
+    assert.equal(node("scene-unavailable").hidden, false);
+    assert.equal(node("stage").dataset.loading, "false", "no frame is needed to clear it");
+    assert.equal(node("scene-loading").attrs["aria-hidden"], "true");
+    finish?.();
+    const later = app.loading.beginRequest("/api/projection", { about: "a", axis: "occurred" });
+    assert.equal(node("stage").dataset.loading, "false", "a later read does not cover it");
+    later();
+    [...frames.values()].forEach((fn) => fn());
+    assert.equal(node("stage").dataset.loading, "false");
+    const evidence = app.loading.beginRequest("/api/node", { about: "a" });
+    assert.equal(node("detail").dataset.loading, "true", "the detail loader still works");
+    evidence();
+  }
+});
+
 test("adding and removing layers stay busy until the replacement projection is applied", async () => {
   for (const abouts of [["b"], []]) {
     const projection = deferred();

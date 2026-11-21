@@ -183,7 +183,8 @@ pub(crate) const BIDIRECTIONAL_SEARCH: [&str; 6] = [
 
 /// `search.direction: bidirectional` is the single-destination trace: each
 /// argument it cannot take is refused by name (`false`), so the refusal says
-/// what to remove instead of restating the whole rule.
+/// what to remove instead of restating the whole rule. Its one `to` may come
+/// as a list holding that one ref (`maxItems` binds only a list).
 fn bidirectional_rule() -> Value {
     let mut search = serde_json::Map::new();
     for key in trace_search_schema()["properties"]
@@ -201,10 +202,27 @@ fn bidirectional_rule() -> Value {
             "if": {"required": ["search"], "properties": {"search": {
                 "required": ["direction"], "properties": {"direction": {"const": "bidirectional"}}}}},
             "then": {"properties": {
-                "to": {"type": "string"}, "as_of": false, "interval": false, "axis": false,
+                "to": {"maxItems": 1}, "as_of": false, "interval": false, "axis": false,
                 "search": {"properties": search}}}
         }),
     )
+}
+
+/// The bidirectional trace with its one `to` sent as a list of that ref,
+/// rewritten with the ref itself: the same call, so the same answer. Any
+/// other call is `None` and goes on unchanged; a list of one without
+/// `bidirectional` stays the bounded search it asks for.
+pub(crate) fn single_destination(arguments: &Value) -> Option<Value> {
+    let bidirectional = arguments["search"]["direction"] == "bidirectional";
+    let [to] = arguments.get("to")?.as_array()?.as_slice() else {
+        return None;
+    };
+    if !bidirectional || !to.is_string() {
+        return None;
+    }
+    let mut rewritten = arguments.clone();
+    rewritten["to"] = to.clone();
+    Some(rewritten)
 }
 
 /// The `search` options only one mode takes: (destinations, evidence).

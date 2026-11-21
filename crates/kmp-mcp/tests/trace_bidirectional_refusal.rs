@@ -132,3 +132,76 @@ async fn to_inside_search_is_an_unknown_argument() {
         "{content}"
     );
 }
+
+/// A list holding the one destination is that destination: the bidirectional
+/// trace answers it byte for byte as it answers the ref, for a reached path
+/// and for one a work limit cut.
+#[tokio::test]
+async fn a_list_of_one_destination_is_the_destination() {
+    let dir = tempfile::tempdir().expect("dir");
+    let server = KernelMcpServer::embedded(dir.path()).expect("server");
+    let entry = |i: usize| format!("{ABOUT}:entry:observation:f-{i}");
+    let entries = (0..6)
+        .map(|i| {
+            json!({"id": entry(i), "kind": "observation", "text": format!("Observation {i}."),
+            "coordinates": [{"dimension": "task", "scope_id": "proof",
+                "observed_at": "2026-09-01T10:00:00Z"}]})
+        })
+        .collect::<Vec<_>>();
+    let relations = (1..6)
+        .map(|i| {
+            json!({"from": entry(i), "to": entry(i - 1), "rel": "uses_background",
+            "class": "evidential", "confidence": "high",
+            "why": format!("Observation {i} builds on observation {}.", i - 1),
+            "evidence": format!("Fixture link {i}->{}.", i - 1)})
+        })
+        .collect::<Vec<_>>();
+    let ingest = json!({"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"kmp_ingest",
+        "arguments":{"about": ABOUT, "idempotency_key": "chain",
+            "memory": {"dimensions": [{"id": "proof", "kind": "task"}],
+                "entries": entries, "relations": relations}}}});
+    let wire = server
+        .handle_json_line(&ingest.to_string())
+        .await
+        .expect("ingested");
+    assert!(wire.contains("\"isError\":false"), "{wire}");
+
+    for (destination, search, reached) in [
+        (entry(3), json!({"direction": "bidirectional"}), true),
+        (
+            entry(0),
+            json!({"direction": "bidirectional", "max_depth": 2}),
+            false,
+        ),
+    ] {
+        let call = |to: Value| {
+            json!({"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"kmp_trace",
+                "arguments":{"about": ABOUT, "from": entry(5), "to": to, "search": search}}})
+            .to_string()
+        };
+        let as_ref = server
+            .handle_json_line(&call(json!(destination)))
+            .await
+            .expect("answered");
+        let as_list = server
+            .handle_json_line(&call(json!([destination])))
+            .await
+            .expect("answered");
+        let answer: Value = serde_json::from_str(&as_ref).expect("json");
+        let content = &answer["result"]["structuredContent"];
+        assert_eq!(answer["result"]["isError"], false, "{answer}");
+        assert_eq!(
+            content["trace"]
+                .as_array()
+                .is_some_and(|trace| !trace.is_empty()),
+            reached,
+            "{content}"
+        );
+        assert_eq!(
+            content["search"].is_object(),
+            !reached,
+            "a cut names its stop: {content}"
+        );
+        assert_eq!(as_list, as_ref, "to: [ref] answers as to: ref");
+    }
+}
