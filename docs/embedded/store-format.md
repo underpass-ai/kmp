@@ -77,7 +77,8 @@ A bundle is one JSON line of header, then one line per event.
 Every 1.x reads both event formats. A bundle carries the event log of the
 abouts it names: memories, relations, labels, reader cards. It does **not**
 carry the derived index, verdicts, continuations, logs, telemetry or the
-salt, and `kmp-mcp demo`'s example never enters a project's committed bundle.
+salt, and `kmp-mcp demo` never writes a project's store, so its example
+never enters a committed bundle or snapshot.
 
 | Command | Use |
 |:--|:--|

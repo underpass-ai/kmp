@@ -411,6 +411,14 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
 
 ### Fixed
 
+- `kmp-mcp demo` never writes a project's store. Run inside a git project it
+  put `example:kmp-demo` into the project store, so `snapshot create`
+  copied it into `.kmp/snapshots/`, and it created an empty `.kmp/memory.jsonl`.
+  There it now writes the store a directory outside any project would open
+  (the saved selection, else the per-user default), says so (`Not in this
+  project's store …`), and tells which session can ask about it.
+  `KMP_MCP_DATA_DIR` still decides when set, and `--dry-run` names the same
+  destination.
 - Top-level `kmp-mcp --help` indents every description under one column,
   including those on the line after a long usage (a string continuation had
   eaten their indent), and `doctor` with `KMP_MCP_BACKEND=grpc` and no

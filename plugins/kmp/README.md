@@ -175,8 +175,9 @@ kmp-mcp demo
 writes a worked example — a checkout service, an incident, the decision that
 replaced an earlier one and the measurement that verified it — into the store
 this directory resolves to, opens ChronoLoom on it and prints four questions
-to ask your agent. It is idempotent and never enters a project's committed
-bundle. `--no-viewer` writes and exits.
+to ask your agent. It is idempotent and never writes a project's store: inside
+a project it writes the store a directory outside any project would open, and
+says so. `--no-viewer` writes and exits.
 
 ### Agent routing policy
 

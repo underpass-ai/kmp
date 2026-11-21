@@ -324,6 +324,15 @@ impl KernelMcpServer {
     }
 
     pub fn try_from_env() -> Result<Self, String> {
+        Self::try_from_env_with_store(None)
+    }
+
+    /// [`try_from_env`](Self::try_from_env), with the embedded store chosen
+    /// by the caller instead of resolved here. `kmp-mcp demo` uses it to keep
+    /// its worked example out of a project's store.
+    pub fn try_from_env_with_store(
+        store: Option<kmp_embedded::ResolvedDataDir>,
+    ) -> Result<Self, String> {
         use crate::serving::backend_name::BackendName;
         // Every switch is checked before any is read: a value the engine
         // does not accept is refused here, naming what it accepts, instead
@@ -357,8 +366,11 @@ impl KernelMcpServer {
             #[cfg(any(debug_assertions, feature = "eval-hooks"))]
             BackendName::Fixture => Ok(Self::fixture()),
             BackendName::Embedded => {
-                let resolved = crate::lifecycle::resolve_memory_for_use()
-                    .map_err(|error| error.to_string())?;
+                let resolved = match store {
+                    Some(store) => crate::lifecycle::prepare_memory_for_use(store),
+                    None => crate::lifecycle::resolve_memory_for_use(),
+                }
+                .map_err(|error| error.to_string())?;
                 let engine = kmp_embedded::default_engine_for_data_dir(resolved.path());
                 let lease = kmp_embedded::user_data_home()
                     .map(|data_home| {

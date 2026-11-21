@@ -45,7 +45,7 @@ listed by the server's `tools/list` and explained by `kmp_guide`.
 
 | Command | What it does |
 |:--|:--|
-| `kmp-mcp demo [--no-viewer] [--dry-run]` | Writes the worked example (about `example:kmp-demo`) into the store selected here and opens ChronoLoom on it. Idempotent. Never enters a committed bundle. `--dry-run` only says where it would write. |
+| `kmp-mcp demo [--no-viewer] [--dry-run]` | Writes the worked example (about `example:kmp-demo`) into the store selected here and opens ChronoLoom on it. Idempotent. It never writes a project's store: inside a project it writes the store a directory outside any project would open (the saved selection, else the per-user default) and says so, so it stays out of the committed bundle and snapshots. `KMP_MCP_DATA_DIR` still decides when set. `--dry-run` only says where it would write. |
 | `kmp-mcp memories [--json]` | Every store this machine knows, how it is reached, its format, size and abouts. Opens nothing for use. |
 | `kmp-mcp memories register <absolute-path>` | Adds an existing store directory to that list. |
 | `kmp-mcp document <about> [--out FILE]` | Renders one about as Markdown. |

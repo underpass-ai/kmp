@@ -71,7 +71,9 @@ kmp-mcp demo
 ```
 
 It writes a worked example into the store this directory selects and opens
-ChronoLoom on it. [What to ask next](../examples/README.md).
+ChronoLoom on it. It never writes a project's store: inside a project it writes
+the store a directory outside any project would open, and says so.
+[What to ask next](../examples/README.md).
 
 ## What setup downloads
 
