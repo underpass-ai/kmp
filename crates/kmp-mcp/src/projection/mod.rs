@@ -8,6 +8,7 @@ pub(crate) mod ingest_projection;
 pub(crate) mod inspect_budget;
 pub(crate) mod inspect_projection;
 mod memory_nodes_projection;
+mod proof_compaction;
 mod recall_budget_audit;
 pub(crate) mod recall_error;
 pub(crate) mod recall_projection;

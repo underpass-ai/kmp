@@ -7,8 +7,13 @@ under the MCP client's name.
 {"about":"project:sample","ref":"<returned-ref>","observed_at":"2026-09-02T10:00:00Z","why":"R2 assigns the failure to the storage team.","add":{"team":["storage"]}}
 ```
 
-The change is dated: a read at an earlier position does not see a label added
-later. Text, evidence, clocks and relations stay as they were. Reuse an
+Name pairs, never coordinates: the kernel reads the memory's coordinates and
+the catalogue itself. A label added late keeps the memory's clocks; its own
+instant lives on the edge it adds (`method: kmp_relabel`, your `why`), so a
+read at an earlier position does not see it. Text, evidence, clocks and
+relations stay as they were. Refused, naming what the memory stands in: a label
+it already has, one it lacks, or its last label. `options.dry_run` writes
+nothing. Reuse an
 existing key/value from the wake catalogue; `options` confirms a new resembling
 label. Replay with the same `idempotency_key`.
 

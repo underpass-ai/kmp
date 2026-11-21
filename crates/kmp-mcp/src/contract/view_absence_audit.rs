@@ -37,8 +37,11 @@ fn absence_fails_an_open_and_degrades_an_intent_on_the_advertised_surface() {
 
     let intent = view("kmp_view_apply_intent");
     assert!(
-        text(&intent["description"]).contains("unhonored"),
-        "kmp_view_apply_intent must advertise where absence is reported"
+        crate::guide::GuideTopic::named("view")
+            .expect("view topic")
+            .text
+            .contains("`unhonored`"),
+        "the view card must say where an intent reports absence"
     );
     let properties = &intent["inputSchema"]["properties"];
     for pointer in [

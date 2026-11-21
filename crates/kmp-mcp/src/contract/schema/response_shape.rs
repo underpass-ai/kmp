@@ -56,7 +56,9 @@ pub(crate) fn proof_output_schema(confidence_description: &str) -> Value {
         "confidence": described("string", confidence_description),
         "evidence": described(
             "array",
-            "Verbatim stored text; metadata.proof_role distinguishes claim from evidence. \
+            "Verbatim stored text; metadata.proof_role distinguishes claim from evidence, and \
+             absent metadata means proof_role stored_evidence. A detail item (id \
+             detail:<ref>) without supports supports that ref. \
              Retrieval metadata never changes that text. reached_by items are indirect proof, \
              never answers or citations in because; reached_from, reached_via and reached_hops \
              identify their route. On citations, bridged_terms names cross-language word pairs; \
@@ -70,7 +72,7 @@ pub(crate) fn proof_output_schema(confidence_description: &str) -> Value {
         "conflicts": described("array", "Explicit contradictions whose entries are both still live; distinct from supersession."),
         "matched_relations": described("array", "Typed relations contributing to ordering. Their prose may improve a match, never promote unrelated evidence into an answer."),
         "matched_terms": described("array", "Question terms matching retrieved evidence."),
-        "path": described("array", "Traversal connecting cited evidence."),
+        "path": described("array", "Traversal connecting cited evidence. A hop's evidence_refs name the relation's own evidence; the endpoints' detail evidence (detail:<from>, detail:<to>) also supports it when evidence carries it."),
         "frontier_size": described("integer", "Reachable items not returned; a signal to expand."),
         "interval": nullable_described("object", "Selected half-open [start,end) span, or null."),
         "axis": nullable_described("string", "Selected occurred/observed/ingested/validity clock, or default precedence; null at the memory's own frontier."),

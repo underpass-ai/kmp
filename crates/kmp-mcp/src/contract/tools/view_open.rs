@@ -1,6 +1,6 @@
 use serde_json::{Value, json};
 
-use crate::contract::schema::definition::tool_definition_with_output;
+use crate::contract::schema::definition::{ToolEffect, tool_definition_with_output};
 #[allow(unused_imports)]
 use crate::contract::schema::primitives::*;
 #[allow(unused_imports)]
@@ -13,8 +13,11 @@ use crate::contract::schema::view_family::view_output_with_url_schema;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_view_open",
-        false,
-        "Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record.",
+        ToolEffect::Write {
+            destructive: false,
+            idempotent: false,
+        },
+        "Open a ChronoLoom view over an about so a human sees the memory you work on, with its link when the viewer is mounted.",
         json!({
             "type": "object",
             "additionalProperties": false,

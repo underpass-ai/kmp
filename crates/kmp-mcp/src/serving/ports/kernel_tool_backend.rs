@@ -20,6 +20,13 @@ pub trait KernelMcpToolBackend: Send + Sync {
         false
     }
 
+    /// The tools that send stored text outside this machine on this backend:
+    /// those whose TypeSafe Jev opt-in took effect for the session's store.
+    /// Empty unless the owner opted in, which is how KMP ships.
+    fn open_world_tools(&self) -> Vec<&'static str> {
+        Vec::new()
+    }
+
     fn call_tool<'a>(&'a self, name: &'a str, arguments: &'a Value) -> KernelMcpToolFuture<'a>;
 
     /// The same call made for `caller`, the MCP host (client name, version)
@@ -50,6 +57,10 @@ where
 
     fn bridges_languages(&self) -> bool {
         self.as_ref().bridges_languages()
+    }
+
+    fn open_world_tools(&self) -> Vec<&'static str> {
+        self.as_ref().open_world_tools()
     }
 
     fn call_tool<'a>(&'a self, name: &'a str, arguments: &'a Value) -> KernelMcpToolFuture<'a> {

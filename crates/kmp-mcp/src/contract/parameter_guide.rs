@@ -21,7 +21,7 @@ use crate::guide::GuideTopic;
 /// it was met (`about` on the two first calls of new work, `continuation` on
 /// the write that resumes its review). `tools` empty means every tool with
 /// that argument.
-pub(crate) const ADVERTISED_LINES: [(&[&str], &str, &str); 6] = [
+pub(crate) const ADVERTISED_LINES: [(&[&str], &str, &str); 7] = [
     (
         &["kmp_write_memory", "kmp_wake"],
         "about",
@@ -56,6 +56,13 @@ pub(crate) const ADVERTISED_LINES: [(&[&str], &str, &str); 6] = [
         &["kmp_write_memory"],
         "continuation",
         "Send alone, exactly as returned.",
+    ),
+    // The cursor each move takes is rule `time.cursor`; a real agent sent
+    // `forward` without one once the rule left the catalogue (tokens-2).
+    (
+        &["kmp_time"],
+        "move",
+        "rewind/forward take from or interval; goto takes at; near takes around.",
     ),
 ];
 
@@ -129,11 +136,20 @@ fn documented(input_schema: &Value) -> Vec<(String, String)> {
     let mut schema = input_schema.clone();
     let mut pairs: Vec<(String, String)> = Vec::new();
     visit(&mut schema, "", &mut |path, object| {
-        if let Some(description) = object.get("description").and_then(Value::as_str) {
-            let pair = (path.to_string(), description.to_string());
-            if !pairs.contains(&pair) {
-                pairs.push(pair);
-            }
+        // `tools/list` leaves defaults out (`published_law`); the argument's
+        // line says it instead.
+        let default = object
+            .get("default")
+            .map(|default| format!("Default: {default}."));
+        let description = match (object.get("description").and_then(Value::as_str), default) {
+            (Some(text), Some(default)) => format!("{text} {default}"),
+            (Some(text), None) => text.to_string(),
+            (None, Some(default)) => default,
+            (None, None) => return,
+        };
+        let pair = (path.to_string(), description);
+        if !pairs.contains(&pair) {
+            pairs.push(pair);
         }
     });
     pairs
@@ -223,10 +239,11 @@ pub(crate) fn without_parameter_descriptions(mut result: Value) -> Value {
         if let Some(topic) = GuideTopic::of_tool(&name)
             && let Some(description) = tool["description"].as_str()
         {
-            tool["description"] = json!(format!(
-                "{description} Arguments explained: kmp_guide topic {}.",
-                topic.name
-            ));
+            // A verb named like its topic needs no pointer: the index and
+            // the `topic` enum already name it.
+            if format!("kmp_{}", topic.name) != name {
+                tool["description"] = json!(format!("{description} Guide topic: {}.", topic.name));
+            }
         }
     }
     result

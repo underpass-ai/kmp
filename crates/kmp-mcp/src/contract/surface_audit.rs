@@ -104,11 +104,12 @@ mod tests {
                 .is_none(),
             "only discovery tools promise the capability handoff"
         );
+        // The detail lives in the view card; the description names the verb.
         assert!(
-            view("kmp_view_get_state")["description"]
-                .as_str()
-                .expect("description")
-                .contains("never pixels")
+            crate::guide::GuideTopic::named("view")
+                .expect("view topic")
+                .text
+                .contains("Never pixels")
         );
     }
 
@@ -142,7 +143,8 @@ mod tests {
         );
         assert_eq!(
             tools[1]["inputSchema"]["then"],
-            json!({"propertyNames":{"enum":["continuation","about","actor"]}})
+            json!({"propertyNames":{"enum":["continuation","about","actor"]},
+                   "x-kmp-rule":"continuation-alone"})
         );
         assert_eq!(
             tools[1]["inputSchema"]["properties"]["memories"]["items"]["properties"]["connect_to"]
@@ -550,18 +552,18 @@ mod tests {
     }
 
     #[test]
-    fn the_surface_enumerates_every_error_code_it_can_return() {
-        let listed = tools_list_result()["_meta"]["kmp/errorCodes"]
-            .as_array()
-            .expect("the codes an agent may branch on are part of the surface")
-            .iter()
-            .map(|entry| entry["code"].as_str().expect("a code").to_string())
+    fn the_guide_enumerates_every_error_code_it_can_return() {
+        let listed = crate::serving::guide_error_codes()
+            .as_object()
+            .expect("the codes an agent may branch on are in the guide card")
+            .keys()
+            .cloned()
             .collect::<Vec<_>>();
 
         for code in ToolErrorCode::ALL {
             assert!(
                 listed.contains(&code.as_str().to_string()),
-                "`{code}` can be returned and is not in tools/list"
+                "`{code}` can be returned and is not in the guide card"
             );
         }
         assert_eq!(listed.len(), ToolErrorCode::ALL.len());
