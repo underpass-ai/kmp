@@ -734,7 +734,14 @@ fn doctor_fails_on_every_layout_that_real_store_open_refuses() {
             report.contains("the selected memory cannot be opened"),
             "{report}"
         );
-        assert!(report.contains("engine on disk: sqlite"), "{report}");
+        if stamp == Some("2\n") {
+            // A retired format is named by the refusal for what it is, not
+            // listed as this engine's sqlite.
+            assert!(report.contains("old label identity"), "{report}");
+            assert!(!report.contains("engine on disk"), "{report}");
+        } else {
+            assert!(report.contains("engine on disk: sqlite"), "{report}");
+        }
         assert!(!report.contains("no store yet"), "{report}");
         assert!(
             report

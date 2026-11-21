@@ -102,15 +102,17 @@ pub(crate) fn describe_data_dir(resolved: &ResolvedDataDir) -> LifecycleFinding 
     // refusal above already says what is (not) on disk, and one cause gets
     // one account of it.
     let lost_database = layout.is_err() && kmp_embedded::validate_store_layout(path).is_ok();
-    if !lost_database {
+    // A retired format (1 or 2) is named by the refusal for what it is; its
+    // files are not this engine's sqlite, whatever they are called.
+    let retired_format = layout.is_err()
+        && kmp_embedded::read_stamped_version(path).is_ok_and(|version| version < 3);
+    if !lost_database && !retired_format {
         match engine_on_disk(path) {
             Some(engine) => finding = finding.with_detail(format!("engine on disk: {engine}")),
             None => match store_file_on_disk(path) {
                 Some(artifact) => {
                     finding = finding
-                        .with_detail(
-                            "storage artifact on disk: unsupported; source left untouched",
-                        )
+                        .with_detail("storage artifact on disk: unsupported; source left untouched")
                         .with_detail(format!("artifact: {}", artifact.display()));
                 }
                 // Only a store that opens is created on first write; after a
@@ -252,7 +254,9 @@ mod tests {
         let lost = describe_data_dir(&resolved);
         assert_eq!(lost.severity(), DiagnosticSeverity::Fail, "{lost:?}");
         assert!(
-            lost.detail().iter().any(|line| line.contains("lost its database")),
+            lost.detail()
+                .iter()
+                .any(|line| line.contains("lost its database")),
             "{lost:?}"
         );
         assert!(
@@ -268,8 +272,28 @@ mod tests {
         let refused = describe_data_dir(&resolved);
         assert_eq!(refused.severity(), DiagnosticSeverity::Fail, "{refused:?}");
         assert!(
-            refused.detail().iter().all(|line| !line.contains("no store yet")),
+            refused
+                .detail()
+                .iter()
+                .all(|line| !line.contains("no store yet")),
             "{refused:?}"
+        );
+
+        // A format-1 store whose directory still holds a SQLite-named file
+        // is a redb store, not this engine's sqlite.
+        std::fs::create_dir_all(dir.path().join("store")).expect("store dir");
+        std::fs::write(dir.path().join("store/kernel.sqlite3"), b"old").expect("file");
+        let retired = describe_data_dir(&resolved);
+        assert!(
+            retired
+                .detail()
+                .iter()
+                .all(|line| !line.contains("engine on disk")),
+            "{retired:?}"
+        );
+        assert!(
+            retired.detail().iter().any(|line| line.contains("redb")),
+            "{retired:?}"
         );
     }
     #[test]

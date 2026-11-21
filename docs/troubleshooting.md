@@ -44,7 +44,7 @@ The host shows no `kmp_*` tools. Follow the
 
 | You see | Cause | Fix |
 |:--|:--|:--|
-| ``embedded store at `<dir>` uses unsupported format version 1; current KMP opens format 4 only and left the directory untouched`` (or version 2) | A store from 0.14 or earlier. | Select another store (`kmp-mcp config memory-store --clear`, or move the directory aside). No migration exists; see [Store format](embedded/store-format.md). |
+| ``embedded store at `<dir>` uses unsupported format version 1 (a redb store written by KMP 0.3.x or earlier); current KMP opens format 4 only and left the directory untouched`` (or version 2, a SQLite store with the old label identity written by KMP 0.2.0 to 0.14.x) | A store from 0.14 or earlier. | Select another store (`kmp-mcp config memory-store --clear`, or move the directory aside). No migration exists; see [Store format](embedded/store-format.md). |
 | `uses format version 9, newer than this binary supports (4); upgrade the binary` | A newer engine wrote it. | `kmp-mcp update`. |
 | `FAIL  the selected memory's database cannot be read` (section **Database**) with `database disk image is malformed` or `file is not a database` | `store/kernel.sqlite3` is damaged. | Move the data directory aside, then `kmp-mcp import <bundle>` into the new empty store from your last export. In a project, the next session rebuilds the store from `.kmp/memory.jsonl`. |
 | ``lost its database: `<dir>/store/kernel.sqlite3` is missing, but this directory shows it held memory before`` | The database was deleted or emptied. KMP refuses to start an empty store over it. | Restore the file from a backup. In a project, move the directory aside: the next session rebuilds it from the committed bundle. |

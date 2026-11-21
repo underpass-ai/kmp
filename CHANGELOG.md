@@ -411,6 +411,13 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
 
 ### Fixed
 
+- A format-1 or format-2 store says what it is and what to do: the refusal
+  names it (a redb store written by KMP 0.3.x or earlier; a SQLite store
+  with the old label identity, written by 0.2.0 to 0.14.x), says no
+  migration exists and that its releases' bundles are refused too, and asks
+  to keep the directory and give this engine another store. It said "This
+  redesign requires a fresh store", and `doctor` listed `engine on disk:
+  sqlite` beneath it.
 - The viewer's refusal of a non-loopback address states the rule it
   applies: it binds a loopback address, any of 127.0.0.0/8 (such as
   `127.0.0.1`) or `[::1]`. It said "only binds 127.0.0.1 or [::1]" while
