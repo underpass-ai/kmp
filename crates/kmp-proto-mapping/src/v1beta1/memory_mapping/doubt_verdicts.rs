@@ -180,7 +180,7 @@ mod tests {
     fn verdicts(promote_at: Option<u16>) -> DoubtVerdicts {
         let mut verdicts = DoubtVerdicts::new(
             DoubtEntry::NarrowMargin,
-            "jev-1.13.0".into(),
+            "jev-1.14.0".into(),
             "doubt_band.v1".into(),
             800,
             promote_at,
@@ -236,13 +236,13 @@ mod tests {
     fn marks_name_the_model_the_probability_and_the_template() {
         let verdicts = verdicts(Some(900));
         let out = verdicts.mark_out(item("entry:a", "alpha"), 900);
-        assert_eq!(out.metadata[JUDGED_OUT_KEY], "jev-1.13.0");
+        assert_eq!(out.metadata[JUDGED_OUT_KEY], "jev-1.14.0");
         assert_eq!(out.metadata[JUDGED_PERMILLE_KEY], "900");
         assert_eq!(out.metadata[JUDGED_TEMPLATE_KEY], "doubt_band.v1");
         assert!(DoubtVerdicts::was_vetoed(&out));
         assert!(!DoubtVerdicts::was_promoted(&out));
         let promoted = verdicts.mark_in(item("entry:b", "beta"), 950);
-        assert_eq!(promoted.metadata[JUDGED_BY_KEY], "jev-1.13.0");
+        assert_eq!(promoted.metadata[JUDGED_BY_KEY], "jev-1.14.0");
         assert!(DoubtVerdicts::was_promoted(&promoted));
     }
 

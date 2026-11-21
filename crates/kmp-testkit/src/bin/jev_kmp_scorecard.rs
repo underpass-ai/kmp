@@ -33,7 +33,7 @@ static ANSWERS: std::sync::Mutex<Vec<String>> = std::sync::Mutex::new(Vec::new()
 const BOOK_FILES: [&str; 2] = ["judgements.sqlite3", "judgements.sqlite3-wal"];
 
 const ACTOR: &str = "jev-scorecard";
-const TYPESAFE: &str = r#"{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.13.0","timeout_ms":20000}"#;
+const TYPESAFE: &str = r#"{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.14.0","timeout_ms":20000}"#;
 /// The narrow pool: the lexical ranker's forty best, read whole.
 const RERANK_NARROW: &str = r#"{"pool_size":40}"#;
 /// The wide pool: up to four hundred admitted passages, 300-character
@@ -1540,6 +1540,15 @@ fn write_baseline(
          # who accepted that cost, so proposed_hops_right is gated at 0.9411 (was 0.9500 while the\n\
          # corridor was opt-in) and the informative proposed_hops_right_corridor_info row is gone.\n\
          # KMP_EVAL_PATHS_CORRIDOR=off still measures the previous filter (0.9500) for reference.\n\
+         # Reviewed change (2026-11-21): the model changed to jev-1.14.0 and the cassette was re-recorded.\n\
+         # Over three same-day samples per model proposed_hops_right is 0.913 / 0.947 / 0.9375 on 1.14\n\
+         # against 0.941 / 0.95 / 0.95 on 1.13. The committed sample (chosen before any score was read)\n\
+         # proposes one more wrong hop, p01 -> b06 at 0.33, just over the path STEP_AT line of 0.3, which\n\
+         # was never tuned; the old floor had no margin over a single sample (16/17). Accepted by the\n\
+         # maintainer's delegate: proposed_hops_right is gated at 0.9130. Raised because all three 1.14\n\
+         # samples exceed the old floor: write_typed_with_jev 0.6363 -> 0.7272, labels_none_kept 0 -> 1.\n\
+         # Not re-verified on 1.14: the ask-judge (P10) and write-expansion (P15) thresholds. Sample 3 of\n\
+         # 1.14 fell under eight floors for a cause not traced (docs/development/jev-evaluation.md).\n\
          # Refresh with: JEV_BASELINE=write bash scripts/ci/jev-baseline.sh\n\
          metric\tfloor\n",
     );

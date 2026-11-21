@@ -281,7 +281,7 @@ async fn run_case(
     if let Some(arm) = arm {
         fs::write(
             data_dir.join("typesafe.json"),
-            r#"{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.13.0","timeout_ms":20000}"#,
+            r#"{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.14.0","timeout_ms":20000}"#,
         )?;
         fs::write(
             data_dir.join("rerank.json"),

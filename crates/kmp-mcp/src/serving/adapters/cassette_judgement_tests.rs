@@ -17,7 +17,7 @@ struct Counting {
 
 impl JudgementModel for Counting {
     fn model(&self) -> &str {
-        "jev-1.13.0"
+        "jev-1.14.0"
     }
 
     fn evaluate<'a>(
@@ -34,7 +34,7 @@ impl JudgementModel for Counting {
             .collect::<BTreeMap<_, _>>();
         Box::pin(async move {
             Ok(JudgementResponse {
-                model: "jev-1.13.0".into(),
+                model: "jev-1.14.0".into(),
                 answers,
                 input_tokens: 42,
                 requests: 1,
@@ -72,7 +72,7 @@ async fn a_recorded_judgement_replays_without_the_model_and_an_unrecorded_one_fa
         "a recorded request is not asked twice"
     );
 
-    let replay = CassetteJudgement::replay(&path, "jev-1.13.0".into()).expect("replay");
+    let replay = CassetteJudgement::replay(&path, "jev-1.14.0".into()).expect("replay");
     assert_eq!(
         replay.evaluate(&request("a")).await.expect("replayed"),
         recorded
@@ -108,7 +108,7 @@ async fn two_recorders_on_one_file_keep_each_other_s_answers() {
     .expect("second");
     first.evaluate(&request("a")).await.expect("a");
     second.evaluate(&request("b")).await.expect("b");
-    let replay = CassetteJudgement::replay(&path, "jev-1.13.0".into()).expect("replay");
+    let replay = CassetteJudgement::replay(&path, "jev-1.14.0".into()).expect("replay");
     replay.evaluate(&request("a")).await.expect("first kept");
     replay.evaluate(&request("b")).await.expect("second kept");
 }
@@ -118,7 +118,7 @@ fn a_cassette_answers_only_for_the_model_it_was_recorded_for() {
     let dir = tempfile::tempdir().expect("dir");
     let path = dir.path().join("jev.cassette.json");
     assert!(
-        CassetteJudgement::replay(&path, "jev-1.13.0".into()).is_err(),
+        CassetteJudgement::replay(&path, "jev-1.14.0".into()).is_err(),
         "no file"
     );
     std::fs::write(
@@ -126,14 +126,14 @@ fn a_cassette_answers_only_for_the_model_it_was_recorded_for() {
         r#"{"schema":"kmp.typesafe.cassette.v1","model":"jev-1.12.0","entries":{}}"#,
     )
     .expect("file");
-    let error = CassetteJudgement::replay(&path, "jev-1.13.0".into())
+    let error = CassetteJudgement::replay(&path, "jev-1.14.0".into())
         .err()
         .expect("other model");
     assert!(error.contains("jev-1.12.0"), "{error}");
     std::fs::write(
         &path,
-        r#"{"schema":"other","model":"jev-1.13.0","entries":{}}"#,
+        r#"{"schema":"other","model":"jev-1.14.0","entries":{}}"#,
     )
     .expect("file");
-    assert!(CassetteJudgement::replay(&path, "jev-1.13.0".into()).is_err());
+    assert!(CassetteJudgement::replay(&path, "jev-1.14.0".into()).is_err());
 }

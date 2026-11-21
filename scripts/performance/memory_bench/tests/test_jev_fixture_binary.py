@@ -22,7 +22,7 @@ from ..runtime.session import BenchProcess, ProcessConfig
 
 BINARY = os.environ.get('KMP_BENCH_BINARY')
 ABOUT = 'project:bt11'
-TYPESAFE = ('{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.13.0",'
+TYPESAFE = ('{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.14.0",'
             '"timeout_ms":20000}')
 FACTS = [('g1', 'The gateway that fronts every public endpoint is Envoy, chosen in March.'),
          ('g2', 'Ana mapped the tumi and roro inboxes into one shared queue.'),
