@@ -12,7 +12,7 @@ Detailed notes from the early release cycle remain available in the
 ### Changed — breaking
 
 The catalogue states the law of a call once (second token reduction, on the
-way to 1.0). `tools/list` drops from 11,856 to about 7,400 tokens
+way to 1.0). `tools/list` drops from 11,856 to 7,468 tokens
 (o200k_base).
 
 - `tools/list` publishes types, enums and `required` (the first-call
