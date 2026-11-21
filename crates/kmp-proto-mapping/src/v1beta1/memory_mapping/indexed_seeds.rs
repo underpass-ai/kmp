@@ -4,7 +4,7 @@ use super::lexical_row::LexicalRow;
 use super::seed_documents::SeedDocuments;
 
 /// The seed rows' direct fields of one indexed ask, read once per reading
-/// and shared by every ranking of the ask ([`SeedDocuments`]).
+/// and shared by every ranking of the ask (`SeedDocuments`).
 ///
 /// A memo, not part of what the ask stands on: two of them always compare
 /// equal, and a clone shares what was read.

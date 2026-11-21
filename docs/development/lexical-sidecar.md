@@ -14,7 +14,7 @@ only the candidates its postings reach.
 |---|---|
 | `on` (**default**) | Answers every ask it can hold from its postings (below); every other ask reads the about as before. Followed after every write and before every ask. |
 | `shadow` | Answers nothing; compares itself with the ranker on every ask (`kmp_lexical_shadow`), as P12 did. |
-| `verify` | Answers as the about does and also from the postings, with no cost bound, and logs `kmp_lexical_verify` with whether the two responses are equal. For measuring. |
+| `verify` | Answers as the about does and also from the postings, with no cost bound, and logs `kmp_lexical_verify` with whether the two responses are equal, and how many candidates the whole about found eligible among those the index set aside as unable to be (`unanswerable_eligible`, which must be 0). For measuring. |
 | `off` | Never opened. |
 
 An unknown value is logged and the default stands. On by default because every
@@ -38,6 +38,7 @@ refuses unknown files inside `store/` (the same place the verdict book took).
 | `lex_node`, `lex_relation`, `lex_far` | what follows the ask's selection one write at a time: each reached node's hop and selection counters and language contribution, each kept relation's language contribution, the nodes one hop past the default depth |
 | `lex_clock` (P13) | per kept relation: its sequence, the latest instant it carries and its `valid_until`: the about's frontier and expiries, which an ask that reads only its candidates must still stand on |
 | `lex_vocab` (P13) | per about and word: how many candidates' texts carry it (the rows carry each text's words, row layout 4): the vocabulary the lexical bridge reads |
+| `lex_reach` (`LexicalReach`) | per about and candidate: every word its graph can lend a strict focus beyond its row: the words of the refs it supports, the details of its refs, and the explanatory relations the selection keeps at its refs (endpoints, type, evidence, rationale and motivation), less the words of its plain direct field |
 
 Every part is a residual of the ranker's own counts (`surface_counts`, shared by
 the ranker and the index), so content = text + summary (+ alias content) and
@@ -78,11 +79,21 @@ reads the same while no node lies one hop past depth 2 (`lex_far` empty).
 - Every write is one transaction that first checks the position it read; a
   writer that lost the race writes nothing and follows again.
 - Opened unless `KMP_LEXICAL_INDEX=off`. It can be deleted any time: the next
-  ask of an about builds it again. The index version is `lexical-index-5`
+  ask of an about builds it again. The index version is `lexical-index-6`
   (P13's clocks and vocabulary; `-4` since «quién» and «con» became stop
   words; `-5` since a relation's clock no longer takes `valid_from` or an
-  `occurred_at` it has nothing else beside as the about's present); a
-  sidecar of another version is emptied.
+  `occurred_at` it has nothing else beside as the about's present; `-6`
+  since every candidate carries its reach); a sidecar of another version is
+  emptied, so a sidecar written before `-6` builds itself again on the next
+  ask (timed below), and a binary that predates `-6` empties one written
+  after it the same way.
+- A candidate's reach moves with its row, with the detail of any of its
+  refs, and with any relation kept or let go at one of its refs: a refresh
+  reads it again for every node a moved row, a moved relation or a moved
+  `contains_entry` edge touches, and for the evidence supporting each.
+  `upkeep_tests` compares the reaches a sidecar followed write by write with
+  those of one built from nothing, after a relation-only write between two
+  entries and the same relation written again with other words.
 
 ## Shadow comparison
 
@@ -290,8 +301,7 @@ expansions in the about (field X is measured over every expanded candidate),
 time-scoped asks (`as_of`, `interval`: idf is local to the selection),
 several abouts, dimensions, a shallower depth, semantic retrieval, remote
 re-ranking and the doubt band. The ⌈2/3⌉ focus of a strict policy is not used
-to prune: it also counts words a candidate's relations and supported claims
-carry, which its row does not hold.
+by the floor bound; top-k bounds it with each candidate's reach (below).
 
 `kmp_lexical_answer` and `kmp_lexical_verify` log `reached` (what the postings
 reached) beside `candidates` (what was read).
@@ -363,6 +373,32 @@ read: the gate cites among them in rank order and its proof keeps them. Not
 read lazily (every candidate after the floor is read): questions with no
 informative word, and asks with `max_entries`. `kmp_lexical_answer`/`kmp_lexical_verify` log `planned` (left
 by the floor) beside `candidates` (read by top-k).
+
+**Candidates no reading can find eligible (P14, second pass).** An eligible
+candidate clears the floor of its direct field and, under a strict policy,
+answers two thirds of the focus concepts, counted over its direct field, the
+claims it supports and the relations at its refs (none once an anchor
+decides). The floor is exact from the row; the focus is at most what its
+direct field and its reach (`lex_reach`) carry, because the ranker reads
+claims and relations from a part of the about the selection keeps, and the
+reach holds every word that selection lends there. A candidate below either
+is ranked by nobody: top-k neither reads it nor waits for it, and the best
+prefix left unread is taken among the others only (`RankPrefixes::cannot_answer`).
+Its rescues are what they were: a rescue walks from what was read, and what
+an association or a bridged word can rescue is still always read. On the
+measured question at 10^4 (3,153 planned candidates, none eligible) top-k
+reads the 55 it must and certifies in one round instead of reading all 3,153.
+Fewer selections now cover more than 35 % of the about, so more asks are
+answered from the index (180 of 184 gold reads at 10^4, against 133).
+
+**What the plan reads (second pass).** The df an ask weighs or counts is the
+df of the question's words in every form, of its anchors, of the words the
+associations bring, and of the words a question word shares at least three
+seed rows with (`AssociationCounts::partners`: weighing a pair reads the df
+of both its words); the plan reads exactly those, not the df of every word
+the reached rows hold. The pairs are counted once per ask and question form
+(`SeedDocuments`, shared by the plan, its prefixes and every top-k round),
+and the prefixes are read from the rows in place (`RowField`).
 
 **Exactness.** `maxscore_parity_tests.rs`: randomized stores (90 and 260
 memories, with and without the shipped bridge, half the questions naming an
