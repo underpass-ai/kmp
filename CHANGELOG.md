@@ -411,6 +411,11 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
 
 ### Fixed
 
+- A bidirectional `kmp_trace` takes its one destination as a list holding
+  that ref (`"to": ["ref"]`), as small models send it, and answers it byte for
+  byte as `"to": "ref"`. It was refused under `trace.bidirectional`; two or
+  more refs still are. A list of one without `bidirectional` stays the bounded
+  search it asks for. `tools/list` is unchanged.
 - `kmp_ask` no longer answers what is not stored when the lexical-bridge table
   `kmp-mcp setup` installs is present. The table is built from a multilingual
   embedding, so besides translations it pairs neighbours inside one language
