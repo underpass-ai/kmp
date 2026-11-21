@@ -376,7 +376,8 @@ Users run with the lexical bridge table `kmp setup` installs, and with it
 an ask at 10^4 still read the whole about. This pass makes the indexed ask
 with the shipped table read what an answer can use, fixes a continuation
 bug the second pass found, and speeds up wake pages. Base: `integration/v1.0`
-at a5e92284 (the base last merged). Evidence: `artifacts/kmp-1.0-2026-11-20/read-perf-3/`
+at a5e92284 for the timings; the parity below was taken again on 154259ff,
+the base last merged (it changes no read with Jev off). Evidence: `artifacts/kmp-1.0-2026-11-20/read-perf-3/`
 (maintainer workspace).
 
 **Why the table's ask read everything.** The lead was the language rule of
@@ -461,17 +462,22 @@ proof path of 23,199 hops alone 109 ms), a clone of the response and its
 JSON kept for continuations 40 ms, the projection 40 ms; reading the page
 back now a few ms.
 
-**Parity** (against a5e92284, the base last merged).
+**Parity** (against a5e92284; gold at 10^4, `quick-a` and the judged
+baselines again against 154259ff).
 
 - Gold calls at 10^4, call by call (148 asks with their first continuation
   pages, the five wakes, the rewind): 206 of 206 equal without the table,
   207 of 207 with the shipped table, and the candidate's two table runs equal
-  each other. At 10^5, every 20th question with its first page: PARITY_1E5
+  each other. At 10^5, every 20th question with its first page: 32 of 32
+  equal; with the table, every 40th: 15 of 15 equal.
 - Whole readings the entries cap carries (`budget.max_entries` 100 and 20,
   every sixth gold ask at 10^4): 100 of 100 equal, with and without the
   table.
 - `KMP_LEXICAL_INDEX=verify` (the `eval-hooks` build of this branch) over
-  the gold asks at 10^4: VERIFY_LINE
+  the gold asks at 10^4: 157 of 157 indexed answers equal the whole about's,
+  without the table and with it; of the 65,044 (83,031 with the table)
+  candidates the whole about found eligible, none is among the 373,709
+  (516,968) the index set aside (`unanswerable_eligible = 0`).
 - `quick-a` (eval-hooks builds, variant names of equal length): `neutral`;
   real store 124 of 124 questions scored, parity 1.0; synth 10^3, 88,
   parity 1.0; the retrieval and Jev judged corpora hold. The real store's
