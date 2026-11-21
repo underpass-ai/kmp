@@ -32,6 +32,7 @@ See [store selection](README.md#where-memory-lives) for the full rules.
 | Calibrated confidence | Off | `confidence_calibration: "shipped"` in anchored `ask-gate.json`; only demotes `high` to `medium`. It does not certify correctness. [Confidence limits](README.md#how-ask-decides). |
 | Ask re-ranking and focused Wake | Off | `rerank.json` or `wake-focus.json`, with working `typesafe.json`; sends selected text to TypeSafe Jev. [Configuration](../development/evidence-rerank.md). |
 | Ask doubt band | Off | `ask-judge.json` with working `typesafe.json`; external judgments can veto citations. Promotion needs a separate opt-in. [Doubt band](README.md#the-doubt-band-opt-in-sends-text-to-typesafe). |
+| Ask cross-language judge | Off | `ask-cross-language.json` with working `typesafe.json`; `veto` and `rescue` are each off unless named. Jev may veto an answer only the lexical bridge's translation carries, and rescue an unanchored UNKNOWN from a memory the bridge reached in another language (never `high`, marked `judged_by`). [Cross-language judge](README.md#the-cross-language-judge-opt-in-sends-text-to-typesafe). |
 | Search expansions at write | Off | `write-expansions.json` with working `typesafe.json`; the writer proposes text and Jev judges it. Expansion-only matches stay outside the answer core. [Write expansions](README.md#search-expansions-at-write-opt-in-sends-text-to-typesafe). |
 | Local semantic encoder | Off | `semantic-retrieval.json` points to a separately operated loopback encoder. Semantic-only proof cannot establish an answer or raise confidence. [Adapter contract](../development/semantic-retrieval.md). |
 
@@ -59,6 +60,7 @@ its store.
 | `rerank.json` | Off | Re-rank Ask candidates with Jev (`pool_size` 1–400 is required). [Configuration](../development/evidence-rerank.md). | Yes |
 | `wake-focus.json` | Off | Focus a Wake with an `intent` through Jev. Same shape as `rerank.json`. | Yes |
 | `ask-judge.json` | Off | The doubt band: Jev judges asks the gate settled in doubt. `{}` takes the defaults. [Doubt band](README.md#the-doubt-band-opt-in-sends-text-to-typesafe). | Yes |
+| `ask-cross-language.json` | Off | Jev as the cross-language judge of Ask: `veto` (keep a translated citation only on a yes at `keep_at`, 0.7) and `rescue` (cite one memory the lexical bridge reached in another language for an unanchored UNKNOWN, at `rescue_at`, 0.9), each off unless named. [Cross-language judge](README.md#the-cross-language-judge-opt-in-sends-text-to-typesafe). | Yes |
 | `write-relations.json` | Off | Jev proposes relations for memories just written. | Yes |
 | `write-expansions.json` | Off | Keep writer-proposed search expansions that Jev accepts. [Write expansions](README.md#search-expansions-at-write-opt-in-sends-text-to-typesafe). | Yes |
 | `judgement-book.json` | Verdict book on, 64 MiB | `max_bytes` (1 MiB – 4 GiB) for `judgements.sqlite3`, or `{"mode":"off"}`. It never turns judging on by itself. | Yes |

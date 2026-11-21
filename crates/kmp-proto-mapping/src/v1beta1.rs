@@ -17,11 +17,11 @@ pub use graph_mapping::{
     proto_graph_node_v1beta1, proto_node_detail_view_v1beta1,
 };
 pub use memory_mapping::{
-    AskGate, AskRetrievalContext, ConfidenceCalibration, DoubtBand, DoubtEntry, DoubtJudgement,
-    DoubtPassage, DoubtVerdicts, FloorBound, IndexedAsk, IndexedFieldStats, IndexedLifecycle,
-    IndexedQuestion, IndexedSeeds, JudgedSelection, LanguageSignals, LexicalBridge,
-    LexicalIndexCache, LexicalMargin, LexicalObservation, LexicalProfile, LexicalReach,
-    LexicalReading, LexicalRow, LexicalShadowWitness, LexicalTerm, PartnerShortlist,
+    AskGate, AskRetrievalContext, ConfidenceCalibration, DoubtBand, DoubtBandEntries, DoubtEntry,
+    DoubtJudgement, DoubtPassage, DoubtVerdicts, FloorBound, IndexedAsk, IndexedFieldStats,
+    IndexedLifecycle, IndexedQuestion, IndexedSeeds, JudgedSelection, LanguageSignals,
+    LexicalBridge, LexicalIndexCache, LexicalMargin, LexicalObservation, LexicalProfile,
+    LexicalReach, LexicalReading, LexicalRow, LexicalShadowWitness, LexicalTerm, PartnerShortlist,
     PathsProposals, Posting, PostingBlock, RankPrefix, RankPrefixes, ReachRelation, RelationClock,
     RerankCandidateRanking, SearchProbe, SearchProbeTerms, SemanticCandidateRanking,
     SemanticSource, ShortlistedPartners, abouts_in_bundle, ask_query_from_proto,

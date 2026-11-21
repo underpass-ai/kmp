@@ -37,6 +37,18 @@ impl VerdictKey {
                 field(&mut hasher, canonical(instructions).as_bytes());
                 field(&mut hasher, &0u32.to_be_bytes());
             }
+            // Its own word, so a noul that says what its answers mean never
+            // shares a verdict with the plain one.
+            JudgementQuestion::CriteriaNoul {
+                instructions,
+                criteria,
+            } => {
+                field(&mut hasher, b"criteria_noul");
+                field(&mut hasher, canonical(instructions).as_bytes());
+                field(&mut hasher, &2u32.to_be_bytes());
+                field(&mut hasher, normalized(&criteria.when_true).as_bytes());
+                field(&mut hasher, normalized(&criteria.when_false).as_bytes());
+            }
             JudgementQuestion::Choice {
                 instructions,
                 options,
@@ -202,5 +214,22 @@ mod tests {
         let made = key("m", &question, json!("s"));
         assert_eq!(made.as_bytes().len(), VerdictKey::BYTES);
         assert!(made.as_bytes().starts_with(&RERANK.prefix()));
+    }
+
+    #[test]
+    fn a_noul_with_criteria_is_another_question_than_the_plain_one() {
+        let instructions = json!({"passage": "p", "question": "q"});
+        let with = |yes: &str, no: &str| JudgementQuestion::CriteriaNoul {
+            instructions: instructions.clone(),
+            criteria: crate::serving::noul_criteria::NoulCriteria::new(yes, no),
+        };
+        let plain = key("m", &noul(instructions.clone()), json!("s"));
+        let criteria = key("m", &with("states it", "absent"), json!("s"));
+        assert_ne!(plain, criteria);
+        assert_ne!(criteria, key("m", &with("states it", "other"), json!("s")));
+        assert_eq!(
+            criteria,
+            key("m", &with("states  it", "absent"), json!("s"))
+        );
     }
 }

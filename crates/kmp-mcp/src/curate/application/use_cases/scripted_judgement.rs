@@ -32,7 +32,9 @@ impl JudgementModel for Scripted {
             .iter()
             .map(|(key, question)| {
                 let answer = match question {
-                    JudgementQuestion::Noul { .. } => JudgementAnswer::Noul { yes: self.noul },
+                    JudgementQuestion::Noul { .. } | JudgementQuestion::CriteriaNoul { .. } => {
+                        JudgementAnswer::Noul { yes: self.noul }
+                    }
                     JudgementQuestion::Score { levels, .. } => JudgementAnswer::Score {
                         score: 0.0,
                         probabilities: (0..levels.len())

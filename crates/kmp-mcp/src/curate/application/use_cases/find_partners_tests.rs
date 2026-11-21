@@ -88,7 +88,9 @@ impl Judge {
                         0.1
                     },
                 },
-                JudgementQuestion::Score { .. } => panic!("partners ask no score"),
+                JudgementQuestion::Score { .. } | JudgementQuestion::CriteriaNoul { .. } => {
+                    panic!("partners ask no score")
+                }
             };
             response.answers.insert(key.clone(), answer);
         }
