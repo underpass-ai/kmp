@@ -55,3 +55,6 @@ mod maxscore_parity_tests;
 
 #[cfg(test)]
 mod parts_memo_tests;
+
+#[cfg(test)]
+mod reach_removal_tests;

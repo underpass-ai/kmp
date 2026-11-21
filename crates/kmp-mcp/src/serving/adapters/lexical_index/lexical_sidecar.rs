@@ -357,7 +357,7 @@ impl LexicalSidecar {
                 );
             }
             if !rescued {
-                bridged_limit = bridged_limit.saturating_mul(4);
+                bridged_limit = bridged_limit.max(selection.bridged_read).saturating_mul(4);
             }
         }
     }

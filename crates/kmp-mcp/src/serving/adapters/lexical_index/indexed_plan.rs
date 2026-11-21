@@ -10,6 +10,11 @@ use super::about_stats::AboutStats;
 use super::index_limits::IndexLimits;
 use super::sqlite_lexical_sidecar::SqliteLexicalSidecar;
 use super::top_k_selection::TopKSelection;
+
+/// How many carriers of a bridged word that no reading can find eligible
+/// top-k reads down to at first: the bridged rescue takes three of the
+/// rejected, and one more stands in for one that is not current.
+const BRIDGED_SURE: usize = 4;
 use crate::serving::ports::lexical_candidates::LexicalCandidates;
 
 /// What an ask answered from the lexical index reads (DESIGN L6, P13): the
@@ -268,10 +273,17 @@ impl IndexedPlan {
                     .map(|doc| (prefixes.prefix(doc).map_or(i64::MAX, |prefix| prefix.2), doc))
                     .collect::<Vec<_>>();
                 carriers.sort_by(|left, right| right.0.cmp(&left.0).then_with(|| left.1.cmp(right.1)));
+                // Read at least `bridged_limit` of them, and on to the
+                // `BRIDGED_SURE`-th that no reading can find eligible: the
+                // rescue takes its few from the rejected, best first.
                 let mut last = None;
+                let mut sure = 0usize;
+                let mut bridged_read = 0usize;
                 for (taken, (score, doc)) in carriers.iter().enumerate() {
-                    if taken < bridged_limit || last == Some(*score) {
+                    if taken < bridged_limit || sure < BRIDGED_SURE || last == Some(*score) {
                         chosen.insert((*doc).clone());
+                        sure += usize::from(prefixes.cannot_answer(doc));
+                        bridged_read += 1;
                         last = Some(*score);
                     } else {
                         break;
@@ -303,6 +315,7 @@ impl IndexedPlan {
                     candidates: chosen,
                     unread,
                     unread_bridged,
+                    bridged_read,
                 }
             }
         };

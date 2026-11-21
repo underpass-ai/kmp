@@ -11,6 +11,8 @@ pub(super) struct TopKSelection {
     pub(super) candidates: BTreeSet<String>,
     pub(super) unread: Option<RankPrefix>,
     pub(super) unread_bridged: Option<i64>,
+    /// How many carriers of a bridged word it reads.
+    pub(super) bridged_read: usize,
 }
 
 impl TopKSelection {
@@ -20,6 +22,7 @@ impl TopKSelection {
             candidates,
             unread: None,
             unread_bridged: None,
+            bridged_read: 0,
         }
     }
 
