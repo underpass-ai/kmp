@@ -271,9 +271,31 @@ sampler of the first pass, on a profiling build of the base.
 - **Label references** are parsed once per thread and kept (16 of them).
 - **The cl100k table** loads beside startup instead of inside the first read.
 
-TABLE
+Before (`integration/v1.0` at c517577b) → after, one about, p50 of seven
+calls (first wake: one call; write: five), release builds without
+`eval-hooks`, cores 5–9, both binaries back to back under the build lock,
+21 Nov 2026; other agents' processes kept the load average at 9–12:
 
-GOLD
+| memories | first wake | wake | ask | time (rewind) | write | peak RSS |
+|---:|---:|---:|---:|---:|---:|---:|
+| 1,000 | 180 → 140 ms | 86 → 62 ms | 257 → 233 ms | 16 → 13 ms | 8 → 7 ms | 130 → 119 MB |
+| 10,000 | 1,032 → 742 ms | 156 → 155 ms | 2,039 → 357 ms | 506 → 153 ms | 9 → 7 ms | 823 → 557 MB |
+ROW_TABLE
+| 100,000 | 11.4 → 10.4 s | 11.0 → 8.0 s | 28.0 → 3.0 s | 5.6 → 4.0 s | 143 → 15 ms | 5.1 → 3.9 GB |
+
+Writes at 10^4 after the sidecar is built (30 single-memory writes, twice
+per binary): p50 9.4 and 82.9 ms → 3.1 and 3.2 ms (p90 5–7 ms); the base's
+second run met a burst of disk traffic from elsewhere.
+
+**Gold questions at 10^4** (148 asks and their first continuation pages,
+every second question of the bench's ≤ 10^4 levels), same conditions: ask
+p50 744 → 415 ms, p90 4.9 → 2.1 s, all 148 asks 232 → 118 s, asks within
+500 ms 34 → 95; first wake p50 942 → 696 ms; the rewind 492 → 339 ms (one
+call, not kept yet); peak RSS of the replaying process 1,165 → 1,011 MB.
+The index answers 180 of the 184 indexed-shaped reads (133 before; the rest
+read the whole about because their candidates cover too much of it), and
+with the shipped table 149 of 174 (110 before); counted from the debug log
+on the two merges before c517577b, whose read code is the same.
 
 **Profile after (10^4, profiling build, other builds running).** The
 measured question: plan 0.30–0.36 s (its rows 0.06 s; seed df, counting the
@@ -289,9 +311,30 @@ index: the dimension filter over the index's whole bundle and its
 validation, the proof labels of every entry, and the traversal (together
 about 70 % of the call). Raw: `read-perf-2/profile-final/`.
 
-**Parity.** PARITY
+**Parity** (against the merged base, `integration/v1.0` at c517577b).
 
-**Sidecar upgrade.** UPGRADE
+- Gold calls at 10^4, call by call (148 asks with their first continuation
+  pages, the five wakes, the rewind): 206 of 206 equal; with the shipped
+  lexical bridge table (`KMP_LEXICAL_BRIDGE`), 207 of 207. At 10^5, every
+  40th question with its first page: 15 of 15 equal (against ec3fe186, the
+  base before #943).
+- `KMP_LEXICAL_INDEX=verify` (an `eval-hooks` build) over the gold asks at
+  10^4: 157 of 157 indexed answers equal the whole about's, without the
+  table and with it; and of the 65,044 (83,031 with the table) candidates
+  the whole about found eligible, none is among the 373,709 (516,093) the
+  index set aside as unable to be (`unanswerable_eligible = 0`).
+- `quick-a`, `neutral`: real store 124 of 124 questions scored, parity 1.0;
+  synth 10^3, 88, parity 1.0; the retrieval and Jev judged corpora hold.
+- `retrieval-baseline.sh` (including the shipped-bridge rows),
+  `jev-baseline.sh` and `relate-baseline.sh` hold with no refresh.
+- A store went this build → v0.27.1 → this build, every call answered (the
+  sidecar is rebuilt each time its version changes).
+
+**Sidecar upgrade.** A sidecar written before `lexical-index-6` is emptied
+and built again on the next ask (`lexical-sidecar.md`): 8.3 s at 10^4 and
+91 s at 10^5 on a host with other builds running, against 9.5 s and 83 s
+for the `-5` build of the same stores in the same runs; the first ask after
+the upgrade pays it once.
 
 **What remains.**
 
