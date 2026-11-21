@@ -93,7 +93,7 @@ impl IndexedPlan {
         let seeds_read = IndexedSeeds::default();
         // The df the associations read: the question's words, and the words
         // a question word pairs with in enough seed rows. Nothing the ask
-        // weighs or counts reads any other df (`AssociationIndex::partners`).
+        // weighs or counts reads any other df (`AssociationCounts::partners`).
         let mut probed = seeds.clone();
         probed.extend(question.anchor_terms().iter().cloned());
         let mut frequencies = sidecar.document_frequencies(about, &probed)?;
