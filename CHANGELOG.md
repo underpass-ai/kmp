@@ -411,6 +411,11 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
 
 ### Fixed
 
+- Top-level `kmp-mcp --help` indents every description under one column,
+  including those on the line after a long usage (a string continuation had
+  eaten their indent), and `doctor` with `KMP_MCP_BACKEND=grpc` and no
+  endpoint says `set KMP_KERNEL_GRPC_ENDPOINT, or unset …` without a stray
+  space before the comma.
 - A format-1 or format-2 store says what it is and what to do: the refusal
   names it (a redb store written by KMP 0.3.x or earlier; a SQLite store
   with the old label identity, written by 0.2.0 to 0.14.x), says no

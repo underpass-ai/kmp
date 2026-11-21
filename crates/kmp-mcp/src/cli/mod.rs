@@ -301,44 +301,170 @@ fn print_subcommand_help(command: &str) {
 
 fn print_help() {
     println!(
-        "{}\n\n\
-Usage:\n  kmp-mcp                         Serve MCP over stdio\n  \
-kmp-mcp info                    What this binary is and which memory it opens\n  \
-kmp-mcp doctor                  Diagnose the setup and name the one thing to fix\n  \
-kmp-mcp setup                   Align installed native plugins and engines\n  \
-kmp-mcp update                  Update every installed KMP host as one convergence\n  \
-kmp-mcp config                  Show the agent policy and the user memory selection\n  \
-kmp-mcp config memory-routing <on-request|always>\n  \
-kmp-mcp config memory-store <absolute-path>|--clear\n  \
-                                Select the user memory persistently, or stop selecting one\n  \
-kmp-mcp demo [--no-viewer] [--dry-run]\n  \
-                                Write a worked example into this store and open ChronoLoom on it\n  \
-kmp-mcp memories [--json]       Every store on this machine, its reach and its abouts\n  \
-kmp-mcp memories register <absolute-path>\n  \
-                                Remember an existing store no command has opened here\n  \
-kmp-mcp guide sync --plugin-root DIR\n  \
-                                Converge the two immutable shipped guides\n  \
-kmp-mcp plugin resolve-engine  Select the engine matching both host manifests\n  \
-kmp-mcp plugin notice          Report version drift; asks GitHub at most once a day and caches\n  \
-                                the answer, unless KMP_VERSION_CHECK=off\n  \
-kmp-mcp document <about>        Render one about as a Markdown document\n  \
-kmp-mcp context project|expand  Compose captured memory packets or expand their text\n  \
-kmp-mcp snapshot <verb>         Create, verify, read or merge named snapshots\n  \
-kmp-mcp consolidation          Capture, write, audit or project versioned views\n  \
-kmp-mcp summaries pending       List the memories that owe an English search summary\n  \
-kmp-mcp uninstall [--store|--engine <absolute-path>] [--apply] [--purge] [--keep-memory]\n  \
-                                Remove one store or one engine, or preview it all\n  \
-kmp-mcp export [file] [--about <about>]...  Export exact abouts or the full log\n  \
-kmp-mcp export --repair-pending Acknowledge recovery after stopping writers\n  \
-kmp-mcp import [file]           Import an event-log bundle into an empty store\n  \
-kmp-mcp import --from <store|bundle> --about <about>...\n  \
-                                Bring exact abouts of another memory into this one\n  \
-kmp-mcp viewer [addr]           Serve the local memory viewer\n  \
-kmp-mcp --version               Print binary and store formats\n  \
-kmp-mcp --help                  Print this help\n\n\
-Environment: the KMP_* switches are listed with their accepted values in\n\
-docs/embedded/configuration.md; `kmp-mcp doctor` shows the ones set and refuses a\n\
-value kmp-mcp does not accept.",
-        kmp_mcp::banner::large(kmp_mcp::style::Style::for_stdout())
+        "{}\n\n{}",
+        kmp_mcp::banner::large(kmp_mcp::style::Style::for_stdout()),
+        help_text()
     );
+}
+
+/// The verbs and what each does. A usage too long for the first column puts
+/// its description on the next line, under the column.
+const HELP_VERBS: &[(&str, &str)] = &[
+    ("kmp-mcp", "Serve MCP over stdio"),
+    (
+        "kmp-mcp info",
+        "What this binary is and which memory it opens",
+    ),
+    (
+        "kmp-mcp doctor",
+        "Diagnose the setup and name the one thing to fix",
+    ),
+    (
+        "kmp-mcp setup",
+        "Align installed native plugins and engines",
+    ),
+    (
+        "kmp-mcp update",
+        "Update every installed KMP host as one convergence",
+    ),
+    (
+        "kmp-mcp config",
+        "Show the agent policy and the user memory selection",
+    ),
+    ("kmp-mcp config memory-routing <on-request|always>", ""),
+    (
+        "kmp-mcp config memory-store <absolute-path>|--clear",
+        "Select the user memory persistently, or stop selecting one",
+    ),
+    (
+        "kmp-mcp demo [--no-viewer] [--dry-run]",
+        "Write a worked example into this store and open ChronoLoom on it",
+    ),
+    (
+        "kmp-mcp memories [--json]",
+        "Every store on this machine, its reach and its abouts",
+    ),
+    (
+        "kmp-mcp memories register <absolute-path>",
+        "Remember an existing store no command has opened here",
+    ),
+    (
+        "kmp-mcp guide sync --plugin-root DIR",
+        "Converge the two immutable shipped guides",
+    ),
+    (
+        "kmp-mcp plugin resolve-engine",
+        "Select the engine matching both host manifests",
+    ),
+    (
+        "kmp-mcp plugin notice",
+        "Report version drift; asks GitHub at most once a day and caches\n\
+         the answer, unless KMP_VERSION_CHECK=off",
+    ),
+    (
+        "kmp-mcp document <about>",
+        "Render one about as a Markdown document",
+    ),
+    (
+        "kmp-mcp context project|expand",
+        "Compose captured memory packets or expand their text",
+    ),
+    (
+        "kmp-mcp snapshot <verb>",
+        "Create, verify, read or merge named snapshots",
+    ),
+    (
+        "kmp-mcp consolidation",
+        "Capture, write, audit or project versioned views",
+    ),
+    (
+        "kmp-mcp summaries pending",
+        "List the memories that owe an English search summary",
+    ),
+    (
+        "kmp-mcp uninstall [--store|--engine <absolute-path>] [--apply] [--purge] [--keep-memory]",
+        "Remove one store or one engine, or preview it all",
+    ),
+    (
+        "kmp-mcp export [file] [--about <about>]...",
+        "Export exact abouts or the full log",
+    ),
+    (
+        "kmp-mcp export --repair-pending",
+        "Acknowledge recovery after stopping writers",
+    ),
+    (
+        "kmp-mcp import [file]",
+        "Import an event-log bundle into an empty store",
+    ),
+    (
+        "kmp-mcp import --from <store|bundle> --about <about>...",
+        "Bring exact abouts of another memory into this one",
+    ),
+    ("kmp-mcp viewer [addr]", "Serve the local memory viewer"),
+    ("kmp-mcp --version", "Print binary and store formats"),
+    ("kmp-mcp --help", "Print this help"),
+];
+
+/// Where descriptions start, counted from the line's first column.
+const HELP_COLUMN: usize = 34;
+
+fn help_text() -> String {
+    let mut out = String::from("Usage:\n");
+    let indent = " ".repeat(HELP_COLUMN);
+    for (usage, description) in HELP_VERBS {
+        let mut lines = description.lines();
+        let line = format!("  {usage}");
+        match lines.next() {
+            Some(first) if line.len() < HELP_COLUMN => {
+                out.push_str(&format!("{line:<HELP_COLUMN$}{first}\n"));
+            }
+            Some(first) => out.push_str(&format!("{line}\n{indent}{first}\n")),
+            None => out.push_str(&format!("{line}\n")),
+        }
+        for rest in lines {
+            out.push_str(&format!("{indent}{}\n", rest.trim_start()));
+        }
+    }
+    out.push_str(
+        "\nEnvironment: the KMP_* switches are listed with their accepted values in\n\
+         docs/embedded/configuration.md; `kmp-mcp doctor` shows the ones set and refuses a\n\
+         value kmp-mcp does not accept.",
+    );
+    out
+}
+
+#[cfg(test)]
+mod help_tests {
+    use super::{HELP_COLUMN, help_text};
+
+    #[test]
+    fn every_help_line_under_usage_is_indented_and_descriptions_share_a_column() {
+        let text = help_text();
+        let verbs = text
+            .lines()
+            .skip(1)
+            .take_while(|line| !line.is_empty())
+            .collect::<Vec<_>>();
+        assert!(verbs.len() > 20, "{text}");
+        for line in &verbs {
+            assert!(line.starts_with("  "), "unindented help line: `{line}`");
+        }
+        for line in verbs.iter().filter(|line| line.starts_with("  kmp-mcp")) {
+            if line.len() > HELP_COLUMN && line.as_bytes()[HELP_COLUMN - 1] == b' ' {
+                assert_ne!(
+                    line.as_bytes()[HELP_COLUMN],
+                    b' ',
+                    "description off the column: `{line}`"
+                );
+            }
+        }
+        assert!(
+            text.contains(&format!(
+                "\n{}Select the user memory persistently",
+                " ".repeat(HELP_COLUMN)
+            )),
+            "{text}"
+        );
+    }
 }
