@@ -20,9 +20,22 @@ With a lexical-bridge table installed — `kmp-mcp setup` installs the one the
 release publishes, once for the machine, and `scripts/lexical-bridge/` builds
 your own — `kmp_ask` also reaches memory written in another language on its
 own: a citation that crossed a language names the word pairs that carried it
-(`valvula≈valve 0.51`) and answers at medium confidence at most. Either way,
-evidence, refs, relation `why` and source metadata stay exactly as stored,
-and the agent answers in the user's language.
+(`valvula≈valve 0.51`). Either way, evidence, refs, relation `why` and source
+metadata stay exactly as stored, and the agent answers in the user's language.
+
+The table translates; it does not stand in for a word inside one language.
+Its vectors come from a multilingual embedding, so it also puts neighbours of
+one language close together (`deadline≈final`, `prefix≈prefer`). A bridged
+pair therefore counts as stating what the question asked only when the
+question and the memory are written in two different languages, each read
+from its own function words; a memory in the question's language, or one
+whose language cannot be read, still has to share the reader's words. Inside
+one language the table still helps ranking, and a memory it reached arrives in
+`proof.evidence` marked with its pairs, but the table never makes it an
+answer. `high` is read from the reader's own words only: an anchored answer
+that stands because the table translated a concept is `medium` at most, and so
+is one the table alone carried to the bar. With no table installed nothing of
+this applies and `kmp_ask` answers as it always did.
 
 ## English search summaries
 
@@ -43,6 +56,12 @@ them, the doctor counts them, and the agent attaches each with
 the stored text untouched.
 
 ## Limits
+
+The language a question and a memory lean in is read from Spanish and English
+function words only, from as few as one. A question or a memory in another
+language leans in neither, so the table translates nothing for it; and a
+single stray function word (`la`, `de`, `ha`) can make an otherwise keyword
+question lean Spanish.
 
 Questions in Chinese, Japanese or Thai are not segmented by word yet. Their
 stored memory remains byte-exact and inspectable; word-based semantic

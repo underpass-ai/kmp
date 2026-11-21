@@ -84,7 +84,7 @@ exactly 0, and it lists the raw movement apart (`raw_moved`). Measured on
 |---|---|---|---|
 | `real-store` | B-real (`gold.jsonl`, when labelled), hard negatives, identifier guards | frozen copy of the real store, `<freeze>/store/`, a fresh copy per process | private |
 | `synth-mono` | synth-v1 seed 7 at 10^3, mono | written once by the baseline, imported by each arm (`build = import`) | public |
-| `retrieval-judged` | `retrieval_cases.json`: 35 originals + 18 guarded cases (plain), 35 with narrow rerank from the cassette | one seeded store per case | public |
+| `retrieval-judged` | `retrieval_cases.json`: 35 originals + 18 guarded cases (plain), 35 with narrow rerank from the cassette; the shipped-bridge stress cases (`crates/kmp-mcp/tests/fixtures/lexical_bridge_stress/`, 103: synthetic negatives and cross-language questions) with the table `kmp-mcp setup` installs, whatever the variant's table (shipped-bridge) | one seeded store per case | public |
 | `jev-judged` | `jev_cases.json` in cassette replay | one seeded store per case and Jev arm | public |
 
 Parity is not a section of its own: every run section compares the two arms

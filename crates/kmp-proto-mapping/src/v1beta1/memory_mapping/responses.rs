@@ -639,6 +639,17 @@ pub fn ask_response_from_result(
     } else {
         confidence
     };
+    // Nor is one the lexical bridge had to carry: the gate answered only
+    // because the table translated what a cited memory states in another
+    // language, and the coverage above counted the anchors it named in the
+    // reader's words, never the concept the table stood in for.
+    let confidence = if verdict.as_ref().is_some_and(|verdict| verdict.translated)
+        && confidence == MemoryConfidence::High
+    {
+        MemoryConfidence::Medium
+    } else {
+        confidence
+    };
     // A store that asked for it (`attribute_check`) holds an unanchored
     // `high` to a citation that states the asked attribute itself.
     let confidence = match (retrieval.gate, &verdict) {
