@@ -252,7 +252,11 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
     (partner round, labels, retyping).
   - A companion yes/no question replaces the `none` option: pair typing,
     the partner round, the path step round without a corridor, the
-    pre-write direction, lifecycle.
+    pre-write direction, lifecycle. Lifecycle reads its companion at 0.5,
+    the line the owner chose between three measured options: at the
+    guide's 0.7 it withdrew most real supersessions. On fresh synthetic
+    seeds the 0.5 line finds 50 of 90 real supersessions with 14 false
+    proposals of 120 (the earlier form: 68 and 47).
     Labels keep their `none` option (the companion proposed fewer right
     values on the held-out set).
   - Relation types, directions and lifecycle readings carry a description
