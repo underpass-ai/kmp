@@ -32,8 +32,9 @@ do so as a repair. Selecting another directory is their decision.
 
 Tool failures set `isError=true` and carry
 `structuredContent.error.{code,message}`. Read the code; it is produced where
-the failure happened, never inferred from the words, and `tools/list` carries
-the closed set under `_meta."kmp/errorCodes"` with what each one means.
+the failure happened, never inferred from the words, and `kmp_guide
+{"topic":"guide"}` lists the closed set under `error_codes` with what each one
+means.
 
 | code | what to do |
 | --- | --- |

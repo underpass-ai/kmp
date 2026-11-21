@@ -22,6 +22,10 @@
         "topic": "relations"
       },
       {
+        "purpose": "Resume a write that answered needs_review",
+        "topic": "review"
+      },
+      {
         "purpose": "Write one canonical memory document",
         "topic": "ingest"
       },

@@ -1,4 +1,4 @@
-use crate::contract::schema::definition::tool_definition_with_output;
+use crate::contract::schema::definition::{ToolEffect, tool_definition_with_output};
 use crate::guide::GuideTopic;
 use serde_json::{Value, json};
 
@@ -6,8 +6,8 @@ pub(crate) fn definition() -> Value {
     let topics: Vec<&str> = GuideTopic::all().iter().map(|topic| topic.name).collect();
     tool_definition_with_output(
         "kmp_guide",
-        false,
-        "Explain one topic before its first use: a short worked card and the arguments of the tools it teaches. Without a topic, list the topics. A plain lookup that reads no store and records nothing.",
+        ToolEffect::Read,
+        "Explain one topic before its first use: a worked card, its rules and its arguments; without a topic, list the topics.",
         json!({"type":"object","additionalProperties":false,"properties":{
             "topic":{"type":"string","enum":topics,"description":"The topic to explain. Omit to list the topics."}
         }}),

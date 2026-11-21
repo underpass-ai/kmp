@@ -1,6 +1,6 @@
 use serde_json::{Value, json};
 
-use crate::contract::schema::definition::tool_definition_with_output;
+use crate::contract::schema::definition::{ToolEffect, tool_definition_with_output};
 #[allow(unused_imports)]
 use crate::contract::schema::primitives::*;
 #[allow(unused_imports)]
@@ -13,8 +13,14 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_inspect",
-        false,
-        "Inspect one stored memory object or accepted write receipt inside an explicit about boundary. Receipt object.text is immutable command-detail JSON, not current memory. Evidence, links and raw records page under the byte ceiling; continuations can reuse the first page's object.",
+        // A read of a node of the installed guide on a store that lacks it
+        // seeds the guide first (`serving::guide_seed`), so Inspect is not a
+        // pure read; the seed is content-addressed and appends nothing twice.
+        ToolEffect::Write {
+            destructive: false,
+            idempotent: true,
+        },
+        "Read one stored memory or write receipt in full, with its evidence and links, before relying on it.",
         json!({
             "type": "object",
             "additionalProperties": false,

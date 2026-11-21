@@ -90,6 +90,12 @@ impl KernelMcpToolBackend for RetryingEmbeddedKernelMcpBackend {
             .unwrap_or(false)
     }
 
+    fn open_world_tools(&self) -> Vec<&'static str> {
+        self.opened_backend()
+            .map(|backend| backend.open_world_tools())
+            .unwrap_or_default()
+    }
+
     fn call_tool<'a>(&'a self, name: &'a str, arguments: &'a Value) -> KernelMcpToolFuture<'a> {
         Box::pin(async move {
             let backend = self.opened_backend()?;

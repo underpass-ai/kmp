@@ -242,6 +242,27 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
         !self.lexical_bridge.is_silent()
     }
 
+    /// Each tool whose Jev opt-in took effect when the store opened: the
+    /// review and summary audit with `typesafe.json` and a key, Wake with
+    /// `wake-focus.json`, Ask with `rerank.json` or `ask-judge.json`, the
+    /// writer with `write-relations.json` or `write-expansions.json`.
+    fn open_world_tools(&self) -> Vec<&'static str> {
+        if !matches!(self.judgement, Ok(Some(_))) {
+            return Vec::new();
+        }
+        let mut tools = vec!["kmp_curate", "kmp_summaries_audit"];
+        if matches!(self.wake_focus, Ok(Some(_))) {
+            tools.push("kmp_wake");
+        }
+        if matches!(self.rerank, Ok(Some(_))) || matches!(self.doubt_band, Ok(Some(_))) {
+            tools.push("kmp_ask");
+        }
+        if self.write_relations || matches!(self.write_expansions, Ok(Some(_))) {
+            tools.push("kmp_write_memory");
+        }
+        tools
+    }
+
     fn call_tool<'a>(&'a self, name: &'a str, arguments: &'a Value) -> KernelMcpToolFuture<'a> {
         Box::pin(async move {
             let writes = writes_memory(name);

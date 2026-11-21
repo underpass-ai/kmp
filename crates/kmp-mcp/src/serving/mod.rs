@@ -15,6 +15,8 @@ pub(crate) mod frozen_recall_key;
 pub(crate) mod grpc_tls_config;
 pub(crate) mod grpc_tls_mode;
 mod guide_dispatch;
+#[cfg(test)]
+pub(crate) use guide_dispatch::guide_error_codes;
 mod guide_repair;
 pub(crate) mod guide_seed;
 pub(crate) mod json_rpc;

@@ -20,11 +20,12 @@ ingestion time; supply it only when the source gives another. Omit unknown
 `occurred_at`, `valid_from` and `valid_until`; observation is never onset. Root clocks are record defaults; a
 record's null clears one. Keep a later check out of an earlier event's summary.
 
-A link (`connect_to`, `relations`) is taught by topic `relations`. Rich links
-return `status:needs_review`, `accepted:false`: nothing written. Review the
-returned neighborhood, then send the returned `continuation` (alone, or with
-the same `about`/`actor`) or correct the proposal. That review is yours, not a
-request for human approval. Never invent a date, alias or proof to pass.
+A link (`connect_to`, `relations`) is taught by topic `relations`: `relations`
+links memories already stored and writes only the link and its evidence, so
+never resubmit a stored memory to connect it. Independent observations and
+honest fallback links stay one call. Set `options.dry_run` only for a requested
+preview or payload debugging. Rich links answer `status:needs_review`,
+`accepted:false`, with nothing written: topic `review` resumes them.
 
 More: `guide:kmp-agent:example:first-decision`,
 `guide:kmp-agent:example:event-separation`.

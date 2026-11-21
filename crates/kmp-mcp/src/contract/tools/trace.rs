@@ -1,6 +1,6 @@
 use serde_json::{Value, json};
 
-use crate::contract::schema::definition::tool_definition_with_output;
+use crate::contract::schema::definition::{ToolEffect, tool_definition_with_output};
 use crate::contract::schema::paging::page_schema;
 #[allow(unused_imports)]
 use crate::contract::schema::primitives::*;
@@ -14,13 +14,13 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_trace",
-        false,
-        "Choose one mode: to connects known destination refs; search.seek discovers compatible evidence paths from a seed without destinations. Never combine their search options. A to array, search or temporal selection enables a bounded shared search through same-about entries. One shortest discovered route per destination by default; search can retain alternatives and follow each relation type in its chosen direction; paths do not establish answer completeness. A single to without search or temporal selection traces equivalence-aware over every stored relation with a bounded bidirectional search; a work cutoff returns no path, the stop in search and an optional search.widen.",
+        ToolEffect::Read,
+        "Find the evidenced path from a stored memory to known destinations (`to`), or the evidence for required roles from that seed (`search.seek`).",
         json!({
             "type": "object",
             "additionalProperties": false,
             "required": ["about", "from"],
-            "oneOf": [{"required":["to"],"not":{"properties":{"search":{"required":["seek"]}},"required":["search"]}}, {"required":["search"],"properties":{"search":{"required":["seek"]}},"not":{"required":["to"]}}],
+            "allOf": [crate::contract::cross_field_rule::tagged("trace.mode", json!({"oneOf": [{"required":["to"],"not":{"properties":{"search":{"required":["seek"]}},"required":["search"]}}, {"required":["search"],"properties":{"search":{"required":["seek"]}},"not":{"required":["to"]}}]}))],
             "properties": {
                 "about": string_schema("Memory anchor for this trace. Refs normally belong to it; a trace may cross a writer-declared same_event_as or same_entity_as link backed by a kmp_relate proposal. Naming another about's ref alone does not create a path."),
                 "from": string_schema("Source memory ref. In live gRPC mode this must resolve to a kernel node id."),
@@ -163,11 +163,38 @@ fn trace_search_schema() -> Value {
     }
     // Declare field bodies once: clients see two exclusive choices while the
     // existing unknown-argument validator retains recursive property checks.
-    schema["oneOf"] = json!([
-        {"title":"Known destinations", "description":"Requires to at call level. No seek or witness joins.",
-         "propertyNames":{"enum":destinations}},
-        {"title":"Evidence from seed", "description":"Requires seek; no to. Relations and constraints live inside roles.",
-         "required":["seek"], "propertyNames":{"enum":evidence}}
-    ]);
+    schema["allOf"] = json!([crate::contract::cross_field_rule::tagged(
+        "trace.search-mode",
+        json!({"oneOf":[
+            {"title":"Known destinations", "propertyNames":{"enum":destinations}},
+            {"title":"Evidence from seed", "required":["seek"], "propertyNames":{"enum":evidence}}
+        ]})
+    )]);
     schema
+}
+
+/// The `search` options only one mode takes: (destinations, evidence).
+pub(crate) fn search_mode_fields() -> (Vec<String>, Vec<String>) {
+    let schema = trace_search_schema();
+    let branch = |index: usize| -> Vec<String> {
+        schema["allOf"][0]["oneOf"][index]["propertyNames"]["enum"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(|name| name.as_str().map(str::to_string))
+            .collect()
+    };
+    let (destinations, evidence) = (branch(0), branch(1));
+    (
+        destinations
+            .iter()
+            .filter(|name| !evidence.contains(name))
+            .cloned()
+            .collect(),
+        evidence
+            .iter()
+            .filter(|name| !destinations.contains(name))
+            .cloned()
+            .collect(),
+    )
 }

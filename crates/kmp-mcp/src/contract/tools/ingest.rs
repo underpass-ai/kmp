@@ -1,6 +1,8 @@
 use serde_json::{Value, json};
 
-use crate::contract::schema::definition::tool_definition_with_output;
+use crate::contract::cross_field_rule::tagged;
+
+use crate::contract::schema::definition::{ToolEffect, tool_definition_with_output};
 #[allow(unused_imports)]
 use crate::contract::schema::primitives::*;
 #[allow(unused_imports)]
@@ -13,14 +15,19 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_ingest",
-        true,
-        "Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape.",
+        ToolEffect::Write {
+            destructive: true,
+            idempotent: true,
+        },
+        "Low-level writer of one exact canonical memory graph; prefer kmp_write_memory unless you produce that graph yourself.",
         json!({
             "type": "object",
             "additionalProperties": false,
             "required": ["about", "memory", "idempotency_key"],
-            "if":{"not":{"required":["default_observation_to_ingestion"],"properties":{"default_observation_to_ingestion":{"const":true}}}},
-            "then":{"properties":{"provenance":{"required":["observed_at"]}}},
+            "allOf":[tagged("ingest.observed", json!({
+                "if":{"not":{"required":["default_observation_to_ingestion"],"properties":{"default_observation_to_ingestion":{"const":true}}}},
+                "then":{"properties":{"provenance":{"required":["observed_at"]}}}
+            }))],
             "properties": {
                 "about": string_schema("Memory anchor or root ref this memory should attach to."),
                 "default_observation_to_ingestion": json!({"type":"boolean","default":false,"description":"Semantic-writer policy: fill missing observations on new coordinates, source times, packet provenance and explicit proof clock objects using exact kernel ingestion. Preserve supplied observations and restored clocks. Absent relation/support clock objects inherit packet observation. Ordinary canonical ingest preserves unknown entry clocks."}),
@@ -28,8 +35,10 @@ pub(crate) fn definition() -> Value {
                     "type": "object",
                     "additionalProperties": false,
                     "required": ["dimensions", "entries"],
-                    "if":{"properties":{"entries":{"maxItems":0}}},
-                    "then":{"required":["relations"],"properties":{"relations":{"minItems":1}}},
+                    "allOf":[tagged("ingest.links-only", json!({
+                        "if":{"properties":{"entries":{"maxItems":0}}},
+                        "then":{"required":["relations"],"properties":{"relations":{"minItems":1}}}
+                    }))],
                     "properties": {
                         "dimensions": {
                             "type": "array",
