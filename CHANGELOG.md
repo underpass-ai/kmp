@@ -411,6 +411,14 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
 
 ### Fixed
 
+- KMP's own memory (`.kmp/memory.jsonl`, from
+  `examples/kmp-project/requests.json`) records the 1.0 decision that a read
+  never writes and `kmp_guide` serves the guide from the engine, superseding
+  "guide seeded on first read", which it still held as current. It is a new
+  event appended to the committed history: `scripts/examples/bundle.py
+  --base` sends the packets on top of the committed bundle, which
+  `refresh.sh` now uses for this bundle, so existing project stores stay a
+  prefix of it.
 - `kmp-mcp demo` never writes a project's store. Run inside a git project it
   put `example:kmp-demo` into the project store, so `snapshot create`
   copied it into `.kmp/snapshots/`, and it created an empty `.kmp/memory.jsonl`.
