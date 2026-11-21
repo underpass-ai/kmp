@@ -37,7 +37,8 @@ token figure is `null` with its reason; nothing else changes.
      the report records the checkout's commit and whether the tree was dirty.
    - `[binary] git_ref = "<branch or commit>"`. `quick-a` resolves the ref to a
      commit, adds a throwaway git worktree under `tmp/memory-bench/work/`,
-     runs `cargo build --release --locked -p kmp-mcp` there with a shared
+     runs `cargo build --release --locked -p kmp-mcp` there (with
+     `--features eval-hooks` when that ref's `kmp-mcp` declares the feature) with a shared
      `CARGO_TARGET_DIR` (`work/cargo-target`), copies the executable to
      `tmp/memory-bench/bin/<sha256>/kmp-mcp` with `provenance.json` (ref, commit,
      cargo and rustc versions, build seconds, `--version`) and removes the
@@ -191,7 +192,9 @@ first: `captura_fallida`, `no_comparable`, `regresion`, `indecidible`,
 `mejora_con_coste`, `solo_coste`, `mejora`, `neutral`), that any voting section
 reached. A section votes when it measured a target of the claim, or when it
 failed, was not comparable or regressed (a broken guard anywhere is a
-regression). A section whose questions never exercise the target (no wake
+regression). A section in which any journey ended in an error is `failed`
+with no headline (verdict `captura_fallida`, reason `journeys not scored`); it
+is never scored over the journeys that did finish. A section whose questions never exercise the target (no wake
 question for a wake claim) says `indecidible` by construction and does not
 vote. So a candidate earns `mejora` only when every section that measured its
 targets says so. The judged corpora
@@ -328,6 +331,13 @@ evidence node of a judged entry: v2 counted it as a miss.
 B-real is the corpus built from real `kmp_ask` calls against a frozen copy of a
 real store, with gold written by people. It is a local release gate: it never
 runs in CI and its data never enters the repository.
+
+A frozen question keeps the call it was asked with. Before a run sends it, its
+first call is brought to the current contract (`Question.first_call` through
+`current_arguments`): a field 1.0 retired because the read ignored it
+(`budget.tokens`, recall `depth`, the trace `goal`, `limit.tokens`, any
+budget on `kmp_curate`) is left out, and `kmp_time`'s top-level `depth` moves
+into `budget.depth`. The frozen data is never rewritten.
 
 ### Privacy
 

@@ -1,20 +1,20 @@
 # Store configuration and retrieval defaults
 
-This page describes the current `main` branch. The retrieval defaults below
-ship in v0.24.0; the **Store config** section in `info` and `doctor` was added
-after that release, and the **Environment** section and strict switches in
-1.0. Check `kmp-mcp --version` before comparing an installed
-engine with these docs.
+Every setting `kmp-mcp` reads: environment switches, the optional files
+beside the store, and the user config file. Check `kmp-mcp --version` before
+comparing an installed engine with this page.
 
 ## Select the memory first
 
-Run these commands from the host's working directory with the same environment:
+Run this from the host's working directory with the same environment:
 
 ```bash
-kmp-mcp config
-kmp-mcp info
 kmp-mcp doctor
 ```
+
+It names the data directory, the rule that chose it, the switches in effect
+and the verdict on every optional file. `kmp-mcp config` shows the saved
+selection alone.
 
 `KMP_MCP_DATA_DIR` wins over everything; then the nearest project root's
 `.kernel/` (a Git checkout, whose worktrees share its store); then the saved
@@ -37,8 +37,50 @@ See [store selection](README.md#where-memory-lives) for the full rules.
 
 No external service is required for default embedded retrieval. Enabling a
 TypeSafe integration sends the selected question or memory text needed by
-that feature to the configured service. A cloud agent also receives the
-evidence returned to it under that host's data policy.
+that feature to the configured service; [Security and privacy](../security-privacy.md#typesafe-jev-opt-in-per-store)
+lists what each one sends. A cloud agent also receives the evidence returned
+to it under that host's data policy.
+
+## Optional files beside the store
+
+These are the twelve files `doctor` and `info` report under **Store config**.
+Each goes in the data directory, beside `store/`. An absent file leaves its
+default; a file that cannot apply is reported `rejected` and the default
+stands. Restart the host after a change: a session reads them when it opens
+its store.
+
+| File | Default without it | What it does | Needs `typesafe.json` |
+|:--|:--|:--|:--|
+| `ask-gate.json` | Anchored gate on, with partial answers | `mode` (`anchored` or `off`), `partial`, `confidence_calibration`, `attribute_check`, `expansion_rescue_focus`. [How Ask decides](README.md#how-ask-decides). | No |
+| `lexical-index.json` | Index limits as shipped | `max_candidate_share_percent`, `min_about_entries`, `head_window`, `continuation_chunk`. [Index contract](../development/lexical-sidecar.md). | No |
+| `lexical-bridge.kmpb` | The machine table `<data home>/kmp/lexical-bridge.kmpb`, if any | A bridge table for this store only. `KMP_LEXICAL_BRIDGE` names another file or `none`. [Languages](languages.md). | No |
+| `semantic-retrieval.json` | Off | Experimental: a local encoder on a loopback address. [Adapter contract](../development/semantic-retrieval.md). | No |
+| `typesafe.json` | Off: nothing is sent | Opt this store into TypeSafe Jev: `{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.14.0","timeout_ms":20000}`. Only a pinned model is accepted. Turns on `kmp_curate` and `kmp_summaries_audit` judgements. | — |
+| `rerank.json` | Off | Re-rank Ask candidates with Jev (`pool_size` 1–400 is required). [Configuration](../development/evidence-rerank.md). | Yes |
+| `wake-focus.json` | Off | Focus a Wake with an `intent` through Jev. Same shape as `rerank.json`. | Yes |
+| `ask-judge.json` | Off | The doubt band: Jev judges asks the gate settled in doubt. `{}` takes the defaults. [Doubt band](README.md#the-doubt-band-opt-in-sends-text-to-typesafe). | Yes |
+| `write-relations.json` | Off | Jev proposes relations for memories just written. | Yes |
+| `write-expansions.json` | Off | Keep writer-proposed search expansions that Jev accepts. [Write expansions](README.md#search-expansions-at-write-opt-in-sends-text-to-typesafe). | Yes |
+| `judgement-book.json` | Verdict book on, 64 MiB | `max_bytes` (1 MiB – 4 GiB) for `judgements.sqlite3`, or `{"mode":"off"}`. It never turns judging on by itself. | Yes |
+| `curate.json` | 120 facts per about for a review without focus | `partner_facts` (up to 512), `partner_filter`, `paths_corridor`. [Pairing orphans](README.md#how-a-review-without-focus-pairs-orphans). | Yes |
+
+The TypeSafe key is read from `TYPESAFE_API_KEY`, else from the line
+`TYPESAFE_API_KEY=…` in `$XDG_CONFIG_HOME/typesafe.env` (`~/.config/typesafe.env`
+without `XDG_CONFIG_HOME`). That file is refused when group or others can read
+it. Without `typesafe.json` the key is never read.
+
+## The user config file
+
+`$XDG_CONFIG_HOME/kmp/config.toml` (`~/.config/kmp/config.toml`) holds two
+keys. Write them with `kmp-mcp config`, not by hand:
+
+| Key | Values | Set with |
+|:--|:--|:--|
+| `memory_routing` | `on_request` (default), `always` | `kmp-mcp config memory-routing <on-request\|always>` |
+| `memory_store` | an absolute path | `kmp-mcp config memory-store <absolute-path>`, `--clear` to remove |
+
+An older file may hold an `ask_fallback_languages` line; it is ignored and
+`doctor` says so.
 
 ## Environment switches
 
@@ -89,8 +131,8 @@ and `fixture`, `shadow` and `verify` are refused like any unknown value.
 
 ## Read the diagnostics
 
-Current `main` uses the startup configuration loaders for the **Store config**
-section in both `info` and `doctor`:
+The **Store config** section of `info` and `doctor` runs the same loaders a
+starting server runs:
 
 | State | Meaning | Next step |
 |:--|:--|:--|

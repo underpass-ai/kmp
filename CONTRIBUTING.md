@@ -18,16 +18,12 @@ Non-negotiable rules:
 - one use case per file
 - no product-specific nouns in the kernel boundary
 
-The kernel public language stays node-centric:
-
-- root node
-- neighbor nodes
-- relationships
-- node detail
-
-If a change needs `story`, `task`, `project`, `planning.*`,
-`orchestration.*`, or similar product language, it probably belongs in an
-integrating product, not here.
+The public language is the one agents use: abouts, memories, evidence,
+relations with their `why`, labels, the four clocks, wake, ask, time and
+trace ([Concepts](docs/concepts.md)). The kernel stays free of any one
+product's vocabulary: a product's own nouns (`story`, `planning.*`,
+`orchestration.*`) belong in its abouts and labels, or in the integrating
+product, not in a kernel type or tool.
 
 ## Toolchain
 
@@ -79,7 +75,9 @@ If you change a public MCP, gRPC, HTTP or async contract:
 - do not introduce integrating-product nouns
 
 Store-format and migration changes need an explicit compatibility story. A
-binary must never guess which engine owns an existing store.
+binary must never guess which engine owns an existing store. A change to a
+surface the 1.x series promises follows [Stability and support](docs/stability.md):
+add, deprecate, and remove only in a major release.
 
 ## Pull Requests
 
@@ -103,7 +101,11 @@ Update current docs when your change affects:
 - enterprise deployment
 - operational behavior
 
-Historical material remains available in Git history. Do not rewrite history
+Keep [`docs/index.md`](docs/index.md) and
+[`docs/development/README.md`](docs/development/README.md) complete. A dated
+record (an increment note, an acceptance matrix, a measurement of one issue)
+goes to [`docs/archive/`](docs/archive/README.md) with one index line. Historical
+material remains available in Git history. Do not rewrite history
 to make a new implementation look older than it is.
 
 ## Reporting Problems

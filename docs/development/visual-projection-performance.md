@@ -91,7 +91,8 @@ and allocator retention. They must not be interpreted as cache-owned bytes or
 as a 32 MiB process-memory guarantee.
 
 Full samples, equivalence results, compiler/binary/source hashes and process
-measurements are preserved locally in `artifacts/performance-779/native-final/`.
+measurements were kept outside the repository, in a local
+`performance-779/native-final` evidence directory that was never committed.
 The earlier `native/` trial is retained but is not the source of this table:
 its extra synthetic label edges lacked dimension nodes. The final fixture writes
 real dimensions and coordinates and asserts their counts before timing.
