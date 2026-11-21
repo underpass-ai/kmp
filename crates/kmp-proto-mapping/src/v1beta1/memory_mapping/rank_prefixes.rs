@@ -160,6 +160,22 @@ impl RankPrefixes {
     /// alone: an unread candidate can then only fall after all of them,
     /// beyond the depth read, and the head (built from the window) is the
     /// same. A rescue walks from the window and is read with it.
+    /// How many eligible candidates read `response` carried (the window and
+    /// the tail it read, never a rescue): a reading that carried the whole
+    /// ranking of what it read found no more than that many.
+    pub fn carried(response: &AskResponse) -> usize {
+        response
+            .proof
+            .as_ref()
+            .map(|proof| proof.evidence.as_slice())
+            .unwrap_or_default()
+            .iter()
+            .filter(|item| {
+                !was_reached_indirectly(item) && !item.metadata.contains_key(RESTATED_FROM_KEY)
+            })
+            .count()
+    }
+
     pub fn certifies(&self, response: &AskResponse, unread: Option<RankPrefix>) -> bool {
         let Some(unread) = unread else {
             return true;

@@ -134,3 +134,98 @@ python3 scripts/performance/baseline_compare.py \
 
 Performance remains informational. Semantic differences, missing proof or
 failed journeys stop the runner instead of being reported as faster queries.
+
+## Reads at scale: one about of 10^3 to 10^5 memories (1.0)
+
+Before 1.0 a read cost grew faster than the about: one about of 100,000
+memories took 22 s to wake and 90 s to ask. The measurement and the fixes
+are recorded here; the method is reusable for any read.
+
+**Store and calls.** The memory bench's cached synth-v1 seed 7 mono stores
+(10^3, 10^4, 10^5 entries in `synth:mono-a000`), a fresh copy per process,
+default settings. Per size one stdio process: startup, a first `kmp_wake`,
+then seven each of `kmp_wake`, `kmp_ask` (a question built from three words
+of the wake text) and `kmp_time` rewind over the whole interval, five
+single-memory writes; p50 of the seven, peak RSS (`VmHWM`). Release builds,
+cores 5–9, no build running. The bench's gold questions (`kmp_ask` and
+`kmp_wake` of the ≤ 10^4 levels, every second one, plus the first
+continuation page) were replayed on both binaries and compared call by call.
+
+**Profile.** `perf` needs a lower `perf_event_paranoid` than shared hosts
+allow, so two in-process tools were used: stage timers around each stage, and
+a SIGPROF sampler (`setitimer(ITIMER_PROF)`, glibc `backtrace()` into a static
+ring, symbolized with `addr2line -i` against a release build with line
+tables). Neither is in the tree; both are throwaway patches.
+
+**Where the time went (10^4, before).**
+
+| read | largest terms |
+|---|---|
+| first wake, 2.1 s | render 1.1 s: every section of the whole about tokenized with cl100k, though a wake reads only the summary tier, and the flat sections only while fewer than five live memories fill its state; catalogue 0.4 s (two SQL statements per node); node materialization, response, JSON and paging 0.1–0.2 s each |
+| ask, 6.4 s | SQLite re-parsing the sidecar's `relation` statement for every edge (28 %); the ranker tokenizing every candidate again (27 %), though the sidecar row holds the same counts; four top-k rounds (142 → 380 → 1,337 → 3,153 candidates), each reading and ranking from nothing; at 10^5 a scan of every relation per lifecycle end in the plan (10 s) |
+| time, 0.64 s | the whole catalogue read on every call (the temporal index cache keeps catalogues of at most 8,192 nodes) |
+
+**What changed (answers unchanged).**
+
+- A wake renders the summary tier alone (`RenderDemand::Summary`) and renders
+  the flat sections from the same bundle only when its state needs them.
+- Every SQLite connection of the store and the sidecar sets the query
+  planner stability guarantee: a cached statement is no longer re-planned and
+  re-parsed when its parameters change. No plan depends on a bound value.
+- The sidecar indexes `lex_relation(about, type, target)`, so an about's
+  lifecycle relations, and what supports each end, are found without
+  scanning its relations.
+- The top-k rounds of one ask share their point reads (`PartsMemo`), and a
+  round that found too few eligible candidates reads enough for its depth at
+  the rate it found them (`next_limit`) instead of four times as many.
+- The ranker takes an indexed candidate's counts from its sidecar row.
+- A node header is read with one statement instead of two.
+
+Before (integration/v1.0 at 6dd25e97) → after, one about, p50 of seven
+calls, release builds on the GX10 (aarch64), 21 Nov 2026:
+
+| memories | first wake | wake | ask | time (rewind) | write | peak RSS |
+|---:|---:|---:|---:|---:|---:|---:|
+| 1,000 | 279 → 156 ms | 192 → 79 ms | 260 → 250 ms | 15 → 15 ms | 8 → 1 ms | 115 → 115 MB |
+| 10,000 | 2,065 → 981 ms | 151 → 153 ms | 6,271 → 1,979 ms | 625 → 491 ms | 7 → 3 ms | 644 → 650 MB |
+| 100,000 | 22.6 → 11.1 s | 22.7 → 11.0 s | 92.4 → 27.8 s | 7.1 → 5.5 s | 5 → 7 ms | 4.7 → 5.1 GB |
+
+A repeated wake at 10,000 is served from the frozen read (150 ms on both);
+at 100,000 it is not kept, so every wake pays the read. Writes are within
+noise. Gold questions at 10,000 (148 asks and their first continuation
+pages, every second question of the bench's ≤ 10^4 levels): ask p50
+1,220 → 755 ms, all 148 asks 444 → 231 s, first wake 2.1 → 0.94 s; 133 asks
+answered from the index and 31 that read the whole about on both binaries.
+
+**Parity.** Every gold call (206, continuation pages included) is equal
+between the two binaries after the replica's `store.path` and the
+per-process `read_<hex>` handle; with `KMP_LEXICAL_INDEX=verify` every
+indexed answer (157) equals the whole about's; the retrieval, Jev and relate
+baselines hold unchanged. `quick-a` against the base binary is `neutral`:
+parity 1.0 on the real store (124 questions) and on synth 10^3 (88), quality
+equal. The bench's normalizer now treats `structuredContent.store.path` as the
+replica-dependent value it is. A continuation page's `used_bytes` counts that
+path too, and the replica's directory embeds the variant's name, so compare
+variants with names of equal length.
+
+**What remains.** Every read above still reads the whole about once; what changed is the
+work per memory and what was done several times. The 1.0 targets of
+500 ms at 10^4 and 3 s at 10^5 need reads that follow what they return:
+
+- **Ask.** A question whose words reach a third of the about (the measured
+  one plans 3,153 of 10,000 candidates) reads and ranks every one of them:
+  top-k cannot certify an answer because eligibility (the strict focus) also
+  counts words a candidate's relations and supported claims carry, which its
+  row does not hold, so too few of the best prefixes are eligible. Bounding it
+  needs that focus indexed per candidate. The plan still reads the df of every
+  term the reached rows hold; 31 of 148 gold asks at 10^4 cover more than
+  35 % of the about and read the whole about, as before.
+- **Wake.** It reads the whole about (catalogue, nodes, bodies), orders all
+  its evidence by lifecycle and relation signals, and renders the whole
+  packet to JSON before cutting a page. Following the page needs that order
+  kept per about and the page materialized from it.
+- **Time.** Every call reads the whole catalogue: the temporal index is kept
+  only for catalogues of at most 8,192 nodes and 64 MiB. A position index per
+  clock in the store, or keeping larger indexes, would bound it.
+- **Memory.** Wake and the about path hold the whole about several times
+  over; peak RSS at 10^5 stays above 4 GB.

@@ -97,6 +97,9 @@ pub(super) struct AnswerEvidenceRanker<'a> {
     /// store's associations are counted over, however many candidates the
     /// floor bound left unread.
     indexed_seed_documents: Option<std::sync::Arc<Vec<super::term_counts::TermCounts>>>,
+    /// The index rows of the candidates an indexed ask reads, by id.
+    indexed_rows:
+        Option<std::sync::Arc<std::collections::BTreeMap<String, super::lexical_row::LexicalRow>>>,
     /// Whether an expansion rescue must answer the strict focus (P15; the
     /// store's `expansion_rescue_focus`, on by default).
     expansion_focus: bool,
@@ -120,6 +123,7 @@ impl Default for AnswerEvidenceRanker<'_> {
             indexed_collection: None,
             indexed_vocabulary: None,
             indexed_seed_documents: None,
+            indexed_rows: None,
             expansion_focus: true,
             prepared_cache: None,
             head_window: HEAD_WINDOW,
@@ -239,6 +243,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
             indexed_collection: None,
             indexed_vocabulary: None,
             indexed_seed_documents: None,
+            indexed_rows: None,
             expansion_focus: true,
             prepared_cache: None,
             head_window: HEAD_WINDOW,
@@ -439,7 +444,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
             if keep {
                 let terms = evidence
                     .iter()
-                    .map(|item| AnswerCandidateTerms::from_evidence(item, &self.context))
+                    .map(|item| self.terms_of(item))
                     .collect::<Vec<_>>();
                 cache.put(evidence.clone(), aliased, terms.clone());
                 return evidence.into_iter().zip(terms).collect();
@@ -448,10 +453,38 @@ impl<'a> AnswerEvidenceRanker<'a> {
         evidence
             .into_iter()
             .map(|item| {
-                let terms = AnswerCandidateTerms::from_evidence(&item, &self.context);
+                let terms = self.terms_of(&item);
                 (item, terms)
             })
             .collect()
+    }
+
+    /// One candidate's terms: from its index row when the ask is answered
+    /// from the lexical index and the row is held (the counts the index
+    /// read it with), otherwise read from its text.
+    fn terms_of(&self, item: &MemoryEvidence) -> AnswerCandidateTerms {
+        match self
+            .indexed_rows
+            .as_ref()
+            .and_then(|rows| rows.get(&item.id))
+        {
+            Some(row) => AnswerCandidateTerms::from_counted(
+                item,
+                &self.context,
+                row.counted_surface(self.context.identifier_aliases),
+            ),
+            None => AnswerCandidateTerms::from_evidence(item, &self.context),
+        }
+    }
+
+    /// The rows of the candidates an ask answered from the lexical index
+    /// reads ([`super::indexed_ask::IndexedAsk::rows`]).
+    pub(super) fn with_indexed_rows(
+        mut self,
+        rows: std::sync::Arc<std::collections::BTreeMap<String, super::lexical_row::LexicalRow>>,
+    ) -> Self {
+        self.indexed_rows = Some(rows);
+        self
     }
 
     /// Reads the candidates' terms from `cache` when an earlier reading of
@@ -1277,6 +1310,7 @@ mod tests {
             indexed_collection: None,
             indexed_vocabulary: None,
             indexed_seed_documents: None,
+            indexed_rows: None,
             expansion_focus: true,
             prepared_cache: None,
             head_window: HEAD_WINDOW,
@@ -1998,6 +2032,7 @@ mod tests {
             indexed_collection: None,
             indexed_vocabulary: None,
             indexed_seed_documents: None,
+            indexed_rows: None,
             expansion_focus: true,
             prepared_cache: None,
             head_window: HEAD_WINDOW,
@@ -2434,6 +2469,7 @@ mod tests {
             indexed_collection: None,
             indexed_vocabulary: None,
             indexed_seed_documents: None,
+            indexed_rows: None,
             expansion_focus: true,
             prepared_cache: None,
             head_window: HEAD_WINDOW,

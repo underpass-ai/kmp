@@ -189,3 +189,46 @@ fn a_term_held_by_many_candidates_splits_into_blocks_in_order() {
             .is_empty()
     );
 }
+
+#[test]
+fn lookups_keep_their_plans_and_lifecycle_reads_use_the_type_index() {
+    let (_directory, sidecar) = open();
+    sidecar
+        .with(|connection| {
+            // A cached statement is not re-planned (and re-parsed) per binding.
+            assert!(
+                connection
+                    .db_config(rusqlite::config::DbConfig::SQLITE_DBCONFIG_ENABLE_QPSG)
+                    .map_err(storage)?
+            );
+            // An about's lifecycle relations, and what supports each end, are
+            // found through the index, not by scanning all its relations.
+            let plan_of = |sql: &str, bound: &[&str]| -> Result<String, String> {
+                let mut statement = connection
+                    .prepare(&format!("EXPLAIN QUERY PLAN {sql}"))
+                    .map_err(storage)?;
+                let rows = statement
+                    .query_map(rusqlite::params_from_iter(bound), |row| {
+                        row.get::<_, String>(3)
+                    })
+                    .map_err(storage)?
+                    .collect::<Result<Vec<_>, _>>()
+                    .map_err(storage)?;
+                Ok(rows.join(" "))
+            };
+            let ends = plan_of(
+                "SELECT source, target FROM lex_relation WHERE about = ?1 \
+                 AND type IN ('supersedes', 'corrects', 'updates_state')",
+                &["about"],
+            )?;
+            assert!(ends.contains("lex_relation_by_type"), "{ends}");
+            let supports = plan_of(
+                "SELECT source FROM lex_relation WHERE about = ?1 AND target = ?2 \
+                 AND type = 'supports'",
+                &["about", "node"],
+            )?;
+            assert!(supports.contains("lex_relation_by_type"), "{supports}");
+            Ok(())
+        })
+        .expect("sidecar reads");
+}

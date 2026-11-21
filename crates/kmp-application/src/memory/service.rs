@@ -412,17 +412,23 @@ where
             .await
     }
 
+    /// The wake's render of a bundle it read, as [`Self::wake_on_demand`]
+    /// renders it: a caller that read with [`RenderDemand::Summary`] and
+    /// finds it needs the flat sections renders them from the same bundle.
+    pub fn render_wake(
+        query: &WakeMemoryQuery,
+        bundle: &KmpBundle,
+        demand: RenderDemand,
+    ) -> crate::queries::RenderedContext {
+        crate::queries::render_graph_bundle_on_demand(bundle, &wake_render_options(query), demand)
+    }
+
     async fn wake_snapshot(
         &self,
         query: WakeMemoryQuery,
         demand: RenderDemand,
     ) -> Result<GetContextResult, ApplicationError> {
-        let render_options = memory_render_options(
-            query.token_budget,
-            query.max_tier,
-            KmpMode::ResumeFocused,
-            EndpointHint::Neighborhood,
-        );
+        let render_options = wake_render_options(&query);
         let dimensions = query.dimensions.resolve_current_about(&query.about);
         self.selected_recall_context(
             &query.about,
@@ -1312,6 +1318,15 @@ fn inspect_raw_coordinates(
     }
 
     Ok(coordinates)
+}
+
+fn wake_render_options(query: &WakeMemoryQuery) -> ContextRenderOptions {
+    memory_render_options(
+        query.token_budget,
+        query.max_tier,
+        KmpMode::ResumeFocused,
+        EndpointHint::Neighborhood,
+    )
 }
 
 fn memory_render_options(

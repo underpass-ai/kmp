@@ -20,6 +20,7 @@ mod kept_relation;
 mod lexical_maintainer;
 pub(crate) mod lexical_sidecar;
 mod node_state;
+mod parts_memo;
 mod refreshed;
 mod relation_key;
 mod row_writer;
@@ -50,3 +51,6 @@ mod indexed_ask_tests;
 
 #[cfg(test)]
 mod maxscore_parity_tests;
+
+#[cfg(test)]
+mod parts_memo_tests;

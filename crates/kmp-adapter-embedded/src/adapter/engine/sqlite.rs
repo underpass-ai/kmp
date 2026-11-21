@@ -227,6 +227,7 @@ fn open_read_only_connection(store_file: &Path) -> Result<Connection, PortError>
     connection
         .execute_batch("PRAGMA query_only=ON")
         .map_err(|error| pragma_error(store_file, "query_only", &error))?;
+    stabilize_plans(&connection, store_file)?;
     Ok(connection)
 }
 
@@ -250,7 +251,19 @@ fn open_connection(store_file: &Path) -> Result<Connection, PortError> {
     connection
         .pragma_update(None, "synchronous", "FULL")
         .map_err(|error| pragma_error(store_file, "synchronous", &error))?;
+    stabilize_plans(&connection, store_file)?;
     Ok(connection)
+}
+
+/// Cached statements are re-bound for every node a read visits. Without the
+/// planner stability guarantee SQLite re-plans an adjacency page statement
+/// on new bindings, re-parsing it per node. No plan here depends on a bound
+/// value (no statistics, no partial index, no LIKE), so nothing read changes.
+fn stabilize_plans(connection: &Connection, store_file: &Path) -> Result<(), PortError> {
+    connection
+        .set_db_config(DbConfig::SQLITE_DBCONFIG_ENABLE_QPSG, true)
+        .map(|_| ())
+        .map_err(|error| pragma_error(store_file, "query planner stability", &error))
 }
 
 fn harden_connection(connection: &Connection, store_file: &Path) -> Result<(), PortError> {
@@ -1056,6 +1069,27 @@ fn write_error(table: Table, error: &rusqlite::Error) -> PortError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn every_connection_keeps_its_cached_plans_across_bindings() {
+        // Without the planner stability guarantee SQLite re-parses a cached
+        // statement on new bindings: one adjacency page statement per node.
+        let dir = tempfile::tempdir().expect("temp dir");
+        let store_file = dir.path().join("kernel.sqlite3");
+        let connection = open_connection(&store_file).expect("connection opens");
+        assert!(
+            connection
+                .db_config(DbConfig::SQLITE_DBCONFIG_ENABLE_QPSG)
+                .expect("planner stability reads back")
+        );
+        drop(connection);
+        let reader = open_read_only_connection(&store_file).expect("reader opens");
+        assert!(
+            reader
+                .db_config(DbConfig::SQLITE_DBCONFIG_ENABLE_QPSG)
+                .expect("planner stability reads back")
+        );
+    }
 
     #[test]
     fn every_connection_treats_the_database_schema_as_untrusted() {

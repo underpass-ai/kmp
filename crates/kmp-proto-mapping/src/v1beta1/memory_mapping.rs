@@ -37,6 +37,8 @@ mod confidence_calibration_tests;
 mod confidence_rule;
 mod confidence_traits;
 mod content_scores;
+#[cfg(test)]
+mod counted_surface_tests;
 mod decided_selection;
 mod dimensions;
 mod doubt_band;
@@ -152,6 +154,8 @@ mod wake_current_state;
 mod wake_evidence_identity_tests;
 #[cfg(test)]
 mod wake_state_tests;
+#[cfg(test)]
+mod wake_summary_render_tests;
 
 pub use ask_gate::AskGate;
 pub use ask_retrieval_context::AskRetrievalContext;
@@ -201,7 +205,8 @@ pub use relation_clock::RelationClock;
 pub use rerank_candidate_ranking::RerankCandidateRanking;
 pub use responses::{
     ask_response_from_result, inspect_response_from_result, temporal_response_from_result,
-    trace_response_from_result, wake_response_from_result, wake_response_with_focus, wake_sources,
+    trace_response_from_result, wake_response_from_result, wake_response_rendering,
+    wake_response_with_focus, wake_sources,
 };
 pub use search_probe::SearchProbe;
 pub use search_probe_terms::SearchProbeTerms;
