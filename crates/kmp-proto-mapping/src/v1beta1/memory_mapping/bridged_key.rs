@@ -2,6 +2,7 @@ use std::collections::BTreeSet;
 
 use super::answer_candidate_terms::AnswerCandidateTerms;
 use super::bridged_term::BridgedTerm;
+use super::counted_text::CountedText;
 use super::lexical_bridge::LexicalBridge;
 use super::morphology::Morphology;
 use super::search_terms::{concept_key, informative_tokens, matching_terms, search_key};
@@ -134,6 +135,35 @@ impl BridgedKey {
             if focus_terms.contains(&pair.question_key)
                 && terms.direct_counts.count(&pair.candidate_key) > 0
             {
+                covered.insert(concept_key(&pair.question_key).to_string());
+            }
+        }
+        covered.len()
+    }
+
+    /// At most how many focus concepts a candidate can answer when its
+    /// searchable words are among `searchable` and its direct field is
+    /// `direct` (P14): [`Self::focus_matches`] counted over a superset of
+    /// what it counts, so never less than it.
+    pub(super) fn focus_bound<'t, D: CountedText + ?Sized>(
+        bridged: &[Self],
+        focus_terms: &BTreeSet<String>,
+        searchable: impl IntoIterator<Item = &'t String>,
+        direct: &D,
+    ) -> usize {
+        let concepts = focus_terms
+            .iter()
+            .map(|term| concept_key(term))
+            .collect::<BTreeSet<_>>();
+        let mut covered = BTreeSet::new();
+        for term in searchable {
+            let key = concept_key(term);
+            if concepts.contains(key) {
+                covered.insert(key.to_string());
+            }
+        }
+        for pair in bridged {
+            if focus_terms.contains(&pair.question_key) && direct.count(&pair.candidate_key) > 0 {
                 covered.insert(concept_key(&pair.question_key).to_string());
             }
         }

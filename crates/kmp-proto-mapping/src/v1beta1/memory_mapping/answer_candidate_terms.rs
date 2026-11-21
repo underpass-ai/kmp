@@ -237,7 +237,7 @@ fn search_summary(item: &MemoryEvidence) -> Option<&str> {
 /// `:current` — shared by whole families of entries, so letting it match a
 /// question gave every `success_path` evidence row "evidence" and "current"
 /// for free and pushed entries whose own words answered out of the core.
-fn ref_words(reference: &str) -> String {
+pub(super) fn ref_words(reference: &str) -> String {
     let mut rest = reference.strip_prefix("detail:").unwrap_or(reference);
     rest = rest.strip_prefix("evidence:").unwrap_or(rest);
     rest = rest.strip_suffix(":current").unwrap_or(rest);

@@ -181,6 +181,10 @@ pub(super) fn dump(path: &Path) -> BTreeMap<String, Vec<String>> {
             "SELECT doc, row FROM lex_fwd WHERE about = ?1 ORDER BY doc",
         ),
         (
+            "reach",
+            "SELECT doc, reach FROM lex_reach WHERE about = ?1 ORDER BY doc",
+        ),
+        (
             "df",
             "SELECT term, content, direct FROM lex_key_df WHERE about = ?1 ORDER BY term",
         ),
@@ -342,6 +346,33 @@ async fn a_sidecar_followed_write_by_write_equals_one_built_from_nothing() {
                 "evidence":"Trace P-7 starts one minute after log 14."}]}),
     )
     .await;
+    // An explanatory relation between two entries, then the same relation
+    // with other words: every reach at either end follows (P14).
+    let crew = first["local_refs"]["crew"]
+        .as_str()
+        .expect("ref")
+        .to_string();
+    for (key, why, evidence) in [
+        (
+            "upkeep:cause",
+            "The crew depended on the frozen valve.",
+            "Ticket M-201 cites log 14.",
+        ),
+        (
+            "upkeep:cause-again",
+            "The replacement waited for thawing gear.",
+            "Gear manifest G-4 arrived at 02:40.",
+        ),
+    ] {
+        write(
+            &server,
+            json!({"about":ABOUT,"actor":"fixture","idempotency_key":key,"observed_at":AT,
+                "read_context":{"inspected_refs":[crew, valve]},
+                "relations":[{"from":crew,"to":valve,"rel":"depends_on",
+                    "why":why,"evidence":evidence}]}),
+        )
+        .await;
+    }
     write(
         &server,
         memories(
@@ -376,6 +407,12 @@ async fn a_sidecar_followed_write_by_write_equals_one_built_from_nothing() {
     assert!(plain.comparable, "{plain:?}");
     assert_eq!(plain.differences(), 0, "{plain:?}");
     let followed = dump(&sidecar_path);
+    // The relation's words reach the entries at its ends.
+    assert!(
+        followed["reach"].iter().any(|row| row.len() > 64),
+        "{:?}",
+        followed["reach"]
+    );
     let built = rebuilt(&kernel, &scratch.path().join("built.sqlite3")).await;
     assert_same(&followed, &built);
 

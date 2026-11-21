@@ -153,18 +153,56 @@ impl<'r> AboutRebuild<'r> {
                 .or_default()
                 .push(key.target.clone());
         }
+        // What each candidate's graph can lend its focus: the details of
+        // its refs and the explanatory relations the selection keeps
+        // around them.
+        let mut incident = BTreeMap::<&str, Vec<&NodeRelationProjection>>::new();
+        for (key, edge) in &kept {
+            incident.entry(key.source.as_str()).or_default().push(edge);
+            if key.target != key.source {
+                incident.entry(key.target.as_str()).or_default().push(edge);
+            }
+        }
+        let reach = |item: &kmp_proto::v1beta1::MemoryEvidence,
+                     row: &kmp_proto_mapping::v1beta1::LexicalRow|
+         -> Result<Vec<u8>, String> {
+            AboutReader::reach(
+                item,
+                row,
+                &profile,
+                |reference| match details.get(reference) {
+                    Some(detail) => Ok(detail.as_ref().map(|detail| detail.detail().to_string())),
+                    None => Ok(self
+                        .reader
+                        .detail(reference)?
+                        .map(|detail| detail.detail().to_string())),
+                },
+                |reference| {
+                    Ok(incident
+                        .get(reference)
+                        .map(|edges| edges.iter().map(|edge| (*edge).clone()).collect())
+                        .unwrap_or_default())
+                },
+            )
+            .map(|reach| reach.encode())
+        };
         let mut rows = Vec::new();
+        let mut reaches = Vec::new();
         for id in &included {
             let (Some(Some(node)), Some(state)) = (nodes.get(id), states.get(id)) else {
                 continue;
             };
             if state.selected_entry()
-                && let Some(row) = AboutReader::entry_row(node, &profile)
+                && let Some((item, row)) = AboutReader::entry_row(node, &profile)
             {
-                rows.push((format!("entry:{id}"), Some(row.encode())));
+                let doc = format!("entry:{id}");
+                reaches.push((doc.clone(), Some(reach(&item, &row)?)));
+                rows.push((doc, Some(row.encode())));
             }
-            if let Some(row) = evidence_row(node, state, &details, &supported, &profile) {
-                rows.push((format!("detail:{id}"), Some(row.encode())));
+            if let Some((item, row)) = evidence_row(node, state, &details, &supported, &profile) {
+                let doc = format!("detail:{id}");
+                reaches.push((doc.clone(), Some(reach(&item, &row)?)));
+                rows.push((doc, Some(row.encode())));
             }
         }
         Ok(AboutChange {
@@ -176,6 +214,7 @@ impl<'r> AboutRebuild<'r> {
                 .collect(),
             relations,
             rows,
+            reach: reaches,
             far: far.into_iter().map(|id| (id, true)).collect(),
             signals,
             summaries,
@@ -192,7 +231,10 @@ fn evidence_row(
     details: &BTreeMap<String, Option<kmp_domain::BundleNodeDetail>>,
     supported: &BTreeMap<&str, Vec<String>>,
     profile: &LexicalProfile,
-) -> Option<kmp_proto_mapping::v1beta1::LexicalRow> {
+) -> Option<(
+    kmp_proto::v1beta1::MemoryEvidence,
+    kmp_proto_mapping::v1beta1::LexicalRow,
+)> {
     if !state.included() || !state.evidence_kind {
         return None;
     }

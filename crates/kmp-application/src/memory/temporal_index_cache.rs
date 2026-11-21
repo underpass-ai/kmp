@@ -20,9 +20,12 @@ impl TemporalIndexCache {
     }
 }
 
-const MAX_CATALOGUE_NODES: usize = 8192;
-const MAX_CATALOGUE_RELATIONSHIPS: usize = 32768;
-const RETENTION_ALLOWANCE: usize = 64 * 1024 * 1024;
+// An about of 10,000 memories (the size 1.0 promises to keep fluid) is
+// retained: about 10,000 nodes, 23,000 relations and a 120 MiB allowance at
+// the factor below. Past these it is read on every call and never kept.
+const MAX_CATALOGUE_NODES: usize = 16_384;
+const MAX_CATALOGUE_RELATIONSHIPS: usize = 65_536;
+const RETENTION_ALLOWANCE: usize = 256 * 1024 * 1024;
 
 // Counts retained catalogue text conservatively, including metadata and
 // relation explanations. The factor covers index copies of coordinates and

@@ -22,6 +22,7 @@ mod ask_gate;
 mod ask_retrieval_context;
 mod ask_setup;
 mod asked_attribute;
+mod association_counts;
 mod association_index;
 #[cfg(test)]
 mod association_index_parity_tests;
@@ -41,6 +42,7 @@ mod confidence_traits;
 mod content_scores;
 #[cfg(test)]
 mod counted_surface_tests;
+mod counted_text;
 mod cross_language;
 mod cross_language_band;
 #[cfg(test)]
@@ -70,6 +72,7 @@ mod indexed_ask;
 mod indexed_field_stats;
 mod indexed_lifecycle;
 mod indexed_question;
+mod indexed_seeds;
 mod ingest;
 mod ingest_search_expansions;
 mod judged_core;
@@ -84,6 +87,7 @@ mod lexical_index_identity;
 mod lexical_margin;
 mod lexical_observation;
 mod lexical_profile;
+mod lexical_reach;
 mod lexical_reading;
 mod lexical_row;
 mod lexical_shadow_witness;
@@ -116,6 +120,7 @@ mod ranked_evidence;
 mod ranked_selection;
 mod ranking_focus;
 mod reach_graph;
+mod reach_relation;
 mod read_selection_fingerprint;
 mod relabel;
 mod relate;
@@ -130,10 +135,12 @@ mod rerank_candidate_ranking;
 #[cfg(test)]
 mod rerank_recall_tests;
 mod responses;
+mod row_field;
 mod scalars;
 mod search_probe;
 mod search_probe_terms;
 mod search_terms;
+mod seed_documents;
 mod semantic_candidate_ranking;
 #[cfg(test)]
 mod semantic_recall_tests;
@@ -181,6 +188,7 @@ pub use indexed_ask::IndexedAsk;
 pub use indexed_field_stats::IndexedFieldStats;
 pub use indexed_lifecycle::IndexedLifecycle;
 pub use indexed_question::IndexedQuestion;
+pub use indexed_seeds::IndexedSeeds;
 pub use ingest::{ingest_command_from_proto, ingest_response_from_outcome};
 pub use ingest_search_expansions::{
     ingest_response_without_judge, search_expansion_proposals_from_proto,
@@ -193,6 +201,7 @@ pub use lexical_index_cache::LexicalIndexCache;
 pub use lexical_margin::LexicalMargin;
 pub use lexical_observation::LexicalObservation;
 pub use lexical_profile::LexicalProfile;
+pub use lexical_reach::LexicalReach;
 pub use lexical_reading::LexicalReading;
 pub use lexical_row::LexicalRow;
 pub use lexical_shadow_witness::LexicalShadowWitness;
@@ -207,6 +216,7 @@ pub use queries::{
     wake_query_from_proto,
 };
 pub use rank_prefixes::{RankPrefix, RankPrefixes};
+pub use reach_relation::ReachRelation;
 pub use relabel::{relabel_command_from_proto, relabel_response_from_outcome};
 pub use relate::{
     curate_paths_reading_from_result, curate_reading_from_result, relate_response_from_result,

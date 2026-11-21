@@ -21,8 +21,8 @@ use kmp_proto_mapping::v1beta1::recall_projection::{
     RANK_DEPTH_CHUNK, RANK_HEAD_WINDOW, ask_rank_depth, project_rendered_ask, render_ask,
 };
 use kmp_proto_mapping::v1beta1::{
-    AskGate, AskRetrievalContext, DoubtBandEntries, LexicalBridge, ask_query_from_proto,
-    ask_response_from_result,
+    AskGate, AskRetrievalContext, DoubtBandEntries, LexicalBridge, LexicalShadowWitness,
+    ask_query_from_proto, ask_response_from_result,
 };
 use serde_json::Value;
 use std::sync::Arc;
@@ -272,6 +272,7 @@ impl<'a> EmbeddedAskTool<'a> {
                     elapsed_us,
                     plan_us,
                     parts_us,
+                    read.unanswerable,
                 ))
             }
             Some((_, Ok(Err(why)), _)) => {
@@ -308,7 +309,13 @@ impl<'a> EmbeddedAskTool<'a> {
         if let Some(gate) = self.gate {
             retrieval = retrieval.with_gate(gate);
         }
-        if let Some(witness) = &witness {
+        // Verify: which candidates the whole about finds eligible, to check
+        // the index set none of them aside (P14).
+        let eligibility = indexed
+            .as_ref()
+            .filter(|_| witness.is_none())
+            .map(|_| Arc::new(LexicalShadowWitness::eligibility()));
+        if let Some(witness) = witness.as_ref().or(eligibility.as_ref()) {
             retrieval = retrieval.with_lexical_witness(Arc::clone(witness));
         }
         let mut warnings = Vec::new();
@@ -429,12 +436,25 @@ impl<'a> EmbeddedAskTool<'a> {
             elapsed_us,
             plan_us,
             parts_us,
+            unanswerable,
         )) = indexed
         {
+            // The reach bound (P14) is sound when nothing it set aside is
+            // eligible in the whole about's answer.
+            let eligible = eligibility
+                .as_ref()
+                .and_then(|witness| witness.take_eligible())
+                .unwrap_or_default();
+            let unanswerable_eligible = unanswerable
+                .as_ref()
+                .map_or(0, |set| eligible.intersection(set).count());
             tracing::info!(
                 target: "kmp_mcp::lexical_index",
                 event = "kmp_lexical_verify",
                 equal = answered == response,
+                unanswerable = unanswerable.as_ref().map_or(0, |set| set.len()),
+                eligible = eligible.len(),
+                unanswerable_eligible,
                 reached,
                 planned,
                 candidates,
