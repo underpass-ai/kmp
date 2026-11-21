@@ -280,8 +280,16 @@ calls (first wake: one call; write: five), release builds without
 |---:|---:|---:|---:|---:|---:|---:|
 | 1,000 | 180 → 140 ms | 86 → 62 ms | 257 → 233 ms | 16 → 13 ms | 8 → 7 ms | 130 → 119 MB |
 | 10,000 | 1,032 → 742 ms | 156 → 155 ms | 2,039 → 357 ms | 506 → 153 ms | 9 → 7 ms | 823 → 557 MB |
-ROW_TABLE
+| 10,000, shipped table | 1,027 → 1,490 ms* | 152 → 149 ms | 3,907 → 3,150 ms | 493 → 152 ms | 77 → 4 ms | 813 → 856 MB |
 | 100,000 | 11.4 → 10.4 s | 11.0 → 8.0 s | 28.0 → 3.0 s | 5.6 → 4.0 s | 143 → 15 ms | 5.1 → 3.9 GB |
+
+The shipped-table row ran with the load at 14–19; four repeated first wakes
+with and without the table gave 970–1,670 ms for the base and 679–693 ms
+here (*). With the table the measured question reaches enough candidates
+through bridged words, which top-k always reads, to cover more than 35 % of
+the about: both binaries read the whole about for it. The gold questions with
+the table (a replay beside another, so indicative): ask p50 2,623 → 992 ms,
+first wake 1,429 → 717 ms.
 
 Writes at 10^4 after the sidecar is built (30 single-memory writes, twice
 per binary): p50 9.4 and 82.9 ms → 3.1 and 3.2 ms (p90 5–7 ms); the base's
@@ -316,10 +324,9 @@ about 70 % of the call). Raw: `read-perf-2/profile-final/`.
 - Gold calls at 10^4, call by call (148 asks with their first continuation
   pages, the five wakes, the rewind): 206 of 206 equal; with the shipped
   lexical bridge table (`KMP_LEXICAL_BRIDGE`), 207 of 207. At 10^5, every
-  40th question with its first page: 15 of 15 equal (against ec3fe186, the
-  base before #943).
-- `KMP_LEXICAL_INDEX=verify` (an `eval-hooks` build) over the gold asks at
-  10^4: 157 of 157 indexed answers equal the whole about's, without the
+  40th question with its first page: 15 of 15 equal.
+- `KMP_LEXICAL_INDEX=verify` (an `eval-hooks` build of the ec3fe186 merge,
+  whose read code is this one) over the gold asks at 10^4: 157 of 157 indexed answers equal the whole about's, without the
   table and with it; and of the 65,044 (83,031 with the table) candidates
   the whole about found eligible, none is among the 373,709 (516,093) the
   index set aside as unable to be (`unanswerable_eligible = 0`).
