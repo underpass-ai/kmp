@@ -141,6 +141,36 @@ impl LexicalRow {
         )
     }
 
+    /// Its surfaces under one reading as the ranker reads a candidate: the
+    /// terms of its text, its content and direct fields and its judged
+    /// expansions, each exactly what [`surface_counts`] and the text's
+    /// [`text_counts`] gave when the row was read.
+    pub(super) fn counted_surface(
+        &self,
+        aliased: bool,
+    ) -> super::answer_candidate_terms::CountedSurface {
+        let text = self
+            .terms
+            .iter()
+            .filter(|term| term.text > 0)
+            .map(|term| term.term.clone())
+            .collect();
+        let expansion = TermCounts::from_counts(
+            self.terms
+                .iter()
+                .filter(|term| term.expansion > 0)
+                .map(|term| (term.term.clone(), term.expansion as u32))
+                .collect(),
+            self.expansion_length.max(0) as usize,
+        );
+        (
+            text,
+            self.content_counts(aliased),
+            self.direct_counts(aliased),
+            expansion,
+        )
+    }
+
     /// Its content field under one reading, as the ranker counts it.
     pub(super) fn content_counts(&self, aliased: bool) -> TermCounts {
         TermCounts::from_counts(
