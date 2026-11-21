@@ -370,6 +370,28 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
 
 ### Added
 
+- **Jev as the cross-language judge of `kmp_ask`**, behind its own opt-in
+  `ask-cross-language.json` (needs `typesafe.json`; `veto` and `rescue` are
+  each off unless named). The veto asks Jev whether each citation of an
+  answer that stands only through the lexical bridge's translation states
+  the answer (`veto_at` 0.5); the rescue asks about up to eight memories the
+  bridge reached in the other language for an unanchored UNKNOWN, plus a
+  companion "answerable from these?", and cites the likeliest only when both
+  reach `rescue_at` 0.9 — never `high`, marked `judged_by`
+  (`cross_language.v1`), with a summary that says it rests on a judgement.
+  The rescue is the one place a memory the bridge reached may be cited, and
+  only inside this switch; it never admits an absent anchor. Same verdict
+  book, 1.5 s first-page deadline and failure handling as the doubt band,
+  under its own telemetry site `cross_language`. On the synthetic sets
+  (`jev-1.14.0`, three samples, majority): cross-language answers right
+  11 → 30 (EN→ES) and 16 → 30 (ES→EN), 0 rescues of a wrong memory, false
+  answers 2 → 0 on matched negatives and 6 → 2 on Spanish renderings of the
+  stress negatives, 0 on the stress and judged negatives with or without it.
+  `crates/kmp-mcp/tests/cross_language_judge.rs` replays the recorded
+  verdicts in CI with no key. Without the file the ask is byte-identical.
+- TypeSafe nouls with `criteria` (a new question variant), so a question
+  can say what yes and no mean; every existing request body and verdict key
+  is unchanged.
 - `tools/list` carries one short description on the arguments agents were
   refused over without the guide: `about` (on `kmp_write_memory` and
   `kmp_wake`), `actor` (on the four writers), and on `kmp_write_memory`

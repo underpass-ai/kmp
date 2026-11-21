@@ -294,7 +294,10 @@ verdict lands in the book for the next ask. A continuation never asks. When
 both this file and `ask-judge.json` are present, an ask that enters one of
 these two entries is judged here and not by the doubt band; one judge is
 asked per ask. Measured lines and their limits are in
-[languages](languages.md#the-cross-language-judge).
+[languages](languages.md#the-cross-language-judge). A store whose
+`ask-cross-language.json` cannot apply (no working `typesafe.json`, or a
+file that turns nothing on) answers deterministically with the warning
+`cross-language judge disabled: …`.
 
 ### Search expansions at write (opt-in, sends text to TypeSafe)
 

@@ -37,6 +37,51 @@ that stands because the table translated a concept is `medium` at most, and so
 is one the table alone carried to the bar. With no table installed nothing of
 this applies and `kmp_ask` answers as it always did.
 
+## The cross-language judge
+
+The table's translation can be wrong, and it reaches more than it can
+answer. A store that opted into TypeSafe Jev can have it judge both, with
+`ask-cross-language.json` (`{"veto": true, "rescue": true}`; each effect is
+off unless named, and without the file or without `typesafe.json` the answer
+is the deterministic one):
+
+- **veto**: an answer that stands only through the table's translation is
+  asked about, one passage at a time ("does it state the answer? It may be
+  written in another language"); a citation Jev finds at least `veto_at`
+  (0.5) likely not to state it leaves, and the answer is what it is without
+  it — usually UNKNOWN;
+- **rescue**: an UNKNOWN to a question with no required anchor, for which the
+  table reached memories written in the other language, is asked about up to
+  eight of them and whether they answer the question at all; the likeliest
+  is cited only when both judgements reach `rescue_at` (0.9). It is the
+  stored text, marked `judged_by`, never `high`, and the summary says it
+  rests on Jev's judgement. An anchored question is never rescued.
+
+Measured on 2026-11-21 with `jev-1.14.0` and the shipped table, synthetic
+data only (synth-v1 mono 1000, seeds 7 11 13 17 19 23), three fresh samples,
+counts that held in at least two of them:
+
+| | Off | Veto | Veto + rescue |
+|:--|--:|--:|--:|
+| English question, Spanish memory: answered right (of 36) | 11 | 11 | 30 (19 rescued) |
+| Spanish question, English memory: answered right (of 36) | 16 | 16 | 30 (14 rescued) |
+| Zero-overlap paraphrase, same language (of 72) | 0 | 0 | 0 |
+| Same questions, answer removed from the store (of 144) | 2 | 0 | 0 |
+| Judged negatives of the retrieval collection (of 11) | 0 | 0 | 0 |
+| Anchored stress negatives (of 360) | 0 | 0 | 0 |
+| Their Spanish renderings (of 264) | 6 | 2 | 2 |
+| Their bare keywords, with a stray `de` / `la` (of 360 each) | 20 / 20 | 13 / 11 | 13 / 11 |
+
+No right answer became UNKNOWN, and no rescue cited a wrong memory, in any
+sample. What is left: the keyword answers that read `high` (8 in each
+keyword set) come from a literal `status` and are the same with no table at
+all, so the judge never sees them; the others are citations Jev also reads
+as stating the answer (it judges a memory that names both identifiers and
+the topic as stating it). A paraphrase in the same language is outside the
+judge's reach: the table reaches nothing across a language there.
+About 7 % of these asks reach Jev (140 of 2,003), at about 1,450 input tokens
+each and a median of 0.15 s of Jev time (0.3 s added to the ask).
+
 ## English search summaries
 
 A writer can attach an English rendering of a memory as the reserved entry
