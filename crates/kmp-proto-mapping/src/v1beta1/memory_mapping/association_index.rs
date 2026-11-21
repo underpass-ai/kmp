@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 
+use super::association_counts::AssociationCounts;
 use super::lexical_field::LexicalField;
 use super::term_counts::TermCounts;
 
@@ -26,13 +27,13 @@ pub(super) struct AssociationIndex {
 /// Fewer documents than this and co-occurrence is anecdote. KMP stores hold
 /// decisions and evidence rather than transcripts, so this floor is reached
 /// late and declining is the common case, not the exception.
-const MINIMUM_DOCUMENTS: usize = 12;
+pub(super) const MINIMUM_DOCUMENTS: usize = 12;
 /// A pair seen fewer times than this is not a pattern.
-const MINIMUM_PAIR_COUNT: usize = 3;
+pub(super) const MINIMUM_PAIR_COUNT: usize = 3;
 /// Pointwise mutual information above zero means the two words appear together
 /// more than chance would explain; the bar sits above zero so that "more than
 /// chance" has to be a margin rather than a rounding.
-const MINIMUM_ASSOCIATION: f64 = 0.5;
+pub(super) const MINIMUM_ASSOCIATION: f64 = 0.5;
 /// How many neighbours one term may bring, so a common word cannot widen a
 /// question indefinitely.
 const MAX_NEIGHBOURS: usize = 3;
@@ -42,7 +43,7 @@ const EXPANSION_WEIGHT: f64 = 0.35;
 /// How far below `MINIMUM_ASSOCIATION` the PMI bound ln(N/df) must fall before
 /// a question term is skipped uncounted. Far wider than the few ulps either
 /// logarithm can drift, far narrower than any bound that matters.
-const BOUND_MARGIN: f64 = 1e-9;
+pub(super) const BOUND_MARGIN: f64 = 1e-9;
 
 impl AssociationIndex {
     /// Every term's neighbours, from every pair of every document.
@@ -124,47 +125,27 @@ impl AssociationIndex {
         field: &LexicalField,
         documents: impl IntoIterator<Item = &'a TermCounts>,
     ) -> Self {
-        if field.documents() < MINIMUM_DOCUMENTS {
-            return Self::default();
-        }
-        let total = field.documents() as f64;
-        let asked = question
-            .terms()
-            .map(String::as_str)
-            .filter(|term| {
-                let frequency = field.document_frequency(term);
-                frequency >= MINIMUM_PAIR_COUNT
-                    && (total / frequency as f64).ln() >= MINIMUM_ASSOCIATION - BOUND_MARGIN
-            })
-            .collect::<Vec<_>>();
-        if asked.is_empty() {
-            return Self::default();
-        }
+        Self::from_counts(
+            AssociationCounts::count(question, field, documents).as_ref(),
+            field,
+        )
+    }
 
-        let mut together = asked
-            .iter()
-            .map(|term| (*term, BTreeMap::<&str, usize>::new()))
-            .collect::<BTreeMap<_, _>>();
-        for document in documents {
-            for (term, partners) in &mut together {
-                if document.count(term) == 0 {
-                    continue;
-                }
-                for other in document.terms() {
-                    if other != term {
-                        *partners.entry(other.as_str()).or_default() += 1;
-                    }
-                }
-            }
-        }
-
+    /// [`Self::for_question`] from the pairs it counted
+    /// ([`AssociationCounts`]), against the field they were counted with
+    /// or one holding the same N and the same df of every word the pairs
+    /// name.
+    pub(super) fn from_counts(counts: Option<&AssociationCounts>, field: &LexicalField) -> Self {
+        let Some(counts) = counts else {
+            return Self::default();
+        };
+        let total = counts.total();
         let mut neighbours = BTreeMap::<String, Vec<(String, f64)>>::new();
-        for (term, partners) in together {
+        for (term, partners) in counts.pairs() {
+            let term = term.as_str();
             let mut entries = Vec::new();
             for (other, count) in partners {
-                if count < MINIMUM_PAIR_COUNT {
-                    continue;
-                }
+                let (other, count) = (other.as_str(), *count);
                 // The whole-store build sees the pair with its terms in
                 // lexical order; keep that order so the float is the same.
                 let (left, right) = if term < other {

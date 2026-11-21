@@ -576,45 +576,6 @@ impl Ops<'_> {
             .map_err(|error| read_error(table, &error))
     }
 
-    pub(super) fn project_str_json(
-        &self,
-        table: Table,
-        key: &str,
-        fields: &[&str],
-    ) -> Result<Option<Vec<u8>>, PortError> {
-        if table.key_shape() != KeyShape::Str {
-            return Err(scan_shape_mismatch(table, KeyShape::Str));
-        }
-        let mut args = Vec::new();
-        let mut expressions = Vec::new();
-        for field in fields {
-            let path = field
-                .split('.')
-                .map(|part| serde_json::to_string(part).expect("string JSON"))
-                .fold(String::from("$"), |path, part| format!("{path}.{part}"));
-            args.push((*field).to_string());
-            args.push(path);
-            expressions.push(format!(
-                "?{}, json_extract(v, ?{})",
-                args.len() - 1,
-                args.len()
-            ));
-        }
-        args.push(key.to_string());
-        let sql = format!(
-            "SELECT json_object({}) FROM \"{table}\" WHERE k=?{}",
-            expressions.join(", "),
-            args.len()
-        );
-        self.prepare(&sql)?
-            .query_row(rusqlite::params_from_iter(args), |row| {
-                row.get::<_, String>(0)
-            })
-            .optional()
-            .map(|value| value.map(String::into_bytes))
-            .map_err(|e| read_error(table, &e))
-    }
-
     pub(super) fn scan_str3_by_first(
         &self,
         table: Table,
@@ -861,14 +822,6 @@ impl ReadTx for SqliteRead<'_> {
     fn scan_str(&self, table: Table) -> Result<Vec<StrRow>, PortError> {
         self.ops().scan_str(table)
     }
-    fn project_str_json(
-        &self,
-        table: Table,
-        key: &str,
-        fields: &[&str],
-    ) -> Result<Option<Vec<u8>>, PortError> {
-        self.ops().project_str_json(table, key, fields)
-    }
 
     fn scan_str3_by_first(&self, table: Table, first: &str) -> Result<Vec<Str3Row>, PortError> {
         self.ops().scan_str3_by_first(table, first)
@@ -945,14 +898,6 @@ impl ReadTx for SqliteWrite<'_> {
     }
     fn scan_str(&self, table: Table) -> Result<Vec<StrRow>, PortError> {
         self.ops().scan_str(table)
-    }
-    fn project_str_json(
-        &self,
-        table: Table,
-        key: &str,
-        fields: &[&str],
-    ) -> Result<Option<Vec<u8>>, PortError> {
-        self.ops().project_str_json(table, key, fields)
     }
 
     fn scan_str3_by_first(&self, table: Table, first: &str) -> Result<Vec<Str3Row>, PortError> {
@@ -1216,10 +1161,6 @@ mod adjacency_tests;
 #[cfg(test)]
 #[path = "sqlite_value_len_tests.rs"]
 mod value_len_tests;
-
-#[cfg(test)]
-#[path = "sqlite_json_projection_tests.rs"]
-mod json_projection_tests;
 
 #[cfg(test)]
 #[path = "sqlite_linked_json_tests.rs"]

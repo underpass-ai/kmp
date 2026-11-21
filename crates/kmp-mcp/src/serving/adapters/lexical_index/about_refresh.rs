@@ -1,6 +1,9 @@
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
-use kmp_proto_mapping::v1beta1::{LanguageSignals, LexicalProfile, LexicalReading, LexicalRow};
+use kmp_proto::v1beta1::MemoryEvidence;
+use kmp_proto_mapping::v1beta1::{
+    LanguageSignals, LexicalProfile, LexicalReach, LexicalReading, LexicalRow,
+};
 
 use super::about_change::AboutChange;
 use super::about_reader::AboutReader;
@@ -170,12 +173,37 @@ impl<'r, 's> AboutRefresh<'r, 's> {
                 .map(|key| key.source.clone()),
         );
         let profile = LexicalProfile::new(language.clone());
+        // 9. Every reach those moves can have touched: a candidate's reach
+        //    reads the details of its refs and the kept relations around
+        //    them, so it moves with its row, with a ref's detail, and with a
+        //    relation kept or let go at a ref; the refs of evidence include
+        //    what it supports.
+        let mut reach_due = due.clone();
+        reach_due.extend(
+            relations
+                .iter()
+                .chain(touched_relations)
+                .chain(&edges)
+                .flat_map(|key| [key.source.clone(), key.target.clone()]),
+        );
+        for id in reach_due.clone() {
+            for edge in self.reader.incoming(&id, Some(SUPPORTS))? {
+                reach_due.insert(edge.source_node_id);
+            }
+        }
         let mut rows = Vec::with_capacity(due.len() * 2);
-        for id in &due {
-            rows.extend(
-                self.rows_of(id, &profile)?
-                    .map(|(doc, row)| (doc, row.map(|row| row.encode()))),
-            );
+        let mut reach = Vec::with_capacity(reach_due.len() * 2);
+        for id in &reach_due {
+            for (doc, read) in self.rows_of(id, &profile)? {
+                let reach_of = match &read {
+                    Some((item, row)) => Some(self.reach_of(item, row, &profile)?.encode()),
+                    None => None,
+                };
+                reach.push((doc.clone(), reach_of));
+                if due.contains(id) {
+                    rows.push((doc, read.map(|(_, row)| row.encode())));
+                }
+            }
         }
         Ok(Refreshed::Changed(AboutChange {
             about: self.about,
@@ -183,6 +211,7 @@ impl<'r, 's> AboutRefresh<'r, 's> {
             nodes,
             relations: kept_relations,
             rows,
+            reach,
             far: self.set.far_changes(),
             signals,
             summaries,
@@ -402,11 +431,12 @@ impl<'r, 's> AboutRefresh<'r, 's> {
 
     /// The two candidates a node can make, as they stand: its text once a
     /// kept `contains_entry` reaches it, its detail while it is kept evidence.
+    #[allow(clippy::type_complexity)]
     fn rows_of(
         &mut self,
         id: &str,
         profile: &LexicalProfile,
-    ) -> Result<[(String, Option<LexicalRow>); 2], String> {
+    ) -> Result<[(String, Option<(MemoryEvidence, LexicalRow)>); 2], String> {
         let state = self.set.node(id)?;
         let node = match &state {
             Some(_) => self.reader.node(id)?,
@@ -443,5 +473,39 @@ impl<'r, 's> AboutRefresh<'r, 's> {
             (format!("entry:{id}"), entry),
             (format!("detail:{id}"), evidence),
         ])
+    }
+
+    /// What a candidate's graph can lend its focus as the refresh leaves it:
+    /// its refs' details, and the relations at its refs the selection keeps.
+    fn reach_of(
+        &mut self,
+        item: &MemoryEvidence,
+        row: &LexicalRow,
+        profile: &LexicalProfile,
+    ) -> Result<LexicalReach, String> {
+        let reader = self.reader;
+        let mut kept = BTreeMap::new();
+        for reference in LexicalReach::refs(item) {
+            let mut edges = reader.incoming(&reference, None)?;
+            edges.extend(reader.outgoing(&reference, None)?);
+            let mut held = Vec::new();
+            for edge in edges {
+                if self.set.relation(&RelationKey::of(&edge))?.is_some() {
+                    held.push(edge);
+                }
+            }
+            kept.insert(reference, held);
+        }
+        AboutReader::reach(
+            item,
+            row,
+            profile,
+            |reference| {
+                Ok(reader
+                    .detail(reference)?
+                    .map(|detail| detail.detail().to_string()))
+            },
+            |reference| Ok(kept.remove(reference).unwrap_or_default()),
+        )
     }
 }

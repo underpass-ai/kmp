@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 
+use super::counted_text::CountedText;
 use super::term_counts::TermCounts;
 
 /// Okapi BM25 over the candidates of one question.
@@ -130,10 +131,10 @@ impl LexicalField {
     /// A word the reader wrote weighs one. A word this memory associates with
     /// it weighs a fraction, so an expansion can lift a candidate the question
     /// nearly reached and can never outvote the words actually typed.
-    pub(super) fn score_weighted(
+    pub(super) fn score_weighted<D: CountedText + ?Sized>(
         &self,
         weights: &BTreeMap<String, f64>,
-        document: &TermCounts,
+        document: &D,
     ) -> f64 {
         if self.documents == 0 || self.average_length <= 0.0 {
             return 0.0;
@@ -160,7 +161,7 @@ impl LexicalField {
     /// refuses a longer-than-average candidate that matches exactly the
     /// concept the floor is made of — which is a cliff again, wearing the
     /// units of the thing meant to remove one.
-    pub(super) fn single_occurrence_factor(&self, document: &TermCounts) -> f64 {
+    pub(super) fn single_occurrence_factor<D: CountedText + ?Sized>(&self, document: &D) -> f64 {
         if self.documents == 0 || self.average_length <= 0.0 {
             return 1.0;
         }

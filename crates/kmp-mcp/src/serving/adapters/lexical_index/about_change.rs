@@ -19,6 +19,9 @@ pub(super) struct AboutChange {
     /// Candidate rows, encoded (`LexicalRow::encode`): a build holds one per
     /// candidate of the about, and encoded they take a fraction of the room.
     pub(super) rows: Vec<(String, Option<Vec<u8>>)>,
+    /// Candidate reaches, encoded (`LexicalReach::encode`), one beside each
+    /// row a pass wrote; `None` takes one out.
+    pub(super) reach: Vec<(String, Option<Vec<u8>>)>,
     /// Nodes one hop past the ask's depth that came (`true`) or went.
     pub(super) far: Vec<(String, bool)>,
     pub(super) signals: LanguageSignals,

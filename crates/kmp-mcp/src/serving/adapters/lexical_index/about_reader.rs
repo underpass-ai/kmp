@@ -1,7 +1,10 @@
 use kmp_domain::{
     BundleNode, BundleNodeDetail, DimensionSelection, GraphPointReads, NodeRelationProjection,
 };
-use kmp_proto_mapping::v1beta1::{LanguageSignals, LexicalProfile, LexicalReading, LexicalRow};
+use kmp_proto::v1beta1::MemoryEvidence;
+use kmp_proto_mapping::v1beta1::{
+    LanguageSignals, LexicalProfile, LexicalReach, LexicalReading, LexicalRow, ReachRelation,
+};
 
 use super::relation_key::RelationKey;
 
@@ -83,22 +86,57 @@ impl<'r> AboutReader<'r> {
         )
     }
 
-    /// The candidate an entry's text makes, as a row.
-    pub(super) fn entry_row(node: &BundleNode, profile: &LexicalProfile) -> Option<LexicalRow> {
-        LexicalReading::entry_candidate(node).map(|item| LexicalRow::read(&item, profile))
+    /// The candidate an entry's text makes, and its row.
+    pub(super) fn entry_row(
+        node: &BundleNode,
+        profile: &LexicalProfile,
+    ) -> Option<(MemoryEvidence, LexicalRow)> {
+        LexicalReading::entry_candidate(node).map(|item| {
+            let row = LexicalRow::read(&item, profile);
+            (item, row)
+        })
     }
 
-    /// The candidate an evidence node's detail makes, as a row.
+    /// The candidate an evidence node's detail makes, and its row.
     pub(super) fn evidence_row(
         node: &BundleNode,
         detail: &BundleNodeDetail,
         supports: Vec<String>,
         profile: &LexicalProfile,
-    ) -> LexicalRow {
-        LexicalRow::read(
-            &LexicalReading::evidence_candidate(node, detail, supports),
+    ) -> (MemoryEvidence, LexicalRow) {
+        let item = LexicalReading::evidence_candidate(node, detail, supports);
+        let row = LexicalRow::read(&item, profile);
+        (item, row)
+    }
+
+    /// What `item`'s graph can lend its focus beyond `row` (P14): the
+    /// details of its refs and the kept relations incident to them, as
+    /// `detail` and `kept` give them.
+    pub(super) fn reach(
+        item: &MemoryEvidence,
+        row: &LexicalRow,
+        profile: &LexicalProfile,
+        mut detail: impl FnMut(&str) -> Result<Option<String>, String>,
+        mut kept: impl FnMut(&str) -> Result<Vec<NodeRelationProjection>, String>,
+    ) -> Result<LexicalReach, String> {
+        let mut details = Vec::new();
+        let mut relations = Vec::new();
+        for reference in LexicalReach::refs(item) {
+            details.extend(detail(&reference)?);
+            relations.extend(kept(&reference)?);
+        }
+        Ok(LexicalReach::read(
+            item,
+            row,
             profile,
-        )
+            details.iter().map(String::as_str),
+            relations.iter().map(|relation| ReachRelation {
+                source: &relation.source_node_id,
+                target: &relation.target_node_id,
+                relation_type: &relation.relation_type,
+                explanation: &relation.explanation,
+            }),
+        ))
     }
 
     /// What a kept node adds to its about's language.

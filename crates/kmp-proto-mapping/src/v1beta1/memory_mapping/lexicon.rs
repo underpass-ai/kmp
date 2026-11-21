@@ -2,11 +2,13 @@ use super::answer_candidate_terms::AnswerCandidateTerms;
 use super::association_index::AssociationIndex;
 use super::bridged_key::BridgedKey;
 use super::bridged_term::BridgedTerm;
+use super::counted_text::CountedText;
 use super::lexical_bridge::LexicalBridge;
 use super::lexical_collection::LexicalCollection;
 use super::lexical_field::ranked_score;
 use super::morphology::Morphology;
 use super::search_terms::informative_term_counts;
+use super::seed_documents::SeedDocuments;
 use super::term_counts::TermCounts;
 use kmp_proto::v1beta1::MemoryEvidence;
 use std::collections::{BTreeMap, BTreeSet};
@@ -40,7 +42,7 @@ impl Lexicon {
         bridge: &LexicalBridge,
         collection: Arc<LexicalCollection>,
         vocabulary: Option<&[String]>,
-        association_documents: Option<&[TermCounts]>,
+        association_documents: Option<&SeedDocuments>,
     ) -> Self {
         let question_counts = informative_term_counts(question, morphology);
         // The table bridges the question to the words of every candidate:
@@ -72,14 +74,12 @@ impl Lexicon {
         // of the question: those given, or, when the lexical index left the
         // ones below the floor unread (P14), the ones its postings reached.
         let associations = match association_documents {
-            Some(documents) => {
-                AssociationIndex::for_question(&question_counts, &collection.direct, documents)
-            }
-            None => AssociationIndex::for_question(
+            Some(documents) => documents.associations(&question_counts, &collection.direct),
+            None => std::sync::Arc::new(AssociationIndex::for_question(
                 &question_counts,
                 &collection.direct,
                 prepared.iter().map(|(_, terms)| &terms.direct_counts),
-            ),
+            )),
         };
         let associated = associations.expand(&question_counts);
         let mut asked = associated.clone();
@@ -110,18 +110,17 @@ impl Lexicon {
     /// Measured on the raw score, not the quantized one, so a candidate is
     /// never refused by a rounding boundary.
     pub(super) fn clears_floor(&self, terms: &AnswerCandidateTerms) -> bool {
-        let score = self
-            .collection
-            .direct
-            .score_weighted(&self.asked, &terms.direct_counts);
+        self.clears_floor_of(&terms.direct_counts)
+    }
+
+    /// [`Self::clears_floor`] over a direct field counted elsewhere (the
+    /// lexical index's rows, P14).
+    pub(super) fn clears_floor_of<D: CountedText + ?Sized>(&self, direct: &D) -> bool {
+        let score = self.collection.direct.score_weighted(&self.asked, direct);
         // The bar is read in the candidate's own length, so a long entry that
         // says the one thing the question asked about is ranked low rather
         // than refused.
-        let floor = self.floor
-            * self
-                .collection
-                .direct
-                .single_occurrence_factor(&terms.direct_counts);
+        let floor = self.floor * self.collection.direct.single_occurrence_factor(direct);
         // Sharing nothing at all is its own answer, and no floor derived from
         // an empty overlap should be able to admit it.
         score > 0.0 && score >= floor
@@ -174,6 +173,18 @@ impl Lexicon {
         BridgedKey::focus_matches(&self.bridged, focus_terms, terms)
     }
 
+    /// At most how many focus concepts a candidate whose searchable words
+    /// are among `searchable` and whose direct field is `direct` answers
+    /// ([`BridgedKey::focus_bound`]).
+    pub(super) fn focus_bound<'t, D: CountedText + ?Sized>(
+        &self,
+        focus_terms: &BTreeSet<String>,
+        searchable: impl IntoIterator<Item = &'t String>,
+        direct: &D,
+    ) -> usize {
+        BridgedKey::focus_bound(&self.bridged, focus_terms, searchable, direct)
+    }
+
     /// How many of the focus concepts this candidate states in its own
     /// words, or through the table onto them: its content alone.
     pub(super) fn content_focus_matches(
@@ -194,12 +205,12 @@ impl Lexicon {
 
     /// [`Self::content_score`] over counts read elsewhere (the lexical
     /// index's rows, P14).
-    pub(super) fn content_score_of(&self, content: &TermCounts) -> i64 {
+    pub(super) fn content_score_of<D: CountedText + ?Sized>(&self, content: &D) -> i64 {
         ranked_score(self.collection.content.score_weighted(&self.asked, content))
     }
 
     /// [`Self::direct_score`] over counts read elsewhere.
-    pub(super) fn direct_score_of(&self, direct: &TermCounts) -> i64 {
+    pub(super) fn direct_score_of<D: CountedText + ?Sized>(&self, direct: &D) -> i64 {
         ranked_score(self.collection.direct.score_weighted(&self.asked, direct))
     }
 }

@@ -3,7 +3,8 @@ use std::path::Path;
 use std::sync::Mutex;
 
 use kmp_proto_mapping::v1beta1::{
-    IndexedLifecycle, LanguageSignals, LexicalRow, Posting, PostingBlock, RelationClock,
+    IndexedLifecycle, LanguageSignals, LexicalReach, LexicalRow, Posting, PostingBlock,
+    RelationClock,
 };
 use rusqlite::{Connection, OptionalExtension, TransactionBehavior, params};
 
@@ -42,6 +43,10 @@ CREATE TABLE IF NOT EXISTS lex_fwd(
     fingerprint INTEGER NOT NULL, row BLOB NOT NULL,
     PRIMARY KEY (about, doc)) WITHOUT ROWID;
 CREATE UNIQUE INDEX IF NOT EXISTS lex_fwd_ordinal ON lex_fwd(about, ordinal);
+-- What each candidate's graph can lend its strict focus (P14, LexicalReach).
+CREATE TABLE IF NOT EXISTS lex_reach(
+    about TEXT NOT NULL, doc TEXT NOT NULL, reach BLOB NOT NULL,
+    PRIMARY KEY (about, doc)) WITHOUT ROWID;
 CREATE TABLE IF NOT EXISTS lex_post(
     about TEXT NOT NULL, term TEXT NOT NULL, block INTEGER NOT NULL, postings BLOB NOT NULL,
     PRIMARY KEY (about, term, block)) WITHOUT ROWID;
@@ -62,7 +67,7 @@ CREATE TABLE IF NOT EXISTS lex_key_df(
     PRIMARY KEY (about, term)) WITHOUT ROWID;
 ";
 
-pub(super) const TABLES: [&str; 9] = [
+pub(super) const TABLES: [&str; 10] = [
     "lex_stats",
     "lex_node",
     "lex_relation",
@@ -70,6 +75,7 @@ pub(super) const TABLES: [&str; 9] = [
     "lex_vocab",
     "lex_far",
     "lex_fwd",
+    "lex_reach",
     "lex_post",
     "lex_key_df",
 ];
@@ -324,6 +330,30 @@ impl SqliteLexicalSidecar {
                 .map_err(storage)?
                 .map(|row| LexicalRow::decode(&row))
                 .transpose()
+        })
+    }
+
+    /// The reach of each of `docs` that has one ([`LexicalReach`]).
+    pub(super) fn reaches<'d>(
+        &self,
+        about: &str,
+        docs: impl IntoIterator<Item = &'d String>,
+    ) -> Result<BTreeMap<String, LexicalReach>, String> {
+        self.with(|connection| {
+            let mut statement = connection
+                .prepare_cached("SELECT reach FROM lex_reach WHERE about = ?1 AND doc = ?2")
+                .map_err(storage)?;
+            let mut held = BTreeMap::new();
+            for doc in docs {
+                let reach = statement
+                    .query_row(params![about, doc], |row| row.get::<_, Vec<u8>>(0))
+                    .optional()
+                    .map_err(storage)?;
+                if let Some(reach) = reach {
+                    held.insert(doc.clone(), LexicalReach::decode(&reach)?);
+                }
+            }
+            Ok(held)
         })
     }
 

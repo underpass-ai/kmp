@@ -20,4 +20,8 @@ pub(crate) struct IndexedRead {
     /// their neighbourhood from the store.
     pub(crate) plan_us: u64,
     pub(crate) parts_us: u64,
+    /// In `verify`, the candidates the plan found no reading could make
+    /// eligible ([`kmp_proto_mapping::v1beta1::LexicalReach`]): none of them
+    /// may be eligible in the whole about's answer.
+    pub(crate) unanswerable: Option<std::sync::Arc<std::collections::BTreeSet<String>>>,
 }

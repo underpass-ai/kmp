@@ -249,6 +249,13 @@ impl LexicalSidecar {
             Err(why) => return Ok(Err(why)),
         };
         let plan_us = started.elapsed().as_micros() as u64;
+        let unanswerable = (self.mode == LexicalIndexMode::Verify)
+            .then(|| {
+                plan.prefixes
+                    .as_ref()
+                    .map(|prefixes| Arc::new(prefixes.unanswerable().clone()))
+            })
+            .flatten();
         let mut limit = self.limits.head_window + depth + TOP_K_SLACK;
         // Every round reads at the same position: what one read, the next
         // need not read again.
@@ -311,6 +318,7 @@ impl LexicalSidecar {
                 documents: plan.documents,
                 plan_us,
                 parts_us: started.elapsed().as_micros() as u64 - plan_us,
+                unanswerable: unanswerable.clone(),
             };
             let response = answer(&indexed_read)?;
             let certified = plan

@@ -1,39 +1,32 @@
-use super::super::engine::{ReadTx, Table};
+use super::super::engine::{Key, ReadTx, Table};
 use super::super::serdes::decode;
 use kmp_domain::{NodeProjection, PortError};
 use serde::Deserialize;
 use std::collections::BTreeMap;
 
 /// Boundary DTO for graph admission. Large source prose and arbitrary payload
-/// metadata stay in SQLite until the application admits their node identities.
+/// metadata stay out of the projection: serde skips every field it does not
+/// name without allocating it, so the node's stored JSON is read once, in
+/// Rust, and only the header is kept.
 #[derive(Deserialize)]
 struct NodeAdmissionHeader {
     node_id: String,
     node_kind: String,
     status: String,
     labels: Vec<String>,
-    #[serde(rename = "properties.placeholder")]
-    placeholder: Option<String>,
+    properties: Option<AdmittedProperties>,
     title: Option<String>,
     summary: Option<String>,
 }
 
-/// The fields one statement projects: the header, and the title and summary
-/// every node but evidence is admitted with. Reading them in the same
-/// statement halves the statements a catalogue issues per node; evidence
-/// keeps neither, exactly as when they were read apart.
-const FIELDS: [&str; 7] = [
-    "node_id",
-    "node_kind",
-    "status",
-    "labels",
-    "properties.placeholder",
-    "title",
-    "summary",
-];
+/// The one payload property a node is admitted with.
+#[derive(Deserialize)]
+struct AdmittedProperties {
+    placeholder: Option<String>,
+}
 
 pub(super) fn read(tx: &dyn ReadTx, id: &str) -> Result<Option<NodeProjection>, PortError> {
-    let Some(raw) = tx.project_str_json(Table::Nodes, id, &FIELDS)? else {
+    let Some(raw) = tx.get(Table::Nodes, Key::Str(id))? else {
         return Ok(None);
     };
     let header: NodeAdmissionHeader = decode("node admission header", &raw)?;
@@ -57,9 +50,14 @@ pub(super) fn read(tx: &dyn ReadTx, id: &str) -> Result<Option<NodeProjection>, 
         title,
         summary,
         properties: header
-            .placeholder
+            .properties
+            .and_then(|properties| properties.placeholder)
             .map(|value| BTreeMap::from([("placeholder".into(), value)]))
             .unwrap_or_default(),
         provenance: None,
     }))
 }
+
+#[cfg(test)]
+#[path = "node_admission_header_tests.rs"]
+mod tests;

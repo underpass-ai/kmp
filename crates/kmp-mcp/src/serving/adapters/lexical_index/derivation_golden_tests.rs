@@ -2,14 +2,17 @@
 //! terms, the surface of a candidate or its judged expansions changes these
 //! fingerprints, and a sidecar written before the change would then disagree
 //! with the ranker.
+//! A change to what a candidate's reach reads (P14) changes the reach
+//! fingerprint the same way.
 //! When this fails, bump `INDEX_VERSION` (so every sidecar is built again)
 //! and record the new fingerprints with it.
 
 use std::collections::HashMap;
 
+use kmp_domain::{RelationExplanation, RelationSemanticClass};
 use kmp_domain::{SearchExpansions, SearchSummary};
 use kmp_proto::v1beta1::MemoryEvidence;
-use kmp_proto_mapping::v1beta1::{LexicalProfile, LexicalRow};
+use kmp_proto_mapping::v1beta1::{LexicalProfile, LexicalReach, LexicalRow, ReachRelation};
 
 use super::lexical_maintainer::INDEX_VERSION;
 
@@ -90,7 +93,7 @@ fn the_derivation_is_the_one_this_index_version_names() {
     ];
     assert_eq!(
         (INDEX_VERSION, measured),
-        ("lexical-index-5", GOLDEN),
+        ("lexical-index-6", GOLDEN),
         "the row derivation moved: bump INDEX_VERSION and record the new fingerprints"
     );
 }
@@ -100,3 +103,60 @@ const GOLDEN: [(u64, u64); 3] = [
     (2_465_792_658_603_608_410, 3_987_275_543_019_347_018),
     (989_271_219_903_669_556, 13_049_686_741_475_258_028),
 ];
+
+/// The reach of every fixture, beside one causal and one structural relation
+/// at its first ref and a detail there, folded like the rows.
+fn reach_fingerprint(language: Option<&str>) -> u64 {
+    let profile = LexicalProfile::new(language.map(str::to_string));
+    let causal = RelationExplanation::new(RelationSemanticClass::Causal)
+        .with_optional_rationale(Some("Frost burst the pipe overnight.".into()))
+        .with_optional_evidence(Some("Gauge G-7 read minus twelve.".into()));
+    let structural = RelationExplanation::new(RelationSemanticClass::Structural)
+        .with_optional_rationale(Some("Scope keeps the entry.".into()));
+    fixtures().iter().fold(0u64, |folded, item| {
+        let row = LexicalRow::read(item, &profile);
+        let reference = LexicalReach::refs(item)
+            .into_iter()
+            .next()
+            .expect("every fixture has a ref");
+        let reach = LexicalReach::read(
+            item,
+            &row,
+            &profile,
+            ["Crews replaced the gasket at dawn."],
+            [
+                ReachRelation {
+                    source: &reference,
+                    target: "project:plant:entry:fact:boiler-hall",
+                    relation_type: "depends_on",
+                    explanation: &causal,
+                },
+                ReachRelation {
+                    source: "label:plant",
+                    target: &reference,
+                    relation_type: "contains_entry",
+                    explanation: &structural,
+                },
+            ],
+        );
+        reach.encode().iter().fold(folded, |folded, byte| {
+            (folded ^ u64::from(*byte)).wrapping_mul(0x0000_0100_0000_01b3)
+        })
+    })
+}
+
+#[test]
+fn the_reach_derivation_is_the_one_this_index_version_names() {
+    let measured = [
+        reach_fingerprint(None),
+        reach_fingerprint(Some("english")),
+        reach_fingerprint(Some("spanish")),
+    ];
+    assert_eq!(
+        (INDEX_VERSION, measured),
+        ("lexical-index-6", REACH_GOLDEN),
+        "the reach derivation moved: bump INDEX_VERSION and record the new fingerprints"
+    );
+}
+
+const REACH_GOLDEN: [u64; 3] = [0, 0, 0];

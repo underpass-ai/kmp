@@ -96,7 +96,7 @@ pub(super) struct AnswerEvidenceRanker<'a> {
     /// are only those the lexical index read (DESIGN L6, P14): what the
     /// store's associations are counted over, however many candidates the
     /// floor bound left unread.
-    indexed_seed_documents: Option<std::sync::Arc<Vec<super::term_counts::TermCounts>>>,
+    indexed_seed_documents: Option<std::sync::Arc<super::seed_documents::SeedDocuments>>,
     /// The index rows of the candidates an indexed ask reads, by id.
     indexed_rows:
         Option<std::sync::Arc<std::collections::BTreeMap<String, super::lexical_row::LexicalRow>>>,
@@ -314,7 +314,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
     /// fields instead of the candidates it is given (DESIGN L6, P14).
     pub(super) fn with_indexed_seed_documents(
         mut self,
-        documents: std::sync::Arc<Vec<super::term_counts::TermCounts>>,
+        documents: std::sync::Arc<super::seed_documents::SeedDocuments>,
     ) -> Self {
         self.indexed_seed_documents = Some(documents);
         self
@@ -404,7 +404,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
             self.bridge,
             std::sync::Arc::clone(&collection),
             self.indexed_vocabulary.as_deref().map(Vec::as_slice),
-            self.indexed_seed_documents.as_deref().map(Vec::as_slice),
+            self.indexed_seed_documents.as_deref(),
         );
         self.observe(&prepared, &collection, &lexicon);
         self.rank_prepared(
@@ -565,6 +565,9 @@ impl<'a> AnswerEvidenceRanker<'a> {
                 .cmp(&left.relevance)
                 .then_with(|| left.stable_key.cmp(&right.stable_key))
         });
+        if let Some(witness) = self.witness {
+            witness.record_eligible(candidates.iter().map(|candidate| candidate.item.id.clone()));
+        }
         let scores = ContentScores::read(candidates.iter().map(|candidate| {
             (
                 candidate.item.id.as_str(),
@@ -681,7 +684,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
                     self.bridge,
                     std::sync::Arc::clone(&collection),
                     self.indexed_vocabulary.as_deref().map(Vec::as_slice),
-                    self.indexed_seed_documents.as_deref().map(Vec::as_slice),
+                    self.indexed_seed_documents.as_deref(),
                 );
                 self.observe(&prepared, &collection, &lexicon);
                 let (evidence, scores) = self.rank_prepared(
@@ -712,7 +715,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
             self.bridge,
             std::sync::Arc::clone(&collection),
             self.indexed_vocabulary.as_deref().map(Vec::as_slice),
-            self.indexed_seed_documents.as_deref().map(Vec::as_slice),
+            self.indexed_seed_documents.as_deref(),
         );
         self.observe(&prepared, &collection, &lexicon);
         let unfiltered = self
