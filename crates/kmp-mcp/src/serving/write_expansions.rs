@@ -17,7 +17,9 @@ use crate::write::plan::KernelWritePlan;
 
 impl KernelMcpServer {
     /// Asks the backend's judge about what passed the lint and applies its
-    /// answer. A backend without the judge keeps nothing.
+    /// answer. A backend without the judge keeps nothing. The judgement waits
+    /// at most the site's deadline (`JudgementSite::Expansions`); a late one
+    /// is not judged, and nothing is stored unjudged.
     pub(super) async fn judge_expansion_selection(
         &self,
         about: &str,

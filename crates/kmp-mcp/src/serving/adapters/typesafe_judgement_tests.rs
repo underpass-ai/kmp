@@ -165,6 +165,40 @@ async fn a_persistent_rate_limit_gives_up_after_two_retries() {
 }
 
 #[tokio::test]
+async fn an_overloaded_provider_is_retried_with_backoff() {
+    let (url, fixture) = serve(vec![
+        status(529, Vec::new()),
+        status(529, vec![("Retry-After", "0".into())]),
+        ok(answer()),
+    ]);
+    let started = std::time::Instant::now();
+    let response = adapter(url, Duration::from_secs(5))
+        .evaluate(&request())
+        .await
+        .expect("retried");
+    assert_eq!(fixture.join().expect("fixture").len(), 3);
+    assert_eq!(response.requests, 1);
+    assert!(
+        started.elapsed() >= Duration::from_millis(500),
+        "the unannounced retry waits its backoff: {:?}",
+        started.elapsed()
+    );
+}
+
+#[tokio::test]
+async fn a_persistent_overload_fails_and_is_never_an_answer() {
+    let busy = || status(529, vec![("Retry-After", "0".into())]);
+    let (url, fixture) = serve(vec![busy(), busy(), busy()]);
+    let error = adapter(url, Duration::from_secs(5))
+        .evaluate(&request())
+        .await
+        .expect_err("gave up");
+    assert_eq!(fixture.join().expect("fixture").len(), 3);
+    assert!(error.contains("529"), "{error}");
+    assert!(!error.contains(KEY));
+}
+
+#[tokio::test]
 async fn malformed_bodies_and_slow_answers_fail_safely() {
     let (url, fixture) = serve(vec![Reply {
         status: 200,

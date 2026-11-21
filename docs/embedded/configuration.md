@@ -56,13 +56,13 @@ its store.
 | `lexical-index.json` | Index limits as shipped | `max_candidate_share_percent`, `min_about_entries`, `head_window`, `continuation_chunk`. [Index contract](../development/lexical-sidecar.md). | No |
 | `lexical-bridge.kmpb` | The machine table `<data home>/kmp/lexical-bridge.kmpb`, if any | A bridge table for this store only. `KMP_LEXICAL_BRIDGE` names another file or `none`. [Languages](languages.md). | No |
 | `semantic-retrieval.json` | Off | Experimental: a local encoder on a loopback address. [Adapter contract](../development/semantic-retrieval.md). | No |
-| `typesafe.json` | Off: nothing is sent | Opt this store into TypeSafe Jev: `{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.14.0","timeout_ms":20000}`. Only a pinned model is accepted. Turns on `kmp_curate` and `kmp_summaries_audit` judgements. | — |
+| `typesafe.json` | Off: nothing is sent | Opt this store into TypeSafe Jev: `{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.14.0","timeout_ms":20000}`. Only a pinned model is accepted. Turns on `kmp_curate` and `kmp_summaries_audit` judgements. `kmp-mcp doctor` asks TypeSafe whether the pinned model is still served (`GET /v1/models`, the key and no store text). | — |
 | `rerank.json` | Off | Re-rank Ask candidates with Jev (`pool_size` 1–400 is required). [Configuration](../development/evidence-rerank.md). | Yes |
 | `wake-focus.json` | Off | Focus a Wake with an `intent` through Jev. Same shape as `rerank.json`. | Yes |
 | `ask-judge.json` | Off | The doubt band: Jev judges asks the gate settled in doubt. `{}` takes the defaults. [Doubt band](README.md#the-doubt-band-opt-in-sends-text-to-typesafe). | Yes |
 | `ask-cross-language.json` | Off | Jev as the cross-language judge of Ask: `veto` (keep a translated citation only on a yes at `keep_at`, 0.7) and `rescue` (cite one memory the lexical bridge reached in another language for an unanchored UNKNOWN, at `rescue_at`, 0.9), each off unless named. [Cross-language judge](README.md#the-cross-language-judge-opt-in-sends-text-to-typesafe). | Yes |
-| `write-relations.json` | Off | Jev proposes relations for memories just written. | Yes |
-| `write-expansions.json` | Off | Keep writer-proposed search expansions that Jev accepts. [Write expansions](README.md#search-expansions-at-write-opt-in-sends-text-to-typesafe). | Yes |
+| `write-relations.json` | Off | Jev proposes relations for memories just written. Each judgement waits at most 3 s; a late one is reported as not judged and the write stands. | Yes |
+| `write-expansions.json` | Off | Keep writer-proposed search expansions that Jev accepts (it belongs to the memory at `accept_at`, 0.5, and adds no fact; at most 3 s, else not judged and not stored). [Write expansions](README.md#search-expansions-at-write-opt-in-sends-text-to-typesafe). | Yes |
 | `judgement-book.json` | Verdict book on, 64 MiB | `max_bytes` (1 MiB – 4 GiB) for `judgements.sqlite3`, or `{"mode":"off"}`. It never turns judging on by itself. | Yes |
 | `curate.json` | 120 facts per about for a review without focus | `partner_facts` (up to 512), `partner_filter`, `paths_corridor`. [Pairing orphans](README.md#how-a-review-without-focus-pairs-orphans). | Yes |
 

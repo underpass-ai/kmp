@@ -4,6 +4,7 @@
 
 mod about_label_keys;
 pub(crate) mod adapters;
+pub(crate) mod answer_wording;
 pub(crate) mod backend_choice;
 pub(crate) mod backend_name;
 mod curate_dispatch;
@@ -31,7 +32,9 @@ pub(crate) mod kernel_mcp_server;
 pub(crate) mod lexical_index_mode;
 pub(crate) mod lexical_totals;
 pub(crate) mod mcp_session;
+pub(crate) mod model_check;
 pub(crate) mod noul_criteria;
+pub(crate) mod noul_reading;
 mod output_schema_projection;
 mod panic_guard;
 pub(crate) mod passage_projection;

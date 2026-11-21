@@ -47,6 +47,7 @@ mod shared_outcomes;
 mod sqlite_verdict_book;
 mod store_config_loads;
 pub(crate) use store_config_loads::inspect_store_config;
+pub(crate) use typesafe_model_check::pinned_model_check;
 mod store_config_report;
 #[cfg(test)]
 mod store_config_report_tests;
@@ -61,6 +62,7 @@ mod typesafe_fixture;
 mod typesafe_judgement;
 #[cfg(test)]
 mod typesafe_judgement_tests;
+mod typesafe_model_check;
 mod typesafe_request_body;
 mod typesafe_transport;
 mod typesafe_wire_response;

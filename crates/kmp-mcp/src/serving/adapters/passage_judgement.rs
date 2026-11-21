@@ -1,22 +1,23 @@
 use kmp_proto_mapping::v1beta1::SemanticSource;
-use serde_json::json;
+use serde_json::Value;
 
 use crate::serving::judgement_answer::JudgementAnswer;
 use crate::serving::judgement_question::JudgementQuestion;
 use crate::serving::judgement_request::JudgementRequest;
 use crate::serving::ports::judgement_model::JudgementModel;
 
-/// One yes/no question about each passage of a pool, against a state. The
-/// passages judged at `keep_at` or above come back best first, as entry ref
-/// and text fingerprint, at most `limit` of them; ties break by ref, then by
+/// One yes/no question about each passage of a pool (`ask` builds it from
+/// the passage's excerpt), against a state. The passages `keep` admits by
+/// their probability of yes come back best first, as entry ref and text
+/// fingerprint, at most `limit` of them; ties break by ref, then by
 /// fingerprint, so the order is reproducible.
 pub(super) async fn judge_passages(
     model: &dyn JudgementModel,
-    state: &str,
-    question: &str,
+    state: Value,
+    ask: impl Fn(String) -> JudgementQuestion,
     pool: &[SemanticSource],
     excerpt_chars: usize,
-    keep_at: f64,
+    keep: impl Fn(f64) -> bool,
     limit: usize,
 ) -> Result<Vec<(String, String)>, String> {
     let questions = pool
@@ -25,20 +26,12 @@ pub(super) async fn judge_passages(
         .map(|(n, source)| {
             (
                 format!("p{n}"),
-                JudgementQuestion::Noul {
-                    instructions: json!({
-                        "passage": source.text.chars().take(excerpt_chars).collect::<String>(),
-                        "question": question,
-                    }),
-                },
+                ask(source.text.chars().take(excerpt_chars).collect::<String>()),
             )
         })
         .collect();
     let response = model
-        .evaluate(&JudgementRequest {
-            state: json!(state),
-            questions,
-        })
+        .evaluate(&JudgementRequest { state, questions })
         .await?;
     let mut scored = pool
         .iter()
@@ -50,7 +43,7 @@ pub(super) async fn judge_passages(
             };
             (yes, source)
         })
-        .filter(|(yes, _)| *yes >= keep_at)
+        .filter(|(yes, _)| keep(*yes))
         .collect::<Vec<_>>();
     scored.sort_by(|left, right| {
         right

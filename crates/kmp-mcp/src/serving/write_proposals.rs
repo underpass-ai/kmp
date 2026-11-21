@@ -18,6 +18,9 @@ const HOW_WITH_LIFECYCLE: &str = "Relations Jev reads as missing from what you j
 impl KernelMcpServer {
     /// Adds `proposed_relations` to a committed memories write when the store
     /// opted in. Silent otherwise, and a failure only warns: the write stands.
+    /// Each judgement the review asks waits at most the site's deadline
+    /// (`JudgementSite::WriteRelations`); a late one comes back as a warning
+    /// that says it was not judged, never as an empty set of proposals.
     pub(super) async fn propose_write_relations(&self, plan: &KernelWritePlan, result: &mut Value) {
         if plan.operation != WriteOperation::Memories
             || plan.dry_run

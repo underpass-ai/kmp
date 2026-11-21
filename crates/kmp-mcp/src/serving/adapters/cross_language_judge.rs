@@ -10,6 +10,7 @@ use sha2::{Digest, Sha256};
 
 use super::ask_cross_language_config::{ASK_CROSS_LANGUAGE_FILE, AskCrossLanguageConfig};
 use super::doubt_band_judge::doubt_judgement;
+use crate::serving::answer_wording::{ASKED, STATES, STATES_FALSE, STATES_TRUE};
 use crate::serving::doubt_outcome::DoubtOutcome;
 use crate::serving::environment::judgement_deadline;
 use crate::serving::judgement_answer::JudgementAnswer;
@@ -32,13 +33,7 @@ const COMPANION: &str = "any";
 // the question.
 
 /// The state's field for the reader's question, and for its language.
-const ASKED: &str = "user_question";
 const ASKED_LANGUAGE: &str = "user_question_language";
-/// One question per passage: does it state what was asked?
-const STATES: &str = "Does `passage` state the answer to `user_question`?";
-const STATES_TRUE: &str = "the passage states the fact `user_question` asks for";
-const STATES_FALSE: &str =
-    "the passage is about the same subject but does not state the asked fact";
 /// The companion of a rescue: can the question be answered from these
 /// passages at all? Its own Noul, never a `none` option (as of Jev 1.14 the
 /// companion usually works better).

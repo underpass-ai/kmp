@@ -1,5 +1,7 @@
 pub(crate) mod find_partners;
 pub(crate) mod find_paths;
+#[cfg(test)]
+pub(crate) mod keyed_nouls;
 pub(crate) mod prepare_apply;
 pub(crate) mod propose_labels;
 pub(crate) mod review_focus;

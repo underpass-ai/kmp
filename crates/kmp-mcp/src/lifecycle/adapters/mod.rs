@@ -49,5 +49,6 @@ pub mod system_process_executor;
 pub(crate) mod telemetry_probe;
 #[cfg(test)]
 pub(crate) mod tests_support;
+pub(crate) mod typesafe_model_probe;
 pub mod uninstall_report;
 pub(crate) mod viewer_probe;

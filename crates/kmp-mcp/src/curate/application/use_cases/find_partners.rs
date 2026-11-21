@@ -76,18 +76,17 @@ impl FindPartners {
                 let Some(response) = ask.ask(request).await else {
                     break 'abouts;
                 };
-                first.push(response.answers);
+                first.push(response);
             }
             let (mut chosen, last) = plan.after_first(&first);
             if let Some(request) = last {
                 let Some(response) = ask.ask(request).await else {
                     break 'abouts;
                 };
-                chosen.extend(plan.after_final(&response.answers));
+                chosen.extend(plan.after_final(&response));
             }
-            // In the order of the orphans' keys, as one choice always
-            // answered them.
-            chosen.sort();
+            // In the about's order of the orphans, then of their partners.
+            chosen.sort_by_key(|(own, partner)| (plan.position(own), plan.position(partner)));
             let mut pairs = chosen
                 .iter()
                 .filter_map(|(own, partner)| {

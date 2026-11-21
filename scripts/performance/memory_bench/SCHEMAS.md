@@ -1501,7 +1501,7 @@ client mirrors the binary's retry policy; `limitations` says so.
 |---|---|
 | `schema`, `bench_version`, `status` | `ran` or `skipped` (then `reason`, empty `levels`) |
 | `mode`, `upstream`, `key` | `real` / `self_check`; the provider URL or `loopback stand-in`; `{source, recorded: false}` |
-| `settings` | `concurrency` (2–4), `requests` per level and pass, `sites`, `deadlines_ms[site]`, `plan` (faults cycled by arrival: `pass`, `429[:s]`, `delay:<ms>`, `timeout:<s>`), `policy` (`max_retries`, `max_wait_s`, `default_wait_s`, `timeout_s`) |
+| `settings` | `concurrency` (2–4), `requests` per level and pass, `sites`, `deadlines_ms[site]`, `plan` (faults cycled by arrival: `pass`, `429[:s]`, `delay:<ms>`, `timeout:<s>`), `policy` (`max_retries`, `max_wait_s`, `first_backoff_ms`, `timeout_s`) |
 | `levels[]` | `concurrency`, `all` and `by_site[site]` rows, `proxy` (`clean_requests`, `faulted_requests`, `faults` by label) |
 | row | `n`, `added_ms` (`max`, `p99` or null with `p99_absent_reason` below n = 100, `mean`; added = faulted minus clean wall time of the same request), `deadline_ms`, `within_deadline`, `within_deadline_rate`, `retries`, `waited_s`, `degraded` (requests that gave up), `warned` and `warnings` (the binary's message per way of giving up), `clean_errors` |
 | `elapsed_s`, `limitations` | |
@@ -1512,6 +1512,6 @@ client mirrors the binary's retry policy; `limitations` says so.
  "settings": {"concurrency": [2, 3, 4], "requests": 40, "sites": ["rerank", "wake_focus", "paths", "labels"],
               "deadlines_ms": {"labels": 20000, "paths": 20000, "rerank": 20000, "wake_focus": 20000},
               "plan": "pass,429:1,pass,delay:1500,pass,timeout:25,pass,429,pass,pass",
-              "policy": {"max_retries": 2, "max_wait_s": 5, "default_wait_s": 1, "timeout_s": 20.0}},
+              "policy": {"max_retries": 2, "max_wait_s": 5, "first_backoff_ms": 500, "timeout_s": 20.0}},
  "levels": [], "limitations": ["kmp-mcp pins https://api.typesafe.ai ..."]}
 ```

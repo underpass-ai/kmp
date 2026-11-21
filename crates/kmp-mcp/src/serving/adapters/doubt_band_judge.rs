@@ -9,12 +9,14 @@ use sha2::{Digest, Sha256};
 
 use super::ask_judge_config::{ASK_JUDGE_FILE, AskJudgeConfig};
 use super::ask_judge_question::AskJudgeQuestion;
+use crate::serving::answer_wording::{ASKED, HOW_WELL, STATES, STATES_FALSE, STATES_TRUE};
 use crate::serving::doubt_outcome::DoubtOutcome;
 use crate::serving::environment::judgement_deadline;
 use crate::serving::judgement_answer::JudgementAnswer;
 use crate::serving::judgement_question::JudgementQuestion;
 use crate::serving::judgement_request::JudgementRequest;
 use crate::serving::judgement_site::JudgementSite;
+use crate::serving::noul_criteria::NoulCriteria;
 use crate::serving::ports::judgement_model::JudgementModel;
 
 const TARGET: &str = "kmp_mcp::doubt_band";
@@ -168,17 +170,12 @@ impl DoubtBandJudge {
             .map(|(n, passage)| {
                 let passage = passage.text.chars().take(excerpt).collect::<String>();
                 let asked = match self.config.question() {
-                    AskJudgeQuestion::Noul => JudgementQuestion::Noul {
-                        instructions: json!({
-                            "passage": passage,
-                            "question": "Does `passage` answer the question in the state?",
-                        }),
+                    AskJudgeQuestion::Noul => JudgementQuestion::CriteriaNoul {
+                        instructions: json!({"passage": passage, "question": STATES}),
+                        criteria: NoulCriteria::new(STATES_TRUE, STATES_FALSE),
                     },
                     AskJudgeQuestion::Score => JudgementQuestion::Score {
-                        instructions: json!({
-                            "passage": passage,
-                            "question": "How well does `passage` answer the question in the state?",
-                        }),
+                        instructions: json!({"passage": passage, "question": HOW_WELL}),
                         levels: AskJudgeQuestion::LEVELS.map(String::from).to_vec(),
                     },
                 };
@@ -186,7 +183,7 @@ impl DoubtBandJudge {
             })
             .collect::<BTreeMap<_, _>>();
         JudgementRequest {
-            state: json!(question),
+            state: json!({ ASKED: question }),
             questions,
         }
     }

@@ -20,6 +20,7 @@ use super::startup_log_probe::startup_history;
 use super::store_config_probe::store_config_findings;
 use super::store_readability_probe::store_readability_finding;
 use super::telemetry_probe::telemetry_finding;
+use super::typesafe_model_probe::typesafe_model_finding;
 use super::viewer_probe::viewer_finding;
 
 /// Everything one doctor run found, and the verdict it earned. Rendering
@@ -92,10 +93,12 @@ pub(crate) fn observe_doctor(lifecycle: Vec<LifecycleFinding>) -> DoctorObservat
     if let Some(durability) = durability {
         sections.push(ReportSection::single("Durability", durability));
     }
-    let store_config = resolved
+    let mut store_config = resolved
         .as_ref()
         .map(store_config_findings)
         .unwrap_or_default();
+    // Doctor only (info stays offline): is the pinned TypeSafe model served?
+    store_config.extend(resolved.as_ref().and_then(typesafe_model_finding));
     let store_config_level = worst_severity(store_config.iter().map(|finding| finding.severity()));
     if !store_config.is_empty() {
         sections.push(ReportSection::new("Store config", store_config));

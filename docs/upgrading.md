@@ -78,6 +78,7 @@ ends with `Help: kmp_guide {"topic":"…"}`.
 | Lexical bridge fix | With the bridge table `kmp-mcp setup` installs, a same-language word pair (`deadline≈final`) no longer answers a question whose attribute is not stored. An answer that stands only through a translation is `medium` at most. |
 | `valid_from` ahead | See above: such a memory is no longer served as current. |
 | Undated labels (0.27.1) | A label written without a clock stands where its entry stands on that clock, so label selectors find it on `occurred` and `observed`. |
+| Jev questions to TypeSafe's guide (Jev-on stores only) | Each rewritten site (`rerank`, `doubt_band`, `curate_review`, `curate_focus`, `write_relations`, `precheck`, `paths`, `summaries`, `expansions`) is re-judged once, then answered from the verdict book again; the book drops those sites' old verdicts the next time the store opens. Outcomes that can differ: `kmp_curate` types more pairs right and proposes fewer non-relations, gates labels on probability (a few more proposals), reads the steps of a goal-less path search only behind a yes; with `lifecycle: jev`, far fewer lifecycle proposals (false ones fall, and so do real supersessions); re-ranking keeps passages Jev cannot settle, below the clear ones; the doubt band vetoes more non-answers; summaries flag fewer partial-but-faithful renderings. A committed write no longer waits more than 3 s for relation proposals or expansions. `doctor` makes one `GET /v1/models` call when the store has `typesafe.json` and a key. |
 
 ## For operators: switches and commands
 
