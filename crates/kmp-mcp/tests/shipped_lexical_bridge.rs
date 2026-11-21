@@ -130,7 +130,11 @@ async fn ask_case(case: &serde_json::Value) -> serde_json::Value {
         }),
     )
     .await;
-    assert_eq!(receipt["accepted"], true, "{}: {receipt}", case["id"]);
+    assert_eq!(
+        receipt["memory"]["read_after_write_ready"], true,
+        "{}: {receipt}",
+        case["id"]
+    );
     call(
         &server,
         "kmp_ask",

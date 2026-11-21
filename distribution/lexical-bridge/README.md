@@ -99,6 +99,23 @@ Retrieval, on the judged collection (`scripts/ci/retrieval-baseline.sh` with
 floor held, and no case lost rank against the fixture run. Of the 694 word
 types the judged cases use, 570 (82 %) are in this table.
 
+That run held the floors and not the false-answer ceilings, and until
+2026-11-21 nothing checked those with this table. They did not hold: the
+vectors also put neighbours of one language together (`deadline≈final`,
+`prefix≈prefer`, `deploy≈job`), and the anchored gate counted such a pair as
+stating what a question asked. With this table one judged `singular_anchored_twin`
+negative was answered at `high`, 13 of 360 synthetic "attribute not stored"
+questions were answered at `high`, and 2 of 64 negatives of the frozen real
+store were answered. The kernel now credits a pair only across two languages
+and never for a function word (see [languages](../../docs/embedded/languages.md)),
+and `scripts/ci/retrieval-baseline.sh` scores the judged collection and the
+stress cases in `crates/kmp-mcp/tests/fixtures/lexical_bridge_stress/` with
+these bytes, each against its own recorded rows
+(`docs/development/retrieval-baseline-shipped-bridge.tsv`,
+`docs/development/retrieval-bridge-stress-baseline.tsv`);
+`crates/kmp-mcp/tests/shipped_lexical_bridge.rs` asks the stress negatives with
+them on every test run.
+
 What is not in it, by name, so nobody is surprised: inflected verb forms
 (`congelaron`, `adelantó`, `froze`), some plurals (`auditores`, `auditors`)
 and some domain nouns (`despliegue`, `canteen`, `backlog`). A question that
