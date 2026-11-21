@@ -19,7 +19,7 @@ pub use graph_mapping::{
 pub use memory_mapping::{
     AskGate, AskRetrievalContext, ConfidenceCalibration, DoubtBand, DoubtBandEntries, DoubtEntry,
     DoubtJudgement, DoubtPassage, DoubtVerdicts, FloorBound, IndexedAsk, IndexedFieldStats,
-    IndexedLifecycle, IndexedQuestion, IndexedSeeds, JudgedSelection, LanguageSignals,
+    BridgedRescues, IndexedLifecycle, IndexedQuestion, IndexedSeeds, JudgedSelection, LanguageSignals,
     LexicalBridge, LexicalIndexCache, LexicalMargin, LexicalObservation, LexicalProfile,
     LexicalReach, LexicalReading, LexicalRow, LexicalShadowWitness, LexicalTerm, PartnerShortlist,
     PathsProposals, Posting, PostingBlock, RankPrefix, RankPrefixes, ReachRelation, RelationClock,

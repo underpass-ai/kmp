@@ -29,6 +29,9 @@ pub struct IndexedAsk {
     /// The seed rows' direct fields and associations, read once for every
     /// ranking of the ask.
     pub seeds: super::indexed_seeds::IndexedSeeds,
+    /// Where the rankings of one read record what their bridged rescue took
+    /// (P14): top-k reads only the best carriers of a bridged word.
+    pub rescues: super::bridged_rescues::BridgedRescues,
 }
 
 impl IndexedAsk {

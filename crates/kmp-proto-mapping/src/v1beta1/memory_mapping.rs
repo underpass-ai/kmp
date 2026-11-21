@@ -73,6 +73,7 @@ mod indexed_field_stats;
 mod indexed_lifecycle;
 mod indexed_question;
 mod indexed_seeds;
+mod bridged_rescues;
 mod ingest;
 mod ingest_search_expansions;
 mod judged_core;
@@ -189,6 +190,7 @@ pub use indexed_field_stats::IndexedFieldStats;
 pub use indexed_lifecycle::IndexedLifecycle;
 pub use indexed_question::IndexedQuestion;
 pub use indexed_seeds::IndexedSeeds;
+pub use bridged_rescues::BridgedRescues;
 pub use ingest::{ingest_command_from_proto, ingest_response_from_outcome};
 pub use ingest_search_expansions::{
     ingest_response_without_judge, search_expansion_proposals_from_proto,

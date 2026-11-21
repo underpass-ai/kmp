@@ -3,12 +3,13 @@ use std::collections::{BTreeMap, BTreeSet};
 use kmp_application::MemoryAnswerPolicy;
 use kmp_proto_mapping::v1beta1::{
     FloorBound, IndexedAsk, IndexedFieldStats, IndexedQuestion, IndexedSeeds, LexicalBridge,
-    LexicalRow, RankPrefix, RankPrefixes,
+    LexicalRow, RankPrefixes,
 };
 
 use super::about_stats::AboutStats;
 use super::index_limits::IndexLimits;
 use super::sqlite_lexical_sidecar::SqliteLexicalSidecar;
+use super::top_k_selection::TopKSelection;
 use crate::serving::ports::lexical_candidates::LexicalCandidates;
 
 /// What an ask answered from the lexical index reads (DESIGN L6, P13): the
@@ -22,9 +23,13 @@ pub(super) struct IndexedPlan {
     pub(super) reached: usize,
     /// Every candidate's rank prefix, when top-k may read fewer (P14).
     pub(super) prefixes: Option<RankPrefixes>,
-    /// What top-k always reads: candidates an association, a bridged word
-    /// or a declared lifecycle can rescue.
+    /// What top-k always reads: candidates an association or a declared
+    /// lifecycle can rescue, and those naming an anchor the gate requires.
     must: BTreeSet<String>,
+    /// The other candidates that carry a word the table bridged the
+    /// question to: a ranking rescues the best few of them it rejected by
+    /// direct score, so top-k reads the best of them by that score.
+    bridged: BTreeSet<String>,
     bounded: Option<IndexLimits>,
     /// How many candidates the whole about holds.
     pub(super) documents: u64,
@@ -138,11 +143,12 @@ impl IndexedPlan {
         // themselves, which the bound weighs; what else they bring, and
         // every bridged word, keeps a candidate read.
         let asked = question.terms();
-        let mut kept = associated
+        let associated = associated
             .into_iter()
             .filter(|term| !asked.contains(term))
             .collect::<BTreeSet<_>>();
-        kept.extend(bridged);
+        let mut kept = associated.clone();
+        kept.extend(bridged.iter().cloned());
         // MaxScore against the floor (P14): a candidate no reading of the
         // question lets clear it, and that carries no association or bridged
         // word, is ranked by nobody and rescued by nobody; it is left unread.
@@ -174,6 +180,7 @@ impl IndexedPlan {
             seed_rows: Some(seed_rows),
             rows: Some(std::sync::Arc::clone(&rows)),
             seeds: seeds_read,
+            rescues: Default::default(),
         };
         let read = rows.as_ref();
         // Top-k (P14): each candidate's rank prefix, and what is always read.
@@ -198,27 +205,33 @@ impl IndexedPlan {
             )
         });
         drop(reach);
-        let must = if let Some(prefixes) = &prefixes {
+        let (must, carriers) = if let Some(prefixes) = &prefixes {
             let lifecycle = sidecar.lifecycle_docs(about)?;
             let anchors = prefixes.anchors();
-            read.iter()
-                .filter(|(doc, row)| {
-                    lifecycle.contains(*doc)
-                        || row.terms().iter().any(|term| {
-                            term.is_held()
-                                && (kept.contains(&term.term) || anchors.contains(&term.term))
-                        })
-                })
-                .map(|(doc, _)| doc.clone())
-                .collect()
+            let carries = |row: &LexicalRow, words: &BTreeSet<String>| {
+                row.terms()
+                    .iter()
+                    .any(|term| term.is_held() && words.contains(&term.term))
+            };
+            let mut must = BTreeSet::new();
+            let mut carriers = BTreeSet::new();
+            for (doc, row) in read {
+                if lifecycle.contains(doc) || carries(row, &associated) || carries(row, anchors) {
+                    must.insert(doc.clone());
+                } else if carries(row, &bridged) {
+                    carriers.insert(doc.clone());
+                }
+            }
+            (must, carriers)
         } else {
-            BTreeSet::new()
+            (BTreeSet::new(), BTreeSet::new())
         };
         Ok(Ok(Self {
             candidates: read.keys().cloned().collect(),
             reached: count,
             prefixes,
             must,
+            bridged: carriers,
             bounded,
             documents: stats.documents,
             indexed,
@@ -226,29 +239,51 @@ impl IndexedPlan {
     }
 
     /// The candidates to read for a ranking carried `limit` eligible
-    /// candidates deep, and the best rank prefix left unread (`None`:
-    /// every candidate is read), or why the index does not answer.
+    /// candidates deep and a bridged rescue `bridged_limit` carriers deep,
+    /// with the best rank prefix and the best carrier's direct score left
+    /// unread (`None`: every such candidate is read), or why the index does
+    /// not answer.
     ///
     /// Without prefixes every candidate is read. With them, the ones top-k
-    /// must read and the best `limit` others by prefix that some reading
-    /// could find eligible, ties at the cut included, so an unread candidate
-    /// always ranks strictly below every one read with a lower prefix, or
-    /// is ranked by nobody.
+    /// must read, the best `bridged_limit` carriers of a bridged word by
+    /// direct score, and the best `limit` others by prefix that some reading
+    /// could find eligible, ties at both cuts included, so an unread
+    /// candidate always ranks strictly below every one read with a lower
+    /// prefix, or is ranked by nobody, and an unread carrier scores no more
+    /// than the best carrier left unread.
     pub(super) fn select(
         &self,
         limit: usize,
-    ) -> Result<(BTreeSet<String>, Option<RankPrefix>), &'static str> {
-        let (chosen, unread) = match &self.prefixes {
-            None => (self.candidates.clone(), None),
+        bridged_limit: usize,
+    ) -> Result<TopKSelection, &'static str> {
+        let selection = match &self.prefixes {
+            None => TopKSelection::everything(self.candidates.clone()),
             Some(prefixes) => {
                 let mut chosen = self.must.clone();
+                // A carrier's rescue is ordered by its direct score, the
+                // last part of its prefix.
+                let mut carriers = self
+                    .bridged
+                    .iter()
+                    .map(|doc| (prefixes.prefix(doc).map_or(i64::MAX, |prefix| prefix.2), doc))
+                    .collect::<Vec<_>>();
+                carriers.sort_by(|left, right| right.0.cmp(&left.0).then_with(|| left.1.cmp(right.1)));
+                let mut last = None;
+                for (taken, (score, doc)) in carriers.iter().enumerate() {
+                    if taken < bridged_limit || last == Some(*score) {
+                        chosen.insert((*doc).clone());
+                        last = Some(*score);
+                    } else {
+                        break;
+                    }
+                }
                 let mut unread = None;
                 let mut taken = 0usize;
                 let mut last = None;
                 for (prefix, doc) in prefixes.ordered() {
                     // What top-k must read is read; what no reading can
                     // find eligible is neither read nor waited for.
-                    if self.must.contains(&doc) || prefixes.cannot_answer(&doc) {
+                    if chosen.contains(&doc) || prefixes.cannot_answer(&doc) {
                         continue;
                     }
                     if taken < limit || last == Some(prefix) {
@@ -260,16 +295,24 @@ impl IndexedPlan {
                         break;
                     }
                 }
-                (chosen, unread)
+                let unread_bridged = carriers
+                    .iter()
+                    .find(|(_, doc)| !chosen.contains(*doc))
+                    .map(|(score, _)| *score);
+                TopKSelection {
+                    candidates: chosen,
+                    unread,
+                    unread_bridged,
+                }
             }
         };
         if let Some(why) = self
             .bounded
-            .and_then(|limits| limits.too_many(chosen.len(), self.documents))
+            .and_then(|limits| limits.too_many(selection.candidates.len(), self.documents))
         {
             return Err(why);
         }
-        Ok((chosen, unread))
+        Ok(selection)
     }
 }
 

@@ -31,6 +31,7 @@ mod sidecar_candidates;
 mod sidecar_meta;
 mod sqlite_lexical_sidecar;
 mod term_postings;
+mod top_k_selection;
 mod working_set;
 
 fn storage(error: impl std::fmt::Display) -> String {
