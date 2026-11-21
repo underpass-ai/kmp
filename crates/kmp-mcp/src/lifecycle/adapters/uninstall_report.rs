@@ -113,6 +113,7 @@ mod tests {
         SurveyRoots {
             home: base.join("home"),
             data_home: base.join("home/.local/share"),
+            codex_home: base.join("home/.codex"),
             working_dir: base.join("project"),
             path_entries: Vec::new(),
         }

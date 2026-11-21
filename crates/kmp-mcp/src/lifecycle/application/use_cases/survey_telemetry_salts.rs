@@ -55,6 +55,7 @@ mod tests {
         let roots = SurveyRoots {
             home: base.path().join("home"),
             data_home: base.path().join("data"),
+            codex_home: base.path().join("home/.codex"),
             working_dir: base.path().join("project"),
             path_entries: Vec::new(),
         };
@@ -71,6 +72,7 @@ mod tests {
 
         let none = SurveyTelemetrySalts::new(&NativeInstallationCatalog).execute(&SurveyRoots {
             data_home: Path::new("/nonexistent/kmp").to_path_buf(),
+            codex_home: Path::new("/nonexistent/kmp/.codex").to_path_buf(),
             ..roots
         });
         assert!(none.is_empty());

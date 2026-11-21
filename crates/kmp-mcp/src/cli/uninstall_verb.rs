@@ -65,20 +65,7 @@ pub(super) async fn run_uninstall_command(args: &[&str]) -> i32 {
         return 2;
     }
 
-    let home = std::env::var_os("HOME")
-        .or_else(|| std::env::var_os("USERPROFILE"))
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("."));
-    let data_home =
-        kmp_embedded::user_data_home().unwrap_or_else(|| home.join(".local").join("share"));
-    let roots = kmp_mcp::lifecycle::SurveyRoots {
-        home,
-        data_home,
-        working_dir: std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")),
-        path_entries: std::env::var_os("PATH")
-            .map(|value| std::env::split_paths(&value).collect())
-            .unwrap_or_default(),
-    };
+    let roots = kmp_mcp::lifecycle::native_survey_roots();
 
     let workspace = roots.working_dir.clone();
     let selective = selected_store.is_some() || selected_engine.is_some();

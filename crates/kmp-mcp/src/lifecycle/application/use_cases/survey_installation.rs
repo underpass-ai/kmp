@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use crate::lifecycle::application::use_cases::survey_engine_pieces::SurveyEnginePieces;
+use crate::lifecycle::application::use_cases::survey_hand_wiring::SurveyHandWiring;
 use crate::lifecycle::application::use_cases::survey_holds::SurveyHolds;
 use crate::lifecycle::application::use_cases::survey_leftovers::SurveyLeftovers;
 use crate::lifecycle::application::use_cases::survey_memories::SurveyMemories;
@@ -144,32 +145,15 @@ impl<'a> SurveyInstallation<'a> {
         // them and the command that removes them; it does not edit a user's
         // configuration on their behalf, because a botched edit there costs
         // more than the uninstall saves.
-        let claude_config = roots.home.join(".claude.json");
-        for (needle, server_id) in [("\"kmp\"", "kmp"), ("\"kernel-memory\"", "kernel-memory")] {
-            if self.installation.file_mentions(&claude_config, needle) {
-                pieces.push(Piece {
-                    kind: PieceKind::HostWiring,
-                    detail: format!("remove with:  claude mcp remove {server_id}"),
-                    path: claude_config.clone(),
-                    bundled_events: None,
-                    ours_to_remove: false,
-                    held_by: None,
-                });
-            }
-        }
-        let codex_config = roots.home.join(".codex/config.toml");
-        for server_id in ["kmp", "kernel-memory"] {
-            let header = format!("[mcp_servers.{server_id}]");
-            if self.installation.file_mentions(&codex_config, &header) {
-                pieces.push(Piece {
-                    kind: PieceKind::HostWiring,
-                    detail: format!("delete the {header} block"),
-                    path: codex_config.clone(),
-                    bundled_events: None,
-                    ours_to_remove: false,
-                    held_by: None,
-                });
-            }
+        for registration in SurveyHandWiring::new(self.installation).execute(roots) {
+            pieces.push(Piece {
+                kind: PieceKind::HostWiring,
+                detail: registration.removal(),
+                path: registration.path().to_path_buf(),
+                bundled_events: None,
+                ours_to_remove: false,
+                held_by: None,
+            });
         }
 
         pieces
@@ -260,6 +244,7 @@ mod tests {
         SurveyRoots {
             home: base.join("home"),
             data_home: base.join("home/.local/share"),
+            codex_home: base.join("home/.codex"),
             working_dir: base.join("project"),
             path_entries: Vec::new(),
         }

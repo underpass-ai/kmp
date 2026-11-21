@@ -411,6 +411,15 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
 
 ### Fixed
 
+- `kmp-mcp doctor` reports a second MCP owner. It reads the same files as
+  the `kmp-mcp uninstall` preview: a hand-written `[mcp_servers.kmp]` in
+  Codex's `config.toml` (or `claude mcp add kmp`) beside an installed plugin
+  is `warn  <host>: a second MCP owner is wired by hand beside the plugin`,
+  and a retired `kernel-memory` registration is reported wherever it is; both
+  name the edit that removes them. Doctor used to read only the host's
+  inventory and the first server named `kmp`. Both verbs now read Codex's
+  configuration from `$CODEX_HOME` (default `~/.codex`); `uninstall` read
+  `$HOME/.codex` whatever `CODEX_HOME` said.
 - `kmp_ask` no longer answers what is not stored when the lexical-bridge table
   `kmp-mcp setup` installs is present. The table is built from a multilingual
   embedding, so besides translations it pairs neighbours inside one language

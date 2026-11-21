@@ -4,12 +4,14 @@ use crate::lifecycle::adapters::filesystem_plugin_cache::FilesystemPluginCache;
 use crate::lifecycle::adapters::github_release_repository::GithubReleaseRepository;
 use crate::lifecycle::adapters::lifecycle_cli_parser::LifecycleCliParser;
 use crate::lifecycle::adapters::native_host_gateway::NativeHostGateway;
+use crate::lifecycle::adapters::native_installation_catalog::NativeInstallationCatalog;
 use crate::lifecycle::adapters::system_process_executor::SystemProcessExecutor;
 use crate::lifecycle::application::dto::lifecycle_receipt_dto::LifecycleReceiptDto;
 use crate::lifecycle::application::mappers::lifecycle_command_mapper::LifecycleCommandMapper;
 use crate::lifecycle::application::mappers::lifecycle_receipt_mapper::LifecycleReceiptMapper;
 use crate::lifecycle::application::use_cases::diagnose_lifecycle::DiagnoseLifecycle;
 use crate::lifecycle::application::use_cases::setup_kmp::SetupKmp;
+use crate::lifecycle::application::use_cases::survey_hand_wiring::SurveyHandWiring;
 use crate::lifecycle::application::use_cases::update_kmp::UpdateKmp;
 use crate::lifecycle::domain::lifecycle_action::LifecycleAction;
 use crate::lifecycle::domain::lifecycle_diagnosis::LifecycleDiagnosis;
@@ -48,6 +50,10 @@ impl NativeLifecycle {
         let processes = SystemProcessExecutor::default();
         let hosts = NativeHostGateway::new(&processes);
         let engines = FilesystemEngineStore;
-        DiagnoseLifecycle::new(&hosts, &engines).execute()
+        let hand_wiring = SurveyHandWiring::new(&NativeInstallationCatalog)
+            .execute(&super::native_survey_roots::native_survey_roots());
+        DiagnoseLifecycle::new(&hosts, &engines)
+            .with_hand_wiring(hand_wiring)
+            .execute()
     }
 }

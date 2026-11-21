@@ -95,6 +95,7 @@ mod tests {
         let roots = SurveyRoots {
             home: base.join("home"),
             data_home: base.join("home/.local/share"),
+            codex_home: base.join("home/.codex"),
             working_dir: base.join("project"),
             path_entries: vec![cargo_bin, local_bin],
         };
@@ -127,6 +128,7 @@ mod tests {
         let roots = SurveyRoots {
             home: base.join("home"),
             data_home: base.join("home/.local/share"),
+            codex_home: base.join("home/.codex"),
             working_dir: base.join("project"),
             path_entries: Vec::new(),
         };
@@ -149,6 +151,7 @@ mod tests {
         let roots = SurveyRoots {
             home: base.join("home"),
             data_home: base.join("home/.local/share"),
+            codex_home: base.join("home/.codex"),
             working_dir: base.join("project"),
             path_entries: Vec::new(),
         };
@@ -173,6 +176,7 @@ mod tests {
         let roots = SurveyRoots {
             home: base.join("home"),
             data_home: base.join("home/.local/share"),
+            codex_home: base.join("home/.codex"),
             working_dir: base.join("project"),
             // The conventional directory is also on PATH, as it usually is.
             path_entries: vec![local_bin.clone(), local_bin],

@@ -24,6 +24,7 @@ pub use adapters::native_lifecycle::NativeLifecycle;
 pub use adapters::native_plugin_engine_probe::NativePluginEngineProbe;
 pub use adapters::native_plugin_engine_resolver::NativePluginEngineResolver;
 pub use adapters::native_process_liveness::NativeProcessLiveness;
+pub use adapters::native_survey_roots::native_survey_roots;
 pub use adapters::store_opening::resolve_memory_for_use;
 pub use adapters::store_removal_guard::StoreRemovalGuard;
 pub use adapters::store_session_lease::StoreSessionLease;

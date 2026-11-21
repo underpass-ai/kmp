@@ -18,15 +18,17 @@ available, fall back to:
 kmp-mcp doctor
 ```
 
-The fallback cannot inspect plugin/global ownership inside every host.
+The fallback reads Claude Code's `~/.claude.json` and Codex's `config.toml`
+(`$CODEX_HOME`, default `~/.codex`) for hand-written wiring; it does not
+inspect Hermes or Pi configuration for a second owner.
 
 ## 2. Classify the failure
 
 | Finding | Meaning | Repair |
 |:--|:--|:--|
 | Binary missing | Plugin exists but cannot launch its engine | Run `kmp-setup`; restart the host. |
-| Plugin plus global MCP registration | Two owners can select different stores or binaries | Keep the plugin owner and remove the duplicate registration through setup repair. |
-| `kernel-memory` registration | Retired server identity or transport syntax | Remove the retired registration; let the plugin own `kmp`. |
+| Plugin plus global MCP registration (`warn  codex: a second MCP owner is wired by hand beside the plugin`) | Two owners can select different stores or binaries | Keep the plugin owner; make the edit doctor names (`delete the [mcp_servers.kmp] block`, or `claude mcp remove kmp`), then restart the host. Setup does not edit these files. |
+| `kernel-memory` registration (``warn  <host>: a retired `kernel-memory` registration is still wired``) | Retired server identity or transport syntax | Make the edit doctor names, then restart the host; let the plugin own `kmp`. |
 | The expected tools in a standalone smoke, none in the current session | The host cached its startup inventory | Restart the host once. |
 | Fixture backend | A release binary refuses it and does not start | Unset `KMP_MCP_BACKEND`. |
 | A refused environment value | The server does not start; doctor names the variable and the accepted values | Fix or unset it ([accepted values](../embedded/configuration.md#environment-switches)). |

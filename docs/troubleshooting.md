@@ -104,7 +104,12 @@ process would:
 | `warn  codex: MCP registration installed and enabled, live connection unverified` | `doctor` cannot open a host session itself. | Nothing to fix; ask the agent to call a `kmp_*` tool to confirm. |
 
 One plugin owns the MCP registration. Do not also add `[mcp_servers.kmp]`
-to `~/.codex/config.toml` or `claude mcp add kmp` by hand. `doctor` does not
-report such a second owner: it reads the host's inventory and looks only for
-one server named `kmp`. The `kmp-mcp uninstall` preview lists hand-written
-Codex wiring (`delete the [mcp_servers.kmp] block`).
+to Codex's `config.toml` (`$CODEX_HOME`, default `~/.codex`) or
+`claude mcp add kmp` by hand. `doctor` reads the same files as the
+`kmp-mcp uninstall` preview and reports such a second owner beside an
+installed plugin, and a retired `kernel-memory` registration anywhere:
+
+| You see | Cause | Fix |
+|:--|:--|:--|
+| `warn  codex: a second MCP owner is wired by hand beside the plugin` / `delete the [mcp_servers.kmp] block, then restart codex` | A hand-written `[mcp_servers.kmp]` table beside the plugin. | Delete the block from the file it names, then restart the host. |
+| ``warn  claude: a retired `kernel-memory` registration is still wired`` / `remove with: claude mcp remove kernel-memory, then restart claude` | Wiring from before the server was named `kmp`. | Run the command it names, then restart the host. |

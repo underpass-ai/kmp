@@ -31,6 +31,7 @@ pub mod native_plugin_engine_resolver;
 pub mod native_process_liveness;
 pub mod native_release_readers;
 pub mod native_skill_mirror;
+pub mod native_survey_roots;
 pub mod pi_host_adapter;
 pub mod plugin_engine_cli_parser;
 pub mod plugin_tree_locator;
