@@ -61,13 +61,28 @@ impl KernelMcpServer {
         };
         // The planner words the refusal in the writer's own codes; the
         // cross-field rule the schema found broken stays named beside them.
-        let rule = refused
+        // When the planner speaks of the same argument, its item carries the
+        // rule; otherwise the schema's own item, rule included, follows it.
+        let ruled = refused
             .feedback
             .iter()
-            .find_map(|item| item.get("rule").cloned());
-        let mut error = planner.unwrap_or(refused);
-        if let (Some(rule), Some(first)) = (rule, error.feedback.first_mut()) {
-            first["rule"] = rule;
+            .find(|item| item.get("rule").is_some())
+            .cloned();
+        let Some(mut error) = planner else {
+            return refused;
+        };
+        if let Some(ruled) = ruled {
+            let field = ruled["field"].as_str().unwrap_or_default().to_string();
+            let same = error.feedback.iter_mut().find(|item| {
+                let named = item["field"].as_str().unwrap_or_default();
+                named == field
+                    || (!field.is_empty() && named.starts_with(&field))
+                    || (!named.is_empty() && field.starts_with(named))
+            });
+            match same {
+                Some(item) => item["rule"] = ruled["rule"].clone(),
+                None => error.feedback.push(ruled),
+            }
         }
         error
     }
