@@ -231,7 +231,10 @@ UNKNOWN without an anchor while a `best_effort` reading would cite something,
 `attribute_not_found` or PARTIAL under an anchor, or answered with a first
 citation leading the second by less than `margin_tenths` tenths of a BM25
 point. One batch of at most eight admitted passages goes to Jev through the
-verdict book (`judgements.sqlite3`), with a 1.5 s deadline on the first page;
+verdict book (`judgements.sqlite3`), each asked the cross-language judge's
+question ("Does `passage` state the answer to `user_question`?", with what a
+yes and a no mean) over the question as a named state field, with a 1.5 s
+deadline on the first page;
 past it the deterministic answer stands, with a warning, and the verdict lands
 in the book for the next ask. A continuation never asks.
 
@@ -318,12 +321,16 @@ kept only on a store that opted in with `write-expansions.json` beside
 
 Each expansion is read first by a deterministic lint (it may not name an
 identifier the memory does not state, repeat the memory's own words or repeat
-another expansion), then by Jev with one yes/no question through the verdict
-book. Those Jev reads as belonging at `accept_at` (0.5, fixed on the
-development corpora) are stored as metadata bound to the text they were
-judged against; the rest are listed in the result as refused. Without the
-file, a working Jev or an answer, nothing is stored and the result says why
-(`search_expansions.not_stored`). A memories write commits the memories
+another expansion), then by Jev with two yes/no questions through the verdict
+book: does it belong to the memory (a question it answers, a paraphrase, the
+same in Spanish or English), and does it state a fact, name, number or answer
+the memory does not. Those Jev reads as belonging at `accept_at` (0.5, fixed
+on the development corpora) and as adding nothing (below 0.5) are stored as
+metadata bound to the text they were judged against; the rest are listed in
+the result as refused. Without the file, a working Jev or an answer (it waits
+at most 3 s), nothing is stored and the result says why
+(`search_expansions.not_stored`); an expansion left unanswered is not
+judged, never refused. A memories write commits the memories
 first and attaches the kept expansions as a second, metadata-only write.
 
 The gRPC write carries the same proposal: `MemoryEntry.search_expansions`
