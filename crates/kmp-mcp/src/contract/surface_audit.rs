@@ -21,7 +21,7 @@ mod tests {
     use serde_json::json;
 
     #[test]
-    fn former_tool_names_resolve_to_the_advertised_kmp_surface() {
+    fn former_tool_names_are_no_longer_callable() {
         let former = [
             "kernel_ingest",
             "kernel_write_memory",
@@ -38,14 +38,17 @@ mod tests {
             .map(|tool| tool["name"].as_str().expect("tool name"))
             .collect::<Vec<_>>();
 
-        // Every former name still resolves to something this surface
-        // advertises. It is not an equality: the view tools were born with
-        // their kmp_ names and never had a kernel_ one to rename.
-        for name in former.map(canonical_tool_name) {
-            assert!(
-                current.contains(&name),
-                "former name resolves to `{name}`, which the surface no longer advertises"
-            );
+        // The migration release is over (E10 of the 1.0 review): a name
+        // tools/list does not carry is not callable, the two that never had
+        // a schema included.
+        for name in former
+            .into_iter()
+            .chain(["kernel_remember", "kernel_ingest_context"])
+        {
+            assert!(!current.contains(&name));
+            let error = crate::contract::reject_invalid_arguments(name, &json!({"about": "a:b"}))
+                .expect_err("an unlisted name is refused");
+            assert_eq!(error.code, ToolErrorCode::UnknownTool, "{name}");
         }
         assert!(current.iter().all(|name| name.starts_with("kmp_")));
     }
@@ -101,11 +104,12 @@ mod tests {
                 .is_none(),
             "only discovery tools promise the capability handoff"
         );
+        // The detail lives in the view card; the description names the verb.
         assert!(
-            view("kmp_view_get_state")["description"]
-                .as_str()
-                .expect("description")
-                .contains("never pixels")
+            crate::guide::GuideTopic::named("view")
+                .expect("view topic")
+                .text
+                .contains("Never pixels")
         );
     }
 
@@ -137,13 +141,25 @@ mod tests {
                 .expect("required")
                 .contains(&json!("actor"))
         );
+        // Beside a handle any declared argument is accepted by the law; the
+        // server compares its value with the retained call.
+        let mut declared: Vec<_> = tools[1]["inputSchema"]["properties"]
+            .as_object()
+            .expect("properties")
+            .keys()
+            .cloned()
+            .map(Value::String)
+            .collect();
+        declared.sort_by_key(|key| key.to_string());
+        let mut alongside = tools[1]["inputSchema"]["then"]["propertyNames"]["enum"]
+            .as_array()
+            .expect("alongside")
+            .clone();
+        alongside.sort_by_key(|key| key.to_string());
+        assert_eq!(alongside, declared);
         assert_eq!(
-            tools[1]["inputSchema"]["else"]["if"],
-            json!({"not":{"required":["actor"]}})
-        );
-        assert_eq!(
-            tools[1]["inputSchema"]["else"]["then"],
-            json!({"required":["context_id"]})
+            tools[1]["inputSchema"]["then"]["x-kmp-rule"],
+            "continuation-alone"
         );
         assert_eq!(
             tools[1]["inputSchema"]["properties"]["memories"]["items"]["properties"]["connect_to"]
@@ -246,10 +262,6 @@ mod tests {
         let schema = |name: &str| &tools[name]["inputSchema"];
         let memory_keys = |name: &str| {
             let mut fields = keys(schema(name));
-            // These are MCP interaction metadata. CallGuidance removes both
-            // before compilation or RPC; native continuation checks prove it.
-            assert!(fields.remove("context_id"), "{name} context metadata");
-            assert!(fields.remove("purpose"), "{name} recommendation metadata");
             // Retained calls resolve before authorization/dispatch; the backend
             // receives their full native arguments, never the transport handle.
             fields.remove("continuation");
@@ -275,7 +287,6 @@ mod tests {
                 "as_of",
                 "axis",
                 "budget",
-                "depth",
                 "dimensions",
                 "intent",
                 "interval",
@@ -292,7 +303,6 @@ mod tests {
                 "asked_as",
                 "axis",
                 "budget",
-                "depth",
                 "dimensions",
                 "interval",
                 "page",
@@ -313,7 +323,6 @@ mod tests {
                     "about",
                     "axis",
                     "budget",
-                    "depth",
                     "dimensions",
                     "fields", // MCP entry projection; not a kernel query filter.
                     "include",
@@ -339,8 +348,7 @@ mod tests {
         assert_eq!(
             memory_keys("kmp_trace"),
             expected(&[
-                "about", "as_of", "axis", "budget", "from", "goal", "interval", "page", "role",
-                "search", "to",
+                "about", "as_of", "axis", "budget", "from", "interval", "page", "search", "to",
             ])
         );
         assert_eq!(
@@ -351,15 +359,15 @@ mod tests {
         );
 
         // These shared shapes are one-to-one with MemoryBudget,
-        // DimensionSelection and PageRequest. `depth` at the tool root is an
-        // explicit compatibility alias for MemoryBudget.depth; Trace.role is
-        // an alias for TraceRequest.goal. Inspect.budget and Inspect.page are
+        // DimensionSelection and PageRequest. The root `depth` aliases,
+        // Trace.goal and its alias role, and budget.tokens left at 1.0 (E11).
+        // Inspect.budget and Inspect.page are
         // transport-only result projection and never cross the gRPC request;
         // its budget may only carry max_bytes.
         let wake_properties = &schema("kmp_wake")["properties"];
         assert_eq!(
             keys(&wake_properties["budget"]),
-            expected(&["depth", "detail", "max_bytes", "max_entries", "tokens"])
+            expected(&["detail", "max_bytes", "max_entries"])
         );
         assert_eq!(
             keys(&wake_properties["dimensions"]),
@@ -555,18 +563,18 @@ mod tests {
     }
 
     #[test]
-    fn the_surface_enumerates_every_error_code_it_can_return() {
-        let listed = tools_list_result()["_meta"]["kmp/errorCodes"]
-            .as_array()
-            .expect("the codes an agent may branch on are part of the surface")
-            .iter()
-            .map(|entry| entry["code"].as_str().expect("a code").to_string())
+    fn the_guide_enumerates_every_error_code_it_can_return() {
+        let listed = crate::serving::guide_error_codes()
+            .as_object()
+            .expect("the codes an agent may branch on are in the guide card")
+            .keys()
+            .cloned()
             .collect::<Vec<_>>();
 
         for code in ToolErrorCode::ALL {
             assert!(
                 listed.contains(&code.as_str().to_string()),
-                "`{code}` can be returned and is not in tools/list"
+                "`{code}` can be returned and is not in the guide card"
             );
         }
         assert_eq!(listed.len(), ToolErrorCode::ALL.len());

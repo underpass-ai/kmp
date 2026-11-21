@@ -10,7 +10,7 @@ Beside the selected store, place:
 - `typesafe.json`, the store's TypeSafe opt-in, shared with `kmp_curate`:
 
   ```json
-  {"endpoint": "https://api.typesafe.ai/v1/systemone", "model": "jev-1.13.0", "timeout_ms": 20000}
+  {"endpoint": "https://api.typesafe.ai/v1/systemone", "model": "jev-1.14.0", "timeout_ms": 20000}
   ```
 
 - `rerank.json`, Ask re-ranking itself. `pool_size` is from 1 to 400 and
@@ -26,7 +26,9 @@ Beside the selected store, place:
   off).
 
 and set `TYPESAFE_API_KEY` in the environment of the MCP process, or put
-`TYPESAFE_API_KEY=<key>` in `~/.config/typesafe.env` with mode 600. The
+`TYPESAFE_API_KEY=<key>` in `$XDG_CONFIG_HOME/typesafe.env` (else
+`~/.config/typesafe.env`) with mode 600. The model must be a pinned release
+(`jev-<major>.<minor>.<patch>`); an alias such as `jev-latest` is refused. The
 environment wins when both are set. Then
 restart that process. The key is never written to a file by KMP and never
 appears in logs, warnings or errors.
@@ -50,11 +52,15 @@ appears in logs, warnings or errors.
   three, and 0 sends the fewest requests: 9 of the 35 retrieval cases
   instead of 35 (13.6k → 3.8k Jev tokens) and 14 of the 16 trap asks
   (`jev-evaluation.md`).
-- **The question.** Jev answers one yes/no question per passage: does it
-  answer the question? Only passages with a probability of at least 0.5
-  join the ranking, ordered by that probability, with ties broken by ref and
-  then by text. A channel that listed the whole pool would grow proof with
-  passages the judge itself finds irrelevant.
+- **The question.** Jev answers one yes/no question per passage: does
+  `passage` state the answer to `user_question`? The question goes in the
+  state as a named field, and the noul says what a yes and a no mean ("the
+  passage is about the same subject but does not state the asked fact" is a
+  no), the wording of the cross-language judge. A passage joins the ranking
+  unless Jev reads it as a no (probability 0.3 or below): an unsettled one
+  ranks below every clear yes, ordered by probability, with ties broken by
+  ref and then by text. A channel that listed the whole pool would grow
+  proof with passages the judge itself finds irrelevant.
 - **What the order may move.** It joins the RRF fusion as one more channel,
   like the local semantic channel. The five deterministic citations,
   `because` and confidence stay lexical. An entry that only re-ranking
@@ -68,7 +74,7 @@ appears in logs, warnings or errors.
 
 ## Measured so far
 
-On 2026-09-25, on a copy of a real store (`project:made`, 307 facts), four
+On 2026-09-25, on a copy of a real store (307 facts), four
 paraphrased questions were asked with and without re-ranking:
 
 - Every Ask judged 40 passages in one request.
@@ -97,8 +103,8 @@ Ordinary retrieval continues with a warning in each of these cases:
 A failure is frozen like a success, so a later page cannot silently read a
 different order.
 
-Design: `docs/development/jev-rerank-design.md`. The TypeSafe client is shared
-with `kmp_curate` (`docs/development/jev-curate-design.md`).
+Design: `docs/archive/development/jev-rerank-design.md`. The TypeSafe client is shared
+with `kmp_curate` (`docs/archive/development/jev-curate-design.md`).
 
 ## Focused wake
 
@@ -130,10 +136,14 @@ with a digit or `#`, as the anchored gate reads them, hubs aside) and its 40
 best BM25 matches over the about. An about of at most 40 other facts is read
 whole, in its own order. Jev answers whether each has a direct relation to
 the new memory: causes, explains, supports, contradicts, updates, answers or
-repeats. Up to three
-facts at 0.5 or above are kept, relations already declared are skipped, and
-each pair is typed. Kernel pairs that touch the new memory are typed with
-them. A pair Jev types as no relation is dropped.
+repeats (the noul's criteria; two facts that only share a name, number,
+template or topic are a no). Up to three facts Jev reads as yes (0.7 or
+above) are kept, relations already declared are skipped, and each pair is
+typed: a choice over the relation types, each described, beside a companion
+yes/no (any direct relation at all?), with which of the two was recorded
+first stated. Kernel pairs that touch the new memory are typed with them. A
+pair whose companion does not read yes is dropped. Each judgement waits at
+most 3 s; a late one leaves a warning that it was not judged.
 
 Nothing is written. The proposals are a frozen `kmp_curate` review, so the
 agent declares the ones it confirms through `kmp_curate` apply, in its own
@@ -153,8 +163,14 @@ the partner question round stays near 3.5k however large the about grows
 focused review of the store, the current facts of the same entry kind that
 name the new fact's principal anchor (its rarest hard anchor), as
 `supersedes` for the writer to confirm, retype to `updates_state` or ignore;
-`{"lifecycle": "jev"}` has Jev read each such pair first (duplicate,
-update_state, supersede, contradict or novel) and withdraws the novel ones.
+`{"lifecycle": "jev"}` has Jev read each such pair first (restates,
+later_state, replaces or conflicts, each described, with which was recorded
+first stated) beside a companion yes/no (are they about the same specific
+thing?), and proposes a pair when the companion reads 0.5 or above
+(an unsettled pair below 0.5 is withdrawn). The line was chosen by the
+owner on 21 Nov 2026: on fresh synthetic seeds it finds 50 of 90 real
+supersessions with 14 false proposals of 120, where TypeSafe's 0.7 found 18
+with 3 and the earlier form 68 with 47 (`jev-evaluation.md`).
 Both are off by default: sharing an anchor is not a replacement
 (MemStrata, 2606.26511), and on the judged corpora none of the 68 pairs the
 rule proposed was one. A review of an about of more than 60 facts without

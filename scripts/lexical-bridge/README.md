@@ -18,7 +18,12 @@ reader's words.
 
 What it does not do: a single vector per word carries no sense, so
 `slipped` does not reach `postponed`. Paraphrase inside one language is not
-what the table knows. The judged case `paraphrase-gap` stays open on purpose
+what the table knows, and the kernel does not let it pretend: the vectors also
+put neighbours of one language together (`deadline≈final`), so a pair counts
+as stating what a question asked only when the question and the memory lean
+in two different languages (read from their Spanish or English function
+words), and never for a function word. Inside one language the table only
+ranks. The judged case `paraphrase-gap` stays open on purpose
 and says so.
 
 ## Format

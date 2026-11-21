@@ -69,7 +69,7 @@ fn destination_options_still_parse_and_unknown_nested_fields_still_fail() {
         let mut invalid = request.clone();
         invalid.pointer_mut(pointer).expect("object")["misspelled"] = json!(true);
         assert!(
-            crate::contract::validator::reject_unknown_arguments("kmp_trace", &invalid).is_err()
+            crate::contract::validator::reject_invalid_arguments("kmp_trace", &invalid).is_err()
         );
     }
 }
@@ -88,7 +88,7 @@ fn proof_is_shared_by_both_modes_and_requires_a_boolean() {
                 .proof
         );
         request["search"]["proof"] = json!(true);
-        crate::contract::validator::reject_unknown_arguments("kmp_trace", &request)
+        crate::contract::validator::reject_invalid_arguments("kmp_trace", &request)
             .expect("known option");
         assert!(
             super::TraceSearchOptionsMapper::from_arguments(&request)

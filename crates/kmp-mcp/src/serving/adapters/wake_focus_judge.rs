@@ -3,12 +3,14 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use kmp_proto_mapping::v1beta1::{JudgedSelection, SemanticSource};
+use serde_json::json;
 use sha2::{Digest, Sha256};
 
 use super::passage_judgement::judge_passages;
 use super::rerank_config::RerankConfig;
 use super::shared_outcomes::SharedOutcomes;
 use crate::serving::environment::judgement_deadline;
+use crate::serving::judgement_question::JudgementQuestion;
 use crate::serving::judgement_site::JudgementSite;
 use crate::serving::ports::judgement_model::JudgementModel;
 use crate::serving::wake_focus_outcome::WakeFocusOutcome;
@@ -17,6 +19,7 @@ const KEPT: usize = 64;
 /// Evidence judged less likely than this to matter for the intent is
 /// withheld from the packet.
 const MATTERS_AT: f64 = 0.5;
+const MATTERS: &str = "Does `passage` matter for resuming the work in the state?";
 
 /// A wake focused on what the caller says it is resuming. One yes/no
 /// question per admitted evidence entry — does it matter for this intent? —
@@ -43,8 +46,8 @@ impl WakeFocusJudge {
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
             Err(_) => return Err("cannot read wake focus configuration".into()),
         };
-        let config: RerankConfig =
-            serde_json::from_slice(&bytes).map_err(|_| "invalid wake focus configuration")?;
+        let config: RerankConfig = serde_json::from_slice(&bytes)
+            .map_err(|error| format!("invalid wake focus configuration: {error}"))?;
         let (pool_size, excerpt_chars) = config.validate()?;
         match judgement {
             Ok(Some(model)) => Ok(Some(Arc::new(Self {
@@ -95,13 +98,18 @@ impl WakeFocusJudge {
         // for the next wake.
         let judged = tokio::spawn(async move {
             let limit = pool.len();
+            // Kept as it was: the guide's form (named state, criteria, an
+            // unsettled row) kept more unrelated passages on the held-out set
+            // (jev-evaluation.md, 2026-11-21).
             let kept = judge_passages(
                 model.as_ref(),
-                &state,
-                "Does `passage` matter for resuming the work in the state?",
+                json!(state),
+                |passage| JudgementQuestion::Noul {
+                    instructions: json!({"passage": passage, "question": MATTERS}),
+                },
                 &pool,
                 excerpt_chars,
-                MATTERS_AT,
+                |yes| yes >= MATTERS_AT,
                 limit,
             )
             .await?;

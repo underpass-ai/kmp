@@ -13,28 +13,22 @@ impl MemoryBudgetMapper {
     ) -> Result<MemoryBudget, String> {
         let arguments = JsonFieldReader::object(arguments, "tool arguments")?;
         let budget = JsonFieldReader::optional_object_field(arguments, "budget", "budget")?;
-        let tokens = budget
-            .map(|budget| {
-                JsonFieldReader::optional_positive_u32_field(budget, "tokens", "budget.tokens")
-            })
-            .transpose()?
-            .flatten()
-            .unwrap_or(default_tokens);
+        // `budget.tokens` left the contract at 1.0 (E11): it was echoed and
+        // never filtered anything. The kernel's render still takes the
+        // tool's planning default.
+        let tokens = default_tokens;
         let detail = budget
             .map(Self::detail_level_from_object)
             .transpose()?
             .unwrap_or(MemoryDetailLevel::Unspecified as i32);
-        let depth = match JsonFieldReader::optional_positive_u32_field(arguments, "depth", "depth")?
-        {
-            Some(depth) => depth,
-            None => budget
-                .map(|budget| {
-                    JsonFieldReader::optional_positive_u32_field(budget, "depth", "budget.depth")
-                })
-                .transpose()?
-                .flatten()
-                .unwrap_or(default_depth),
-        };
+        // Only `budget.depth` (kmp_time): the top-level alias left at 1.0.
+        let depth = budget
+            .map(|budget| {
+                JsonFieldReader::optional_positive_u32_field(budget, "depth", "budget.depth")
+            })
+            .transpose()?
+            .flatten()
+            .unwrap_or(default_depth);
         let max_entries = budget
             .map(|budget| {
                 JsonFieldReader::optional_positive_u32_field(

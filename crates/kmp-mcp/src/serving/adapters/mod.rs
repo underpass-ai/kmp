@@ -1,10 +1,16 @@
+mod ask_cross_language_config;
 mod ask_gate_config;
 mod ask_judge_config;
 mod ask_judge_question;
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 mod cassette_judgement;
 #[cfg(test)]
 mod cassette_judgement_tests;
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 mod cassette_mode;
+mod cross_language_judge;
+#[cfg(test)]
+mod cross_language_judge_tests;
 mod curate_config;
 pub(crate) mod curate_doubt_cache;
 pub(crate) mod curate_review_cache;
@@ -15,8 +21,10 @@ mod embedded;
 pub(crate) mod embedded_backend;
 pub(crate) mod embedded_errors;
 pub(crate) mod expansion_judge;
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 pub(crate) mod fixture_backend;
 pub(crate) mod grpc;
+mod judgement_key;
 mod judgement_reranker;
 #[cfg(test)]
 mod judgement_reranker_tests;
@@ -39,6 +47,7 @@ mod shared_outcomes;
 mod sqlite_verdict_book;
 mod store_config_loads;
 pub(crate) use store_config_loads::inspect_store_config;
+pub(crate) use typesafe_model_check::pinned_model_check;
 mod store_config_report;
 #[cfg(test)]
 mod store_config_report_tests;
@@ -53,6 +62,7 @@ mod typesafe_fixture;
 mod typesafe_judgement;
 #[cfg(test)]
 mod typesafe_judgement_tests;
+mod typesafe_model_check;
 mod typesafe_request_body;
 mod typesafe_transport;
 mod typesafe_wire_response;

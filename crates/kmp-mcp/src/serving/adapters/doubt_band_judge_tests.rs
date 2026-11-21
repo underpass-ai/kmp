@@ -39,7 +39,8 @@ impl JudgementModel for PassageJudge {
             .iter()
             .map(|(key, question)| {
                 let (instructions, graded) = match question {
-                    JudgementQuestion::Noul { instructions } => (instructions, false),
+                    JudgementQuestion::Noul { instructions }
+                    | JudgementQuestion::CriteriaNoul { instructions, .. } => (instructions, false),
                     JudgementQuestion::Score { instructions, .. } => (instructions, true),
                     JudgementQuestion::Choice { instructions, .. } => (instructions, false),
                 };
@@ -144,10 +145,14 @@ async fn one_batch_asks_about_every_passage_and_keeps_every_verdict() {
         asked[0].questions.keys().cloned().collect::<Vec<_>>(),
         ["d0", "d1", "d2"]
     );
-    assert_eq!(asked[0].state, serde_json::json!("Which port?"));
+    assert_eq!(
+        asked[0].state,
+        serde_json::json!({"user_question": "Which port?"}),
+        "the question is a named field of the state"
+    );
     assert!(matches!(
         asked[0].questions["d0"],
-        JudgementQuestion::Noul { .. }
+        JudgementQuestion::CriteriaNoul { .. }
     ));
 }
 

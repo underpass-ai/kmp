@@ -73,6 +73,57 @@ pub(super) fn observation_time(
     Ok(Some(observed.to_owned()))
 }
 
+/// Clock and rank values the schema admits but the writer could not use.
+///
+/// An empty `occurred_at` and a `rank` past `u32` were read as absent and the
+/// memory committed without them (found by the E1 fuzz of the 1.0 review);
+/// a value given must be a value used.
+pub(super) fn unreadable_clocks(
+    arguments: &serde_json::Map<String, Value>,
+) -> Vec<super::validation_error::WriteValidationError> {
+    use super::validation_error::WriteValidationError;
+    let mut refused = Vec::new();
+    for field in ["occurred_at", "valid_from", "valid_until"] {
+        let Some(value) = arguments.get(field).and_then(Value::as_str) else {
+            continue;
+        };
+        if value.trim().is_empty() {
+            refused.push(
+                WriteValidationError::new(format!(
+                    "`{field}` must be an RFC3339 timestamp with a zone, or left out; received \
+                     an empty string"
+                ))
+                .at(field)
+                .code("INVALID_TYPE"),
+            );
+        } else if let Err(reason) = crate::clock::require_rfc3339(value, field) {
+            // Refused here, in the writer's own words: left to the compiled
+            // ingest, the refusal named `memory.entries[].coordinates[]`, a
+            // path the caller never wrote (E7).
+            refused.push(
+                WriteValidationError::new(reason)
+                    .at(field)
+                    .code("INVALID_TIMESTAMP"),
+            );
+        }
+    }
+    if let Some(rank) = arguments.get("rank")
+        && !rank
+            .as_u64()
+            .is_some_and(|rank| rank > 0 && u32::try_from(rank).is_ok())
+    {
+        refused.push(
+            WriteValidationError::new(format!(
+                "`rank` must be an integer from 1 to {}; received {rank}",
+                u32::MAX
+            ))
+            .at("rank")
+            .code("INVALID_TYPE"),
+        );
+    }
+    refused
+}
+
 /// Canonical timestamp fields use absence, not a null timestamp placeholder.
 pub(super) fn omit_unknown_observations(arguments: &mut Value) {
     if arguments["provenance"]["observed_at"].is_null()

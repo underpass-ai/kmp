@@ -8,7 +8,6 @@
 
 // The shared fakes serve setup, update and diagnosis; this binary only needs
 // the part of them a read-only diagnosis touches.
-#[allow(dead_code)]
 #[path = "lifecycle_support/fake_engine_store.rs"]
 mod fake_engine_store;
 #[path = "lifecycle_support/fake_host_gateway.rs"]
@@ -238,5 +237,159 @@ fn pi_is_diagnosed_as_a_peer_whose_registration_is_unverified() {
             .iter()
             .any(|finding| finding.headline().contains("plugin trees differ")),
         "a Pi agent home is not a plugin tree"
+    );
+}
+
+/// S10: a host whose plugin and engine agree on a release newer than this
+/// doctor is warned about, never failed, and never told to converge back.
+#[test]
+fn an_older_doctor_warns_about_a_newer_consistent_install_instead_of_failing_it() {
+    let newer = ReleaseVersion::parse("9.9.9").expect("release");
+    let hosts = FakeHostGateway::with_installations(vec![HostInstallation::discovered(
+        Host::Claude,
+        newer.clone(),
+        PluginRoot::new("/tmp/claude").expect("plugin root"),
+        true,
+    )])
+    .reporting(HostRuntimeStatus::Connected);
+    let engines = FakeEngineStore::empty().reporting_version(newer);
+
+    let findings = DiagnoseLifecycle::new(&hosts, &engines)
+        .execute()
+        .findings()
+        .to_vec();
+
+    assert!(
+        findings
+            .iter()
+            .all(|finding| finding.severity() != DiagnosticSeverity::Fail),
+        "{findings:?}"
+    );
+    let warning = findings
+        .iter()
+        .find(|finding| finding.headline().contains("this doctor is the older"))
+        .expect("the reader is told this doctor is behind");
+    assert_eq!(warning.severity(), DiagnosticSeverity::Warn);
+    assert!(says(warning, "doctor`"), "{warning:?}");
+    assert!(
+        !findings
+            .iter()
+            .any(|finding| says(finding, "kmp-mcp update")),
+        "{findings:?}"
+    );
+}
+
+/// S11: one host whose inventory cannot be read fails for that host; the
+/// others are still diagnosed.
+#[test]
+fn an_unreadable_host_inventory_is_that_hosts_failure_alone() {
+    let hosts = FakeHostGateway::with_installations(vec![installed(Host::Claude, "/tmp/claude")])
+        .reporting(HostRuntimeStatus::Connected)
+        .with_unreadable_inventory(Host::Hermes, "Hermes MCP config is not a mapping");
+    let engines = FakeEngineStore::empty();
+
+    let findings = DiagnoseLifecycle::new(&hosts, &engines)
+        .execute()
+        .findings()
+        .to_vec();
+
+    let hermes = one(&findings, "hermes: plugin inventory failed");
+    assert_eq!(hermes.severity(), DiagnosticSeverity::Fail);
+    let claude = one(&findings, "claude: live MCP connection verified");
+    assert_eq!(claude.severity(), DiagnosticSeverity::Ok);
+}
+
+/// S13: a plugin the host lists with nothing behind it is a failure.
+#[test]
+fn a_hollow_plugin_directory_fails_the_diagnosis() {
+    let hosts = FakeHostGateway::with_installations(vec![installed(Host::Claude, "/tmp/claude")])
+        .reporting(HostRuntimeStatus::Connected)
+        .with_hollow(Host::Claude);
+    let engines = FakeEngineStore::empty();
+
+    let findings = DiagnoseLifecycle::new(&hosts, &engines)
+        .execute()
+        .findings()
+        .to_vec();
+
+    let hollow = one(&findings, "claude: installation incomplete on disk");
+    assert_eq!(hollow.severity(), DiagnosticSeverity::Fail);
+}
+
+/// Doctor sees what `uninstall` sees: a hand-written `kmp` beside the Codex
+/// plugin is a second owner, the retired `kernel-memory` id is one wherever it
+/// is, and a lone hand-written `kmp` with no plugin is the only owner.
+#[test]
+fn hand_wiring_beside_a_plugin_and_the_retired_id_are_second_owners() {
+    use kmp_mcp::lifecycle::domain::hand_wired_registration::HandWiredRegistration;
+
+    let codex_config = std::path::PathBuf::from("/tmp/codex-home/config.toml");
+    let claude_config = std::path::PathBuf::from("/tmp/home/.claude.json");
+    let hosts = FakeHostGateway::with_installations(vec![installed(Host::Codex, "/tmp/codex")]);
+    let engines = FakeEngineStore::empty();
+    let findings = DiagnoseLifecycle::new(&hosts, &engines)
+        .with_hand_wiring(vec![
+            HandWiredRegistration::new(Host::Codex, "kmp", codex_config.clone()),
+            HandWiredRegistration::new(Host::Claude, "kmp", claude_config.clone()),
+            HandWiredRegistration::new(Host::Claude, "kernel-memory", claude_config),
+        ])
+        .execute()
+        .findings()
+        .to_vec();
+
+    let second = one(
+        &findings,
+        "codex: a second MCP owner is wired by hand beside the plugin",
+    );
+    assert_eq!(second.severity(), DiagnosticSeverity::Warn);
+    assert!(says(&second, "/tmp/codex-home/config.toml"));
+    assert!(says(
+        &second,
+        "delete the [mcp_servers.kmp] block, then restart codex"
+    ));
+    let retired = one(
+        &findings,
+        "claude: a retired `kernel-memory` registration is still wired",
+    );
+    assert!(says(&retired, "claude mcp remove kernel-memory"));
+    // Claude Code has no plugin here, so its own `kmp` is its only owner.
+    assert!(
+        !findings
+            .iter()
+            .any(|finding| finding.headline().starts_with("claude: a second MCP owner")),
+        "{:?}",
+        findings
+            .iter()
+            .map(LifecycleFinding::headline)
+            .collect::<Vec<_>>()
+    );
+}
+
+/// With nothing installed the retired id is still reported, after the
+/// not-installed warning.
+#[test]
+fn the_retired_id_is_reported_when_no_plugin_is_installed() {
+    use kmp_mcp::lifecycle::domain::hand_wired_registration::HandWiredRegistration;
+
+    let hosts = FakeHostGateway::with_installations(Vec::new());
+    let engines = FakeEngineStore::empty();
+    let findings = DiagnoseLifecycle::new(&hosts, &engines)
+        .with_hand_wiring(vec![
+            HandWiredRegistration::new(Host::Codex, "kmp", "/tmp/c/config.toml".into()),
+            HandWiredRegistration::new(Host::Codex, "kernel-memory", "/tmp/c/config.toml".into()),
+        ])
+        .execute()
+        .findings()
+        .to_vec();
+    let headlines = findings
+        .iter()
+        .map(LifecycleFinding::headline)
+        .collect::<Vec<_>>();
+    assert_eq!(
+        headlines,
+        vec![
+            "KMP is not installed in a native host",
+            "codex: a retired `kernel-memory` registration is still wired",
+        ]
     );
 }

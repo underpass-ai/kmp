@@ -1,6 +1,8 @@
 use serde_json::{Value, json};
 
-use crate::contract::schema::definition::tool_definition_with_output;
+use crate::contract::cross_field_rule::tagged;
+
+use crate::contract::schema::definition::{ToolEffect, tool_definition_with_output};
 #[allow(unused_imports)]
 use crate::contract::schema::primitives::*;
 #[allow(unused_imports)]
@@ -13,30 +15,37 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_ingest",
-        true,
-        "Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape.",
+        ToolEffect::Write {
+            destructive: true,
+            idempotent: true,
+        },
+        "Low-level writer of one exact canonical memory graph; prefer kmp_write_memory unless you produce that graph yourself.",
         json!({
             "type": "object",
             "additionalProperties": false,
             "required": ["about", "memory", "idempotency_key"],
-            "if":{"not":{"required":["default_observation_to_ingestion"],"properties":{"default_observation_to_ingestion":{"const":true}}}},
-            "then":{"properties":{"provenance":{"required":["observed_at"]}}},
+            "allOf":[tagged("ingest.observed", json!({
+                "if":{"not":{"required":["default_observation_to_ingestion"],"properties":{"default_observation_to_ingestion":{"const":true}}}},
+                "then":{"properties":{"provenance":{"required":["observed_at"]}}}
+            }))],
             "properties": {
                 "about": string_schema("Memory anchor or root ref this memory should attach to."),
                 "default_observation_to_ingestion": json!({"type":"boolean","default":false,"description":"Semantic-writer policy: fill missing observations on new coordinates, source times, packet provenance and explicit proof clock objects using exact kernel ingestion. Preserve supplied observations and restored clocks. Absent relation/support clock objects inherit packet observation. Ordinary canonical ingest preserves unknown entry clocks."}),
                 "memory": {
                     "type": "object",
-                    "additionalProperties": true,
+                    "additionalProperties": false,
                     "required": ["dimensions", "entries"],
-                    "if":{"properties":{"entries":{"maxItems":0}}},
-                    "then":{"required":["relations"],"properties":{"relations":{"minItems":1}}},
+                    "allOf":[tagged("ingest.links-only", json!({
+                        "if":{"properties":{"entries":{"maxItems":0}}},
+                        "then":{"required":["relations"],"properties":{"relations":{"minItems":1}}}
+                    }))],
                     "properties": {
                         "dimensions": {
                             "type": "array",
                             "description": "Declare new dimensions, or leave empty when the about already holds the required dimensions.",
                             "items": {
                                 "type": "object",
-                                "additionalProperties": true,
+                                "additionalProperties": false,
                                 "required": ["id", "kind"],
                                 "properties": {
                                     "id": string_schema("Dimension scope id."),
@@ -51,7 +60,7 @@ pub(crate) fn definition() -> Value {
                             "description": "Entries this command creates or replaces. Leave empty to attach relations and evidence to existing refs without rewriting them.",
                             "items": {
                                 "type": "object",
-                                "additionalProperties": true,
+                                "additionalProperties": false,
                                 "required": ["id", "kind", "text", "coordinates"],
                                 "properties": {
                                     "id": string_schema("Memory entry id. Must be a safe descendant of the exact about, beginning with `<about>:`; the about anchor and refs owned by another about are refused."),
@@ -79,7 +88,7 @@ pub(crate) fn definition() -> Value {
                             "type": "array",
                             "items": {
                                 "type": "object",
-                                "additionalProperties": true,
+                                "additionalProperties": false,
                                 "required": ["from", "to", "rel", "class"],
                                 "properties": {
                                     "from": string_schema("Source ref owned by the exact about, its anchor, or a declared dimension id."),
@@ -117,7 +126,7 @@ pub(crate) fn definition() -> Value {
                             "type": "array",
                             "items": {
                                 "type": "object",
-                                "additionalProperties": true,
+                                "additionalProperties": false,
                                 "required": ["id", "text"],
                                 "properties": {
                                     "id": string_schema("Evidence id. Must begin with `evidence:<about>:` so it cannot overwrite evidence owned by another about."),
@@ -155,7 +164,7 @@ pub(crate) fn definition() -> Value {
                         "causation_id": string_schema("Optional causation id.")
                     }
                 },
-                "idempotency_key": string_schema("Required stable idempotency key for replay-safe ingest."),
+                "idempotency_key": string_schema("Required stable idempotency key for replay-safe ingest. Keys are global to the store, not per about."),
                 "dry_run": {
                     "type": "boolean",
                     "description": "Validate against the selected store without committing. References, labels and coordinates are checked by the kernel; the backend must be reachable. This reserves no future write."

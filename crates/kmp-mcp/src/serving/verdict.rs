@@ -61,11 +61,12 @@ impl Verdict {
         created_at: i64,
     ) -> Option<Self> {
         let answer = match (question, answer) {
-            (JudgementQuestion::Noul { .. }, JudgementAnswer::Noul { yes }) => {
-                QuantizedAnswer::Noul {
-                    yes: quantize(*yes),
-                }
-            }
+            (
+                JudgementQuestion::Noul { .. } | JudgementQuestion::CriteriaNoul { .. },
+                JudgementAnswer::Noul { yes },
+            ) => QuantizedAnswer::Noul {
+                yes: quantize(*yes),
+            },
             (
                 JudgementQuestion::Choice { options, .. },
                 JudgementAnswer::Choice {
@@ -115,11 +116,12 @@ impl Verdict {
     /// the verdict cannot be for it.
     pub(crate) fn answer(&self, question: &JudgementQuestion) -> Option<JudgementAnswer> {
         match (question, &self.answer) {
-            (JudgementQuestion::Noul { .. }, QuantizedAnswer::Noul { yes }) => {
-                Some(JudgementAnswer::Noul {
-                    yes: dequantize(*yes),
-                })
-            }
+            (
+                JudgementQuestion::Noul { .. } | JudgementQuestion::CriteriaNoul { .. },
+                QuantizedAnswer::Noul { yes },
+            ) => Some(JudgementAnswer::Noul {
+                yes: dequantize(*yes),
+            }),
             (
                 JudgementQuestion::Choice { options, .. },
                 QuantizedAnswer::Choice {
@@ -287,6 +289,7 @@ mod tests {
         JudgementQuestion::Choice {
             instructions: json!("q"),
             options: vec!["none".into(), "b".into(), "a".into()],
+            described: Default::default(),
         }
     }
 

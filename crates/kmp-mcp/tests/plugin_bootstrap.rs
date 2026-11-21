@@ -1,9 +1,11 @@
 #![cfg(unix)]
 
+#[path = "support/isolated_home.rs"]
+mod isolated_home;
+
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -96,7 +98,7 @@ exit 1
         fs::write(&checksum_path, format!("{checksum}  kmp-mcp\n")).expect("checksum");
         let curl_log = self.root.path().join("curl.log");
         let path = format!("{}:/usr/bin:/bin", tools.display());
-        let output = Command::new(&bootstrap)
+        let output = isolated_home::command(&bootstrap)
             .args(["setup", "--claude", "--dry-run"])
             .env("HOME", &home)
             .env("PATH", path)
@@ -212,7 +214,7 @@ exit 1
         let checksum_path = case.join("engine.sha256");
         fs::write(&checksum_path, format!("{checksum}  kmp-mcp\n")).expect("checksum");
         let curl_log = case.join("curl.log");
-        let output = Command::new(plugin.join("scripts/kmp-update.sh"))
+        let output = isolated_home::command(plugin.join("scripts/kmp-update.sh"))
             .args([
                 "--claude",
                 "--dry-run",
@@ -297,7 +299,7 @@ exit 1
                     vec!["update", "--version", "9.9.9"],
                 ),
             ] {
-                let output = Command::new(
+                let output = isolated_home::command(
                     self.root
                         .path()
                         .join("plugin/scripts/kmp-install-binary.sh"),
@@ -360,4 +362,70 @@ exit 1
 #[test]
 fn clean_source_marketplace_install_bootstraps_a_verified_rust_engine() {
     PluginBootstrapHarness::new().execute();
+}
+
+/// N7: a stale plugin's bootstrap never installs its older release over a
+/// newer shared engine; it runs that engine for its own release instead.
+#[test]
+fn a_stale_plugin_never_downgrades_a_newer_shared_engine() {
+    let root = tempfile::tempdir().expect("isolated bootstrap root");
+    let repository = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let plugin = root.path().join("plugin");
+    let install = root.path().join("install");
+    let tools = root.path().join("tools");
+    for directory in [
+        plugin.join("scripts"),
+        plugin.join(".codex-plugin"),
+        install.clone(),
+        tools.clone(),
+    ] {
+        fs::create_dir_all(directory).expect("directory");
+    }
+    fs::write(
+        plugin.join(".codex-plugin/plugin.json"),
+        r#"{"name":"kmp","version":"0.0.1"}"#,
+    )
+    .expect("stale manifest");
+    let bootstrap = plugin.join("scripts/kmp-install-binary.sh");
+    fs::copy(
+        repository.join("plugins/kmp/scripts/kmp-install-binary.sh"),
+        &bootstrap,
+    )
+    .expect("bootstrap adapter");
+    let executable = |path: &Path, body: &str| {
+        fs::write(path, body).expect("script");
+        fs::set_permissions(path, fs::Permissions::from_mode(0o755)).expect("executable");
+    };
+    let ran = root.path().join("ran.log");
+    let curl_log = root.path().join("curl.log");
+    let engine = format!(
+        "#!/bin/sh\nif [ \"$1\" = --version ]; then echo 'kmp-mcp 999.0.0 (store format 4 (sqlite))'; exit 0; fi\necho \"$*\" >> {}\n",
+        ran.display()
+    );
+    executable(&install.join("kmp-mcp"), &engine);
+    executable(
+        &tools.join("curl"),
+        &format!("#!/bin/sh\necho \"$*\" >> {}\nexit 1\n", curl_log.display()),
+    );
+
+    let output = isolated_home::command(&bootstrap)
+        .args(["setup", "--claude", "--dry-run"])
+        .env("HOME", root.path().join("home"))
+        .env_remove("KMP_MCP_BIN")
+        .env("PATH", format!("{}:/usr/bin:/bin", tools.display()))
+        .env("KMP_INSTALL_DIR", &install)
+        .output()
+        .expect("bootstrap runs");
+
+    assert!(output.status.success(), "{output:?}");
+    assert!(!curl_log.exists(), "nothing is downloaded");
+    assert_eq!(
+        fs::read_to_string(install.join("kmp-mcp")).expect("engine"),
+        engine
+    );
+    assert_eq!(
+        fs::read_to_string(&ran).expect("the newer engine ran"),
+        "setup --claude --dry-run\n",
+        "it sets up its own release, not the stale plugin's"
+    );
 }

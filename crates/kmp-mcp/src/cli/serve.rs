@@ -14,6 +14,11 @@ use tracing_subscriber::{EnvFilter, Layer};
 pub(crate) async fn serve() -> Result<(), Box<dyn std::error::Error>> {
     let _log_guard = init_tracing();
     collect_deferred_plugin_cache_releases();
+    // Every recall's page is measured in cl100k tokens, whose table loads on
+    // first use. Loaded beside startup, the first read does not wait for it.
+    std::thread::spawn(|| {
+        kmp_application::queries::cl100k_estimator::Cl100kEstimator::shared();
+    });
 
     let configured = server_from_env().await.and_then(|server| {
         server
@@ -164,12 +169,19 @@ struct StartupFailure {
 }
 
 impl StartupFailure {
-    /// The backend could not be chosen from the environment. Saying which
-    /// variables settle it is genuinely the next step.
+    /// The server could not be composed from the environment. Pointing at
+    /// `KMP_MCP_BACKEND` is the next step only when someone set it to a
+    /// remote backend; a store or a switch that failed under the default
+    /// embedded kernel used to get the same hint, naming the wrong variable
+    /// (E7).
     fn selecting_a_backend(message: impl Into<String>) -> Self {
+        let remote_requested = std::env::var(MCP_BACKEND_ENV).is_ok_and(|value| {
+            let value = value.trim();
+            !value.is_empty() && !value.eq_ignore_ascii_case("embedded")
+        });
         Self {
             message: message.into(),
-            backend_selection: true,
+            backend_selection: remote_requested,
         }
     }
 
@@ -182,10 +194,16 @@ impl StartupFailure {
     }
 }
 
-/// Builds the MCP server, mounting the local web viewer over the embedded
-/// backend. Sharing this process's kernel keeps the viewer on the exact live
-/// facade without a second store connection or read model.
+/// Builds the MCP server, ready to mount the local web viewer over the
+/// embedded backend. Sharing this process's kernel keeps the viewer on the
+/// exact live facade without a second store connection or read model. No
+/// port is bound here: the viewer listens from the first request that needs
+/// it, and an address that could never be bound is refused now.
 async fn server_from_env() -> Result<KernelMcpServer, StartupFailure> {
+    // Every switch first: a misspelt value is named for what it is, not
+    // reported as a backend that could not be chosen.
+    kmp_mcp::environment::check_environment()
+        .map_err(|refusal| StartupFailure::after_the_backend_was_chosen(refusal.to_string()))?;
     let viewer = kmp_mcp::viewer::viewer_addr_from_env();
     let backend_is_embedded = backend_is_embedded_from_env();
 
@@ -206,10 +224,18 @@ async fn server_from_env() -> Result<KernelMcpServer, StartupFailure> {
         };
     }
 
+    if viewer.was_asked_for() {
+        kmp_viewer::loopback_socket_addr(addr).map_err(|error| {
+            StartupFailure::after_the_backend_was_chosen(format!(
+                "{} is `{addr}`, which the viewer cannot serve: {error}",
+                kmp_viewer::VIEWER_ADDR_ENV
+            ))
+        })?;
+    }
+
     let resolved = kmp_mcp::lifecycle::resolve_memory_for_use()
         .map_err(|error| StartupFailure::after_the_backend_was_chosen(error.to_string()))?;
-    let engine = kmp_embedded::resolve_engine_for_data_dir_from_env(resolved.path())
-        .map_err(|error| StartupFailure::after_the_backend_was_chosen(error.to_string()))?;
+    let engine = kmp_embedded::default_engine_for_data_dir(resolved.path());
     let lease = kmp_embedded::user_data_home()
         .map(|data_home| {
             kmp_mcp::lifecycle::StoreSessionLease::acquire(&data_home, resolved.path())
@@ -226,45 +252,16 @@ async fn server_from_env() -> Result<KernelMcpServer, StartupFailure> {
         commit_native,
     )
     .map_err(StartupFailure::after_the_backend_was_chosen)?;
-    let url = match spawn_viewer(backend.kernel(), addr).await {
-        Ok(url) => Some(url),
-        // An explicit address is a contract. The default is only a preference:
-        // if another session owns it, this process falls forward to a free
-        // loopback port below and advertises its own capability URL.
-        Err(message) if viewer.was_asked_for() => {
-            // You asked for this address, so you get told why it did not
-            // happen and what to type next — not a shrug.
-            return Err(StartupFailure::after_the_backend_was_chosen(format!(
-                "{message}\nkmp-mcp: usually another project's session already has it. Name a \
-                 free port with {}=127.0.0.1:7318, or {}=off to go without.",
-                kmp_viewer::VIEWER_ADDR_ENV,
-                kmp_viewer::VIEWER_ADDR_ENV
-            )));
-        }
-        Err(message) => {
-            eprintln!("kmp-mcp: {message}; choosing a free per-session loopback port instead");
-            match spawn_viewer(backend.kernel(), "127.0.0.1:0").await {
-                Ok(url) => Some(url),
-                Err(fallback) => {
-                    eprintln!(
-                        "kmp-mcp: viewer fallback also failed: {fallback}; continuing without it. \
-                         Set {}=off to stop offering it.",
-                        kmp_viewer::VIEWER_ADDR_ENV
-                    );
-                    None
-                }
-            }
-        }
-    };
+    let on_demand = kmp_mcp::viewer::SessionViewer::on_demand(
+        viewer.clone(),
+        kmp_mcp::viewer::ViewerMount::over(backend.kernel()),
+    );
     let server = KernelMcpServer::with_embedded_backend(backend).with_resolved_store(&resolved);
     let server = match lease {
         Some(lease) => server.with_store_session_lease(lease),
         None => server,
     };
-    Ok(match url {
-        Some(url) => server.serving_viewer_at(url),
-        None => server,
-    })
+    Ok(server.with_viewer_on_demand(on_demand))
 }
 
 /// Binds the viewer on `addr` (loopback only) and serves it in the
@@ -275,37 +272,9 @@ pub(super) async fn spawn_viewer(
     kernel: &kmp_embedded::EmbeddedKernel,
     addr: &str,
 ) -> Result<String, String> {
-    let telemetry_unavailable = kernel.quality_telemetry_error().map(str::to_string);
-    let mut viewer = kmp_viewer::MemoryViewerServer::new(
-        kernel.service(),
-        Some(kernel.data_dir().display().to_string()),
-    )
-    .map_err(|error| format!("viewer capability could not be created: {error}"))?;
-    if let Some(reader) = kernel.quality_telemetry_reader() {
-        viewer = viewer.with_observability(std::sync::Arc::new(reader));
-    } else if let Some(reason) = telemetry_unavailable.as_deref() {
-        viewer = viewer.with_observability_unavailable(reason);
-    }
-    let viewer = std::sync::Arc::new(viewer);
-    let listener = kmp_viewer::bind_loopback(addr)
+    kmp_mcp::viewer::ViewerMount::over(kernel)
+        .serve_at(addr)
         .await
-        .map_err(|error| format!("viewer could not bind `{addr}`: {error}"))?;
-    let local_addr = listener
-        .local_addr()
-        .map_err(|error| format!("viewer listener has no local address: {error}"))?;
-    let base_url = format!("http://{local_addr}/");
-    let url = viewer.capability_url(&base_url);
-    if let Some(reason) = telemetry_unavailable {
-        eprintln!("kmp-mcp: memory viewer at {url}; observability unavailable: {reason}");
-    } else {
-        eprintln!("kmp-mcp: memory viewer at {url}");
-    }
-    tokio::spawn(async move {
-        if let Err(error) = viewer.serve(listener).await {
-            tracing::error!(%error, "memory viewer stopped");
-        }
-    });
-    Ok(url)
 }
 
 /// Logs go to stderr through a bounded, lossy queue (stdout belongs to MCP

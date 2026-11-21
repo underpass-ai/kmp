@@ -22,7 +22,6 @@ fn authorize_tool_call(identity: &Identity, request: &Value) -> Result<(), Autho
         .and_then(|params| params.get("name"))
         .and_then(Value::as_str)
         .unwrap_or_default();
-    let name = canonical_tool_name(name);
     let arguments = params
         .and_then(|params| params.get("arguments"))
         .unwrap_or(&Value::Null);
@@ -93,25 +92,6 @@ fn authorize_tool_call(identity: &Identity, request: &Value) -> Result<(), Autho
         _ => {}
     }
     Ok(())
-}
-
-fn canonical_tool_name(name: &str) -> &str {
-    if matches!(name, "kernel_remember" | "kernel_ingest_context") {
-        return "kmp_ingest";
-    }
-    name.strip_prefix("kernel_")
-        .map(|suffix| match suffix {
-            "ingest" => "kmp_ingest",
-            "write_memory" => "kmp_write_memory",
-            "wake" => "kmp_wake",
-            "ask" => "kmp_ask",
-            "relate" => "kmp_relate",
-            "trace" => "kmp_trace",
-            "inspect" => "kmp_inspect",
-            "relabel" => "kmp_relabel",
-            _ => name,
-        })
-        .unwrap_or(name)
 }
 
 /// Semantic review reads surrounding memory. Reuse the existing read/about
@@ -579,7 +559,11 @@ mod tests {
     }
 
     #[test]
-    fn legacy_ingest_alias_cannot_bypass_write_authorization() {
+    fn a_former_alias_is_not_a_tool_and_needs_no_grant() {
+        // `kernel_remember` used to reach ingest. The server no longer has
+        // any `kernel_*` name (E10 of the 1.0 review) and refuses it as an
+        // unknown tool before anything reads the arguments, so there is no
+        // write here to authorize.
         let actor = identity(&[READ_SCOPE]);
         let request = call(
             "kernel_remember",
@@ -588,12 +572,7 @@ mod tests {
                 "memory":{"dimensions":[{"id":"timeline:kmp"}],"entries":[]}
             }),
         );
-        assert_eq!(
-            authorize(&actor, &request)
-                .expect_err("legacy ingest alias must require write scope")
-                .required_scope,
-            Some(WRITE_SCOPE)
-        );
+        assert!(authorize(&actor, &request).is_ok());
     }
 
     #[test]

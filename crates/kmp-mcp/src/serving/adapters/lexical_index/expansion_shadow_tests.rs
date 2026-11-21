@@ -42,7 +42,9 @@ impl KernelMcpToolBackend for JudgingBackend {
                             if text.contains("launch") { 0.9 } else { 0.1 }
                         })
                         .collect::<Vec<_>>();
-                    json!({"ref": item["ref"], "yes": yes})
+                    // The judge's second question: nothing added.
+                    let adds = vec![0.0_f64; yes.len()];
+                    json!({"ref": item["ref"], "yes": yes, "adds": adds})
                 })
                 .collect::<Vec<_>>();
             let answer = json!({"structuredContent": {

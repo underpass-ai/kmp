@@ -35,18 +35,23 @@ impl KernelMcpServer {
     ) -> String {
         let outcome = match name {
             "kmp_view_get_state" => {
-                crate::serving::view_tools::get_state(arguments, self.viewer_url.as_deref())
+                crate::serving::view_tools::get_state(arguments, self.viewer_url())
             }
             "kmp_view_undo" => crate::serving::view_tools::undo(arguments),
             "kmp_view_take_control" => crate::serving::view_tools::take_control(arguments),
             "kmp_view_open" => {
                 let about = arguments.get("about").and_then(Value::as_str).unwrap_or("");
                 match self.memory_ref_exists(about, about).await {
-                    Ok(exists) => crate::serving::view_tools::open(
-                        arguments,
-                        exists,
-                        self.viewer_url.as_deref(),
-                    ),
+                    // Opening a view onto memory that is there is the request
+                    // for the viewer: its listener starts here, once.
+                    Ok(true) => {
+                        let viewer = match self.viewer.as_deref() {
+                            Some(viewer) => viewer.ensure().await.map(Some),
+                            None => Ok(None),
+                        };
+                        crate::serving::view_tools::open(arguments, true, viewer)
+                    }
+                    Ok(false) => crate::serving::view_tools::open(arguments, false, Ok(None)),
                     Err(error) => Err(error),
                 }
             }
@@ -170,7 +175,11 @@ impl KernelMcpServer {
 
     /// Whether one ref is in this store, asked through the same read the
     /// agent would use. Never a write.
-    async fn memory_ref_exists(&self, about: &str, reference: &str) -> Result<bool, ToolError> {
+    pub(super) async fn memory_ref_exists(
+        &self,
+        about: &str,
+        reference: &str,
+    ) -> Result<bool, ToolError> {
         let reference = reference.trim();
         if reference.is_empty() {
             return Ok(false);

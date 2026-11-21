@@ -25,7 +25,7 @@ pub(super) fn kernel_error<'a>(
     move |error| {
         let code = match &error {
             ApplicationError::RetryableConflict(reason) => {
-                return ToolError::conflict(format!(
+                return ToolError::retryable_conflict(format!(
                     "embedded kernel {operation} write conflict for `{about}`: the store moved \
                      while this write was being prepared, so this attempt was not applied. It \
                      is safe to retry the same logical write with the same `idempotency_key`; \
@@ -94,7 +94,7 @@ mod tests {
             ),
         );
 
-        assert_eq!(error.code, ToolErrorCode::Conflict);
+        assert_eq!(error.code, ToolErrorCode::RetryableConflict);
         assert!(error.message.contains("write conflict"), "{error}");
         assert!(error.message.contains("attempt was not applied"), "{error}");
         assert!(error.message.contains("safe to retry"), "{error}");

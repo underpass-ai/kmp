@@ -9,7 +9,9 @@ use std::sync::Arc;
 
 use kmp_proto_mapping::v1beta1::{AskGate, LexicalBridge};
 
+use super::ask_cross_language_config::ASK_CROSS_LANGUAGE_FILE;
 use super::ask_gate_config::{ASK_GATE_FILE, AskGateConfig};
+use super::cross_language_judge::CrossLanguageJudge;
 use super::curate_config::{CURATE_FILE, CurateConfig};
 use super::doubt_band_judge::DoubtBandJudge;
 use super::judgement_reranker::JudgementReranker;
@@ -30,9 +32,7 @@ use super::write_relations_config::WriteRelationsConfig;
 use crate::curate::domain::partner_cap::PartnerCap;
 use crate::curate::domain::partner_filter::PartnerFilter;
 use crate::curate::domain::paths_corridor::PathsCorridor;
-use crate::serving::environment::{
-    TYPESAFE_API_KEY_ENV, TYPESAFE_CASSETTE_ENV, TYPESAFE_CASSETTE_MODE_ENV, optional_env_string,
-};
+use crate::serving::environment::{TYPESAFE_API_KEY_ENV, optional_env_string};
 use crate::serving::judgement_site::JudgementSite;
 use crate::serving::ports::judgement_model::JudgementModel;
 use crate::serving::ports::semantic_candidate_provider::SemanticCandidateProvider;
@@ -45,6 +45,7 @@ pub(super) struct StoreConfigLoads {
     pub(super) rerank: Result<Option<Arc<JudgementReranker>>, String>,
     pub(super) wake_focus: Result<Option<Arc<WakeFocusJudge>>, String>,
     pub(super) doubt_band: Result<Option<Arc<DoubtBandJudge>>, String>,
+    pub(super) cross_language: Result<Option<Arc<CrossLanguageJudge>>, String>,
     pub(super) write_relations: Option<WriteRelationsConfig>,
     pub(super) write_expansions: Result<Option<WriteExpansionsConfig>, String>,
     pub(super) lexical_bridge: LexicalBridge,
@@ -56,18 +57,18 @@ pub(super) struct StoreConfigLoads {
 
 impl StoreConfigLoads {
     pub(super) fn load(data_dir: &Path, book: VerdictBookAccess) -> Self {
+        // A judgement cassette is an evaluation hook: a release build
+        // reads no cassette (`crate::environment::eval_hooks`).
+        let (cassette, cassette_mode) = crate::environment::eval_hooks::typesafe_cassette();
+        let behind_cassette = cassette.is_some();
         let judgement = load_judgement(
             data_dir,
             optional_env_string(TYPESAFE_API_KEY_ENV),
-            optional_env_string(TYPESAFE_CASSETTE_ENV),
-            optional_env_string(TYPESAFE_CASSETTE_MODE_ENV),
+            cassette,
+            cassette_mode,
         );
         let ledger = match book {
-            VerdictBookAccess::Open => VerdictLedger::load(
-                data_dir,
-                &judgement,
-                optional_env_string(TYPESAFE_CASSETTE_ENV).is_some(),
-            ),
+            VerdictBookAccess::Open => VerdictLedger::load(data_dir, &judgement, behind_cassette),
             VerdictBookAccess::ConfigurationOnly => VerdictBookConfig::load(data_dir).map(|_| None),
         };
         let observed = |site| {
@@ -77,10 +78,13 @@ impl StoreConfigLoads {
         let rerank = JudgementReranker::load(data_dir, &observed(JudgementSite::Rerank));
         let wake_focus = WakeFocusJudge::load(data_dir, &observed(JudgementSite::WakeFocus));
         let doubt_band = DoubtBandJudge::load(data_dir, &observed(JudgementSite::DoubtBand));
+        let cross_language =
+            CrossLanguageJudge::load(data_dir, &observed(JudgementSite::CrossLanguage));
         Self {
             rerank,
             wake_focus,
             doubt_band,
+            cross_language,
             write_relations: WriteRelationsConfig::load(data_dir),
             write_expansions: WriteExpansionsConfig::load(data_dir),
             lexical_bridge: load_lexical_bridge(data_dir),
@@ -102,13 +106,13 @@ impl StoreConfigLoads {
                 .clone()
                 .map_err(|error| format!("{file} needs a working typesafe.json: {error}"))
         };
-        let mut report = StoreConfigReport::new(data_dir)
-            .beside_store("typesafe.json", judged.clone())
-            .at(
-                "typesafe-cassette",
-                optional_env_string(TYPESAFE_CASSETTE_ENV).map(Into::into),
-                judged.clone(),
-            )
+        let mut report =
+            StoreConfigReport::new(data_dir).beside_store("typesafe.json", judged.clone());
+        // Only a build that carries the cassette hook reports it.
+        if let (Some(cassette), _) = crate::environment::eval_hooks::typesafe_cassette() {
+            report = report.at("typesafe-cassette", Some(cassette.into()), judged.clone());
+        }
+        let mut report = report
             .beside_store("rerank.json", verdict(&self.rerank))
             .beside_store("wake-focus.json", verdict(&self.wake_focus))
             .beside_store("semantic-retrieval.json", verdict(&self.semantic))
@@ -141,6 +145,7 @@ impl StoreConfigLoads {
                 },
             )
             .beside_store("ask-judge.json", verdict(&self.doubt_band))
+            .beside_store(ASK_CROSS_LANGUAGE_FILE, verdict(&self.cross_language))
             .at(
                 "lexical-bridge.kmpb",
                 lexical_bridge_path(data_dir),
@@ -178,6 +183,25 @@ impl StoreConfigLoads {
                     match judge.promote_permille() {
                         Some(permille) => format!("promote at {}", permille_text(permille)),
                         None => "promote off".into(),
+                    },
+                );
+        }
+        if let Ok(Some(judge)) = &self.cross_language {
+            report = report
+                .effective(
+                    ASK_CROSS_LANGUAGE_FILE,
+                    if judge.veto() {
+                        format!("veto keeps at {}", permille_text(judge.keep_permille()))
+                    } else {
+                        "veto off".into()
+                    },
+                )
+                .effective(
+                    ASK_CROSS_LANGUAGE_FILE,
+                    if judge.rescue() {
+                        format!("rescue at {}", permille_text(judge.rescue_permille()))
+                    } else {
+                        "rescue off".into()
                     },
                 );
         }

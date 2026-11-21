@@ -640,8 +640,7 @@ fn near_probe_arguments(event: &MemoryArenaEvent, expected: &MemoryArenaExpected
             "after_entries": 0
         },
         "limit": {
-            "entries": 12,
-            "tokens": 2400
+            "entries": 12
         },
         "dimensions": {
             "scope": "current_about",
@@ -653,7 +652,6 @@ fn near_probe_arguments(event: &MemoryArenaEvent, expected: &MemoryArenaExpected
             "raw_refs": false
         },
         "budget": {
-            "tokens": 2400,
             "depth": 3
         }
     })
@@ -680,12 +678,7 @@ fn trace_probe_arguments(
     json!({
         "about": event.about,
         "from": expected.current_question_ref,
-        "to": target_ref,
-        "goal": "MemoryArena staged MCP navigation probe",
-        "budget": {
-            "tokens": 1600,
-            "depth": 1
-        }
+        "to": target_ref
     })
 }
 

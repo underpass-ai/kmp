@@ -9,7 +9,7 @@ Prefer the live `tools/list` result; it is the surface, and a count written
 down here only drifts. Its memory tools are `kmp_ingest`, `kmp_write_memory`,
 `kmp_wake`, `kmp_ask`, `kmp_relate`, `kmp_time`, `kmp_trace`, `kmp_inspect`,
 `kmp_relabel`, `kmp_condense`, `kmp_summaries_audit` and `kmp_curate`.
-`kmp_guide` manages the persistent agent identity and progressive scheme.
+`kmp_guide {topic}` explains a verb's arguments before its first use.
 Its three semantic view tools are `kmp_view_open`,
 `kmp_view_apply_intent`, and `kmp_view_get_state`.
 

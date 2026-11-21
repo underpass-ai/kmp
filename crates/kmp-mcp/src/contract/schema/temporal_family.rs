@@ -1,6 +1,6 @@
 use serde_json::{Value, json};
 
-use crate::contract::schema::definition::tool_definition_with_output;
+use crate::contract::schema::definition::{ToolEffect, tool_definition_with_output};
 #[allow(unused_imports)]
 use crate::contract::schema::primitives::*;
 use crate::contract::schema::primitives::{
@@ -73,10 +73,6 @@ pub(crate) fn time_tool_definition(description: &str) -> Value {
                     "entries": {
                         "type": "integer",
                         "minimum": 1
-                    },
-                    "tokens": {
-                        "type": "integer",
-                        "minimum": 1
                     }
                 }
             },
@@ -94,7 +90,6 @@ pub(crate) fn time_tool_definition(description: &str) -> Value {
                     }
                 }
             },
-            "depth": integer_schema("Optional graph traversal depth. Applies in embedded and live gRPC modes; it overrides budget.depth."),
             "page": {
                 "type":"object", "additionalProperties":false,
                 "properties": {
@@ -102,7 +97,7 @@ pub(crate) fn time_tool_definition(description: &str) -> Value {
                     "entries":{"type":"integer","minimum":1,"description":"Maximum complete expansion items on this response page, including entries and proof."}
                 }
             },
-            "budget": budget_schema(2_400, 3)
+            "budget": budget_schema(&[BudgetField::MaxBytes, BudgetField::Detail, BudgetField::Depth(3), BudgetField::MaxEntries])
         }
     });
     let mut interval = interval_schema();
@@ -111,14 +106,17 @@ pub(crate) fn time_tool_definition(description: &str) -> Value {
         "Half-open [start,end) entry selection on axis, with at least one bound. Validity selects overlapping spans. Forward/Rewind can start with interval alone; returned continuations preserve it."
     );
     input_schema["properties"]["interval"] = interval;
-    input_schema["anyOf"] = json!([
-        {"properties":{"move":{"enum":["rewind","forward"]}}, "anyOf":[{"required":["from"]}, {"required":["interval"]}]},
-        {"properties":{"move":{"const":"goto"}}, "required":["at"]},
-        {"properties":{"move":{"const":"near"}}, "required":["around"]}
-    ]);
+    input_schema["allOf"] = json!([crate::contract::cross_field_rule::tagged(
+        "time.cursor",
+        json!({"anyOf":[
+            {"properties":{"move":{"enum":["rewind","forward"]}}, "anyOf":[{"required":["from"]}, {"required":["interval"]}]},
+            {"properties":{"move":{"const":"goto"}}, "required":["at"]},
+            {"properties":{"move":{"const":"near"}}, "required":["around"]}
+        ]})
+    )]);
     tool_definition_with_output(
         TIME_TOOL,
-        false,
+        ToolEffect::Read,
         description,
         input_schema,
         temporal_output_schema(),

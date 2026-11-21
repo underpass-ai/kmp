@@ -3,14 +3,14 @@ use std::collections::{BTreeMap, BTreeSet, BinaryHeap};
 use crate::curate::application::corridor::{Corridor, on_some_walk};
 use crate::curate::application::curate_material::CurateMaterial;
 use crate::curate::application::jev_usage::JevUsage;
-use crate::curate::application::judgement_plan::{
-    next_step_request, pair_request, suspect_request,
-};
+use crate::curate::application::judgement_plan::{pair_request, suspect_request};
 use crate::curate::application::on_the_way::facts_on_the_way;
+use crate::curate::application::pair_reading::typed_pair;
 use crate::curate::application::path_search::PathSearch;
+use crate::curate::application::step_request::StepRequest;
 use crate::curate::domain::avoided_hop::AvoidedHop;
 use crate::curate::domain::candidate_pair::CandidatePair;
-use crate::curate::domain::curate_thresholds::{DOUBT_BELOW, NONE};
+use crate::curate::domain::curate_thresholds::DOUBT_BELOW;
 use crate::curate::domain::found_path::FoundPath;
 use crate::curate::domain::pair_origin::PairOrigin;
 use crate::curate::domain::path_hop::PathHop;
@@ -216,8 +216,8 @@ async fn propose(
         return Ok(());
     }
     let neighbours = (corridor && to.is_some()).then(|| Corridor::step_options(material, &walk));
-    let (request, keys) = next_step_request(material, &walk, neighbours.as_ref());
-    let response = model.evaluate(&request).await?;
+    let steps = StepRequest::new(material, &walk, neighbours.as_ref());
+    let response = model.evaluate(&steps.request).await?;
     usage.add(&response);
     let joined = |left: &str, right: &str| {
         edges.iter().any(|hop| {
@@ -225,43 +225,20 @@ async fn propose(
         })
     };
     let mut proposed: Vec<PathHop> = Vec::new();
-    for (key, reference) in &keys {
-        for (question, forward) in [("n", true), ("c", false)] {
-            let Some(JudgementAnswer::Choice { probabilities, .. }) =
-                response.answers.get(&format!("{question}{}", &key[1..]))
-            else {
-                continue;
-            };
-            let mut options = probabilities
-                .iter()
-                .filter(|(option, p)| option.as_str() != NONE && **p >= STEP_AT)
-                .collect::<Vec<_>>();
-            options
-                .sort_by(|left, right| right.1.total_cmp(left.1).then_with(|| left.0.cmp(right.0)));
-            for (option, p) in options.into_iter().take(STEPS_PER_FACT) {
-                let Some(other) = keys.get(option.as_str()) else {
-                    continue;
-                };
-                let (from, to) = if forward {
-                    (reference.clone(), other.clone())
-                } else {
-                    (other.clone(), reference.clone())
-                };
-                let seen = joined(&from, &to)
-                    || proposed.iter().any(|hop| {
-                        (hop.from == from && hop.to == to) || (hop.from == to && hop.to == from)
-                    });
-                if !seen {
-                    proposed.push(PathHop {
-                        from,
-                        to,
-                        rel: None,
-                        declared: false,
-                        confidence: *p,
-                        reversed: false,
-                    });
-                }
-            }
+    for (from, to, p) in steps.read(&response, STEP_AT, STEPS_PER_FACT) {
+        let seen = joined(&from, &to)
+            || proposed.iter().any(|hop| {
+                (hop.from == from && hop.to == to) || (hop.from == to && hop.to == from)
+            });
+        if !seen {
+            proposed.push(PathHop {
+                from,
+                to,
+                rel: None,
+                declared: false,
+                confidence: p,
+                reversed: false,
+            });
         }
     }
     if corridor && let Some(goal) = to {
@@ -296,14 +273,11 @@ async fn propose(
         let typed = model.evaluate(&pair_request(material, &pairs)).await?;
         usage.add(&typed);
         for (n, hop) in proposed.iter_mut().enumerate() {
-            if let Some(JudgementAnswer::Choice { choice, .. }) =
-                typed.answers.get(&format!("t{n}"))
-                && choice != NONE
-            {
-                hop.rel = Some(choice.clone());
+            if let Some(verdict) = typed_pair(&typed, n) {
+                hop.rel = Some(verdict.choice);
             }
         }
-        // A step the judge types as no relation is not a step.
+        // A step whose pair the judge does not read as related is not a step.
         proposed.retain(|hop| hop.rel.is_some());
     }
     edges.extend(proposed);
@@ -518,6 +492,7 @@ mod tests {
             kind: String::new(),
             text: format!("text {reference}"),
             occurred: None,
+            occurred_at: None,
             labels: Vec::new(),
         };
         let link = |from: &str, to: &str| DeclaredLink {
@@ -568,7 +543,16 @@ mod tests {
         }
         .run(&material(), "a", Some("c"), 6)
         .await;
-        assert_eq!(search.paths[0].hops.len(), 2);
+        // A judge that says yes to everything also proposes steps; the
+        // declared route stands among them, and nothing is avoided.
+        assert!(
+            search
+                .paths
+                .iter()
+                .any(|path| path.hops.len() == 2 && path.hops.iter().all(|hop| hop.declared)),
+            "{:?}",
+            search.paths
+        );
         assert!(search.avoided.is_empty());
 
         let plain = FindPaths {

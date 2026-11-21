@@ -4,6 +4,7 @@ use serde_json::json;
 
 use crate::curate::application::curate_material::CurateMaterial;
 use crate::curate::application::judgement_plan::{excerpt, text_of};
+use crate::curate::application::relation_wording::label_question;
 use crate::curate::domain::curate_thresholds::NONE;
 use crate::serving::judgement_question::JudgementQuestion;
 use crate::serving::judgement_request::JudgementRequest;
@@ -72,15 +73,14 @@ pub(crate) fn label_request(
                 JudgementQuestion::Choice {
                     instructions: json!({
                         "memory": excerpt(&text_of(material, reference), FACT_CHARS),
-                        "question": format!(
-                            "Which `{key}` does `memory` belong to, judging by the examples of each value in the catalogue? Answer none when none fits."
-                        ),
+                        "question": label_question(key),
                     }),
                     options: values
                         .keys()
                         .cloned()
                         .chain(std::iter::once(NONE.to_string()))
                         .collect(),
+                    described: Default::default(),
                 },
             );
             keys.insert(question, (reference.clone(), key.clone()));

@@ -52,7 +52,7 @@ impl<'a> ResolvePluginEngine<'a> {
             .collect::<Vec<_>>()
             .join(", ");
         Err(LifecycleError::HostVersionMismatch(format!(
-            "no engine matches plugin {expected}; found {}. Run kmp setup.",
+            "no engine matches plugin {expected}; found {}. Run /kmp:setup or kmp-mcp setup.",
             if observed.is_empty() {
                 "no executable candidates"
             } else {

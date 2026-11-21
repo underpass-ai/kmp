@@ -38,7 +38,10 @@ use super::validation_error::WriteValidationError;
 use super::validation_errors::WriteValidationErrors;
 use super::write_options::WriteOptions;
 
-const DEFAULT_CONFIDENCE: &str = "high";
+/// An omitted confidence is recorded as `unknown`: the writer did not say
+/// how sure it is, and storing `high` claimed a certainty nobody stated
+/// (E12). The schema declares the same default.
+const DEFAULT_CONFIDENCE: &str = "unknown";
 const DEFAULT_SOURCE_KIND: &str = "agent";
 
 /// Coordinates, labels and validity belong to the memories this write does

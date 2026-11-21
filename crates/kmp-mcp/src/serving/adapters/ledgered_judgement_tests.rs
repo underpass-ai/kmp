@@ -55,9 +55,11 @@ impl JudgementModel for Jittery {
                 .enumerate()
                 .map(|(n, (name, question))| {
                     let answer = match question {
-                        JudgementQuestion::Noul { .. } => JudgementAnswer::Noul {
-                            yes: self.yes + n as f64 * 0.0123457,
-                        },
+                        JudgementQuestion::Noul { .. } | JudgementQuestion::CriteriaNoul { .. } => {
+                            JudgementAnswer::Noul {
+                                yes: self.yes + n as f64 * 0.0123457,
+                            }
+                        }
                         JudgementQuestion::Choice { options, .. } => JudgementAnswer::Choice {
                             choice: options.last().expect("option").clone(),
                             probabilities: options
@@ -220,6 +222,7 @@ async fn choices_round_trip_through_the_book() {
             JudgementQuestion::Choice {
                 instructions: json!("Which relation?"),
                 options: vec!["supports".into(), "none".into(), "answers".into()],
+                described: Default::default(),
             },
         )]),
     };

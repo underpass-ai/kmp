@@ -26,6 +26,7 @@ pub(crate) fn build_relabel_plan(arguments: &Value) -> Result<RelabelPlan, Strin
     validate_supplied_entry_ref(&about, "ref", &reference)?;
     let actor = required_string(arguments, "actor")?;
     let observed_at = required_string(arguments, "observed_at")?;
+    crate::clock::require_rfc3339(&observed_at, "observed_at")?;
     reject_a_time_that_has_not_happened(&observed_at, crate::clock::now_seconds())?;
     let why = required_string(arguments, "why")?;
 

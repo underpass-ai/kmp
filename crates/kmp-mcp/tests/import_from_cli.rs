@@ -2,9 +2,12 @@
 //! binary, on a hermetic machine (#903): HOME, XDG and the store are all
 //! temporary, and the working directory is outside any repository.
 
+#[path = "support/isolated_home.rs"]
+mod isolated_home;
+
 use std::collections::BTreeMap;
 use std::path::Path;
-use std::process::{Command, Output};
+use std::process::Output;
 
 use kmp_application::{
     MemoryCoordinateData, MemoryData, MemoryDimensionData, MemoryEntryData, MemoryEvidenceData,
@@ -91,7 +94,7 @@ impl Machine {
     }
 
     fn run(&self, store: &Path, args: &[&str]) -> Output {
-        Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+        isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"))
             .args(args)
             .current_dir(self.cwd.path())
             .env("HOME", self.home.path())
@@ -172,6 +175,21 @@ async fn import_from_a_store_is_exact_idempotent_and_leaves_the_source_alone() {
     ));
     assert_eq!(second["events_imported"], 0, "{second}");
     assert_eq!(second["aggregates"][ABOUT], "unchanged", "{second}");
+
+    // A store source that lacks the about says so as an import, not as
+    // the export it runs underneath.
+    let absent = machine.run(
+        destination.path(),
+        &["import", "--from", from, "--about", "project:absent"],
+    );
+    assert_eq!(absent.status.code(), Some(2));
+    let absent = String::from_utf8_lossy(&absent.stderr);
+    assert!(
+        absent.contains("import refused; nothing was written")
+            && absent.contains("holds no about `project:absent`")
+            && !absent.contains("export"),
+        "{absent}"
+    );
 
     let document = machine.run(destination.path(), &["document", ABOUT]);
     assert!(document.status.success(), "{document:?}");

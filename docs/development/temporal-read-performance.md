@@ -154,7 +154,7 @@ UNKNOWN, on copied synthetic stores before measuring alternating before/after
 pairs. Both runners report first-query latency separately from warm p50/p95,
 coarse process CPU, peak RSS and complete response bytes. These latency runs do
 not instrument allocations or physical I/O. Raw traces belong in the workspace's
-`artifacts/`; throwaway stores belong in `tmp/` and are removed after the run.
+ignored artifacts directory; throwaway stores belong in `tmp/` and are removed after the run.
 
 `scripts/performance/native_allocation_control.py` runs a separate Linux/glibc
 control with `native_allocation_counter.c` preloaded into each native process.
@@ -238,7 +238,8 @@ were outside Git, within the workspace; Cargo's shared target was configured
 only on the checkout so nested release fixtures retained their own targets.
 
 Raw RPCs, source fixtures, environment, source hashes and validation logs are
-retained under `artifacts/performance-770-indexed/` (ignored). The two paired
+kept outside Git in a local `performance-770-indexed` evidence directory
+that was never committed. The two paired
 runner scripts and the allocation control are checked in for reproduction.
 
 Binary SHA-256:

@@ -1,7 +1,8 @@
+use crate::contract::cross_field_rule::tagged;
 use crate::contract::writer_memory_kinds::WRITER_MEMORY_KINDS;
 use serde_json::{Value, json};
 
-use crate::contract::schema::definition::tool_definition_with_output;
+use crate::contract::schema::definition::{ToolEffect, tool_definition_with_output};
 #[allow(unused_imports)]
 use crate::contract::schema::primitives::*;
 #[allow(unused_imports)]
@@ -14,8 +15,11 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_write_memory",
-        true,
-        "Write memory with evidence. Use memories for one or more records with local ids, labels and justified links, validated as one packet before canonical ingest. Use relations to link memories that already exist: the kernel validates the stored endpoints and writes only the link and its evidence. Never resubmit a stored memory as a record just to connect it. Omit options.dry_run for normal writes. Rich links, including local links, return needs_review with brief stored context before commit. Review it and use the returned continuation; changed context refreshes the review. Independent observations and honest fallback links remain one call. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
+        ToolEffect::Write {
+            destructive: true,
+            idempotent: true,
+        },
+        "Record facts with evidence and labels (`memories`), link stored memories (`relations`) or attach search renderings (`search_summaries`): the usual writer.",
         write_memory_schema(),
         write_memory_output_schema(),
     )
@@ -38,15 +42,14 @@ pub(crate) fn write_memory_schema() -> Value {
     let rank = json!({"type":"integer","minimum":1});
     let relation = json!({
         "type":"object","additionalProperties":false,"required":["ref","rel"],
-        "if":{"required":["rel"],"properties":{"rel":{"enum":writer_relations_requiring_class()}}},
-        "then":{"required":["class"]},
+        "allOf":[link_class_rule()],
         "properties":{
             "ref":string_schema("Exact local id (with or without @) in this packet, or an existing canonical ref. No fuzzy matching. Rich links require the server neighborhood review, even with local targets or strict:false. Only same_event_as/same_entity_as may cross abouts, with the returned kmp_relate proposal."),
             "rel":{"type":"string","enum":writer_relation_names(),"description":relation_vocabulary_description("Choose the specific relation justified by the source.")},
             "class":writer_class_schema(),
             "why":string_schema("Why this specific semantic connection holds and what a later reader should understand. Required for non-structural links."),
             "evidence":string_schema("The concrete observation or source supporting the relation rationale. Required for non-structural links."),
-            "confidence":{"type":"string","enum":["high","medium","low","unknown"]}
+            "confidence":{"type":"string","enum":["high","medium","low","unknown"],"default":"unknown"}
         }
     });
     let search_expansions = json!({
@@ -84,8 +87,7 @@ pub(crate) fn write_memory_schema() -> Value {
     let link = json!({
         "type":"object","additionalProperties":false,
         "required":["from","to","rel","why","evidence"],
-        "if":{"required":["rel"],"properties":{"rel":{"enum":writer_relations_requiring_class()}}},
-        "then":{"required":["class"]},
+        "allOf":[link_class_rule()],
         "properties":{
             "from":string_schema("Existing memory of this about that asserts the link. Its stored text, evidence, coordinates, labels, metadata and ingestion history are preserved; a canonical ref returned by a read, never a local id."),
             "to":string_schema("Existing target, also preserved. Only same_event_as/same_entity_as may name a ref of another about, with the returned kmp_relate proposal in read_context."),
@@ -93,7 +95,7 @@ pub(crate) fn write_memory_schema() -> Value {
             "class":writer_class_schema(),
             "why":string_schema("Why this specific semantic connection holds and what a later reader should understand. Always required here: a relation-only write declares no structural link."),
             "evidence":string_schema("The concrete observation or source supporting the rationale. Stored as its own evidence node beside both memories; it never replaces the evidence they already carry."),
-            "confidence":{"type":"string","enum":["high","medium","low","unknown"]},
+            "confidence":{"type":"string","enum":["high","medium","low","unknown"],"default":"unknown"},
             "observed_at":{"type":["string","null"],"description":"When this link was asserted, with its true RFC3339 UTC offset. Omit for the packet observation; null for the exact ingestion time. The endpoints' own clocks never date the link, so an old source linked today is linked today."}
         }
     });
@@ -107,13 +109,13 @@ pub(crate) fn write_memory_schema() -> Value {
         "required":["about","actor"],
         "properties":{
             "about":string_schema("Exact about receiving this one transaction. Never inferred or changed by a default."),
-            "actor":string_schema("Human, agent or component producing the write."),
+            "actor":string_schema("Human, agent or component producing the write. Omitted: the MCP client name from initialize, or mcp-client."),
             "observed_at":json!({"type":["string","null"],"description":"Shared observation and packet provenance. Omit or null for the exact ingestion time. Preserve an explicit source-backed RFC3339 observation; records may override it. Unknown occurrence is never inferred."}),
             "occurred_at":occurred,
             "valid_from":valid_from,
             "valid_until":valid_until,
             "rank":rank,
-            "source_kind":{"type":"string","enum":["human","agent","projection","derived"]},
+            "source_kind":{"type":"string","enum":["human","agent","projection","derived"],"default":"agent"},
             "labels":labels,
             "memories":memories,
             "relations":relations,
@@ -121,7 +123,7 @@ pub(crate) fn write_memory_schema() -> Value {
                 "type":"array","minItems":1,
                 "description":"Attach English search renderings or judged search expansions to existing memories, separately from memories. KMP reads the stored text, kind, coordinates and metadata first and preserves them. Duplicate targets or an invalid rendering reject the whole packet.",
                 "items":{"type":"object","additionalProperties":false,"required":["ref"],
-                    "anyOf":[{"required":["summary_en"]},{"required":["search_expansions"]}],
+                    "allOf":[tagged("write.summary-content", json!({"anyOf":[{"required":["summary_en"]},{"required":["search_expansions"]}]}))],
                     "properties":{
                     "ref":string_schema("Existing memory in this about. The stored source is not replaced."),
                     "summary_en":string_schema("English search rendering of the stored source, retaining its numbers, identifiers and acronyms."),
@@ -130,43 +132,54 @@ pub(crate) fn write_memory_schema() -> Value {
             },
             "read_context":read_context_schema(),
             "review_token":string_schema("Returned neighborhood token, bound to this exact packet and context. Prefer the returned continuation. Omit on a new or corrected proposal; stale tokens refresh context without writing."),
-            "idempotency_key":string_schema("One stable key per logical packet. Exact retries keep refs; a different payload must not reuse an accepted key. Omit to derive the key from the payload."),
+            "idempotency_key":string_schema("One stable key per logical packet. Exact retries keep refs; a different payload must not reuse an accepted key. Keys are global to the store, not per about. Omit to derive the key from the payload."),
             "options":{
                 "type":"object","additionalProperties":false,
                 "properties":{
                     "dry_run":{"type":"boolean","description":"Explicit preview against the selected store, without commit or reservation. Defaults to false: rich links still receive neighborhood review before a later commit. Requires an available backend."},
-                    "strict":{"type":"boolean","description":"Defaults to true. Requires evidence, justified supported relations, and valid search renderings; never bypasses neighborhood review; refuses resembling new labels unless confirmed."},
+                    "strict":{"type":"boolean","default":true,"description":"Defaults to true. Requires evidence, justified supported relations, and valid search renderings; never bypasses neighborhood review; refuses resembling new labels unless confirmed."},
                     "labels_new":{"type":"array","items":{"type":"string"},"description":"Keys whose new values are intentional after consulting the catalogue. Every named key must occur in the packet; the kernel neither renames nor merges a label silently."},
                     "sequence":{"type":"integer","minimum":1,"description":"Optional first sequence, advanced per record. Omit for the next free sequence in each coordinate. Not used for search_summaries, which preserve stored coordinates."}
                 }
             }
         },
-        "oneOf":[{"required":["memories"]},{"required":["search_summaries"]},{"required":["relations"]}],
         "allOf":[
-            {
+            tagged("write.one-form", json!({"oneOf":[{"required":["memories"]},{"required":["search_summaries"]},{"required":["relations"]}]})),
+            tagged("write.labels", json!({
                 "if":{"required":["memories"]},
-                "then":{
-                    "anyOf":[{"required":["labels"]},{"properties":{"memories":{"items":{"required":["labels"]}}}}],
-                    "if":{"not":{"required":["options"],"properties":{"options":{"required":["strict"],"properties":{"strict":{"const":false}}}}}},
-                    "then":{"properties":{"memories":{"items":{"required":["evidence"]}}}}
-                }
-            },
-            {
+                "then":{"anyOf":[{"required":["labels"]},{"properties":{"memories":{"items":{"required":["labels"]}}}}]}
+            })),
+            tagged("write.evidence", json!({
+                "if":{"required":["memories"],"not":{"required":["options"],"properties":{"options":{"required":["strict"],"properties":{"strict":{"const":false}}}}}},
+                "then":{"properties":{"memories":{"items":{"required":["evidence"]}}}}
+            })),
+            tagged("write.summaries-form", json!({
                 "if":{"required":["search_summaries"]},
                 "then":{
                     "properties":{"options":{"not":{"anyOf":[{"required":["sequence"]},{"required":["labels_new"]}]}}},
                     "not":{"anyOf":[{"required":["labels"]},{"required":["occurred_at"]},{"required":["valid_from"]},{"required":["valid_until"]},{"required":["rank"]},{"required":["read_context"]},{"required":["review_token"]}]}
                 }
-            },
-            {
+            })),
+            tagged("write.relations-form", json!({
                 "if":{"required":["relations"]},
                 "then":{
                     "properties":{"options":{"not":{"anyOf":[{"required":["sequence"]},{"required":["labels_new"]}]}}},
                     "not":{"anyOf":[{"required":["labels"]},{"required":["occurred_at"]},{"required":["valid_from"]},{"required":["valid_until"]},{"required":["rank"]}]}
                 }
-            }
+            }))
         ]
     })
+}
+
+/// A link whose relation admits more than one class names its class.
+fn link_class_rule() -> Value {
+    tagged(
+        "write.link-class",
+        json!({
+            "if":{"required":["rel"],"properties":{"rel":{"enum":writer_relations_requiring_class()}}},
+            "then":{"required":["class"]}
+        }),
+    )
 }
 
 pub(crate) fn read_context_schema() -> Value {

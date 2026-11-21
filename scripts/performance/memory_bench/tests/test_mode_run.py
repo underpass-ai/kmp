@@ -100,6 +100,13 @@ class ModesTest(unittest.TestCase):
         self.assertFalse(sections.applicable(verdict('neutral', parity=False)))
         self.assertTrue(sections.applicable(verdict('regresion', n=0)))
 
+    def test_unscored_journeys_are_counted_per_arm(self):
+        # report_section fails a section with any: a partial score is not a result.
+        report = {'headlines': [{'arm': 'baseline', 'errors': 16}, {'arm': 'candidate', 'errors': 16},
+                                {'arm': 'candidate', 'errors': 0}]}
+        self.assertEqual(sections.unscored_journeys(report), {'baseline': 16, 'candidate': 16})
+        self.assertEqual(sections.unscored_journeys({'headlines': [{'arm': 'baseline', 'errors': 0}]}), {})
+
 
 class RealSectionTest(unittest.TestCase):
     def test_strata_take_the_first_questions_by_id(self):
@@ -230,6 +237,15 @@ class FakeRunner:
 
 
 class GitBuildTest(unittest.TestCase):
+    def test_a_ref_that_declares_the_hooks_feature_is_built_with_it(self):
+        with tempfile.TemporaryDirectory() as folder:
+            self.assertEqual(git_build.build_command(folder), git_build.BUILD_COMMAND)
+            manifest = Path(folder) / git_build.HOOKS_MANIFEST
+            manifest.parent.mkdir(parents=True)
+            manifest.write_text('[features]\neval-hooks = []\n', encoding='utf-8')
+            self.assertEqual(git_build.build_command(folder),
+                             git_build.BUILD_COMMAND + ('--features', 'eval-hooks'))
+
     def test_a_git_ref_is_built_once_in_a_removed_worktree_with_provenance(self):
         with tempfile.TemporaryDirectory() as folder:
             layout = public_layout(Path(folder) / 'cache')

@@ -2,11 +2,13 @@
 //! reads, held to the byte ceilings the surface publishes. One mapper per
 //! response family; the budgets trim after the mapper has spoken.
 
+mod argument_slot;
 pub(crate) mod condense_projection;
 pub(crate) mod ingest_projection;
 pub(crate) mod inspect_budget;
 pub(crate) mod inspect_projection;
 mod memory_nodes_projection;
+mod proof_compaction;
 mod recall_budget_audit;
 pub(crate) mod recall_error;
 pub(crate) mod recall_projection;
@@ -36,9 +38,9 @@ pub(crate) use inspect_projection::inspect_from_response;
 pub(crate) use memory_nodes_projection::memory_nodes_from_response;
 #[cfg(test)]
 pub(crate) use recall_projection::enforce_recall_output_budget;
-pub(crate) use recall_projection::{
-    ask_from_response, try_enforce_recall_output_budget, wake_from_response,
-};
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
+pub(crate) use recall_projection::try_enforce_recall_output_budget;
+pub(crate) use recall_projection::{ask_from_response, wake_from_response};
 pub(crate) use relabel_projection::relabel_from_response;
 pub(crate) use relate_projection::relate_from_response;
 pub(crate) use summaries_audit_page::summaries_audit_page;

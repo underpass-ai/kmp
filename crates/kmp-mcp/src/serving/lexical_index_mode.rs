@@ -15,12 +15,15 @@ use crate::serving::environment::{LEXICAL_INDEX_ENV, optional_env_string};
 pub(crate) enum LexicalIndexMode {
     /// The sidecar is never opened, followed or compared.
     Off,
-    /// Maintained beside the store and compared with every ask.
+    /// Maintained beside the store and compared with every ask. A
+    /// measurement mode: only debug and `eval-hooks` builds can select it.
+    #[cfg_attr(not(any(debug_assertions, feature = "eval-hooks")), allow(dead_code))]
     Shadow,
     /// Answers the asks it holds from the postings (P13).
     On,
     /// Answers as before, also answers from the postings, and logs whether
-    /// the two agree.
+    /// the two agree. A measurement mode, like [`Self::Shadow`].
+    #[cfg_attr(not(any(debug_assertions, feature = "eval-hooks")), allow(dead_code))]
     Verify,
 }
 
@@ -29,31 +32,30 @@ impl LexicalIndexMode {
     /// knows.
     pub(crate) const DEFAULT: Self = Self::On;
 
-    /// The mode a value of `KMP_LEXICAL_INDEX` names, if any.
+    /// The mode a value of `KMP_LEXICAL_INDEX` names, if any: the on/off
+    /// words every switch reads, and the two measurement modes in debug and
+    /// `eval-hooks` builds only.
     pub(crate) fn named(value: &str) -> Option<Self> {
+        if let Some(on) = crate::environment::on_off::parse_on_off(value) {
+            return Some(if on { Self::On } else { Self::Off });
+        }
         match value.trim().to_ascii_lowercase().as_str() {
-            "off" => Some(Self::Off),
+            #[cfg(any(debug_assertions, feature = "eval-hooks"))]
             "shadow" => Some(Self::Shadow),
-            "on" => Some(Self::On),
+            #[cfg(any(debug_assertions, feature = "eval-hooks"))]
             "verify" => Some(Self::Verify),
             _ => None,
         }
     }
 
-    /// The mode `KMP_LEXICAL_INDEX` asks for; an unknown value is reported
-    /// and the default stands.
+    /// The mode `KMP_LEXICAL_INDEX` asks for. An unknown value never gets
+    /// here: startup refuses it ([`crate::environment::check_environment`]),
+    /// and a caller that skipped the check gets the default.
     pub(crate) fn from_env() -> Self {
-        let Some(value) = optional_env_string(LEXICAL_INDEX_ENV) else {
-            return Self::DEFAULT;
-        };
-        Self::named(&value).unwrap_or_else(|| {
-            tracing::warn!(
-                target: "kmp_mcp::lexical_index",
-                value = %value,
-                "unknown KMP_LEXICAL_INDEX; the lexical index keeps its default"
-            );
-            Self::DEFAULT
-        })
+        optional_env_string(LEXICAL_INDEX_ENV)
+            .as_deref()
+            .and_then(Self::named)
+            .unwrap_or(Self::DEFAULT)
     }
 
     /// Whether the sidecar is opened at all.
@@ -89,7 +91,13 @@ mod tests {
         );
         assert!(LexicalIndexMode::Shadow.is_open());
         assert_eq!(LexicalIndexMode::named("off"), Some(LexicalIndexMode::Off));
+        assert_eq!(LexicalIndexMode::named("0"), Some(LexicalIndexMode::Off));
+        assert_eq!(
+            LexicalIndexMode::named("FALSE"),
+            Some(LexicalIndexMode::Off)
+        );
         assert_eq!(LexicalIndexMode::named("on"), Some(LexicalIndexMode::On));
+        assert_eq!(LexicalIndexMode::named("1"), Some(LexicalIndexMode::On));
         assert!(LexicalIndexMode::On.reads_postings() && !LexicalIndexMode::On.shadows());
         assert!(LexicalIndexMode::Verify.reads_postings());
         assert_eq!(LexicalIndexMode::named("maybe"), None);

@@ -42,7 +42,7 @@ from ...token_harness.native.transport import TIMEOUT_SECONDS
 from .. import BENCH_VERSION
 from ..domain import cachekey, jsonl
 from ..domain.errors import BenchError
-from ..domain.question import questions_digest
+from ..domain.question import calls_digest, questions_digest
 from ..domain.run_manifest import RunManifest
 from ..domain.run_record import MAX_CALLS_LIMIT, RUN_SCHEMA
 from ..runtime import probes
@@ -132,7 +132,8 @@ class _ArmRun:
         self.binary_sha = binary_sha
         self.key = {'binary_sha256': binary_sha, 'config_digest': arm.variant.config_digest(),
                     'store_key': arm.store.key, 'questions_digest': questions_digest(plan.questions),
-                    'mode': plan.mode, 'bench_version': BENCH_VERSION, 'nonce': plan.nonce}
+                    'mode': plan.mode, 'bench_version': BENCH_VERSION, 'nonce': plan.nonce,
+                    'calls_digest': calls_digest(plan.questions, plan.max_bytes, plan.default_budget)}
         self.run_id = cachekey.result_key(**self.key)
         self.final = layout.run(self.run_id)
         self.staging = layout.require_inside(layout.scratch() / f'{self.run_id}.partial')

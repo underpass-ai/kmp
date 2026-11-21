@@ -29,14 +29,22 @@ impl ProposeLabels<'_> {
             .iter()
             .filter_map(
                 |(question, (reference, key))| match response.answers.get(question) {
+                    // Gated on the chosen value's probability, never on
+                    // `confidence`, which rescales it by the number of values.
                     Some(JudgementAnswer::Choice {
-                        choice, confidence, ..
-                    }) if choice != NONE && *confidence >= PARTNER_AT => Some(ProposedLabel {
-                        reference: reference.clone(),
-                        key: key.clone(),
-                        value: choice.clone(),
-                        confidence: *confidence,
-                    }),
+                        choice,
+                        probabilities,
+                        confidence,
+                    }) if choice != NONE
+                        && probabilities.get(choice).copied().unwrap_or(0.0) >= PARTNER_AT =>
+                    {
+                        Some(ProposedLabel {
+                            reference: reference.clone(),
+                            key: key.clone(),
+                            value: choice.clone(),
+                            confidence: *confidence,
+                        })
+                    }
                     _ => None,
                 },
             )
@@ -60,6 +68,7 @@ mod tests {
             kind: String::new(),
             text: format!("text {reference}"),
             occurred: None,
+            occurred_at: None,
             labels: labels
                 .iter()
                 .map(|(key, value)| ((*key).into(), (*value).into()))

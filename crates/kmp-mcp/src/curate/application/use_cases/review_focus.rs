@@ -4,16 +4,16 @@ use crate::curate::application::focus_plan::related_request;
 use crate::curate::application::jev_usage::JevUsage;
 use crate::curate::application::judgement_plan::pair_request;
 use crate::curate::application::lifecycle_plan::{
-    PROPOSED_REL, lifecycle_candidates, lifecycle_request, proposed_by_choice,
+    PROPOSED_REL, lifecycle_candidates, lifecycle_reading, lifecycle_request,
 };
+use crate::curate::application::pair_reading::{chosen_probability, typed_pair};
 use crate::curate::domain::candidate_pair::CandidatePair;
 use crate::curate::domain::curate_finding::CurateFinding;
-use crate::curate::domain::curate_thresholds::{NONE, PARTNER_AT};
-use crate::curate::domain::jev_verdict::JevVerdict;
 use crate::curate::domain::lifecycle_mode::LifecycleMode;
 use crate::curate::domain::pair_origin::PairOrigin;
 use crate::serving::judgement_answer::JudgementAnswer;
 use crate::serving::judgement_failure::JudgementFailure;
+use crate::serving::noul_reading::NoulReading;
 use crate::serving::ports::judgement_model::JudgementModel;
 
 /// Most partners Jev proposes for one focused fact.
@@ -100,23 +100,19 @@ impl ReviewFocus<'_> {
                 .as_ref()
                 .and_then(|response| response.answers.get(&format!("l{n}")))
             {
-                Some(JudgementAnswer::Choice {
-                    choice,
-                    probabilities,
-                    confidence,
-                }) => match proposed_by_choice(choice) {
-                    Some(rel) => CurateFinding::Missing {
+                Some(answer) => match judged
+                    .as_ref()
+                    .and_then(|response| lifecycle_reading(response, n, answer))
+                {
+                    Some((rel, verdict)) => CurateFinding::Missing {
                         pair,
                         suggested_rel: Some(rel.to_string()),
-                        verdict: Some(JevVerdict {
-                            choice: choice.clone(),
-                            probabilities: probabilities.clone(),
-                            confidence: *confidence,
-                        }),
+                        verdict: Some(verdict),
                     },
+                    // Not the same thing, or not settled: withdrawn.
                     None => continue,
                 },
-                _ => CurateFinding::Missing {
+                None => CurateFinding::Missing {
                     pair,
                     suggested_rel: Some(PROPOSED_REL.to_string()),
                     verdict: None,
@@ -186,7 +182,9 @@ impl ReviewFocus<'_> {
                             .iter()
                             .filter(|(_, (own, _))| own == focused)
                             .filter_map(|(key, (_, other))| match response.answers.get(key) {
-                                Some(JudgementAnswer::Noul { yes }) if *yes >= PARTNER_AT => {
+                                Some(JudgementAnswer::Noul { yes })
+                                    if NoulReading::of(*yes) == NoulReading::Yes =>
+                                {
                                     Some((*yes, other.clone()))
                                 }
                                 _ => None,
@@ -229,21 +227,12 @@ impl ReviewFocus<'_> {
                     let mut missing = pairs
                         .into_iter()
                         .enumerate()
-                        .filter_map(|(n, pair)| match typed.answers.get(&format!("t{n}")) {
-                            Some(JudgementAnswer::Choice {
-                                choice,
-                                probabilities,
-                                confidence,
-                            }) if choice != NONE => Some(CurateFinding::Missing {
+                        .filter_map(|(n, pair)| {
+                            typed_pair(&typed, n).map(|verdict| CurateFinding::Missing {
                                 pair,
-                                suggested_rel: Some(choice.clone()),
-                                verdict: Some(JevVerdict {
-                                    choice: choice.clone(),
-                                    probabilities: probabilities.clone(),
-                                    confidence: *confidence,
-                                }),
-                            }),
-                            _ => None,
+                                suggested_rel: Some(verdict.choice.clone()),
+                                verdict: Some(verdict),
+                            })
                         })
                         .collect::<Vec<_>>();
                     missing.sort_by(|left, right| confidence(right).total_cmp(&confidence(left)));
@@ -260,12 +249,15 @@ impl ReviewFocus<'_> {
     }
 }
 
+/// What orders the missing relations: the chosen type's probability, never
+/// `confidence`, which rescales it by how many types were offered (a pair
+/// across abouts is offered two).
 fn confidence(finding: &CurateFinding) -> f64 {
     match finding {
         CurateFinding::Missing {
             verdict: Some(verdict),
             ..
-        } => verdict.confidence,
+        } => chosen_probability(verdict),
         _ => 0.0,
     }
 }
@@ -275,6 +267,7 @@ mod tests {
     use super::*;
     use std::sync::Mutex;
 
+    use super::super::keyed_nouls::KeyedNouls;
     use super::super::scripted_judgement::Scripted;
     use crate::curate::domain::pair_origin::PairOrigin;
     use crate::curate::domain::{curate_fact::CurateFact, declared_link::DeclaredLink};
@@ -286,6 +279,7 @@ mod tests {
             kind: String::new(),
             text: format!("text {reference}"),
             occurred: None,
+            occurred_at: None,
             labels: Vec::new(),
         };
         CurateMaterial {
@@ -368,6 +362,7 @@ mod tests {
             kind: kind.into(),
             text: text.into(),
             occurred: None,
+            occurred_at: None,
             labels: Vec::new(),
         };
         CurateMaterial {
@@ -423,14 +418,18 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn under_jev_a_lifecycle_pair_is_retyped_or_withdrawn_by_its_reading() {
-        let run = |choice: &'static str| async move {
+    async fn under_jev_a_lifecycle_pair_is_retyped_or_withdrawn_by_its_companion() {
+        let run = |same: f64| async move {
             let focus = ["new".to_string()];
-            let model = Scripted {
-                noul: 0.0,
-                choice,
-                confidence: 0.9,
-                calls: Mutex::new(0),
+            // Partner nouls read no; the lifecycle companion (`s<n>`) reads `same`.
+            let model = KeyedNouls {
+                inner: Scripted {
+                    noul: 0.0,
+                    choice: "later_state",
+                    confidence: 0.9,
+                    calls: Mutex::new(0),
+                },
+                yes: vec![("s", same)],
             };
             let review = ReviewFocus {
                 judgement: Some(&model),
@@ -438,16 +437,24 @@ mod tests {
             }
             .run(lifecycle_material(), &focus, 12)
             .await;
-            let calls = *model.calls.lock().expect("calls");
+            let calls = *model.inner.calls.lock().expect("calls");
             (lifecycle_findings(&review), calls)
         };
-        let (updated, calls) = run("update_state").await;
+        let (updated, calls) = run(0.9).await;
         assert_eq!(
             updated,
             [("old".to_string(), Some("updates_state".to_string()))]
         );
         assert_eq!(calls, 2, "the partner round and the lifecycle reading");
-        let (novel, _) = run("novel").await;
-        assert!(novel.is_empty(), "a novel pair is withdrawn");
+        let (different, _) = run(0.1).await;
+        assert!(different.is_empty(), "not the same thing: withdrawn");
+        let (upper, _) = run(0.6).await;
+        assert_eq!(
+            upper,
+            [("old".to_string(), Some("updates_state".to_string()))],
+            "unsettled at or above the owner's 0.5 line: proposed"
+        );
+        let (lower, _) = run(0.4).await;
+        assert!(lower.is_empty(), "unsettled below 0.5: withdrawn");
     }
 }

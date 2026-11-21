@@ -1,6 +1,6 @@
 use serde_json::{Value, json};
 
-use crate::contract::schema::definition::tool_definition_with_output;
+use crate::contract::schema::definition::{ToolEffect, tool_definition_with_output};
 #[allow(unused_imports)]
 use crate::contract::schema::primitives::*;
 #[allow(unused_imports)]
@@ -13,8 +13,11 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_relabel",
-        true,
-        "Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing.",
+        ToolEffect::Write {
+            destructive: true,
+            idempotent: true,
+        },
+        "Add or take off the labels of one stored memory without rewriting its text.",
         relabel_schema(),
         relabel_output_schema(),
     )
@@ -28,11 +31,12 @@ pub(crate) fn relabel_schema() -> Value {
         "properties": {
             "about": string_schema("The about the memory belongs to."),
             "ref": string_schema("The memory to relabel: an entry ref inside this about, as a read returned it, byte for byte. Never the about anchor, an evidence id or a dimension id."),
-            "actor": string_schema("Human, agent, or component making the change."),
+            "actor": string_schema("Human, agent, or component making the change. Omitted: the MCP client name from initialize, or mcp-client."),
             "observed_at": string_schema("RFC3339 timestamp in UTC for the change's provenance. It is kept on the edge each added label makes and in the event log; it never becomes the memory's time. A stamp more than five minutes ahead of the kernel's clock is refused."),
             "source_kind": {
                 "type": "string",
-                "enum": ["human", "agent", "projection", "derived"]
+                "enum": ["human", "agent", "projection", "derived"],
+                "default": "agent"
             },
             "add": {
                 "type": "object",
@@ -45,13 +49,14 @@ pub(crate) fn relabel_schema() -> Value {
                 "description": "Labels to remove as key-to-array values. Only the named memberships change; a missing membership or removal of the last label is refused."
             },
             "why": string_schema("Why the labels change, in one sentence a later reader can check. Kept with the change and on every edge it adds."),
-            "idempotency_key": string_schema("Optional stable idempotency key. Omit to generate one from the arguments."),
+            "idempotency_key": string_schema("Optional stable idempotency key. Omit to generate one from the arguments. Keys are global to the store, not per about."),
             "options": {
                 "type": "object",
                 "additionalProperties": false,
                 "properties": {
                     "dry_run": {
                         "type": "boolean",
+                        "default": false,
                         "description": "When true, validate the relabel against the store — the memory, its labels, the catalogue — and write nothing. Defaults to false: the call commits."
                     },
                     "labels_new": {
@@ -61,6 +66,7 @@ pub(crate) fn relabel_schema() -> Value {
                     },
                     "strict": {
                         "type": "boolean",
+                        "default": true,
                         "description": "Defaults to true: a new label that resembles one the about holds is refused, naming both. Set false to write it and be told in `labels.resembling`."
                     }
                 }

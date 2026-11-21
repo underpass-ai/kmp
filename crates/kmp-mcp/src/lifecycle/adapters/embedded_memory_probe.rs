@@ -38,7 +38,8 @@ pub(crate) fn store_file_on_disk(data_dir: &Path) -> Option<PathBuf> {
 
 pub(crate) fn describe_data_dir(resolved: &ResolvedDataDir) -> LifecycleFinding {
     let path = resolved.path();
-    let layout = kmp_embedded::validate_store_layout(path);
+    let layout = kmp_embedded::validate_store_layout(path)
+        .and_then(|stamped| kmp_embedded::refuse_vanished_store_database(path).map(|()| stamped));
     let saved = kmp_embedded::memory_selection::saved_selection();
     let ignored_selection_error = saved
         .as_ref()
@@ -90,23 +91,38 @@ pub(crate) fn describe_data_dir(resolved: &ResolvedDataDir) -> LifecycleFinding 
             .with_detail(MEMORY_SELECTION_REPAIR);
     }
 
-    match layout {
+    match &layout {
         Ok(Some(engine)) => {
             finding = finding.with_detail(format!("store format: {}", engine.format_version()));
         }
         Ok(None) => finding = finding.with_detail("store format: not stamped yet"),
         Err(_) => {}
     }
-    match engine_on_disk(path) {
-        Some(engine) => finding = finding.with_detail(format!("engine on disk: {engine}")),
-        None => match store_file_on_disk(path) {
-            Some(artifact) => {
-                finding = finding
-                    .with_detail("storage artifact on disk: unsupported; source left untouched")
-                    .with_detail(format!("artifact: {}", artifact.display()));
-            }
-            None => finding = finding.with_detail("no store yet — it is created on first write"),
-        },
+    // A layout that validates but failed anyway lost its database: the
+    // refusal above already says what is (not) on disk, and one cause gets
+    // one account of it.
+    let lost_database = layout.is_err() && kmp_embedded::validate_store_layout(path).is_ok();
+    // A retired format (1 or 2) is named by the refusal for what it is; its
+    // files are not this engine's sqlite, whatever they are called.
+    let retired_format = layout.is_err()
+        && kmp_embedded::read_stamped_version(path).is_ok_and(|version| version < 3);
+    if !lost_database && !retired_format {
+        match engine_on_disk(path) {
+            Some(engine) => finding = finding.with_detail(format!("engine on disk: {engine}")),
+            None => match store_file_on_disk(path) {
+                Some(artifact) => {
+                    finding = finding
+                        .with_detail("storage artifact on disk: unsupported; source left untouched")
+                        .with_detail(format!("artifact: {}", artifact.display()));
+                }
+                // Only a store that opens is created on first write; after a
+                // refusal this line would contradict the failure above it.
+                None if layout.is_ok() => {
+                    finding = finding.with_detail("no store yet — it is created on first write");
+                }
+                None => {}
+            },
+        }
     }
     if let Some(bundle) = kmp_embedded::project_bundle_path(resolved) {
         finding = finding.with_detail(format!(
@@ -126,6 +142,22 @@ pub(crate) fn describe_data_dir(resolved: &ResolvedDataDir) -> LifecycleFinding 
 }
 
 pub(crate) fn data_dir_finding() -> (LifecycleFinding, Option<ResolvedDataDir>) {
+    // Under a remote kernel the local store is not this session's memory.
+    // Reporting it "ok" beside a gRPC backend read as all clear (E14).
+    if !crate::environment::local_backend_selected() {
+        return (
+            LifecycleFinding::new(
+                DiagnosticSeverity::Ok,
+                "not on this machine: the remote gRPC kernel holds this session's memory",
+            )
+            .with_detail(
+                "the commands that read the local store (export, import, document, snapshot, \
+                 summaries, memories, demo, viewer, consolidation) refuse to run; unset \
+                 KMP_MCP_BACKEND and KMP_KERNEL_GRPC_ENDPOINT to use this machine's store",
+            ),
+            None,
+        );
+    }
     // Locate, never prepare: a report on where memory lives must not create
     // it. `info` and `doctor` are run from wherever the user is standing.
     match kmp_embedded::locate_data_dir_from_env() {
@@ -210,6 +242,59 @@ mod tests {
             );
             assert!(store.exists(), "diagnosis must preserve the memory file");
         }
+    }
+    #[test]
+    fn a_refused_store_never_adds_a_line_that_contradicts_the_refusal() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let resolved = ResolvedDataDir::Explicit(dir.path().to_path_buf());
+        std::fs::write(kmp_embedded::format_version_path(dir.path()), "4\n").expect("stamp");
+        std::fs::write(dir.path().join("telemetry-salt"), b"salt").expect("proof");
+
+        // Lost database: the refusal is the whole account.
+        let lost = describe_data_dir(&resolved);
+        assert_eq!(lost.severity(), DiagnosticSeverity::Fail, "{lost:?}");
+        assert!(
+            lost.detail()
+                .iter()
+                .any(|line| line.contains("lost its database")),
+            "{lost:?}"
+        );
+        assert!(
+            lost.detail()
+                .iter()
+                .all(|line| !line.contains("no store yet") && !line.contains("engine on disk")),
+            "{lost:?}"
+        );
+
+        // An unsupported stamp with nothing beside it is not "created on
+        // first write": it is refused.
+        std::fs::write(kmp_embedded::format_version_path(dir.path()), "1\n").expect("stamp");
+        let refused = describe_data_dir(&resolved);
+        assert_eq!(refused.severity(), DiagnosticSeverity::Fail, "{refused:?}");
+        assert!(
+            refused
+                .detail()
+                .iter()
+                .all(|line| !line.contains("no store yet")),
+            "{refused:?}"
+        );
+
+        // A format-1 store whose directory still holds a SQLite-named file
+        // is a redb store, not this engine's sqlite.
+        std::fs::create_dir_all(dir.path().join("store")).expect("store dir");
+        std::fs::write(dir.path().join("store/kernel.sqlite3"), b"old").expect("file");
+        let retired = describe_data_dir(&resolved);
+        assert!(
+            retired
+                .detail()
+                .iter()
+                .all(|line| !line.contains("engine on disk")),
+            "{retired:?}"
+        );
+        assert!(
+            retired.detail().iter().any(|line| line.contains("redb")),
+            "{retired:?}"
+        );
     }
     #[test]
     fn an_unknown_storage_artifact_is_preserved_without_naming_an_engine() {

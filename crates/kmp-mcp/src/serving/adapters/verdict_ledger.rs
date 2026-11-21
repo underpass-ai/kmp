@@ -212,10 +212,56 @@ mod tests {
         assert_eq!(retire_superseded(&book, &[at(3)]).expect("retire"), 2);
         let current = VerdictKey::of("m", at(3), &question, &state);
         assert_eq!(book.read(&[current]).expect("read"), vec![Some(verdict)]);
+    }
+
+    #[test]
+    fn the_sites_rewritten_to_the_guide_drop_their_first_verdicts_and_the_others_keep_theirs() {
+        let dir = tempfile::tempdir().expect("dir");
+        let book =
+            SqliteVerdictBook::open(&dir.path().join(VERDICT_BOOK_FILE), 1 << 20).expect("book");
+        let question = JudgementQuestion::Noul {
+            instructions: json!("q"),
+        };
+        let state = StateDigest::of(&json!("s"));
+        let verdict =
+            Verdict::of(&question, &JudgementAnswer::Noul { yes: 0.5 }, 1, 1).expect("fits");
+        let first = |site: JudgementSite| {
+            VerdictKey::of(
+                "m",
+                VerdictTemplate {
+                    version: 1,
+                    ..site.template()
+                },
+                &question,
+                &state,
+            )
+        };
+        let sites = [
+            JudgementSite::Rerank,
+            JudgementSite::Precheck,
+            JudgementSite::WakeFocus,
+            JudgementSite::Labels,
+            JudgementSite::CrossLanguage,
+        ];
+        book.record(
+            &sites
+                .iter()
+                .map(|site| (first(*site), verdict.clone()))
+                .collect::<Vec<_>>(),
+        )
+        .expect("record");
         assert_eq!(
             retire_superseded(&book, &JudgementSite::ALL.map(JudgementSite::template))
-                .expect("every site is at its first version"),
-            0
+                .expect("retire"),
+            2,
+            "rerank and precheck are at version 2"
         );
+        let held = book
+            .read(&sites.map(first))
+            .expect("read")
+            .iter()
+            .map(Option::is_some)
+            .collect::<Vec<_>>();
+        assert_eq!(held, [false, false, true, true, true]);
     }
 }

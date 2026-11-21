@@ -9,7 +9,7 @@
 use std::time::Duration;
 
 use crate::http::{HttpRequest, HttpResponse};
-use crate::query_params::label_selector_params;
+use crate::query_params::{label_selector_params, optional_numeric_param};
 use crate::view::ViewRegistry;
 use crate::view::adapters::view_error_status::view_error_response;
 use crate::view::application::commands::{ApplyIntentCommand, OpenViewCommand};
@@ -29,10 +29,11 @@ const VIEW_POLL_PATIENCE: Duration = Duration::from_secs(20);
 pub(crate) async fn view_get(request: &HttpRequest) -> HttpResponse {
     let id = request.param("id").unwrap_or(DEFAULT_VIEW_ID).to_string();
     let registry = ViewRegistry::shared();
-    let state = match request
-        .param("since")
-        .and_then(|since| since.parse::<u64>().ok())
-    {
+    let since = match optional_numeric_param::<u64>(request, "since") {
+        Ok(since) => since,
+        Err(refusal) => return refusal,
+    };
+    let state = match since {
         Some(since) => {
             registry
                 .changed_since(Some(&id), since, VIEW_POLL_PATIENCE)
@@ -174,11 +175,27 @@ mod tests {
             host: None,
             cookie: None,
             accept_encoding: None,
+            origin: None,
+            fetch_site: None,
         }
     }
 
     fn body(response: HttpResponse) -> serde_json::Value {
         serde_json::from_slice(response.body.as_slice()).expect("a JSON body")
+    }
+
+    #[tokio::test]
+    async fn a_long_poll_with_a_revision_that_is_not_a_number_is_refused() {
+        view_open(&request(
+            "/api/view/open",
+            &[("id", "routes-since"), ("about", "about:since")],
+        ));
+        let refused = view_get(&request(
+            "/api/view",
+            &[("id", "routes-since"), ("since", "abc")],
+        ))
+        .await;
+        assert_eq!(refused.status, 400);
     }
 
     #[tokio::test]

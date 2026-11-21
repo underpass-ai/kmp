@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
-# KMP Embedded Edition installer: drops the kmp-mcp binary into
-# ~/.local/bin and prints the per-host registration snippets.
+# KMP installer: drops the kmp-mcp binary into ~/.local/bin, then points at
+# `kmp-mcp setup`, which installs the plugin into each host.
 #
 #   curl --proto '=https' --tlsv1.2 -sSfL https://raw.githubusercontent.com/underpass-ai/kmp/main/scripts/install/install.sh | bash
 #
-# Pin a version with:  KMP_VERSION=v0.1.0 ./install.sh
+# Pin a version with:  KMP_VERSION=v<version> ./install.sh
 
 set -euo pipefail
 
@@ -49,16 +49,11 @@ rm -rf "${tmp}"
 echo
 echo "installed: ${INSTALL_DIR}/kmp-mcp (${VERSION})"
 echo
-echo "Register it in your agent host (memory is per-project by default):"
+echo "Connect it to your agent hosts. The KMP plugin owns the MCP registration;"
+echo "do not add a second KMP server by hand."
 echo
-echo "  Claude Code:"
-echo "    claude mcp add kmp --scope user \\"
-echo "      --env KMP_MCP_BACKEND=embedded \\"
-echo "      -- ${INSTALL_DIR}/kmp-mcp"
+echo "    ${INSTALL_DIR}/kmp-mcp setup     # Claude Code, Codex, Hermes and Pi found on PATH"
+echo "    ${INSTALL_DIR}/kmp-mcp doctor    # check the result"
 echo
-echo "  Codex CLI (~/.codex/config.toml):"
-echo "    [mcp_servers.kmp]"
-echo "    command = \"${INSTALL_DIR}/kmp-mcp\""
-echo "    env = { KMP_MCP_BACKEND = \"embedded\" }"
-echo
-echo "Then, inside a session: kmp_wake {\"about\":\"project:<name>\"}"
+echo "Restart each host once afterwards. Plugin marketplace installs and per-host"
+echo "options: https://github.com/${REPO}#install"

@@ -1,6 +1,6 @@
 use serde_json::{Value, json};
 
-use crate::contract::schema::definition::tool_definition_with_output;
+use crate::contract::schema::definition::{ToolEffect, tool_definition_with_output};
 use crate::contract::schema::paging::page_schema;
 #[allow(unused_imports)]
 use crate::contract::schema::primitives::*;
@@ -14,13 +14,13 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_trace",
-        false,
-        "Choose one mode: to connects known destination refs; search.seek discovers compatible evidence paths from a seed without destinations. Never combine their search options. A to array, search or temporal selection enables a bounded shared search through same-about entries. One shortest discovered route per destination by default; search can retain alternatives and follow each relation type in its chosen direction; paths do not establish answer completeness. A single to without search or temporal selection traces equivalence-aware over every stored relation with a bounded bidirectional search; a work cutoff returns no path, the stop in search and an optional search.widen.",
+        ToolEffect::Read,
+        "Find the evidenced path from a stored memory to known destinations (`to`), or the evidence for required roles from that seed (`search.seek`).",
         json!({
             "type": "object",
             "additionalProperties": false,
             "required": ["about", "from"],
-            "oneOf": [{"required":["to"],"not":{"properties":{"search":{"required":["seek"]}},"required":["search"]}}, {"required":["search"],"properties":{"search":{"required":["seek"]}},"not":{"required":["to"]}}],
+            "allOf": [crate::contract::cross_field_rule::tagged("trace.mode", json!({"oneOf": [{"required":["to"],"not":{"properties":{"search":{"required":["seek"]}},"required":["search"]}}, {"required":["search"],"properties":{"search":{"required":["seek"]}},"not":{"required":["to"]}}]})), bidirectional_rule()],
             "properties": {
                 "about": string_schema("Memory anchor for this trace. Refs normally belong to it; a trace may cross a writer-declared same_event_as or same_entity_as link backed by a kmp_relate proposal. Naming another about's ref alone does not create a path."),
                 "from": string_schema("Source memory ref. In live gRPC mode this must resolve to a kernel node id."),
@@ -30,10 +30,8 @@ pub(crate) fn definition() -> Value {
                 "as_of": as_of_schema(),
                 "interval": interval_schema(),
                 "axis": recall_axis_schema(),
-                "role": string_schema("Optional caller role."),
-                "goal": string_schema("Optional trace goal."),
                 "page": page_schema("Whole items: trace, candidates/groups in seek, then proof objects/supports/gaps when requested."),
-                "budget": budget_schema(1_600, 1)
+                "budget": budget_schema(&[BudgetField::MaxBytes])
             }
         }),
         trace_output_schema(),
@@ -163,11 +161,92 @@ fn trace_search_schema() -> Value {
     }
     // Declare field bodies once: clients see two exclusive choices while the
     // existing unknown-argument validator retains recursive property checks.
-    schema["oneOf"] = json!([
-        {"title":"Known destinations", "description":"Requires to at call level. No seek or witness joins.",
-         "propertyNames":{"enum":destinations}},
-        {"title":"Evidence from seed", "description":"Requires seek; no to. Relations and constraints live inside roles.",
-         "required":["seek"], "propertyNames":{"enum":evidence}}
-    ]);
+    schema["allOf"] = json!([crate::contract::cross_field_rule::tagged(
+        "trace.search-mode",
+        json!({"oneOf":[
+            {"title":"Known destinations", "propertyNames":{"enum":destinations}},
+            {"title":"Evidence from seed", "required":["seek"], "propertyNames":{"enum":evidence}}
+        ]})
+    )]);
     schema
+}
+
+/// The `search` options a bidirectional trace takes.
+pub(crate) const BIDIRECTIONAL_SEARCH: [&str; 6] = [
+    "direction",
+    "max_nodes",
+    "max_edges",
+    "max_depth",
+    "max_states",
+    "paths_per_target",
+];
+
+/// `search.direction: bidirectional` is the single-destination trace: each
+/// argument it cannot take is refused by name (`false`), so the refusal says
+/// what to remove instead of restating the whole rule. Its one `to` may come
+/// as a list holding that one ref (`maxItems` binds only a list).
+fn bidirectional_rule() -> Value {
+    let mut search = serde_json::Map::new();
+    for key in trace_search_schema()["properties"]
+        .as_object()
+        .into_iter()
+        .flat_map(|properties| properties.keys())
+        .filter(|key| !BIDIRECTIONAL_SEARCH.contains(&key.as_str()))
+    {
+        search.insert(key.clone(), json!(false));
+    }
+    search.insert("paths_per_target".into(), json!({"maximum": 1}));
+    crate::contract::cross_field_rule::tagged(
+        "trace.bidirectional",
+        json!({
+            "if": {"required": ["search"], "properties": {"search": {
+                "required": ["direction"], "properties": {"direction": {"const": "bidirectional"}}}}},
+            "then": {"properties": {
+                "to": {"maxItems": 1}, "as_of": false, "interval": false, "axis": false,
+                "search": {"properties": search}}}
+        }),
+    )
+}
+
+/// The bidirectional trace with its one `to` sent as a list of that ref,
+/// rewritten with the ref itself: the same call, so the same answer. Any
+/// other call is `None` and goes on unchanged; a list of one without
+/// `bidirectional` stays the bounded search it asks for.
+pub(crate) fn single_destination(arguments: &Value) -> Option<Value> {
+    let bidirectional = arguments["search"]["direction"] == "bidirectional";
+    let [to] = arguments.get("to")?.as_array()?.as_slice() else {
+        return None;
+    };
+    if !bidirectional || !to.is_string() {
+        return None;
+    }
+    let mut rewritten = arguments.clone();
+    rewritten["to"] = to.clone();
+    Some(rewritten)
+}
+
+/// The `search` options only one mode takes: (destinations, evidence).
+pub(crate) fn search_mode_fields() -> (Vec<String>, Vec<String>) {
+    let schema = trace_search_schema();
+    let branch = |index: usize| -> Vec<String> {
+        schema["allOf"][0]["oneOf"][index]["propertyNames"]["enum"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(|name| name.as_str().map(str::to_string))
+            .collect()
+    };
+    let (destinations, evidence) = (branch(0), branch(1));
+    (
+        destinations
+            .iter()
+            .filter(|name| !evidence.contains(name))
+            .cloned()
+            .collect(),
+        evidence
+            .iter()
+            .filter(|name| !destinations.contains(name))
+            .cloned()
+            .collect(),
+    )
 }

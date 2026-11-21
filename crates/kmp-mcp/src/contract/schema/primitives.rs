@@ -51,10 +51,3 @@ pub(crate) fn string_schema(description: &str) -> Value {
         "description": description
     })
 }
-pub(crate) fn integer_schema(description: &str) -> Value {
-    json!({
-        "type": "integer",
-        "minimum": 1,
-        "description": description
-    })
-}

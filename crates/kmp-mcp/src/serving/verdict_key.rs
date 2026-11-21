@@ -37,16 +37,38 @@ impl VerdictKey {
                 field(&mut hasher, canonical(instructions).as_bytes());
                 field(&mut hasher, &0u32.to_be_bytes());
             }
+            // Its own word, so a noul that says what its answers mean never
+            // shares a verdict with the plain one.
+            JudgementQuestion::CriteriaNoul {
+                instructions,
+                criteria,
+            } => {
+                field(&mut hasher, b"criteria_noul");
+                field(&mut hasher, canonical(instructions).as_bytes());
+                field(&mut hasher, &2u32.to_be_bytes());
+                field(&mut hasher, normalized(&criteria.when_true).as_bytes());
+                field(&mut hasher, normalized(&criteria.when_false).as_bytes());
+            }
             JudgementQuestion::Choice {
                 instructions,
                 options,
+                described,
             } => {
                 field(&mut hasher, b"choice");
                 field(&mut hasher, canonical(instructions).as_bytes());
                 let sorted = sorted_options(options);
                 field(&mut hasher, &(sorted.len() as u32).to_be_bytes());
-                for option in sorted {
-                    field(&mut hasher, normalized(&option).as_bytes());
+                for option in &sorted {
+                    field(&mut hasher, normalized(option).as_bytes());
+                }
+                // Described options are a different question; a choice with
+                // none described keeps the key it always had.
+                if !described.is_empty() {
+                    field(&mut hasher, b"described");
+                    for option in &sorted {
+                        let text = described.get(option).map(String::as_str).unwrap_or("");
+                        field(&mut hasher, normalized(text).as_bytes());
+                    }
                 }
             }
             JudgementQuestion::Score {
@@ -165,18 +187,29 @@ mod tests {
             &StateDigest::of(&json!("state")),
         );
         assert_ne!(reference, other_template);
-        let choice = JudgementQuestion::Choice {
-            instructions: json!({"passage": "p", "question": "q"}),
-            options: vec!["a".into(), "b".into()],
-        };
+        let choice = JudgementQuestion::choice(
+            json!({"passage": "p", "question": "q"}),
+            vec!["a".into(), "b".into()],
+        );
         assert_ne!(reference, key("jev-1", &choice, json!("state")));
+        let described = JudgementQuestion::described_choice(
+            json!({"passage": "p", "question": "q"}),
+            vec![("a".into(), "first".into()), ("b".into(), "second".into())],
+        );
+        assert_ne!(
+            key("jev-1", &choice, json!("state")),
+            key("jev-1", &described, json!("state")),
+            "a described choice is another question"
+        );
     }
 
     #[test]
     fn option_order_does_not_matter_but_the_option_set_does() {
-        let choice = |options: &[&str]| JudgementQuestion::Choice {
-            instructions: json!("Which?"),
-            options: options.iter().map(|o| o.to_string()).collect(),
+        let choice = |options: &[&str]| {
+            JudgementQuestion::choice(
+                json!("Which?"),
+                options.iter().map(|o| o.to_string()).collect(),
+            )
         };
         assert_eq!(
             key("m", &choice(&["a", "b"]), json!(null)),
@@ -202,5 +235,22 @@ mod tests {
         let made = key("m", &question, json!("s"));
         assert_eq!(made.as_bytes().len(), VerdictKey::BYTES);
         assert!(made.as_bytes().starts_with(&RERANK.prefix()));
+    }
+
+    #[test]
+    fn a_noul_with_criteria_is_another_question_than_the_plain_one() {
+        let instructions = json!({"passage": "p", "question": "q"});
+        let with = |yes: &str, no: &str| JudgementQuestion::CriteriaNoul {
+            instructions: instructions.clone(),
+            criteria: crate::serving::noul_criteria::NoulCriteria::new(yes, no),
+        };
+        let plain = key("m", &noul(instructions.clone()), json!("s"));
+        let criteria = key("m", &with("states it", "absent"), json!("s"));
+        assert_ne!(plain, criteria);
+        assert_ne!(criteria, key("m", &with("states it", "other"), json!("s")));
+        assert_eq!(
+            criteria,
+            key("m", &with("states  it", "absent"), json!("s"))
+        );
     }
 }

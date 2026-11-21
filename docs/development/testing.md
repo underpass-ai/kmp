@@ -26,7 +26,7 @@ workspace test or retrieval baseline is not a quick prose check.
 cargo fmt --all -- --check
 cargo test --workspace --locked
 python3 scripts/ci/kmp-capability-contract.py
-bash scripts/ci/retrieval-baseline.sh   # kmp_ask against the judged retrieval collection; refresh with RETRIEVAL_BASELINE=write
+bash scripts/ci/retrieval-baseline.sh   # kmp_ask against the judged retrieval collection, then it and the bridge stress cases with the shipped table; refresh with RETRIEVAL_BASELINE=write
 bash scripts/ci/relate-baseline.sh      # kmp_relate against the judged relate collection; refresh with RELATE_BASELINE=write
 bash scripts/ci/jev-baseline.sh         # TypeSafe Jev with KMP on the judged corpus, replayed from its cassette; see jev-evaluation.md
 ```
@@ -129,6 +129,15 @@ bash scripts/ci/embedded-sqlite-gates.sh
 These enforce the installable binary boundary, store conformance, crash
 recovery and concurrent SQLite use.
 
+`embedded-binary-gates.sh` also builds the MCP in release, strips a copy and
+prints its size in bytes in the job log and summary. The size is
+informational: no fixed ceiling blocks a change. Compare the same target,
+toolchain and profile before attributing a difference to a change, and review
+an increase together with the code, dependency and asset changes behind it.
+The build, the MCP's forbidden dependencies, the embedded kernel's
+observability isolation and the presence of SQLite remain hard checks of the
+same script; a failure there needs its cause fixed.
+
 ## Infrastructure integration
 
 The dedicated scripts under `scripts/ci/` own each live dependency test:
@@ -160,8 +169,11 @@ specific deployment authority and credentials supplied for that environment.
 ## Scratch and evidence
 
 Keep disposable test output under the repository's ignored `tmp/` directory
-and remove it after the run. `target/` and `tmp/` are not evidence. Persist
-only deliberate, reviewable artifacts under `artifacts/`.
+and remove it after the run. `target/` and `tmp/` are not evidence. Generated
+evidence (traces, captures, measurement runs) goes in the ignored artifacts
+directory at the repository root: `.gitignore` excludes it and nothing there is
+tracked. A document that cites a measurement states its number with the commit
+and date it was taken on, not a path into that directory.
 
 ## Reviewing agent documentation
 

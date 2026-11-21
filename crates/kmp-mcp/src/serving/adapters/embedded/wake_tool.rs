@@ -10,7 +10,7 @@ use kmp_application::RenderDemand;
 use kmp_embedded::EmbeddedMemoryService;
 use kmp_proto::v1beta1::WakeResponse;
 use kmp_proto_mapping::v1beta1::recall_projection::{project_rendered_wake, render_wake};
-use kmp_proto_mapping::v1beta1::{wake_query_from_proto, wake_response_with_focus, wake_sources};
+use kmp_proto_mapping::v1beta1::{wake_query_from_proto, wake_response_rendering, wake_sources};
 use serde_json::Value;
 use std::sync::Arc;
 
@@ -91,9 +91,13 @@ impl<'a> EmbeddedWakeTool<'a> {
         let max_entries = query.max_entries;
         let temporal = query.temporal.clone();
         let about = query.about.clone();
+        // The packet reads the summary tier of the prose, and the flat
+        // sections only when its live memories leave room for them: those
+        // are rendered then, from the same bundle (`sections`).
+        let render_query = query.clone();
         let result = self
             .service
-            .wake_on_demand(query, self.telemetry.render_demand(RenderDemand::Structure))
+            .wake_on_demand(query, self.telemetry.render_demand(RenderDemand::Summary))
             .await
             .map_err(kernel_error("wake", &about))?;
         self.telemetry
@@ -123,9 +127,18 @@ impl<'a> EmbeddedWakeTool<'a> {
             _ => {}
         }
         let revision = result.read_revision.clone();
-        let mut focused =
-            wake_response_with_focus(&intent, max_entries, result, &temporal, selection.as_ref())
-                .map_err(|status| mapping_error(&status))?;
+        let sections = |bundle: &kmp_domain::KmpBundle| {
+            EmbeddedMemoryService::render_wake(&render_query, bundle, RenderDemand::Structure)
+        };
+        let mut focused = wake_response_rendering(
+            &intent,
+            max_entries,
+            result,
+            &temporal,
+            selection.as_ref(),
+            Some(&sections),
+        )
+        .map_err(|status| mapping_error(&status))?;
         focused.warnings.extend(warnings);
         Ok((focused, revision))
     }

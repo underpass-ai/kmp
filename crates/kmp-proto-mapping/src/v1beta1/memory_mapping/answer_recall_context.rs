@@ -226,6 +226,11 @@ impl AnswerRecallContext {
             .any(|selected_ref| self.lifecycle.is_expired(selected_ref))
         {
             CandidateTemporalState::Expired
+        } else if refs
+            .iter()
+            .any(|selected_ref| self.lifecycle.is_pending(selected_ref))
+        {
+            CandidateTemporalState::NotYetInForce
         } else {
             CandidateTemporalState::CurrentOrUnspecified
         }
@@ -297,11 +302,20 @@ pub(super) fn node_carries_search_summary(node: &kmp_domain::BundleNode) -> bool
 }
 
 pub(super) fn relationship_is_explanatory(relationship: &kmp_domain::BundleRelationship) -> bool {
-    match relationship.explanation().semantic_class() {
+    relation_is_explanatory(relationship.relationship_type(), relationship.explanation())
+}
+
+/// [`relationship_is_explanatory`] over a relation's type and explanation,
+/// however it was read.
+pub(super) fn relation_is_explanatory(
+    relationship_type: &str,
+    explanation: &kmp_domain::RelationExplanation,
+) -> bool {
+    match explanation.semantic_class() {
         RelationSemanticClass::Causal
         | RelationSemanticClass::Motivational
         | RelationSemanticClass::Constraint => true,
-        RelationSemanticClass::Evidential => relationship.relationship_type() != "supports",
+        RelationSemanticClass::Evidential => relationship_type != "supports",
         RelationSemanticClass::Structural | RelationSemanticClass::Procedural => false,
     }
 }

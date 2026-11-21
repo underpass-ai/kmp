@@ -100,26 +100,12 @@ async fn a_reviewed_preview_still_writes_nothing() {
 async fn retained_write_survives_restart_and_preserves_generated_identity() {
     let dir = scratch();
     let server = KernelMcpServer::embedded(dir.path()).expect("server");
-    let requests: Vec<serde_json::Value> = serde_json::from_str(include_str!(
-        "../../../plugins/kmp/guide/guide.requests.json"
-    ))
-    .expect("generated guide requests");
-    for request in requests {
-        call(&server, "kmp_ingest", request).await;
-    }
     let before = events(dir.path()).await;
-    let agent = call(
-        &server,
-        "kmp_guide",
-        json!({"registration_key":"review-writer"}),
-    )
-    .await;
     let mut request = packet();
     request
         .as_object_mut()
         .expect("writer request")
         .remove("idempotency_key");
-    request["context_id"] = agent["context_id"].clone();
     let first = call(&server, "kmp_write_memory", request).await;
     assert!(
         first["next_actions"][0]["arguments"]["continuation"].is_string(),

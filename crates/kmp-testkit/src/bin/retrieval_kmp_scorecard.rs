@@ -281,7 +281,7 @@ async fn run_case(
     if let Some(arm) = arm {
         fs::write(
             data_dir.join("typesafe.json"),
-            r#"{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.13.0","timeout_ms":20000}"#,
+            r#"{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.14.0","timeout_ms":20000}"#,
         )?;
         fs::write(
             data_dir.join("rerank.json"),
@@ -351,8 +351,7 @@ async fn run_case(
         "about": case.about,
         "question": case.question,
         "answer_policy": case.answer_policy,
-        "depth": 3,
-        "budget": {"tokens": 2048, "detail": "balanced", "max_entries": max_entries}
+        "budget": {"detail": "balanced", "max_entries": max_entries}
     });
     if let Some(as_of) = &case.as_of {
         arguments["as_of"] = as_of.clone();

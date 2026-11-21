@@ -1,7 +1,7 @@
 //! Opt-in display sharing cannot alter native evidence, paging or authorization.
 #[path = "support/shared_dependency_checks.rs"]
 mod dependency_checks;
-#[path = "support/guidance_fixture.rs"]
+#[path = "support/route_fixture.rs"]
 mod fixture;
 #[path = "support/reviewed_writer.rs"]
 mod reviewed_writer;
@@ -69,8 +69,7 @@ async fn only_the_opted_in_host_advertises_shared_prose_and_input_calls_do_not_c
 async fn all_nine_native_read_walks_match_inline_packets_after_expansion() {
     let dir = tempfile::tempdir().expect("valid native fixture");
     let mut server = KernelMcpServer::embedded(dir.path()).expect("valid native fixture");
-    let agent = open(&server, "shared-passage-reads").await;
-    let mut write = packet(&agent["context_id"]);
+    let mut write = packet();
     write["memories"][0]["evidence"]=json!("S1 records the route opening on Tuesday, subject to explicit permission; R8 is not included. ".repeat(30));
     write["memories"].as_array_mut().expect("mutable array").push(json!({"id":"decision","kind":"decision","observed_at":"2026-09-09T11:00:00Z","summary":"Schedule delivery on Tuesday.","evidence":"S2 schedules delivery to match S1 route opening. ".repeat(30),"connect_to":[{"ref":"source","rel":"chosen_because","class":"motivational","why":"The route opening motivates Tuesday delivery.","evidence":"S2 explicitly chooses Tuesday because S1 records the route opening. ".repeat(20)}]}));
     let receipt = call(&server, "kmp_write_memory", write.clone()).await;
@@ -105,8 +104,8 @@ async fn all_nine_native_read_walks_match_inline_packets_after_expansion() {
     }
     let mut encoded_pages = 0;
     for (tool, mut args) in queries {
-        args["context_id"] = agent["context_id"].clone();
-        args["budget"] = if tool == "kmp_inspect" {
+        // Each read declares only the budget fields it honours (E11).
+        args["budget"] = if matches!(tool, "kmp_inspect" | "kmp_trace" | "kmp_relate") {
             json!({"max_bytes":512})
         } else {
             json!({"max_bytes":512,"detail":"full"})
@@ -122,14 +121,6 @@ async fn all_nine_native_read_walks_match_inline_packets_after_expansion() {
                 inline["content"][0], shared["content"][0],
                 "primary read notice: {tool}"
             );
-            assert_eq!(
-                shared["content"][0]["text"]
-                    .as_str()
-                    .expect("primary text")
-                    .starts_with("READ_INCOMPLETE:"),
-                guidance(&shared)["signals"]["packet_partial"] == true,
-                "notice and optional guidance agree: {tool}"
-            );
             let body = &shared["structuredContent"];
             assert!(body.to_string().len() <= inline["structuredContent"].to_string().len());
             encoded_pages += usize::from(body.get("passages").is_some());
@@ -143,10 +134,6 @@ async fn all_nine_native_read_walks_match_inline_packets_after_expansion() {
                     inline["structuredContent"]["projection"]["budget"]["used_bytes"].clone();
             }
             assert_eq!(expanded, inline["structuredContent"], "{tool} page {page}");
-            assert_eq!(
-                guidance(&shared)["recommendation"]["action"],
-                guidance(&inline)["recommendation"]["action"]
-            );
             let action = if body.get("projection").is_some() {
                 body["projection"]["next_action"].clone()
             } else {

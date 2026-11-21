@@ -34,15 +34,11 @@ hash, guide revision and nodes read; that is a delivery record, not proof of
 understanding. Missing content means it is not ready yet. Do not execute the
 sample writes while preloading.
 
-The expert registers its own stable `registration_key` through `kmp_guide` and
-keeps the returned random agent name, `agent_id` and `context_id`. Compare the
-returned guide revision with the manifest before advice. A mismatch requires
-matching installed assets and store, using `kmp-guide`; do not silently mix them.
-Local preload does not mark the MCP's per-node `served` ledger. Do not call every
-node again merely to populate that ledger.
+Compare the store's guide revision with the manifest before advice. A mismatch
+requires matching installed assets and store, using `kmp-guide`; do not
+silently mix them.
 
-After context loss, keep `agent_id`, open a fresh `context_key` and reload the
-complete guide before advice. A stored name or prior readiness message does not
+After context loss, reload the complete guide before advice. A stored name or prior readiness message does not
 restore the guide. When its revision changes, prepare and load the matching
 asset again. Reuse bodies only while they are still present and current.
 

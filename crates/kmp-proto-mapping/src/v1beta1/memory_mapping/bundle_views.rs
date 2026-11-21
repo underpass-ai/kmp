@@ -456,7 +456,7 @@ pub(super) fn about_by_entry(bundle: &KmpBundle) -> BTreeMap<String, String> {
 /// that exactly repeats `Proof.evidence[].text` becomes a stable ref instead,
 /// and every hop incident to a selected evidence/claim carries the refs that
 /// make the join explicit.
-fn normalize_proof_path(
+pub(super) fn normalize_proof_path(
     mut path: Vec<MemoryRelation>,
     evidence: &[MemoryEvidence],
 ) -> Vec<MemoryRelation> {

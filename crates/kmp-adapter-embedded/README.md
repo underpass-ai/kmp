@@ -17,14 +17,14 @@ is SQLite and records store format 4. Format-3 SQLite stores upgrade on open, pr
 
 | Engine | `FORMAT_VERSION` | Store file | Availability |
 | --- | --- | --- | --- |
-| SQLite, WAL mode | 3 | `store/kernel.sqlite3` | active; always available |
+| SQLite, WAL mode | 4 | `store/kernel.sqlite3` | active; always available |
 
 Two agent hosts can open the same project memory, readers do not block the
 writer, and a second writer waits for the commit lock. SQLite passes the full
 conformance, `kill -9` recovery and two-process no-lost-events suites. See the
 [recovery runbook](https://github.com/underpass-ai/kmp/blob/main/docs/runbooks/embedded-recovery.md). An unsupported store format is detected and rejected without touching
-its bytes; preserve it, export with an explicitly archived compatible binary,
-then import the portable bundle into an empty current store.
+its bytes; no tested path brings a format-1 or format-2 store into a current
+one.
 
 Quality telemetry uses its own WAL journal at `telemetry/quality.sqlite3`.
 

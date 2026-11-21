@@ -9,15 +9,23 @@ use crate::serving::grpc_tls_config::KernelMcpGrpcTlsConfig;
 use crate::serving::ports::kernel_tool_backend::KernelMcpToolBackend;
 
 use crate::serving::GrpcKernelMcpBackend;
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 use crate::serving::adapters::fixture_backend::FixtureKernelMcpBackend;
+
+/// Retained read continuations beside the store. Version 0.27.0 kept them in
+/// `agent-users.sqlite3` with agent identities; that file is no longer read.
+const CONTINUATIONS_FILE: &str = "continuations.sqlite3";
 
 pub struct KernelMcpServer {
     pub(super) shared_passages: bool,
     /// Advertise each tool's `outputSchema` in `tools/list` (off by default).
     pub(super) output_schemas: bool,
     pub(super) backend: Arc<dyn KernelMcpToolBackend>,
-    pub(super) agent_directory: std::sync::OnceLock<Arc<dyn crate::guidance::AgentDirectory>>,
-    pub(super) agent_directory_path: Option<std::path::PathBuf>,
+    /// Retained read continuations, opened on first use.
+    pub(super) continuation_store:
+        std::sync::OnceLock<Arc<dyn crate::continuation::ContinuationStore>>,
+    /// Where they are kept; `None` keeps them in memory for this process.
+    pub(super) continuation_store_path: Option<std::path::PathBuf>,
     /// Shared store-use claim held until this MCP transport exits. Selective
     /// uninstall must acquire the exclusive counterpart before it can remove
     /// the directory.
@@ -25,8 +33,9 @@ pub struct KernelMcpServer {
     /// The storage engine under an embedded backend, for the startup line
     /// and the doctor. `None` for the other backends.
     pub(super) embedded_engine: Option<kmp_embedded::StorageEngine>,
-    /// Where this process's viewer is serving, when it mounted one.
-    pub(super) viewer_url: Option<String>,
+    /// This session's viewer, when it may have one. It listens only from
+    /// the first request that asks for it.
+    pub(super) viewer: Option<std::sync::Arc<crate::viewer::SessionViewer>>,
     /// Whether the viewer has already been offered on this session. The
     /// invitation is worth saying once and is noise said twice, and the
     /// moment worth saying it at is the first memory the session writes:
@@ -49,13 +58,11 @@ pub struct KernelMcpServer {
     /// `None` inside once it could not be, so no call retries it.
     pub(super) telemetry_salt:
         std::sync::OnceLock<Option<Arc<crate::serving::telemetry::FingerprintSalt>>>,
-    /// Whether this session already tried to seed the installed guide into
-    /// its store, taken before the attempt so two reads cannot both seed.
-    pub(super) guide_seed_attempted: AtomicBool,
-    /// What that attempt did, for the repair a later failed read carries.
-    pub(super) guide_seed: std::sync::OnceLock<crate::serving::guide_seed::GuideSeedOutcome>,
 }
 
+/// The canned-answer server the test suite drives. Debug and `eval-hooks`
+/// builds only: a release build has no fixture backend.
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 impl Default for KernelMcpServer {
     fn default() -> Self {
         Self::fixture()
@@ -63,6 +70,9 @@ impl Default for KernelMcpServer {
 }
 
 impl KernelMcpServer {
+    /// Canned answers that look real and store nothing. Debug and
+    /// `eval-hooks` builds only.
+    #[cfg(any(debug_assertions, feature = "eval-hooks"))]
     pub fn fixture() -> Self {
         Self::with_backend(FixtureKernelMcpBackend)
     }
@@ -76,9 +86,11 @@ impl KernelMcpServer {
         let endpoint = endpoint.into();
         let key = format!("{:x}", Sha256::digest(endpoint.as_bytes()));
         let mut server = Self::with_backend(GrpcKernelMcpBackend::new(endpoint, tls));
-        server.agent_directory_path = kmp_embedded::user_data_home()
-            .map(|home| home.join("agent-users").join(format!("{key}.sqlite3")));
-        // A remote store's salt stays on this machine, beside its agents.
+        // A remote store's continuations and salt stay on this machine.
+        server.continuation_store_path = kmp_embedded::user_data_home().map(|home| {
+            home.join("agent-users")
+                .join(format!("{key}.{CONTINUATIONS_FILE}"))
+        });
         server.telemetry_salt_path = kmp_embedded::user_data_home().map(|home| {
             home.join("agent-users").join(format!(
                 "{key}.{}",
@@ -86,6 +98,21 @@ impl KernelMcpServer {
             ))
         });
         server
+    }
+
+    /// Keeps a remote store's retained continuations and salt under
+    /// `data_home` instead of the user data home, the way a hermetic caller
+    /// (a test) needs (#910).
+    pub fn with_remote_state_home(mut self, data_home: &std::path::Path) -> Self {
+        let relocate = |path: Option<std::path::PathBuf>| {
+            path.and_then(|path| {
+                path.file_name()
+                    .map(|name| data_home.join("agent-users").join(name))
+            })
+        };
+        self.continuation_store_path = relocate(self.continuation_store_path.take());
+        self.telemetry_salt_path = relocate(self.telemetry_salt_path.take());
+        self
     }
 
     pub fn embedded(data_dir: &std::path::Path) -> Result<Self, String> {
@@ -103,7 +130,7 @@ impl KernelMcpServer {
         let opened_engine = backend.engine();
         let mut server = Self::with_backend(backend);
         server.embedded_engine = Some(opened_engine);
-        server.agent_directory_path = Some(data_dir.join("agent-users.sqlite3"));
+        server.continuation_store_path = Some(data_dir.join(CONTINUATIONS_FILE));
         server.telemetry_salt_path =
             Some(data_dir.join(crate::serving::telemetry::TELEMETRY_SALT_FILE));
         Ok(server)
@@ -118,11 +145,11 @@ impl KernelMcpServer {
             shared_passages: false,
             output_schemas: false,
             backend,
-            agent_directory: std::sync::OnceLock::new(),
-            agent_directory_path: None,
+            continuation_store: std::sync::OnceLock::new(),
+            continuation_store_path: None,
             store_session_lease: None,
             embedded_engine: None,
-            viewer_url: None,
+            viewer: None,
             viewer_offered: AtomicBool::new(false),
             orphaned_bundle: None,
             store_disclosure: None,
@@ -130,8 +157,6 @@ impl KernelMcpServer {
             session: crate::serving::mcp_session::McpSession::new(),
             telemetry_salt_path: None,
             telemetry_salt: std::sync::OnceLock::new(),
-            guide_seed_attempted: AtomicBool::new(false),
-            guide_seed: std::sync::OnceLock::new(),
         }
     }
 
@@ -140,11 +165,11 @@ impl KernelMcpServer {
     pub fn with_embedded_backend(backend: crate::serving::EmbeddedKernelMcpBackend) -> Self {
         let engine = backend.engine();
         let data_dir = std::path::Path::new(backend.data_dir());
-        let agents = data_dir.join("agent-users.sqlite3");
+        let continuations = data_dir.join(CONTINUATIONS_FILE);
         let salt = data_dir.join(crate::serving::telemetry::TELEMETRY_SALT_FILE);
         let mut server = Self::with_backend(backend);
         server.embedded_engine = Some(engine);
-        server.agent_directory_path = Some(agents);
+        server.continuation_store_path = Some(continuations);
         server.telemetry_salt_path = Some(salt);
         server
     }
@@ -168,8 +193,22 @@ impl KernelMcpServer {
     /// write can hand a human the link to their own graph. Without this the
     /// viewer is reachable and unmentioned, which is how it went unnoticed.
     pub fn serving_viewer_at(mut self, url: impl Into<String>) -> Self {
-        self.viewer_url = Some(url.into());
+        self.viewer = Some(std::sync::Arc::new(
+            crate::viewer::SessionViewer::already_serving(url),
+        ));
         self
+    }
+
+    /// Mounts a viewer that binds its port on the first request for it, so
+    /// a session nobody looks at listens on nothing.
+    pub fn with_viewer_on_demand(mut self, viewer: crate::viewer::SessionViewer) -> Self {
+        self.viewer = Some(std::sync::Arc::new(viewer));
+        self
+    }
+
+    /// The viewer link when the viewer is already listening; never starts it.
+    pub(super) fn viewer_url(&self) -> Option<&str> {
+        self.viewer.as_deref()?.url()
     }
 
     pub fn with_store_session_lease(mut self, lease: crate::lifecycle::StoreSessionLease) -> Self {
@@ -181,7 +220,7 @@ impl KernelMcpServer {
     /// flag before returning it, so two concurrent writes cannot both claim
     /// to be the first.
     pub(super) fn viewer_invitation(&self) -> Option<&str> {
-        let url = self.viewer_url.as_deref()?;
+        let url = self.viewer_url()?;
         self.viewer_offered
             .swap(true, Ordering::SeqCst)
             .eq(&false)
@@ -242,6 +281,23 @@ impl KernelMcpServer {
         result
     }
 
+    /// A wake that found nothing names the store in its text too: "nothing
+    /// here" must say where "here" is to a host that shows only text.
+    pub(super) fn disclose_store_in_text(
+        &self,
+        mut result: serde_json::Value,
+    ) -> serde_json::Value {
+        if let Some(store) = &self.store_disclosure
+            && let Some(text) = result
+                .pointer("/content/0/text")
+                .and_then(|text| text.as_str().map(str::to_string))
+        {
+            result["content"][0]["text"] =
+                serde_json::json!(format!("{}{text}", store.error_prefix()));
+        }
+        result
+    }
+
     pub(super) fn orphaned_bundle_notice(&self) -> Option<&kmp_embedded::OrphanedProjectBundle> {
         let orphaned = self.orphaned_bundle.as_ref()?;
         self.orphaned_bundle_offered
@@ -259,25 +315,44 @@ impl KernelMcpServer {
     /// unconfigured binary serves. The one exception is an endpoint already
     /// sitting in the environment: naming a kernel to talk to *is* asking for
     /// gRPC, and it is how the cluster edition has always been selected.
-    fn default_backend(endpoint: Option<&str>) -> &'static str {
+    fn default_backend(endpoint: Option<&str>) -> crate::serving::backend_name::BackendName {
+        use crate::serving::backend_name::BackendName;
         match endpoint {
-            Some(endpoint) if !endpoint.trim().is_empty() => "grpc",
-            _ => "embedded",
+            Some(endpoint) if !endpoint.trim().is_empty() => BackendName::Grpc,
+            _ => BackendName::Embedded,
         }
     }
 
     pub fn try_from_env() -> Result<Self, String> {
-        let endpoint = std::env::var(GRPC_ENDPOINT_ENV).ok();
-        let backend = std::env::var(MCP_BACKEND_ENV)
-            .ok()
-            .map(|value| value.trim().to_ascii_lowercase())
-            .filter(|value| !value.is_empty())
-            .unwrap_or_else(|| Self::default_backend(endpoint.as_deref()).to_string());
+        Self::try_from_env_with_store(None)
+    }
+
+    /// [`try_from_env`](Self::try_from_env), with the embedded store chosen
+    /// by the caller instead of resolved here. `kmp-mcp demo` uses it to keep
+    /// its worked example out of a project's store.
+    pub fn try_from_env_with_store(
+        store: Option<kmp_embedded::ResolvedDataDir>,
+    ) -> Result<Self, String> {
+        use crate::serving::backend_name::BackendName;
+        // Every switch is checked before any is read: a value the engine
+        // does not accept is refused here, naming what it accepts, instead
+        // of being read as the default (E18).
+        crate::environment::check_environment().map_err(|refusal| refusal.to_string())?;
+        let endpoint = crate::serving::environment::optional_env_string(GRPC_ENDPOINT_ENV);
+        let backend = match crate::serving::environment::optional_env_string(MCP_BACKEND_ENV) {
+            Some(value) => BackendName::named(&value).ok_or_else(|| {
+                format!(
+                    "unsupported {MCP_BACKEND_ENV} value `{value}`; it accepts {}",
+                    crate::environment::BACKEND_ACCEPTED
+                )
+            })?,
+            None => Self::default_backend(endpoint.as_deref()),
+        };
         let tls = KernelMcpGrpcTlsConfig::from_env_for_endpoint(endpoint.as_deref());
 
-        match backend.as_str() {
-            "grpc" | "live" => {
-                let Some(endpoint) = endpoint.filter(|endpoint| !endpoint.trim().is_empty()) else {
+        match backend {
+            BackendName::Grpc => {
+                let Some(endpoint) = endpoint else {
                     // Only reachable when someone asked for gRPC by name: with
                     // no endpoint and no variable the default is embedded.
                     return Err(format!(
@@ -288,12 +363,15 @@ impl KernelMcpServer {
                 };
                 Ok(Self::grpc_with_tls(endpoint, tls))
             }
-            "fixture" | "fixtures" => Ok(Self::fixture()),
-            "embedded" => {
-                let resolved = crate::lifecycle::resolve_memory_for_use()
-                    .map_err(|error| error.to_string())?;
-                let engine = kmp_embedded::resolve_engine_for_data_dir_from_env(resolved.path())
-                    .map_err(|error| error.to_string())?;
+            #[cfg(any(debug_assertions, feature = "eval-hooks"))]
+            BackendName::Fixture => Ok(Self::fixture()),
+            BackendName::Embedded => {
+                let resolved = match store {
+                    Some(store) => crate::lifecycle::prepare_memory_for_use(store),
+                    None => crate::lifecycle::resolve_memory_for_use(),
+                }
+                .map_err(|error| error.to_string())?;
+                let engine = kmp_embedded::default_engine_for_data_dir(resolved.path());
                 let lease = kmp_embedded::user_data_home()
                     .map(|data_home| {
                         crate::lifecycle::StoreSessionLease::acquire(&data_home, resolved.path())
@@ -317,9 +395,10 @@ impl KernelMcpServer {
                     ),
                 )
                 .with_resolved_store(&resolved);
-                // Open lazily after a guide read opened the kernel. A metadata
-                // file must not make a not-yet-created kernel look non-empty.
-                server.agent_directory_path = Some(resolved.path().join("agent-users.sqlite3"));
+                // Opened lazily, on the first continuation a read returns. A
+                // metadata file must not make a not-yet-created kernel look
+                // non-empty.
+                server.continuation_store_path = Some(resolved.path().join(CONTINUATIONS_FILE));
                 server.telemetry_salt_path = Some(
                     resolved
                         .path()
@@ -330,19 +409,19 @@ impl KernelMcpServer {
                     None => server,
                 })
             }
-            other => Err(format!(
-                "unsupported {MCP_BACKEND_ENV} value `{other}`; use `embedded` (the default), \
-                 `grpc` or `fixture`"
-            )),
         }
         .and_then(Self::with_passage_format_from_env)
         .and_then(Self::with_output_schemas_from_env)
     }
 
+    /// A gRPC server for an endpoint, the fixture without one. Debug and
+    /// `eval-hooks` builds only.
+    #[cfg(any(debug_assertions, feature = "eval-hooks"))]
     pub fn from_optional_endpoint(endpoint: Option<String>) -> Self {
         Self::from_optional_endpoint_and_tls(endpoint, KernelMcpGrpcTlsConfig::disabled())
     }
 
+    #[cfg(any(debug_assertions, feature = "eval-hooks"))]
     pub fn from_optional_endpoint_and_tls(
         endpoint: Option<String>,
         tls: KernelMcpGrpcTlsConfig,
@@ -364,5 +443,10 @@ impl KernelMcpServer {
     /// Whether this server's `kmp_ask` bridges languages inside the kernel.
     pub fn bridges_languages(&self) -> bool {
         self.backend.bridges_languages()
+    }
+
+    /// The tools whose `openWorldHint` is true for this session.
+    pub(crate) fn open_world_tools(&self) -> Vec<&'static str> {
+        self.backend.open_world_tools()
     }
 }

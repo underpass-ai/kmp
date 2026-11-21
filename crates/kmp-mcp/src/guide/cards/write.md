@@ -1,0 +1,31 @@
+Write separate facts, each with its source evidence and labels that make it
+navigable. A label can hold several values; reuse a known key/value (the wake
+label catalogue) before inventing another. Omit `actor` to be recorded under
+the MCP client's name.
+
+Source R1: “On 2026-09-01 at 09:00 UTC, we observed the cache fail.”
+
+```json
+{"about":"project:sample","idempotency_key":"sample-r1","observed_at":"2026-09-01T09:00:00Z","occurred_at":"2026-09-01T09:00:00Z","labels":{"component":["cache"],"source":["R1"]},"memories":[{"id":"failure","kind":"observation","summary":"The cache failed.","evidence":"R1: On 2026-09-01 at 09:00 UTC, we observed the cache fail."}]}
+```
+
+Expect `accepted:true`, refs and a receipt; copy the refs. Acceptance validates
+the packet, not fidelity to the source. On rejection nothing is committed: read
+every `feedback` item, repair from the source and retry. Replay an accepted
+packet with its same key; `retryable_conflict` (the store kept moving and
+nothing was written) is replayed the same way, `conflict` is not.
+
+Clocks: give a zone (`Z` or `+01:00`). Omit `observed_at` for KMP's exact
+ingestion time; supply it only when the source gives another. Omit unknown
+`occurred_at`, `valid_from` and `valid_until`; observation is never onset. Root clocks are record defaults; a
+record's null clears one. Keep a later check out of an earlier event's summary.
+
+A link (`connect_to`, `relations`) is taught by topic `relations`: `relations`
+links memories already stored and writes only the link and its evidence, so
+never resubmit a stored memory to connect it. Independent observations and
+honest fallback links stay one call. Set `options.dry_run` only for a requested
+preview or payload debugging. Rich links answer `status:needs_review`,
+`accepted:false`, with nothing written: topic `review` resumes them.
+
+More: `guide:kmp-agent:example:first-decision`,
+`guide:kmp-agent:example:event-separation`.

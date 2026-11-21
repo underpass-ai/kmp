@@ -11,8 +11,9 @@ ChronoLoom places each memory once on its owning about plane. Perspective orbit
 and a flat camera share the same exact UTC window and selection. Up to five
 additional abouts can be explicitly compared; ordinary labels filter entries.
 The three semantic detail levels remain: Atlas bins, Episode clusters and Moment entries. The
-application owns this bounded, paginated projection; the browser never walks a
-whole about or a depth-four graph to manufacture it.
+application owns this bounded, paginated projection: the browser never walks a
+whole about or a depth-four graph to manufacture it, although the server still
+reads the whole about for each new time window (see [Limits](#limits)).
 
 The inspector is labelled **Current record**: its status and links include
 updates outside the scene's time window. The clock and UTC window bound the
@@ -45,8 +46,10 @@ Five reading moves sit on top of the loom:
   own why and evidence and composes the exact `kmp_curate` apply call for
   the agent to run. The loom never writes memory, so the write keeps the
   writer's review and Jev's re-read. **Put away** clears the paths.
-- **Search** — plain words or `kind:` / `dim:` / `id:`; Enter frames the
-  hits and steps everything else back.
+- **Search** — plain words or `kind:` / `dim:` / `id:` over the memories the
+  window has loaded at Memories detail (grouped levels load none, and the
+  search says so); Enter frames the hits and the scene steps everything else
+  back.
 - **Lens and compare** — elapsed time remains proportional; event-density
   compresses silence on a non-uniform axis. Two pinned instants remain on
   screen with entry, relation, validity and evidence diffs.
@@ -56,9 +59,16 @@ series retains its exact unit and scope, and exemplars resolve to the operation
 that emitted them; the viewer does not infer health or causality from temporal
 alignment.
 
-Edges wear their semantic class — causal blue, evidential green, temporal
-violet, structural quiet — and node kinds wear the wire's own names in both
-themes.
+Edges wear their semantic class — causal blue, evidential green,
+motivational violet, procedural teal, constraint amber, structural quiet —
+and node kinds wear the wire's own names in both themes.
+
+Without WebGL the 3D scene says it cannot start; layers, labels, search, the
+time window and memory detail keep working. A state the page is in (a store
+with no memory, a read that left older memories out, an ended session, a lost
+connection) stays in the status bar until it changes. When an about holds
+more memories than one read takes (65,536), the window still spans them all
+and the status bar says how many of how many it shows.
 
 ## Why in-process
 
@@ -73,11 +83,14 @@ embedded edition mounts it over its selected local engine and another edition
 can mount it over its own composition unchanged.
 
 The usual way in is [`kmp-mcp`](https://crates.io/crates/kmp-mcp): every
-embedded MCP session brings the viewer up over its own kernel at
-`127.0.0.1:7317`, unasked. When another session already owns that default,
+embedded MCP session can serve the viewer over its own kernel at
+`127.0.0.1:7317`, but listens on no port until the viewer is requested. The
+first `kmp_view_open` (or `kmp-mcp viewer`, or `kmp-mcp demo`) binds it and it
+stays up for the session. When another session already owns that default,
 the new process takes a free loopback port instead. The session's printed
-link carries a random capability for that process only; `kmp_view_open` and `kmp_view_get_state`
-return the same link when the host hides server output. The first browser
+link carries a random capability for that process only; `kmp_view_open`
+returns the same link when the host hides server output, and
+`kmp_view_get_state` does once the viewer listens. The first browser
 request exchanges it for an HttpOnly, SameSite cookie and redirects to the
 clean URL. A local process with only the port gets `401`. `KMP_VIEWER_ADDR`
 moves it to an explicit address (and refuses if that address is busy); `off`
@@ -88,7 +101,7 @@ is required, and the bulk visual chunks stay in app structured content.
 
 ## A deliberately small surface
 
-A hand-rolled HTTP/1.1 GET server bound to loopback, a UI compiled into the
+A hand-rolled HTTP/1.1 server bound to loopback, a UI compiled into the
 binary with `include_str!`, and no dependency the embedded edition does not
 already carry: no HTTP framework, no runtime bundler, no CDN, nothing fetched at
 runtime. Three.js and OrbitControls are vendored as one pinned bundle. The render engine is vendored and hash-verified in
@@ -114,6 +127,17 @@ A work cutoff is explicit; the browser refuses incomplete framing. Unsupported
 adapters return an error instead of synthesizing consistency from separate reads.
 The negotiated MCP App uses `kmp_view_read_nodes` / gRPC `ReadNodes` for the same
 operation; the tool is absent from the model-facing catalogue.
+
+## Limits
+
+| Limit | Detail |
+|:--|:--|
+| Size | Promised to stay fluid up to **10,000 memories per about** in 1.x. Larger abouts work but slow down: each new time window reads the whole about on the server, one read at a time. Windowed reading is planned for 1.1. |
+| One read | At most 65,536 entries of an about. Above that the window still spans them all and the status bar says "Showing the newest 65,536 of N". |
+| 3D scene | Needs WebGL. Without it, layers, labels, search, the time window and memory detail still work. |
+| Search | Reads only the memories the window has loaded at Memories detail. |
+| Writes | None: the viewer never writes memory. **Declare…** composes a `kmp_curate` call for the agent to run. |
+| Network | Loopback only, behind a per-process capability link. [Security and privacy](../../docs/security-privacy.md#the-viewer). |
 
 See the [architecture and verification map](../../docs/architecture/chronoloom-shared-scene.md).
 

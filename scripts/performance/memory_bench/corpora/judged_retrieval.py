@@ -33,8 +33,13 @@ CORPUS = 'retrieval-judged'
 DEFAULT_CASES = 'crates/kmp-testkit/judged/retrieval_cases.json'
 DEFAULT_BASELINE = 'docs/development/retrieval-baseline.tsv'
 DEFAULT_BRIDGE = 'crates/kmp-testkit/judged/lexical-bridge.kmpb'
+# The `shipped-bridge` arm: synthetic stress cases scored with the table `kmp-mcp setup`
+# installs (tools/gen_retrieval_bridge_cases.py, scripts/ci/retrieval-baseline.sh).
+SHIPPED_BRIDGE = 'distribution/lexical-bridge/kmp-lexical-bridge.kmpb'
+SHIPPED_BRIDGE_CASES = 'crates/kmp-mcp/tests/fixtures/lexical_bridge_stress/cases.json'
+SHIPPED_BRIDGE_BASELINE = 'docs/development/retrieval-bridge-stress-baseline.tsv'
 DEFAULT_ARM_CASSETTE = 'crates/kmp-testkit/judged/retrieval.jev.cassette.json'
-TYPESAFE = '{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.13.0","timeout_ms":20000}'
+TYPESAFE = '{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.14.0","timeout_ms":20000}'
 RERANK = {'narrow': '{"pool_size":40}', 'wide': '{"pool_size":400,"excerpt_chars":300}'}
 UNAVAILABLE = ('rerank unavailable', 'rerank disabled')
 TOLERANCE = 1e-9  # baseline_failures' hair: one ulp off never fails a change that moved nothing
@@ -97,8 +102,8 @@ class RetrievalCase:
 
     def ask_arguments(self, max_entries=10):
         arguments = {'about': self.about, 'question': self.question,
-                     'answer_policy': self.answer_policy, 'depth': 3,
-                     'budget': {'tokens': 2048, 'detail': 'balanced', 'max_entries': max_entries}}
+                     'answer_policy': self.answer_policy,
+                     'budget': {'detail': 'balanced', 'max_entries': max_entries}}
         for name in ('as_of', 'interval', 'axis', 'dimensions'):
             if getattr(self, name) is not None:
                 arguments[name] = getattr(self, name)

@@ -22,6 +22,14 @@ pub fn resolve_memory_for_use() -> Result<ResolvedDataDir, PortError> {
     Ok(resolved)
 }
 
+/// [`resolve_memory_for_use`] for a store the caller already chose:
+/// prepared and remembered the same way.
+pub fn prepare_memory_for_use(resolved: ResolvedDataDir) -> Result<ResolvedDataDir, PortError> {
+    kmp_embedded::ensure_data_dir_skeleton(resolved.path())?;
+    remember(&resolved);
+    Ok(resolved)
+}
+
 /// Failure is silence: an index is a convenience, and a command that cannot
 /// write one must still run.
 fn remember(resolved: &ResolvedDataDir) {

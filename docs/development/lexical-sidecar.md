@@ -8,13 +8,16 @@ only the candidates its postings reach.
 
 ## Modes
 
-`KMP_LEXICAL_INDEX` chooses once per process:
+`KMP_LEXICAL_INDEX` chooses once per process. A release binary accepts `on`
+and `off` (with the on/off spellings every switch reads); `shadow` and
+`verify` are measurement modes that only debug builds and builds with the
+`eval-hooks` cargo feature accept:
 
 | Value | What the sidecar does |
 |---|---|
 | `on` (**default**) | Answers every ask it can hold from its postings (below); every other ask reads the about as before. Followed after every write and before every ask. |
 | `shadow` | Answers nothing; compares itself with the ranker on every ask (`kmp_lexical_shadow`), as P12 did. |
-| `verify` | Answers as the about does and also from the postings, with no cost bound, and logs `kmp_lexical_verify` with whether the two responses are equal. For measuring. |
+| `verify` | Answers as the about does and also from the postings, with no cost bound, and logs `kmp_lexical_verify` with whether the two responses are equal, and how many candidates the whole about found eligible among those the index set aside as unable to be (`unanswerable_eligible`, which must be 0). For measuring. |
 | `off` | Never opened. |
 
 An unknown value is logged and the default stands. On by default because every
@@ -38,6 +41,7 @@ refuses unknown files inside `store/` (the same place the verdict book took).
 | `lex_node`, `lex_relation`, `lex_far` | what follows the ask's selection one write at a time: each reached node's hop and selection counters and language contribution, each kept relation's language contribution, the nodes one hop past the default depth |
 | `lex_clock` (P13) | per kept relation: its sequence, the latest instant it carries and its `valid_until`: the about's frontier and expiries, which an ask that reads only its candidates must still stand on |
 | `lex_vocab` (P13) | per about and word: how many candidates' texts carry it (the rows carry each text's words, row layout 4): the vocabulary the lexical bridge reads |
+| `lex_reach` (`LexicalReach`) | per about and candidate: every word its graph can lend a strict focus beyond its row: the words of the refs it supports, the details of its refs, and the explanatory relations the selection keeps at its refs (endpoints, type, evidence, rationale and motivation), less the words of its plain direct field |
 
 Every part is a residual of the ranker's own counts (`surface_counts`, shared by
 the ranker and the index), so content = text + summary (+ alias content) and
@@ -78,9 +82,30 @@ reads the same while no node lies one hop past depth 2 (`lex_far` empty).
 - Every write is one transaction that first checks the position it read; a
   writer that lost the race writes nothing and follows again.
 - Opened unless `KMP_LEXICAL_INDEX=off`. It can be deleted any time: the next
-  ask of an about builds it again. The index version is `lexical-index-4`
+  ask of an about builds it again. The index version is `lexical-index-6`
   (P13's clocks and vocabulary; `-4` since «quién» and «con» became stop
-  words); a sidecar of another version is emptied.
+  words; `-5` since a relation's clock no longer takes `valid_from` or an
+  `occurred_at` it has nothing else beside as the about's present; `-6`
+  since every candidate carries its reach); a sidecar of another version is
+  emptied, so a sidecar written before `-6` builds itself again on the next
+  ask, and a binary that predates `-6` (v0.27.1 writes `-4`) empties one
+  written after it the same way; a store went new → v0.27.1 → new with every
+  call answered. Timed on the cached synth stores under the build lock (load
+  about 10): at 10^4 the `-6` build takes 4.2 s (the `-5` build of the same
+  store 5.2 s in the same run) and the sidecar is 39.7 MB; at 10^5, 51 s
+  (`-5`: 37 s) and 389 MB, against the 20.9 MB and 203 MB the build table
+  above records before reaches.
+- A candidate's reach moves with its row, with the detail of any of its
+  refs, and with any relation kept or let go at one of its refs: a refresh
+  reads it again for every node a moved row, a moved relation or a moved
+  `contains_entry` edge touches, and for the evidence supporting each.
+  `upkeep_tests` compares the reaches a sidecar followed write by write with
+  those of one built from nothing, after a relation-only write between two
+  entries and the same relation written again with other words. The log
+  never removes a relation or a `supports` edge; the one removal it makes is
+  a `contains_entry` edge, when a relabel takes a label off an entry (which
+  keeps one at least): `reach_removal_tests` takes labels off both ends of
+  an explanatory relation and of a support and compares again.
 
 ## Shadow comparison
 
@@ -220,7 +245,11 @@ whole admitted pool: no semantic retrieval, no remote re-ranking, no doubt band
 4. **Ranking.** The ranker ranks those candidates against the whole about as the
    sidecar holds it: N, Σ length and df under both readings (the collection), the
    frontier and expiries (`lex_clock`), the language and the vocabulary the bridge
-   reads. Equal integers give equal scores to the bit.
+   reads. Equal integers give equal scores to the bit. The ranker also takes
+   each candidate's own counts (the terms of its text, its content, direct and
+   expansion fields) from its row rather than tokenizing it again: the row was
+   read by the same `surface_counts`. A candidate without a row (a node the
+   walk brought in) is read from its text as before.
 
 Everything else reads the about as before and says why at debug
 (`kmp_lexical_answer`, `answered = false`, `reason`): another clock, several
@@ -230,8 +259,8 @@ measured over every expanded candidate), or the cost bound.
 
 ## MaxScore against the floor (P14)
 
-**On by default** (`KMP_LEXICAL_MAXSCORE=off` reads every candidate the
-postings reach, as P13 did). Implemented without a measurement campaign
+**Always on** since 1.0: the `KMP_LEXICAL_MAXSCORE=off` switch, which read
+every candidate the postings reach as P13 did, was removed. Implemented without a measurement campaign
 (decision of Tirso, 28 Sept 2026): **not measured at scale**. Exactness is
 tested (a randomized parity test, below) and observable in `verify`.
 
@@ -259,7 +288,8 @@ Why the bound is sound for the whole `RelevanceKey`:
   without its negated stretches, with its alias terms) counts its words, and
   the lowest floor of any form is compared.
 - Lexical bridge: the floor carries the bridged words exactly as the lexicon
-  builds it, and a candidate carrying a bridged word is always read.
+  builds it, and a candidate carrying a bridged word is kept for top-k, which
+  reads the best of them for the bridged rescue (below).
 - Associations: a candidate carrying one is always read (it may be rescued
   through it). The associations are now counted over the rows of every
   candidate that carries a word of the question (`IndexedAsk::seed_rows`),
@@ -284,8 +314,7 @@ expansions in the about (field X is measured over every expanded candidate),
 time-scoped asks (`as_of`, `interval`: idf is local to the selection),
 several abouts, dimensions, a shallower depth, semantic retrieval, remote
 re-ranking and the doubt band. The ⌈2/3⌉ focus of a strict policy is not used
-to prune: it also counts words a candidate's relations and supported claims
-carry, which its row does not hold.
+by the floor bound; top-k bounds it with each candidate's reach (below).
 
 `kmp_lexical_answer` and `kmp_lexical_verify` log `reached` (what the postings
 reached) beside `candidates` (what was read).
@@ -336,13 +365,21 @@ whole on both surfaces, index limits and page sizes alike, with a warning
 **Reading fewer candidates.** Each candidate's rank prefix (content focus
 matches, content BM25, direct BM25, in tenths) is exact from its row
 (`RankPrefixes`, the same integers and the same lexicon the ranker builds).
-The index reads what top-k must (candidates an association, a bridged word or
-a declared lifecycle can rescue, `lifecycle_docs`) and the best
-`64 + depth + 16` others by prefix, ties at the cut included, answers them,
-and keeps the answer only when it is certified: the reading did not carry
-the whole ranking, and every eligible candidate it carried ranks strictly
-above the best prefix left unread. Otherwise it reads four times as many, up
-to every candidate. The 35 % cost bound applies to each selection. A
+The index reads what top-k must (candidates an association or a declared
+lifecycle can rescue, `lifecycle_docs`), the best carriers of a bridged word
+for the bridged rescue (below), and the best `64 + depth + 16` others by
+prefix, ties at the cut included, answers them, and keeps the answer only
+when it is certified: the reading did not carry the whole ranking, every
+eligible candidate it carried ranks strictly above the best prefix left
+unread, and no carrier left unread could have been rescued. Otherwise it reads four times as many, up
+to every candidate; when the round carried the whole ranking of what it read
+because too few of its candidates were eligible, it reads enough to find the
+eligible candidates its depth needs at the rate it found them, twice over
+(`next_limit`). Which round certifies changes how much is read, never the
+answer. Every round reads at the same position and keeps what it read point
+by point (`PartsMemo`: nodes, kept edges, bodies, sidecar node states), so a
+later round reads only what no earlier round did and walks the selection
+afresh over those reads. The 35 % cost bound applies to each selection. A
 question whose anchors the gate requires is ranked as the gate ranks it
 (once an anchor decides: the question without its facets, the focus counted
 but not required) and every candidate naming one of its anchors is always
@@ -350,6 +387,60 @@ read: the gate cites among them in rank order and its proof keeps them. Not
 read lazily (every candidate after the floor is read): questions with no
 informative word, and asks with `max_entries`. `kmp_lexical_answer`/`kmp_lexical_verify` log `planned` (left
 by the floor) beside `candidates` (read by top-k).
+
+**Candidates no reading can find eligible (P14, second pass).** An eligible
+candidate clears the floor of its direct field and, under a strict policy,
+answers two thirds of the focus concepts, counted over its direct field, the
+claims it supports and the relations at its refs (none once an anchor
+decides). The floor is exact from the row; the focus is at most what its
+direct field and its reach (`lex_reach`) carry, because the ranker reads
+claims and relations from a part of the about the selection keeps, and the
+reach holds every word that selection lends there. A candidate below either
+is ranked by nobody: top-k neither reads it nor waits for it, and the best
+prefix left unread is taken among the others only (`RankPrefixes::cannot_answer`).
+Its rescues are what they were: a rescue walks from what was read, and what
+an association or a bridged word can rescue is still always read. On the
+measured question at 10^4 (3,153 planned candidates, none eligible) top-k
+reads the 55 it must and certifies in one round instead of reading all 3,153.
+Fewer selections now cover more than 35 % of the about, so more asks are
+answered from the index (180 of 184 gold reads at 10^4, against 133).
+
+**Carriers of a bridged word (P14, third pass).** With a table installed, a
+ranking rescues at most three candidates it rejected that carry a word the
+table bridged the question to (`bridged_candidates`, any language), the best
+by direct score first; nothing else a bridged word does needs the candidate
+read (its weight is in the floor and the prefix, and the focus a strict
+policy counts is bounded below). Top-k used to read every carrier, which with
+the shipped table put a common question past the 35 % bound (about 4,800
+carriers at 10^4). It now reads the carriers by the direct score their rows
+give (the last part of the prefix), at least 16 and down to the fourth that
+no reading can find eligible, ties at the cut included. Every ranking of the
+read records what its rescue took (`BridgedRescues`, carried by `IndexedAsk`);
+the round is certified only when every ranking took all three and the lowest
+of them scores strictly above the best carrier left unread, since a carrier
+scoring no more can only fall after them (a tie is decided by a key the rows
+do not hold, so it is not certified). Otherwise the next round reads four
+times as many carriers, up to all. The record is read from the ranking, not
+from the response: under the anchored gate an unanswered reading drops the
+rescued items from its proof, but the rescue still decides what the graph
+walk may reach. The table vouches for a focus concept only through a
+translation onto a memory in another language than the question
+(`CrossLanguage`), so the focus bound counts the translations alone, and
+nothing when the question leans in no language. On the measured question at
+10^4 with the shipped table, 4,815 candidates read → 108, and the ask is
+answered from the index instead of the whole about. `verify` checks the
+answers and `unanswerable_eligible`; `maxscore_parity_tests` adds a store
+where half the memories say a word in Spanish (some leaning in Spanish, some
+replaced or expired).
+
+**What the plan reads (second pass).** The df an ask weighs or counts is the
+df of the question's words in every form, of its anchors, of the words the
+associations bring, and of the words a question word shares at least three
+seed rows with (`AssociationCounts::partners`: weighing a pair reads the df
+of both its words); the plan reads exactly those, not the df of every word
+the reached rows hold. The pairs are counted once per ask and question form
+(`SeedDocuments`, shared by the plan, its prefixes and every top-k round),
+and the prefixes are read from the rows in place (`RowField`).
 
 **Exactness.** `maxscore_parity_tests.rs`: randomized stores (90 and 260
 memories, with and without the shipped bridge, half the questions naming an

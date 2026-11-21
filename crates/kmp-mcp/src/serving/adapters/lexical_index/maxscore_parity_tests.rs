@@ -87,8 +87,8 @@ fn packet(key: &str, at: &str, memories: Value) -> Value {
 }
 
 /// One memory's sentence: common words, sometimes rare ones, repeated now
-/// and then (tf above one), sometimes Spanish.
-fn sentence(draw: &mut Draw, index: usize) -> String {
+/// and then (tf above one), Spanish one time in `spanish`.
+fn sentence(draw: &mut Draw, index: usize, spanish: usize) -> String {
     let mut words = Vec::new();
     for _ in 0..(2 + draw.below(4)) {
         words.push(draw.pick(&COMMON).to_string());
@@ -100,7 +100,12 @@ fn sentence(draw: &mut Draw, index: usize) -> String {
             words.push(word.to_string());
         }
     }
-    if draw.below(6) == 0 {
+    if draw.below(spanish) == 0 {
+        // Where Spanish is common it comes with its article, so the
+        // memory leans in Spanish and the table may translate onto it.
+        if spanish <= 2 && draw.below(2) == 0 {
+            words.push("de la".to_string());
+        }
         words.push(draw.pick(&SPANISH).to_string());
     }
     if draw.below(4) == 0 {
@@ -110,13 +115,14 @@ fn sentence(draw: &mut Draw, index: usize) -> String {
 }
 
 /// A randomized about: memories, supports between them, a replacement and
-/// an expiry, written in two batches.
-async fn seed(server: &KernelMcpServer, draw: &mut Draw, memories: usize) {
+/// an expiry, written in two batches; one memory in `spanish` says a word
+/// in Spanish.
+async fn seed(server: &KernelMcpServer, draw: &mut Draw, memories: usize, spanish: usize) {
     let first = (0..memories)
         .map(|index| {
             let mut memory = json!({"id":format!("m{index}"),"kind":"observation",
-                "summary":sentence(draw, index),
-                "evidence":format!("Log {index}: {}", sentence(draw, index + memories))});
+                "summary":sentence(draw, index, spanish),
+                "evidence":format!("Log {index}: {}", sentence(draw, index + memories, spanish))});
             if draw.below(15) == 0 {
                 memory["valid_from"] = json!(AT);
                 memory["valid_until"] = json!("2026-09-01T11:00:00Z");
@@ -129,17 +135,23 @@ async fn seed(server: &KernelMcpServer, draw: &mut Draw, memories: usize) {
     let later = (0..memories / 10)
         .map(|index| {
             let target = draw.below(memories);
-            let rel = if draw.below(3) == 0 {
-                "supersedes"
-            } else {
-                "supports"
+            // A causal `depends_on` hop sorts ahead of the evidence in a
+            // page, so its rendering must not move with the depth read.
+            let (rel, class) = match draw.below(3) {
+                0 => ("supersedes", "evidential"),
+                1 => ("depends_on", "causal"),
+                _ => ("supports", "evidential"),
             };
+            // A relation's words count toward a strict focus (P14's reach):
+            // they name words the questions ask for.
             json!({"id":format!("later{index}"),"kind":"decision",
-                "summary":sentence(draw, index + 2 * memories),
+                "summary":sentence(draw, index + 2 * memories, spanish),
                 "evidence":format!("Order {index} follows up."),
-                "connect_to":[{"ref":refs[format!("m{target}")],"rel":rel,"class":"evidential",
-                    "why":format!("Follow-up {index} of entry {target}."),
-                    "evidence":"The order names it.","confidence":"high"}]})
+                "connect_to":[{"ref":refs[format!("m{target}")],"rel":rel,"class":class,
+                    "why":format!("Follow-up {index} of entry {target}: the {} {}.",
+                        draw.pick(&COMMON), draw.pick(&RARE)),
+                    "evidence":format!("The order names the {}.", draw.pick(&RARE)),
+                    "confidence":"high"}]})
         })
         .collect::<Vec<_>>();
     write(server, packet("seed:later", LATER, json!(later))).await;
@@ -182,6 +194,7 @@ fn query(question: &str, policy: MemoryAnswerPolicy, depth: u32) -> AskMemoryQue
 async fn assert_pruned_asks_equal_the_about(
     seed_value: u64,
     memories: usize,
+    spanish: usize,
     bridge: LexicalBridge,
 ) -> (usize, usize) {
     let mut draw = Draw(seed_value);
@@ -190,6 +203,7 @@ async fn assert_pruned_asks_equal_the_about(
         &server(directory.path(), LexicalIndexMode::Off),
         &mut draw,
         memories,
+        spanish,
     )
     .await;
     let kernel = EmbeddedKernel::open(directory.path()).expect("kernel");
@@ -203,7 +217,17 @@ async fn assert_pruned_asks_equal_the_about(
     let (mut asks, mut pruned, mut lazy) = (0, 0, 0);
     for round in 0..8 {
         let question = question(&mut draw);
-        // Every other question names an anchor the gate requires.
+        // Every other question names an anchor the gate requires, and one
+        // in four leans in no language (no function word: the table then
+        // vouches for no focus concept).
+        let question = if round % 4 == 2 {
+            question
+                .trim_start_matches("what about the ")
+                .trim_end_matches('?')
+                .to_string()
+        } else {
+            question
+        };
         let question = if round % 2 == 1 {
             format!(
                 "{} in {}?",
@@ -288,15 +312,23 @@ async fn maxscore_and_top_k_answer_as_the_whole_about_on_randomized_stores() {
     let (mut pruned, mut lazy) = (0, 0);
     for (seed, memories) in [(7, 90), (11, 260)] {
         let (p, l) =
-            assert_pruned_asks_equal_the_about(seed, memories, LexicalBridge::none()).await;
+            assert_pruned_asks_equal_the_about(seed, memories, 6, LexicalBridge::none()).await;
         pruned += p;
         lazy += l;
     }
     let bytes = std::fs::read(shipped_bridge()).expect("the shipped table is committed");
     let bridge = LexicalBridge::from_owned_bytes(bytes).expect("table");
-    let (p, l) = assert_pruned_asks_equal_the_about(13, 90, bridge).await;
-    assert!(pruned + p > 0, "the floor left nothing unread");
+    let (p, l) = assert_pruned_asks_equal_the_about(13, 90, 6, bridge.clone()).await;
+    // Many carriers of a bridged word, more than top-k reads at first for
+    // the bridged rescue: half the memories say a word in Spanish, some of
+    // them replaced or expired, with ties in their scores.
+    let (bp, bl) = assert_pruned_asks_equal_the_about(19, 260, 2, bridge).await;
+    assert!(pruned + p + bp > 0, "the floor left nothing unread");
     assert!(lazy + l > 0, "top-k never read fewer than the floor left");
+    assert!(
+        bl > 0,
+        "with many bridged carriers top-k read every candidate"
+    );
 }
 
 /// The MCP bytes after the continuation handle, which names a read.
@@ -340,7 +372,7 @@ async fn lazy_pages_concatenate_to_the_exhaustive_ranking() {
     )
     .expect("index limits");
     let off = server(directory.path(), LexicalIndexMode::Off);
-    seed(&off, &mut draw, 260).await;
+    seed(&off, &mut draw, 260, 6).await;
     let on = server(directory.path(), LexicalIndexMode::On);
     let (mut pages, mut deep) = (0, 0);
     for _ in 0..4 {

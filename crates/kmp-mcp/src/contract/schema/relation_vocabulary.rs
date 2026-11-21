@@ -37,14 +37,14 @@ pub(crate) fn writer_class_schema() -> Value {
     schema
 }
 /// The schema carries the doctrine and names where the vocabulary lives; the
-/// per-relation prose is served by `kmp_guide` topic `write`, projected from
+/// per-relation prose is served by `kmp_guide` topic `relations`, projected from
 /// the same writer spec by [`relation_vocabulary_lines`]. Every host pays for
 /// `tools/list` on every session, while only a writer needs the vocabulary.
 pub(crate) fn relation_vocabulary_description(header: &str) -> String {
     format!(
         "{header} The relation carries the explanation: non-structural classes require why, \
          evidence and confidence. Prefer rich types; anemic types are an honest fallback, \
-         never a default. Quality, classes and when to use each: kmp_guide topic write."
+         never a default. Quality, classes and when to use each: kmp_guide topic relations."
     )
 }
 

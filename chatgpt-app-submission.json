@@ -28,7 +28,7 @@
       },
       "justifications": {
         "read_only_justification": "Records memories, relationships or summaries and may persist write-review state in the configured store.",
-        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities.",
+        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities. Only a store whose owner opted into TypeSafe Jev (typesafe.json beside the store and TYPESAFE_API_KEY) sends text it reads to TypeSafe; such a session declares openWorldHint true for this tool in tools/list.",
         "destructive_justification": "An explicit existing reference can replace current memory content while prior canonical events remain available for replay."
       }
     },
@@ -36,11 +36,11 @@
       "annotations": {
         "destructiveHint": false,
         "openWorldHint": false,
-        "readOnlyHint": false
+        "readOnlyHint": true
       },
       "justifications": {
-        "read_only_justification": "Retrieves or audits stored evidence without writing canonical memories, but can persist operational usage, diagnostics or guidance-delivery metadata.",
-        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities.",
+        "read_only_justification": "Reads the configured store and leaves its memory byte for byte unchanged; what it may leave behind is a log line, a bounded quality-telemetry row, a continuation handle when the answer has more pages and, on a store opted into TypeSafe Jev, cached verdicts.",
+        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities. Only a store whose owner opted into TypeSafe Jev (typesafe.json beside the store and TYPESAFE_API_KEY) sends text it reads to TypeSafe; such a session declares openWorldHint true for this tool in tools/list.",
         "destructive_justification": "Does not delete or replace canonical memories, their events or authored cards."
       }
     },
@@ -48,11 +48,11 @@
       "annotations": {
         "destructiveHint": false,
         "openWorldHint": false,
-        "readOnlyHint": false
+        "readOnlyHint": true
       },
       "justifications": {
-        "read_only_justification": "Retrieves or audits stored evidence without writing canonical memories, but can persist operational usage, diagnostics or guidance-delivery metadata.",
-        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities.",
+        "read_only_justification": "Reads the configured store and leaves its memory byte for byte unchanged; what it may leave behind is a log line, a bounded quality-telemetry row, a continuation handle when the answer has more pages and, on a store opted into TypeSafe Jev, cached verdicts.",
+        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities. Only a store whose owner opted into TypeSafe Jev (typesafe.json beside the store and TYPESAFE_API_KEY) sends text it reads to TypeSafe; such a session declares openWorldHint true for this tool in tools/list.",
         "destructive_justification": "Does not delete or replace canonical memories, their events or authored cards."
       }
     },
@@ -60,10 +60,10 @@
       "annotations": {
         "destructiveHint": false,
         "openWorldHint": false,
-        "readOnlyHint": false
+        "readOnlyHint": true
       },
       "justifications": {
-        "read_only_justification": "Retrieves or audits stored evidence without writing canonical memories, but can persist operational usage, diagnostics or guidance-delivery metadata.",
+        "read_only_justification": "Reads the configured store and leaves its memory byte for byte unchanged; what it may leave behind is a log line, a bounded quality-telemetry row, a continuation handle when the answer has more pages and, on a store opted into TypeSafe Jev, cached verdicts.",
         "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities.",
         "destructive_justification": "Does not delete or replace canonical memories, their events or authored cards."
       }
@@ -72,10 +72,10 @@
       "annotations": {
         "destructiveHint": false,
         "openWorldHint": false,
-        "readOnlyHint": false
+        "readOnlyHint": true
       },
       "justifications": {
-        "read_only_justification": "Retrieves or audits stored evidence without writing canonical memories, but can persist operational usage, diagnostics or guidance-delivery metadata.",
+        "read_only_justification": "Reads the configured store and leaves its memory byte for byte unchanged; what it may leave behind is a log line, a bounded quality-telemetry row, a continuation handle when the answer has more pages and, on a store opted into TypeSafe Jev, cached verdicts.",
         "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities.",
         "destructive_justification": "Does not delete or replace canonical memories, their events or authored cards."
       }
@@ -84,10 +84,10 @@
       "annotations": {
         "destructiveHint": false,
         "openWorldHint": false,
-        "readOnlyHint": false
+        "readOnlyHint": true
       },
       "justifications": {
-        "read_only_justification": "Retrieves or audits stored evidence without writing canonical memories, but can persist operational usage, diagnostics or guidance-delivery metadata.",
+        "read_only_justification": "Reads the configured store and leaves its memory byte for byte unchanged; what it may leave behind is a log line, a bounded quality-telemetry row, a continuation handle when the answer has more pages and, on a store opted into TypeSafe Jev, cached verdicts.",
         "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities.",
         "destructive_justification": "Does not delete or replace canonical memories, their events or authored cards."
       }
@@ -99,7 +99,7 @@
         "readOnlyHint": false
       },
       "justifications": {
-        "read_only_justification": "Retrieves or audits stored evidence without writing canonical memories, but can persist operational usage, diagnostics or guidance-delivery metadata.",
+        "read_only_justification": "Reads one stored object; a read of a node of the installed guide on a store that lacks the guide seeds the guide's two abouts into the store first.",
         "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities.",
         "destructive_justification": "Does not delete or replace canonical memories, their events or authored cards."
       }
@@ -132,12 +132,24 @@
       "annotations": {
         "destructiveHint": false,
         "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Reads the configured store and leaves its memory byte for byte unchanged; what it may leave behind is a log line, a bounded quality-telemetry row, a continuation handle when the answer has more pages and, on a store opted into TypeSafe Jev, cached verdicts.",
+        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities. Only a store whose owner opted into TypeSafe Jev (typesafe.json beside the store and TYPESAFE_API_KEY) sends text it reads to TypeSafe; such a session declares openWorldHint true for this tool in tools/list.",
+        "destructive_justification": "Does not delete or replace canonical memories, their events or authored cards."
+      }
+    },
+    "kmp_curate": {
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false,
         "readOnlyHint": false
       },
       "justifications": {
-        "read_only_justification": "Retrieves or audits stored evidence without writing canonical memories, but can persist operational usage, diagnostics or guidance-delivery metadata.",
-        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities.",
-        "destructive_justification": "Does not delete or replace canonical memories, their events or authored cards."
+        "read_only_justification": "Its review, paths and labels modes read memory without changing it; its apply mode declares, in the configured store, the relations the agent confirms.",
+        "open_world_justification": "Judges with TypeSafe Jev only on a store whose owner opted in (typesafe.json beside the store and TYPESAFE_API_KEY); such a session declares openWorldHint true for this tool in tools/list. Otherwise nothing it reads leaves the machine.",
+        "destructive_justification": "Adds relations with their why and evidence; it does not delete or replace memories, their events or authored cards."
       }
     },
     "kmp_view_open": {
@@ -168,10 +180,10 @@
       "annotations": {
         "destructiveHint": false,
         "openWorldHint": false,
-        "readOnlyHint": false
+        "readOnlyHint": true
       },
       "justifications": {
-        "read_only_justification": "Retrieves local view state and can persist operational usage metadata.",
+        "read_only_justification": "Reads the open view's state held by this session; it writes no memory and moves nothing.",
         "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities.",
         "destructive_justification": "Does not delete memory or change the selected view state."
       }
@@ -180,10 +192,10 @@
       "annotations": {
         "destructiveHint": false,
         "openWorldHint": false,
-        "readOnlyHint": false
+        "readOnlyHint": true
       },
       "justifications": {
-        "read_only_justification": "Registers or resumes agent identity, contexts and guide-delivery records in local operational storage.",
+        "read_only_justification": "A lookup of guide cards compiled into the engine: it reads no store and writes nothing.",
         "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities.",
         "destructive_justification": "Does not delete canonical memory or perform destructive administration."
       }

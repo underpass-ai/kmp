@@ -3,6 +3,9 @@ use kmp_domain::PortError;
 use kmp_embedded::{CommitNativeBundle, EmbeddedKernelStore, PendingBundleExport};
 use serde_json::Value;
 
+/// How long a write waits for another session's write to publish its bundle.
+const LOCK_WAIT: std::time::Duration = std::time::Duration::from_secs(10);
+
 /// Owns one event-backed write's bundle guard until publication or a known rejection.
 /// Ambiguous failures deliberately retain the existing pending marker.
 pub(crate) struct CommitNativeWriteGuard<'a> {
@@ -16,10 +19,33 @@ impl<'a> CommitNativeWriteGuard<'a> {
         bundle: &'a CommitNativeBundle,
         store: &'a EmbeddedKernelStore,
     ) -> Result<Self, ToolError> {
-        let pending = bundle
-            .begin_write(store)
-            .await
-            .map_err(Self::preflight_error)?;
+        // Another session's write holds the bundle lock only while it commits
+        // and publishes: wait for it rather than refuse. Several agents on one
+        // project store used to see most of their writes refused (S1 of the
+        // 1.0 review). Past the wait, the refusal stands.
+        let deadline = std::time::Instant::now() + LOCK_WAIT;
+        let pending = loop {
+            match bundle
+                .try_begin_write(store)
+                .await
+                .map_err(Self::preflight_error)?
+            {
+                Some(pending) => break pending,
+                None if std::time::Instant::now() < deadline => {
+                    tokio::time::sleep(std::time::Duration::from_millis(5)).await;
+                }
+                None => {
+                    // Nothing was written and the same call may work later.
+                    return Err(ToolError::unavailable(format!(
+                        "memory write was refused before changing the store: another session's \
+                         write held the lock on the committed bundle `{}` for more than {} s; \
+                         the same call may work once it completes",
+                        bundle.path().display(),
+                        LOCK_WAIT.as_secs()
+                    )));
+                }
+            }
+        };
         Ok(Self {
             bundle,
             store,
@@ -62,6 +88,7 @@ impl<'a> CommitNativeWriteGuard<'a> {
                     ToolErrorCode::InvalidArgument
                         | ToolErrorCode::NotFound
                         | ToolErrorCode::Conflict
+                        | ToolErrorCode::RetryableConflict
                         | ToolErrorCode::UnknownTool
                 ) =>
             {

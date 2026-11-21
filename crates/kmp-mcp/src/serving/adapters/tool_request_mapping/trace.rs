@@ -1,7 +1,7 @@
 use super::memory_budget::MemoryBudgetMapper;
 use super::temporal::TemporalOptionsMapper;
 use super::trace_search::TraceSearchOptionsMapper;
-use crate::contract::validator::{optional_string, required_string, validate_required_arguments};
+use crate::contract::validator::{required_string, validate_required_arguments};
 use crate::projection::relation_cursor::RelationCursor;
 use kmp_proto::v1beta1::TraceRequest;
 use serde_json::Value;
@@ -20,9 +20,9 @@ impl TraceRequestMapper {
             about: required_string(arguments, "about")?,
             from: required_string(arguments, "from")?,
             to,
-            goal: optional_string(arguments, "goal")
-                .or_else(|| optional_string(arguments, "role"))
-                .unwrap_or_default(),
+            // `goal` and its alias `role` left the contract at 1.0 (E11): no
+            // reply changed with them.
+            goal: String::new(),
             budget: Some(MemoryBudgetMapper::from_arguments(arguments, 1600, 1)?),
             page: {
                 let mut page = TemporalOptionsMapper::page_from_arguments(arguments)?;

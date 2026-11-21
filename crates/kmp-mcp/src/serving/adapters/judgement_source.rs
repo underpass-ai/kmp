@@ -1,7 +1,9 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 use super::cassette_judgement::CassetteJudgement;
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 use super::cassette_mode::CassetteMode;
 use super::typesafe_judgement::TypeSafeJudgement;
 use crate::serving::ports::judgement_model::JudgementModel;
@@ -18,6 +20,14 @@ pub(super) fn load_judgement(
     let Some(cassette) = cassette.map(PathBuf::from) else {
         return TypeSafeJudgement::load(data_dir, key);
     };
+    // Only a build that carries the evaluation hooks is ever handed a
+    // cassette (`crate::environment::eval_hooks::typesafe_cassette`).
+    #[cfg(not(any(debug_assertions, feature = "eval-hooks")))]
+    {
+        let _ = (cassette, mode);
+        TypeSafeJudgement::load(data_dir, key)
+    }
+    #[cfg(any(debug_assertions, feature = "eval-hooks"))]
     match CassetteMode::read(mode.as_deref())? {
         CassetteMode::Replay => match TypeSafeJudgement::configured_model(data_dir)? {
             Some(model) => Ok(Some(Arc::new(CassetteJudgement::replay(&cassette, model)?))),

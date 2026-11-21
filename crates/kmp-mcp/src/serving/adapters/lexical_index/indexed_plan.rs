@@ -2,13 +2,19 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use kmp_application::MemoryAnswerPolicy;
 use kmp_proto_mapping::v1beta1::{
-    FloorBound, IndexedAsk, IndexedFieldStats, IndexedQuestion, LexicalBridge, LexicalRow,
-    RankPrefix, RankPrefixes,
+    FloorBound, IndexedAsk, IndexedFieldStats, IndexedQuestion, IndexedSeeds, LexicalBridge,
+    LexicalRow, RankPrefixes,
 };
 
 use super::about_stats::AboutStats;
 use super::index_limits::IndexLimits;
 use super::sqlite_lexical_sidecar::SqliteLexicalSidecar;
+use super::top_k_selection::TopKSelection;
+
+/// How many carriers of a bridged word that no reading can find eligible
+/// top-k reads down to at first: the bridged rescue takes three of the
+/// rejected, and one more stands in for one that is not current.
+const BRIDGED_SURE: usize = 4;
 use crate::serving::ports::lexical_candidates::LexicalCandidates;
 
 /// What an ask answered from the lexical index reads (DESIGN L6, P13): the
@@ -22,9 +28,13 @@ pub(super) struct IndexedPlan {
     pub(super) reached: usize,
     /// Every candidate's rank prefix, when top-k may read fewer (P14).
     pub(super) prefixes: Option<RankPrefixes>,
-    /// What top-k always reads: candidates an association, a bridged word
-    /// or a declared lifecycle can rescue.
+    /// What top-k always reads: candidates an association or a declared
+    /// lifecycle can rescue, and those naming an anchor the gate requires.
     must: BTreeSet<String>,
+    /// The other candidates that carry a word the table bridged the
+    /// question to: a ranking rescues the best few of them it rejected by
+    /// direct score, so top-k reads the best of them by that score.
+    bridged: BTreeSet<String>,
     bounded: Option<IndexLimits>,
     /// How many candidates the whole about holds.
     pub(super) documents: u64,
@@ -37,7 +47,7 @@ impl IndexedPlan {
     /// many for the index to save anything ([`IndexLimits::too_many`]);
     /// unbounded (the `verify` mode) every ask the index can hold is planned,
     /// to measure it. `prune` leaves unread the candidates the floor bound
-    /// refuses (P14, on unless `KMP_LEXICAL_MAXSCORE=off`); the bound applies
+    /// refuses (P14, always on for a sidecar that opened); the bound applies
     /// to what is left to read.
     /// `ask` is the policy and whether the anchored gate reads the
     /// question, for top-k (P14); `None` plans no top-k.
@@ -89,14 +99,28 @@ impl IndexedPlan {
             return Ok(Err(why));
         }
         let seed_rows = std::sync::Arc::new(first.values().cloned().collect::<Vec<_>>());
+        // The seed rows' fields, read once for the plan and every ranking.
+        let seeds_read = IndexedSeeds::default();
+        // The df the associations read: the question's words, and the words
+        // a question word pairs with in enough seed rows. Nothing the ask
+        // weighs or counts reads any other df (`AssociationCounts::partners`).
         let mut probed = seeds.clone();
-        probed.extend(held_terms(first.values()));
-        // Each term's df is read once, under both readings.
+        probed.extend(question.anchor_terms().iter().cloned());
         let mut frequencies = sidecar.document_frequencies(about, &probed)?;
+        for aliased in [false, true] {
+            let field = field_stats(&stats, &seeds, &frequencies, aliased);
+            probed.extend(question.association_partners(&field, aliased, &seed_rows, &seeds_read));
+        }
+        let partners = probed
+            .iter()
+            .filter(|term| !frequencies.contains_key(*term))
+            .cloned()
+            .collect::<BTreeSet<_>>();
+        frequencies.extend(sidecar.document_frequencies(about, &partners)?);
         let mut associated = BTreeSet::new();
         for aliased in [false, true] {
             let field = field_stats(&stats, &probed, &frequencies, aliased);
-            associated.extend(question.associations(&field, aliased, &seed_rows));
+            associated.extend(question.associations(&field, aliased, &seed_rows, &seeds_read));
         }
         let extra = associated
             .iter()
@@ -107,9 +131,8 @@ impl IndexedPlan {
         if !extra.is_empty() {
             reached.extend(candidates(sidecar, about, &extra)?);
         }
-        let mut terms = seeds;
+        let mut terms = probed;
         terms.extend(associated.iter().cloned());
-        terms.extend(held_terms(reached.values()));
         let unread = terms
             .iter()
             .filter(|term| !frequencies.contains_key(*term))
@@ -125,11 +148,12 @@ impl IndexedPlan {
         // themselves, which the bound weighs; what else they bring, and
         // every bridged word, keeps a candidate read.
         let asked = question.terms();
-        let mut kept = associated
+        let associated = associated
             .into_iter()
             .filter(|term| !asked.contains(term))
             .collect::<BTreeSet<_>>();
-        kept.extend(bridged);
+        let mut kept = associated.clone();
+        kept.extend(bridged.iter().cloned());
         // MaxScore against the floor (P14): a candidate no reading of the
         // question lets clear it, and that carries no association or bridged
         // word, is ranked by nobody and rescued by nobody; it is left unread.
@@ -151,6 +175,7 @@ impl IndexedPlan {
             .into_iter()
             .filter(|(_, row)| !bound.as_ref().is_some_and(|bound| bound.prunes(row)))
             .collect::<BTreeMap<_, _>>();
+        let rows = std::sync::Arc::new(read);
         let indexed = IndexedAsk {
             language: stats.language.clone(),
             plain,
@@ -158,32 +183,60 @@ impl IndexedPlan {
             lifecycle: sidecar.lifecycle(about)?,
             vocabulary,
             seed_rows: Some(seed_rows),
+            rows: Some(std::sync::Arc::clone(&rows)),
+            seeds: seeds_read,
+            rescues: Default::default(),
         };
+        let read = rows.as_ref();
         // Top-k (P14): each candidate's rank prefix, and what is always read.
+        // A strict policy's focus also counts words a candidate's graph
+        // lends it; its reach bounds them (P14).
+        let reach = match ask {
+            Some((
+                MemoryAnswerPolicy::EvidenceOrUnknown | MemoryAnswerPolicy::ShowConflicts,
+                _,
+            )) => sidecar.reaches(about, read.keys())?,
+            _ => BTreeMap::new(),
+        };
         let prefixes = ask.and_then(|(policy, gated)| {
-            RankPrefixes::read(asked_text, policy, gated, &indexed, bridge, read.iter())
+            RankPrefixes::read(
+                asked_text,
+                policy,
+                gated,
+                &indexed,
+                bridge,
+                read.iter(),
+                &reach,
+            )
         });
-        let must = if let Some(prefixes) = &prefixes {
+        drop(reach);
+        let (must, carriers) = if let Some(prefixes) = &prefixes {
             let lifecycle = sidecar.lifecycle_docs(about)?;
             let anchors = prefixes.anchors();
-            read.iter()
-                .filter(|(doc, row)| {
-                    lifecycle.contains(*doc)
-                        || row.terms().iter().any(|term| {
-                            term.is_held()
-                                && (kept.contains(&term.term) || anchors.contains(&term.term))
-                        })
-                })
-                .map(|(doc, _)| doc.clone())
-                .collect()
+            let carries = |row: &LexicalRow, words: &BTreeSet<String>| {
+                row.terms()
+                    .iter()
+                    .any(|term| term.is_held() && words.contains(&term.term))
+            };
+            let mut must = BTreeSet::new();
+            let mut carriers = BTreeSet::new();
+            for (doc, row) in read {
+                if lifecycle.contains(doc) || carries(row, &associated) || carries(row, anchors) {
+                    must.insert(doc.clone());
+                } else if carries(row, &bridged) {
+                    carriers.insert(doc.clone());
+                }
+            }
+            (must, carriers)
         } else {
-            BTreeSet::new()
+            (BTreeSet::new(), BTreeSet::new())
         };
         Ok(Ok(Self {
-            candidates: read.into_keys().collect(),
+            candidates: read.keys().cloned().collect(),
             reached: count,
             prefixes,
             must,
+            bridged: carriers,
             bounded,
             documents: stats.documents,
             indexed,
@@ -191,26 +244,64 @@ impl IndexedPlan {
     }
 
     /// The candidates to read for a ranking carried `limit` eligible
-    /// candidates deep, and the best rank prefix left unread (`None`:
-    /// every candidate is read), or why the index does not answer.
+    /// candidates deep and a bridged rescue `bridged_limit` carriers deep,
+    /// with the best rank prefix and the best carrier's direct score left
+    /// unread (`None`: every such candidate is read), or why the index does
+    /// not answer.
     ///
     /// Without prefixes every candidate is read. With them, the ones top-k
-    /// must read and the best `limit` others by prefix, ties at the cut
-    /// included, so an unread candidate always ranks strictly below every
-    /// one read with a lower prefix.
+    /// must read, the best `bridged_limit` carriers of a bridged word by
+    /// direct score, and the best `limit` others by prefix that some reading
+    /// could find eligible, ties at both cuts included, so an unread
+    /// candidate always ranks strictly below every one read with a lower
+    /// prefix, or is ranked by nobody, and an unread carrier scores no more
+    /// than the best carrier left unread.
     pub(super) fn select(
         &self,
         limit: usize,
-    ) -> Result<(BTreeSet<String>, Option<RankPrefix>), &'static str> {
-        let (chosen, unread) = match &self.prefixes {
-            None => (self.candidates.clone(), None),
+        bridged_limit: usize,
+    ) -> Result<TopKSelection, &'static str> {
+        let selection = match &self.prefixes {
+            None => TopKSelection::everything(self.candidates.clone()),
             Some(prefixes) => {
                 let mut chosen = self.must.clone();
+                // A carrier's rescue is ordered by its direct score, the
+                // last part of its prefix.
+                let mut carriers = self
+                    .bridged
+                    .iter()
+                    .map(|doc| {
+                        (
+                            prefixes.prefix(doc).map_or(i64::MAX, |prefix| prefix.2),
+                            doc,
+                        )
+                    })
+                    .collect::<Vec<_>>();
+                carriers
+                    .sort_by(|left, right| right.0.cmp(&left.0).then_with(|| left.1.cmp(right.1)));
+                // Read at least `bridged_limit` of them, and on to the
+                // `BRIDGED_SURE`-th that no reading can find eligible: the
+                // rescue takes its few from the rejected, best first.
+                let mut last = None;
+                let mut sure = 0usize;
+                let mut bridged_read = 0usize;
+                for (taken, (score, doc)) in carriers.iter().enumerate() {
+                    if taken < bridged_limit || sure < BRIDGED_SURE || last == Some(*score) {
+                        chosen.insert((*doc).clone());
+                        sure += usize::from(prefixes.cannot_answer(doc));
+                        bridged_read += 1;
+                        last = Some(*score);
+                    } else {
+                        break;
+                    }
+                }
                 let mut unread = None;
                 let mut taken = 0usize;
                 let mut last = None;
                 for (prefix, doc) in prefixes.ordered() {
-                    if self.must.contains(&doc) {
+                    // What top-k must read is read; what no reading can
+                    // find eligible is neither read nor waited for.
+                    if chosen.contains(&doc) || prefixes.cannot_answer(&doc) {
                         continue;
                     }
                     if taken < limit || last == Some(prefix) {
@@ -222,16 +313,25 @@ impl IndexedPlan {
                         break;
                     }
                 }
-                (chosen, unread)
+                let unread_bridged = carriers
+                    .iter()
+                    .find(|(_, doc)| !chosen.contains(*doc))
+                    .map(|(score, _)| *score);
+                TopKSelection {
+                    candidates: chosen,
+                    unread,
+                    unread_bridged,
+                    bridged_read,
+                }
             }
         };
         if let Some(why) = self
             .bounded
-            .and_then(|limits| limits.too_many(chosen.len(), self.documents))
+            .and_then(|limits| limits.too_many(selection.candidates.len(), self.documents))
         {
             return Err(why);
         }
-        Ok((chosen, unread))
+        Ok(selection)
     }
 }
 
@@ -241,17 +341,6 @@ fn candidates(
     terms: &BTreeSet<String>,
 ) -> Result<BTreeMap<String, LexicalRow>, String> {
     LexicalCandidates::candidates(sidecar, about, &terms.iter().cloned().collect::<Vec<_>>())
-}
-
-/// Every term a row carries under either reading.
-fn held_terms<'r>(rows: impl Iterator<Item = &'r LexicalRow>) -> BTreeSet<String> {
-    rows.flat_map(|row| {
-        row.terms()
-            .iter()
-            .filter(|term| term.is_held())
-            .map(|term| term.term.clone())
-    })
-    .collect()
 }
 
 /// One reading of the about's collection over `terms`, from their df

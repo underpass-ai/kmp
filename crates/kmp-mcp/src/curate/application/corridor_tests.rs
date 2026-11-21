@@ -11,6 +11,7 @@ fn fact(reference: &str, text: &str) -> CurateFact {
         kind: String::new(),
         text: text.into(),
         occurred: None,
+        occurred_at: None,
         labels: Vec::new(),
     }
 }

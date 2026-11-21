@@ -42,7 +42,7 @@ We are grateful to their authors and contributors.
 
 | Library | License | Purpose |
 |---------|---------|---------|
-| [pixi.js](https://pixijs.com) 8.19.0 | MIT | WebGL renderer for the embedded memory viewer; vendored bundle, hash-pinned and supply-chain-verified in `crates/kmp-viewer/ui/vendor/VENDOR.md` |
+| [three.js](https://threejs.org) 0.180.0, with its OrbitControls add-on | MIT, © 2010-2025 three.js authors (full text below) | WebGL renderer for the embedded memory viewer; one vendored bundle, hash-pinned and supply-chain-verified in `crates/kmp-viewer/ui/vendor/VENDOR.md` |
 
 ## Shipped Assets
 
@@ -55,3 +55,34 @@ We are grateful to their authors and contributors.
 | Crate | License | Purpose |
 |-------|---------|---------|
 | [tempfile](https://crates.io/crates/tempfile) | MIT/Apache-2.0 | Temporary files for tests |
+
+## License texts
+
+### three.js 0.180.0
+
+The `kmp-mcp` binary embeds three.js in the ChronoLoom viewer. Its license, as
+shipped in the npm package and in `crates/kmp-viewer/ui/vendor/THREE-LICENSE`:
+
+```text
+The MIT License
+
+Copyright © 2010-2025 three.js authors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+```

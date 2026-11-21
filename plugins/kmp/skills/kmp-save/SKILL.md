@@ -9,3 +9,7 @@ Run `kmp-mcp export`, which maintains `.kmp/memory.jsonl` for a project-scoped
 store. Show `git diff --stat .kmp/memory.jsonl` and the relevant diff, then
 summarize new decisions and their reasons in prose. Do not stage or commit the
 bundle unless the user asks. Flag a non-append-only diff.
+
+If export refuses because the committed bundle holds events it would not keep,
+report its message and the ways out it names. Never add
+`--overwrite-committed` unless the user asks: it drops committed memory.

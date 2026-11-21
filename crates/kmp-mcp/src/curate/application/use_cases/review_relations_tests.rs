@@ -1,6 +1,7 @@
 use super::*;
 use std::sync::Mutex;
 
+use super::super::keyed_nouls::KeyedNouls;
 use super::super::scripted_judgement::Scripted;
 use crate::curate::domain::{
     candidate_pair::CandidatePair, curate_fact::CurateFact, declared_link::DeclaredLink,
@@ -14,6 +15,7 @@ fn fact(reference: &str, about: &str) -> CurateFact {
         kind: String::new(),
         text: format!("text {reference}"),
         occurred: None,
+        occurred_at: None,
         labels: Vec::new(),
     }
 }
@@ -71,11 +73,15 @@ async fn without_jev_kernel_pairs_come_back_untyped_with_a_warning() {
 
 #[tokio::test]
 async fn jev_types_pairs_finds_partners_and_flags_weak_declarations() {
-    let model = Scripted {
-        noul: 0.1,
-        choice: "same_entity_as",
-        confidence: 0.9,
-        calls: Mutex::new(0),
+    // Every pair's companion reads yes; every declaration's support reads no.
+    let model = KeyedNouls {
+        inner: Scripted {
+            noul: 0.1,
+            choice: "same_entity_as",
+            confidence: 0.9,
+            calls: Mutex::new(0),
+        },
+        yes: vec![("r", 0.9)],
     };
     let review = ReviewRelations {
         judgement: Some(&model),
@@ -104,7 +110,7 @@ async fn jev_types_pairs_finds_partners_and_flags_weak_declarations() {
         review.jev.as_ref().map(|u| u.model.as_str()),
         Some("jev-test")
     );
-    assert!(*model.calls.lock().expect("calls") >= 2);
+    assert!(*model.inner.calls.lock().expect("calls") >= 2);
 }
 
 #[tokio::test]
@@ -253,10 +259,12 @@ async fn with_nothing_to_pair_only_the_audit_is_asked() {
 
 #[test]
 fn each_reason_is_reported_on_its_own() {
-    let verdict = |choice: &str, confidence: f64| crate::curate::domain::jev_verdict::JevVerdict {
+    // The retype gate reads the chosen type's probability; `confidence` is
+    // set low on purpose: it never decides.
+    let verdict = |choice: &str, probability: f64| crate::curate::domain::jev_verdict::JevVerdict {
         choice: choice.into(),
-        probabilities: Default::default(),
-        confidence,
+        probabilities: [(choice.to_string(), probability)].into_iter().collect(),
+        confidence: 0.0,
     };
     assert!(
         doubt_reasons(
@@ -326,24 +334,44 @@ fn the_audit_does_not_ask_direction() {
 }
 
 #[test]
-fn direction_is_forward_over_both_ways_and_silent_when_neither() {
-    let choice = |forward: f64, backward: f64| JudgementAnswer::Choice {
-        choice: "forward".into(),
-        probabilities: [
-            ("forward".to_string(), forward),
-            ("backward".to_string(), backward),
-            ("none".to_string(), 1.0 - forward - backward),
-        ]
-        .into_iter()
-        .collect(),
-        confidence: 0.9,
+fn direction_is_the_declared_way_over_both_and_silent_when_its_companion_reads_no() {
+    let response = |forward: f64, backward: f64, either: f64| {
+        let mut response = JudgementResponse::empty("jev");
+        response.answers.insert(
+            "d0".into(),
+            JudgementAnswer::Choice {
+                choice: "from_supersedes_to".into(),
+                probabilities: [
+                    ("from_supersedes_to".to_string(), forward),
+                    ("to_supersedes_from".to_string(), backward),
+                ]
+                .into_iter()
+                .collect(),
+                confidence: 0.9,
+            },
+        );
+        response
+            .answers
+            .insert("e0".into(), JudgementAnswer::Noul { yes: either });
+        response
     };
-    assert_eq!(direction_of(&choice(0.8, 0.2)), Some(0.8));
-    assert_eq!(direction_of(&choice(0.1, 0.3)), Some(0.25));
     assert_eq!(
-        direction_of(&choice(0.05, 0.05)),
-        None,
-        "neither is not a direction"
+        direction_of(&response(0.8, 0.2, 0.9), 0, "supersedes"),
+        Some(0.8)
     );
-    assert_eq!(direction_of(&JudgementAnswer::Noul { yes: 0.9 }), None);
+    assert_eq!(
+        direction_of(&response(0.25, 0.75, 0.5), 0, "supersedes"),
+        Some(0.25),
+        "an unsettled companion still reads the direction"
+    );
+    assert_eq!(
+        direction_of(&response(0.9, 0.1, 0.2), 0, "supersedes"),
+        None,
+        "neither way holds: not a direction"
+    );
+    assert_eq!(
+        direction_of(&JudgementResponse::empty("jev"), 0, "supersedes"),
+        None,
+        "not asked"
+    );
 }

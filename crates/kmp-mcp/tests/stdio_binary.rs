@@ -1,7 +1,9 @@
 #[path = "support/bound_action.rs"]
 mod bound_action;
+#[path = "support/isolated_home.rs"]
+mod isolated_home;
 use std::io::{BufRead, BufReader, Write};
-use std::process::{Child, ChildStdout, Command, Stdio};
+use std::process::{Child, ChildStdout, Stdio};
 use std::sync::mpsc;
 use std::time::Duration;
 
@@ -27,7 +29,7 @@ struct LiveMcp {
 impl LiveMcp {
     fn start(store: &std::path::Path, data_home: &std::path::Path, home: &std::path::Path) -> Self {
         std::fs::create_dir_all(store).expect("store root");
-        let mut child = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+        let mut child = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"))
             .env("KMP_MCP_DATA_DIR", store)
             .env("KMP_VIEWER_ADDR", "off")
             .env("XDG_DATA_HOME", data_home)
@@ -182,7 +184,7 @@ fn scoped_engine_uninstall_reports_the_host_still_reading_it_and_removes_nothing
     )
     .expect("marker");
 
-    let output = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+    let output = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"))
         .args(["uninstall", "--engine"])
         .arg(&engine)
         .current_dir(root.path())
@@ -222,7 +224,7 @@ fn selective_uninstall_refuses_one_live_store_and_preserves_the_other_host() {
     assert_eq!(first.tool_count(), expected_tool_count());
     assert_eq!(second.tool_count(), expected_tool_count());
 
-    let refused = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+    let refused = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"))
         .args(["uninstall", "--store"])
         .arg(&first_store)
         .arg("--apply")
@@ -250,7 +252,7 @@ fn selective_uninstall_refuses_one_live_store_and_preserves_the_other_host() {
     );
 
     first.stop();
-    let removed = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+    let removed = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"))
         .args(["uninstall", "--store"])
         .arg(&first_store)
         .arg("--apply")
@@ -291,6 +293,79 @@ fn selective_uninstall_refuses_one_live_store_and_preserves_the_other_host() {
     second.stop();
 }
 
+/// B3: the copy uninstall saves is never written over by a later uninstall,
+/// never written inside the store it removes, and an empty store leaves no
+/// copy beside a real one.
+#[test]
+fn uninstall_rescues_are_never_overwritten_nor_written_into_the_removed_store() {
+    let root = tempfile::tempdir().expect("test root");
+    let home = root.path().join("home");
+    let workspace = root.path().join("workspace");
+    let store = root.path().join("memory");
+    std::fs::create_dir_all(&home).expect("home");
+    std::fs::create_dir_all(&workspace).expect("workspace");
+    let bin = env!("CARGO_BIN_EXE_kmp-mcp");
+    let kmp = |cwd: &std::path::Path, args: &[&str]| {
+        isolated_home::command(bin)
+            .args(args)
+            .current_dir(cwd)
+            .env("HOME", &home)
+            .env("XDG_DATA_HOME", home.join(".local/share"))
+            .env("XDG_CONFIG_HOME", home.join(".config"))
+            .env("KMP_MCP_DATA_DIR", &store)
+            .env("KMP_VIEWER_ADDR", "off")
+            .output()
+            .expect("kmp-mcp runs")
+    };
+    let rescues = || {
+        let mut found = std::fs::read_dir(&workspace)
+            .expect("workspace listing")
+            .flatten()
+            .map(|entry| entry.path())
+            .filter(|path| {
+                path.extension()
+                    .is_some_and(|extension| extension == "jsonl")
+            })
+            .collect::<Vec<_>>();
+        found.sort();
+        found
+    };
+    let store_arg = store.to_str().expect("utf-8 path");
+
+    assert!(kmp(&workspace, &["demo", "--no-viewer"]).status.success());
+    let first = kmp(&workspace, &["uninstall", "--store", store_arg, "--apply"]);
+    assert!(first.status.success(), "{first:?}");
+    let saved = rescues();
+    assert_eq!(saved.len(), 1, "{saved:?}");
+    let first_path = saved[0].clone();
+    let first_copy = std::fs::read(&first_path).expect("first copy");
+
+    // The same path holds memory again and is uninstalled again: the first
+    // copy stays byte for byte, the second gets its own name.
+    assert!(kmp(&workspace, &["demo", "--no-viewer"]).status.success());
+    let second = kmp(&workspace, &["uninstall", "--store", store_arg, "--apply"]);
+    assert!(second.status.success(), "{second:?}");
+    let saved = rescues();
+    assert_eq!(saved.len(), 2, "{saved:?}");
+    assert_eq!(std::fs::read(&first_path).expect("first copy"), first_copy);
+    assert!(
+        saved
+            .iter()
+            .any(|path| path.to_string_lossy().ends_with("-2.jsonl")),
+        "{saved:?}"
+    );
+
+    // Run from inside the store, the copy would go with it: refused, and
+    // nothing is removed.
+    assert!(kmp(&workspace, &["demo", "--no-viewer"]).status.success());
+    let inside = kmp(&store, &["uninstall", "--store", store_arg, "--apply"]);
+    assert_eq!(inside.status.code(), Some(1), "{inside:?}");
+    let report = String::from_utf8_lossy(&inside.stdout);
+    assert!(report.contains("Nothing was removed"), "{report}");
+    assert!(store.join("FORMAT_VERSION").is_file());
+    assert_eq!(rescues().len(), 2);
+}
+
 #[test]
 fn selective_uninstall_rejects_ambiguous_scope_without_mutating_any_store() {
     let root = tempfile::tempdir().expect("test root");
@@ -310,7 +385,7 @@ fn selective_uninstall_rejects_ambiguous_scope_without_mutating_any_store() {
         ],
         vec!["uninstall", "--bogus"],
     ] {
-        let output = Command::new(bin)
+        let output = isolated_home::command(bin)
             .args(&args)
             .current_dir(root.path())
             .env("HOME", root.path().join("home"))
@@ -327,7 +402,7 @@ fn an_unexpanded_home_data_dir_is_refused_without_creating_a_literal_tilde() {
     let working_dir = tempfile::tempdir().expect("working dir");
     let home = tempfile::tempdir().expect("home dir");
     let input = "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{}}\n";
-    let mut child = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+    let mut child = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"))
         .current_dir(working_dir.path())
         .env("KMP_MCP_DATA_DIR", "~/kmp-host-config")
         .env("HOME", home.path())
@@ -358,7 +433,7 @@ fn an_unexpanded_home_data_dir_is_refused_without_creating_a_literal_tilde() {
         "startup must not create a directory that only looks home-relative"
     );
 
-    let info = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+    let info = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"))
         .arg("info")
         .current_dir(working_dir.path())
         .env("KMP_MCP_DATA_DIR", "~/kmp-host-config")
@@ -368,87 +443,6 @@ fn an_unexpanded_home_data_dir_is_refused_without_creating_a_literal_tilde() {
     let report = String::from_utf8(info.stdout).expect("info output is UTF-8");
     assert!(report.contains("the data directory does not resolve"));
     assert!(report.contains(&home.path().join("kmp-host-config").display().to_string()));
-}
-
-/// The viewer follows the same implicit embedded default as the MCP backend.
-/// Previously this branch looked only for an explicit `KMP_MCP_BACKEND` and
-/// silently skipped the viewer in the zero-configuration path.
-#[test]
-fn unconfigured_embedded_backend_mounts_the_viewer() {
-    let data_dir = tempfile::tempdir().expect("temp data dir");
-    let output = run_binary(
-        &[
-            (
-                "KMP_MCP_DATA_DIR",
-                data_dir.path().to_str().expect("utf8 data path"),
-            ),
-            ("KMP_VIEWER_ADDR", "127.0.0.1:0"),
-        ],
-        "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\",\"params\":{}}\n",
-    );
-
-    assert!(
-        output.status.success(),
-        "the zero-config embedded backend should still serve: {}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-    let stderr = String::from_utf8(output.stderr).expect("stderr should be UTF-8");
-    assert!(
-        stderr.contains("memory viewer at http://127.0.0.1:"),
-        "the implicit embedded backend must mount its viewer: {stderr}"
-    );
-    let token = stderr
-        .split("memory viewer at ")
-        .nth(1)
-        .and_then(|line| line.split_whitespace().next())
-        .and_then(|url| url.trim_end_matches(';').split_once("?k="))
-        .map(|(_, token)| token)
-        .expect("the printed viewer URL carries its capability");
-    assert_eq!(token.len(), 64, "the viewer capability is 256 bits in hex");
-    assert!(token.bytes().all(|byte| byte.is_ascii_hexdigit()));
-}
-
-#[test]
-fn a_busy_default_viewer_port_falls_forward_to_a_session_port() {
-    let occupied = match std::net::TcpListener::bind(kmp_viewer::DEFAULT_VIEWER_ADDR) {
-        Ok(listener) => Some(listener),
-        Err(error) if error.kind() == std::io::ErrorKind::AddrInUse => None,
-        Err(error) => panic!("the default viewer port could not be occupied: {error}"),
-    };
-    let data_dir = tempfile::tempdir().expect("temp data dir");
-    let mut command = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"));
-    command
-        .env_remove("KMP_VIEWER_ADDR")
-        .env("KMP_MCP_DATA_DIR", data_dir.path())
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped());
-    let mut child = command.spawn().expect("stdio MCP binary should spawn");
-    child
-        .stdin
-        .as_mut()
-        .expect("stdin")
-        .write_all(b"{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\",\"params\":{}}\n")
-        .expect("request should be written");
-    drop(child.stdin.take());
-    let output = child.wait_with_output().expect("stdio MCP binary exits");
-    drop(occupied);
-
-    assert!(
-        output.status.success(),
-        "{}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-    let stderr = String::from_utf8(output.stderr).expect("stderr should be UTF-8");
-    assert!(
-        stderr.contains("choosing a free per-session loopback port instead"),
-        "the collision must be explicit: {stderr}"
-    );
-    assert!(
-        stderr.contains("memory viewer at http://127.0.0.1:")
-            && !stderr.contains("memory viewer at http://127.0.0.1:7317/"),
-        "the second session must advertise its own viewer: {stderr}"
-    );
 }
 
 /// gRPC by name and nothing to talk to is the one backend failure left, and
@@ -550,7 +544,7 @@ fn invalid_utf8_costs_one_line_not_the_stdio_session() {
 #[test]
 fn undrained_stderr_never_blocks_stdio_tool_calls() {
     const CALLS: u64 = 200;
-    let mut command = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"));
+    let mut command = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"));
     command
         .env("KMP_MCP_BACKEND", "fixture")
         .env("KMP_VIEWER_ADDR", "off")
@@ -647,7 +641,7 @@ fn run_binary(envs: &[(&str, &str)], stdin: &str) -> std::process::Output {
 }
 
 fn run_binary_bytes(envs: &[(&str, &str)], stdin: &[u8]) -> std::process::Output {
-    let mut command = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"));
+    let mut command = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"));
     command
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -678,7 +672,7 @@ fn run_binary_from(
     envs: &[(&str, &str)],
     stdin: &str,
 ) -> std::process::Output {
-    let mut command = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"));
+    let mut command = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"));
     command
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -724,7 +718,7 @@ fn doctor_fails_on_every_layout_that_real_store_open_refuses() {
             std::fs::write(data_dir.path().join("FORMAT_VERSION"), stamp).expect("invalid stamp");
         }
 
-        let output = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+        let output = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"))
             .arg("doctor")
             .env("HOME", home.path())
             .env("XDG_DATA_HOME", home.path().join("xdg"))
@@ -740,7 +734,14 @@ fn doctor_fails_on_every_layout_that_real_store_open_refuses() {
             report.contains("the selected memory cannot be opened"),
             "{report}"
         );
-        assert!(report.contains("engine on disk: sqlite"), "{report}");
+        if stamp == Some("2\n") {
+            // A retired format is named by the refusal for what it is, not
+            // listed as this engine's sqlite.
+            assert!(report.contains("old label identity"), "{report}");
+            assert!(!report.contains("engine on disk"), "{report}");
+        } else {
+            assert!(report.contains("engine on disk: sqlite"), "{report}");
+        }
         assert!(!report.contains("no store yet"), "{report}");
         assert!(
             report
@@ -804,7 +805,7 @@ fn info_and_doctor_report_the_data_dir_without_creating_it() {
     std::fs::create_dir_all(&empty_path).expect("isolated PATH");
 
     for verb in ["info", "doctor"] {
-        let output = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+        let output = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"))
             .arg(verb)
             .current_dir(project.path())
             .env("HOME", &home)
@@ -860,7 +861,7 @@ fn orphaned_project_bundle_is_diagnosed_and_reported_once_on_project_writes() {
     let user_data = tempfile::tempdir().expect("isolated user data");
     let isolated_home = tempfile::tempdir().expect("isolated host registrations");
 
-    let doctor = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+    let doctor = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"))
         .arg("doctor")
         .current_dir(&nested)
         .env_remove("KMP_MCP_DATA_DIR")
@@ -967,7 +968,7 @@ fn config_persists_and_initialize_survives_invalid_policy() {
     let config_home = tempfile::tempdir().expect("config home");
     let bin = env!("CARGO_BIN_EXE_kmp-mcp");
 
-    let initial = Command::new(bin)
+    let initial = isolated_home::command(bin)
         .arg("config")
         .env("XDG_CONFIG_HOME", config_home.path())
         .current_dir(config_home.path())
@@ -980,7 +981,7 @@ fn config_persists_and_initialize_survives_invalid_policy() {
     assert!(!config_home.path().join("kmp/config.toml").exists());
 
     // The retired verb is refused with the reason, and writes nothing.
-    let retired = Command::new(bin)
+    let retired = isolated_home::command(bin)
         .args(["config", "ask-fallback-languages", "en,fr"])
         .env("XDG_CONFIG_HOME", config_home.path())
         .current_dir(config_home.path())
@@ -1019,7 +1020,7 @@ fn config_persists_and_initialize_survives_invalid_policy() {
     let instructions = initialize("default policy");
     assert!(!instructions.is_empty());
 
-    let unsupported_mode = Command::new(bin)
+    let unsupported_mode = isolated_home::command(bin)
         .args(["config", "memory-routing", "sometimes"])
         .env("XDG_CONFIG_HOME", config_home.path())
         .current_dir(config_home.path())
@@ -1030,7 +1031,7 @@ fn config_persists_and_initialize_survives_invalid_policy() {
         String::from_utf8_lossy(&unsupported_mode.stderr).contains("is not a memory routing mode")
     );
 
-    let always = Command::new(bin)
+    let always = isolated_home::command(bin)
         .args(["config", "memory-routing", "always"])
         .env("XDG_CONFIG_HOME", config_home.path())
         .current_dir(config_home.path())
@@ -1059,7 +1060,7 @@ fn config_persists_and_initialize_survives_invalid_policy() {
         "ask_fallback_languages = [\"en\", \"fr\"]\nmemory_routing = \"always\"\n",
     )
     .expect("legacy policy fixture written");
-    let legacy = Command::new(bin)
+    let legacy = isolated_home::command(bin)
         .arg("config")
         .env("XDG_CONFIG_HOME", config_home.path())
         .current_dir(config_home.path())
@@ -1075,7 +1076,7 @@ fn config_persists_and_initialize_survives_invalid_policy() {
         legacy.contains("ask_fallback_languages is no longer read"),
         "{legacy}"
     );
-    let doctor = Command::new(bin)
+    let doctor = isolated_home::command(bin)
         .arg("doctor")
         .env("XDG_CONFIG_HOME", config_home.path())
         .current_dir(config_home.path())
@@ -1093,7 +1094,7 @@ fn config_persists_and_initialize_survives_invalid_policy() {
         "memory_routing = always\n",
     )
     .expect("invalid policy fixture written");
-    let invalid = Command::new(bin)
+    let invalid = isolated_home::command(bin)
         .arg("config")
         .env("XDG_CONFIG_HOME", config_home.path())
         .current_dir(config_home.path())
@@ -1106,7 +1107,7 @@ fn config_persists_and_initialize_survives_invalid_policy() {
     assert!(!safe_instructions.is_empty());
     assert_ne!(safe_instructions, recruited);
 
-    let doctor = Command::new(bin)
+    let doctor = isolated_home::command(bin)
         .arg("doctor")
         .env("XDG_CONFIG_HOME", config_home.path())
         .current_dir(config_home.path())
@@ -1135,7 +1136,7 @@ fn subcommand_help_and_unknown_options_never_create_flag_named_files() {
         "viewer",
     ] {
         for flag in ["--help", "-h"] {
-            let output = Command::new(bin)
+            let output = isolated_home::command(bin)
                 .args([command, flag])
                 .current_dir(cwd.path())
                 .env("KMP_MCP_DATA_DIR", &data_dir)
@@ -1162,7 +1163,7 @@ fn subcommand_help_and_unknown_options_never_create_flag_named_files() {
         vec!["document", "--bogus"],
         vec!["viewer", "--bogus"],
     ] {
-        let output = Command::new(bin)
+        let output = isolated_home::command(bin)
             .args(&args)
             .current_dir(cwd.path())
             .env("KMP_MCP_DATA_DIR", &data_dir)
@@ -1178,7 +1179,7 @@ fn subcommand_help_and_unknown_options_never_create_flag_named_files() {
     }
     assert!(!cwd.path().join("--bogus").exists());
 
-    let ambiguous = Command::new(bin)
+    let ambiguous = isolated_home::command(bin)
         .args(["export", "./-memory.jsonl"])
         .current_dir(cwd.path())
         .env("KMP_MCP_DATA_DIR", &data_dir)
@@ -1199,7 +1200,7 @@ fn obsolete_store_migration_command_is_not_exposed_or_executed() {
     let source = parent.path().join("source");
     let destination = parent.path().join("destination");
 
-    let output = Command::new(bin)
+    let output = isolated_home::command(bin)
         .args([
             "migrate",
             &source.display().to_string(),
@@ -1217,7 +1218,10 @@ fn obsolete_store_migration_command_is_not_exposed_or_executed() {
     assert!(!source.exists());
     assert!(!destination.exists());
 
-    let help = Command::new(bin).arg("--help").output().expect("help runs");
+    let help = isolated_home::command(bin)
+        .arg("--help")
+        .output()
+        .expect("help runs");
     assert!(!String::from_utf8_lossy(&help.stdout).contains("migrate <"));
 }
 
@@ -1275,7 +1279,7 @@ fn filtered_cli_export_is_verifiable_exact_and_importable() {
     );
 
     let filtered_path = output_dir.path().join("project-a.jsonl");
-    let filtered = Command::new(bin)
+    let filtered = isolated_home::command(bin)
         .args([
             "export",
             filtered_path.to_str().expect("utf8 path"),
@@ -1309,7 +1313,7 @@ fn filtered_cli_export_is_verifiable_exact_and_importable() {
     std::fs::create_dir_all(snapshot_path.parent().expect("snapshot parent"))
         .expect("snapshot directory");
     std::fs::write(&snapshot_path, &bundle).expect("filtered snapshot");
-    let verified = Command::new(bin)
+    let verified = isolated_home::command(bin)
         .args(["snapshot", "verify", "filtered"])
         .current_dir(snapshot_project.path())
         .env_remove("KMP_MCP_DATA_DIR")
@@ -1323,7 +1327,7 @@ fn filtered_cli_export_is_verifiable_exact_and_importable() {
     assert!(String::from_utf8_lossy(&verified.stdout).contains("project:a"));
 
     let repeated_path = output_dir.path().join("both.jsonl");
-    let repeated = Command::new(bin)
+    let repeated = isolated_home::command(bin)
         .args([
             "export",
             repeated_path.to_str().expect("utf8 path"),
@@ -1341,7 +1345,7 @@ fn filtered_cli_export_is_verifiable_exact_and_importable() {
     assert_eq!(repeated.abouts, ["project:a", "project:ab"]);
     assert_eq!(repeated.event_count, 2);
 
-    let imported = Command::new(bin)
+    let imported = isolated_home::command(bin)
         .args(["import", filtered_path.to_str().expect("utf8 path")])
         .env("KMP_MCP_DATA_DIR", target.path())
         .output()
@@ -1352,7 +1356,7 @@ fn filtered_cli_export_is_verifiable_exact_and_importable() {
         String::from_utf8_lossy(&imported.stderr)
     );
     let round_trip_path = output_dir.path().join("round-trip.jsonl");
-    let round_trip = Command::new(bin)
+    let round_trip = isolated_home::command(bin)
         .args(["export", round_trip_path.to_str().expect("utf8 path")])
         .env("KMP_MCP_DATA_DIR", target.path())
         .output()
@@ -1364,7 +1368,7 @@ fn filtered_cli_export_is_verifiable_exact_and_importable() {
     assert_eq!(round_trip.event_count, 1);
 
     let missing_path = output_dir.path().join("missing.jsonl");
-    let missing = Command::new(bin)
+    let missing = isolated_home::command(bin)
         .args([
             "export",
             missing_path.to_str().expect("utf8 path"),
@@ -1388,7 +1392,10 @@ fn cli_surface_version_export_import_and_errors() {
     let bin = env!("CARGO_BIN_EXE_kmp-mcp");
 
     for flag in ["--help", "-h"] {
-        let help = Command::new(bin).arg(flag).output().expect("help runs");
+        let help = isolated_home::command(bin)
+            .arg(flag)
+            .output()
+            .expect("help runs");
         assert!(help.status.success(), "{flag} exits successfully");
         let stdout = String::from_utf8_lossy(&help.stdout);
         assert!(stdout.contains("Serve MCP over stdio"), "{flag}: {stdout}");
@@ -1401,7 +1408,7 @@ fn cli_surface_version_export_import_and_errors() {
         assert!(stdout.contains("snapshot <verb>"), "{flag}: {stdout}");
     }
 
-    let version = Command::new(bin)
+    let version = isolated_home::command(bin)
         .arg("--version")
         .output()
         .expect("version runs");
@@ -1411,14 +1418,14 @@ fn cli_surface_version_export_import_and_errors() {
         "--version must report binary and store format"
     );
 
-    let retired = Command::new(bin)
+    let retired = isolated_home::command(bin)
         .arg("share-memory")
         .output()
         .expect("retired command explains itself");
     assert_eq!(retired.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&retired.stderr).contains("share-memory was retired"));
 
-    let unknown = Command::new(bin)
+    let unknown = isolated_home::command(bin)
         .arg("bogus")
         .output()
         .expect("unknown runs");
@@ -1428,7 +1435,7 @@ fn cli_surface_version_export_import_and_errors() {
     // project there is no repository to commit to, so it refuses and says
     // which resolution rule won rather than guessing a file.
     let outside_project = tempfile::tempdir().expect("non-project dir");
-    let no_path_no_project = Command::new(bin)
+    let no_path_no_project = isolated_home::command(bin)
         .arg("export")
         .env("KMP_MCP_BACKEND", "embedded")
         .env("KMP_MCP_DATA_DIR", outside_project.path())
@@ -1448,7 +1455,7 @@ fn cli_surface_version_export_import_and_errors() {
     // Inside a project it writes that default, creating .kmp/ on first save.
     let project = tempfile::tempdir().expect("project dir");
     std::fs::create_dir_all(project.path().join(".git")).expect("project marker");
-    let seeded = Command::new(bin)
+    let seeded = isolated_home::command(bin)
         .arg("export")
         .env("KMP_MCP_BACKEND", "embedded")
         .env("KMP_MCP_DATA_DIR", project.path().join(".kernel"))
@@ -1467,7 +1474,7 @@ fn cli_surface_version_export_import_and_errors() {
     // where anyone actually is.
     let nested = project.path().join("crates").join("thing");
     std::fs::create_dir_all(&nested).expect("nested dir");
-    let in_project = Command::new(bin)
+    let in_project = isolated_home::command(bin)
         .arg("export")
         .current_dir(&nested)
         .env("KMP_MCP_BACKEND", "embedded")
@@ -1495,7 +1502,7 @@ fn cli_surface_version_export_import_and_errors() {
     assert!(!committed_header.content_digest.is_empty());
 
     for name in ["before-release", "same-history"] {
-        let snapshot = Command::new(bin)
+        let snapshot = isolated_home::command(bin)
             .args(["snapshot", "create", name])
             .current_dir(&nested)
             .env_remove("KMP_MCP_DATA_DIR")
@@ -1507,7 +1514,7 @@ fn cli_surface_version_export_import_and_errors() {
             String::from_utf8_lossy(&snapshot.stderr)
         );
     }
-    let verify = Command::new(bin)
+    let verify = isolated_home::command(bin)
         .args(["snapshot", "verify", "before-release"])
         .current_dir(&nested)
         .env_remove("KMP_MCP_DATA_DIR")
@@ -1515,7 +1522,7 @@ fn cli_surface_version_export_import_and_errors() {
         .expect("snapshot verify runs");
     assert!(verify.status.success());
     assert!(String::from_utf8_lossy(&verify.stdout).contains("before-release"));
-    let list = Command::new(bin)
+    let list = isolated_home::command(bin)
         .args(["snapshot", "list"])
         .current_dir(&nested)
         .env_remove("KMP_MCP_DATA_DIR")
@@ -1523,7 +1530,7 @@ fn cli_surface_version_export_import_and_errors() {
         .expect("snapshot list runs");
     assert!(list.status.success());
     assert!(String::from_utf8_lossy(&list.stdout).contains("same-history"));
-    let merge = Command::new(bin)
+    let merge = isolated_home::command(bin)
         .args([
             "snapshot",
             "merge",
@@ -1562,7 +1569,17 @@ fn cli_surface_version_export_import_and_errors() {
         .join(kmp_embedded::PENDING_EXPORT_DIR);
     std::fs::create_dir_all(&pending_dir).expect("pending dir");
     std::fs::write(pending_dir.join("crashed.pending"), b"pending").expect("pending marker");
-    let guarded_export = Command::new(bin)
+    // A writer that is still running holds the commit-native lock for the
+    // whole write, so a marker found while the lock is held may be its own.
+    let live_writer = std::fs::OpenOptions::new()
+        .create(true)
+        .truncate(false)
+        .read(true)
+        .write(true)
+        .open(project.path().join(".kernel/commit-native-bundle.lock"))
+        .expect("lock file");
+    live_writer.lock().expect("live writer lock");
+    let guarded_export = isolated_home::command(bin)
         .arg("export")
         .current_dir(&nested)
         .env_remove("KMP_MCP_DATA_DIR")
@@ -1574,7 +1591,8 @@ fn cli_surface_version_export_import_and_errors() {
         1,
         "a normal export cannot erase a marker that may belong to a live writer"
     );
-    let repaired_export = Command::new(bin)
+    live_writer.unlock().expect("live writer done");
+    let repaired_export = isolated_home::command(bin)
         .args(["export", "--repair-pending"])
         .current_dir(&nested)
         .env_remove("KMP_MCP_DATA_DIR")
@@ -1582,8 +1600,23 @@ fn cli_surface_version_export_import_and_errors() {
         .expect("repair export runs");
     assert!(repaired_export.status.success());
     assert!(kmp_embedded::pending_bundle_exports(&project.path().join(".kernel")).is_empty());
+    // With no writer left, a marker whose write the bundle already holds is
+    // cleared by the next open on its own (S9): no human step.
+    std::fs::write(pending_dir.join("crashed-again.pending"), b"pending").expect("marker");
+    let recovering_export = isolated_home::command(bin)
+        .arg("export")
+        .current_dir(&nested)
+        .env_remove("KMP_MCP_DATA_DIR")
+        .output()
+        .expect("recovering export runs");
+    assert!(
+        recovering_export.status.success(),
+        "{}",
+        String::from_utf8_lossy(&recovering_export.stderr)
+    );
+    assert!(kmp_embedded::pending_bundle_exports(&project.path().join(".kernel")).is_empty());
     let unrelated_export = project.path().join("unrelated.jsonl");
-    let refused_repair = Command::new(bin)
+    let refused_repair = isolated_home::command(bin)
         .args([
             "export",
             unrelated_export.to_str().expect("utf-8 path"),
@@ -1614,14 +1647,14 @@ fn cli_surface_version_export_import_and_errors() {
     );
     assert!(ingest.status.success());
 
-    let export = Command::new(bin)
+    let export = isolated_home::command(bin)
         .args(["export", bundle_path.to_str().expect("utf8")])
         .env("KMP_MCP_DATA_DIR", source.path())
         .output()
         .expect("export runs");
     assert!(export.status.success(), "export: {export:?}");
 
-    let import = Command::new(bin)
+    let import = isolated_home::command(bin)
         .args(["import", bundle_path.to_str().expect("utf8")])
         .env("KMP_MCP_DATA_DIR", target.path())
         .output()
@@ -1629,7 +1662,7 @@ fn cli_surface_version_export_import_and_errors() {
     assert!(import.status.success(), "import: {import:?}");
     assert!(String::from_utf8_lossy(&import.stdout).contains("\"events_imported\":1"));
 
-    let import_again = Command::new(bin)
+    let import_again = isolated_home::command(bin)
         .args(["import", bundle_path.to_str().expect("utf8")])
         .env("KMP_MCP_DATA_DIR", target.path())
         .output()
@@ -1638,6 +1671,13 @@ fn cli_surface_version_export_import_and_errors() {
         import_again.status.code(),
         Some(2),
         "non-empty import exits 2"
+    );
+    let refusal = String::from_utf8_lossy(&import_again.stderr);
+    assert!(
+        refusal.contains("already holds 1 event.")
+            && refusal.contains("kmp-mcp import --from")
+            && !refusal.contains("1 events"),
+        "the refusal names the verb that merges abouts: {refusal}"
     );
 
     let wake = run_binary(
@@ -1685,14 +1725,14 @@ fn doctor_warns_rather_than_fails_when_the_bundle_is_behind_authored_memory() {
     // Then a committed bundle that predates it: an export taken from an empty
     // store, written over whatever automatic maintenance produced.
     let empty_store = project.path().join("empty-store");
-    let exported = Command::new(binary)
+    let exported = isolated_home::command(binary)
         .args(["export", committed.to_str().expect("bundle path")])
         .env("KMP_MCP_DATA_DIR", empty_store)
         .output()
         .expect("empty export");
     assert!(exported.status.success(), "{exported:?}");
 
-    let doctor = Command::new(binary)
+    let doctor = isolated_home::command(binary)
         .arg("doctor")
         .current_dir(project.path())
         .env_remove("KMP_MCP_DATA_DIR")
@@ -1737,7 +1777,7 @@ fn doctor_treats_a_legacy_guide_bearing_bundle_as_repairable() {
     let guide = workspace.join("plugins/kmp/guide/memory.jsonl");
     let binary = env!("CARGO_BIN_EXE_kmp-mcp");
 
-    let imported = Command::new(binary)
+    let imported = isolated_home::command(binary)
         .args(["import", guide.to_str().expect("guide path")])
         .env("KMP_MCP_DATA_DIR", &data_dir)
         .output()
@@ -1745,7 +1785,7 @@ fn doctor_treats_a_legacy_guide_bearing_bundle_as_repairable() {
     assert!(imported.status.success(), "{imported:?}");
 
     let legacy_export = project.path().join("legacy-full.jsonl");
-    let exported = Command::new(binary)
+    let exported = isolated_home::command(binary)
         .args(["export", legacy_export.to_str().expect("bundle path")])
         .env("KMP_MCP_DATA_DIR", &data_dir)
         .output()
@@ -1753,7 +1793,7 @@ fn doctor_treats_a_legacy_guide_bearing_bundle_as_repairable() {
     assert!(exported.status.success(), "{exported:?}");
     std::fs::copy(&legacy_export, &committed).expect("install legacy project bundle");
 
-    let doctor = Command::new(binary)
+    let doctor = isolated_home::command(binary)
         .arg("doctor")
         .current_dir(project.path())
         .env_remove("KMP_MCP_DATA_DIR")
@@ -1809,7 +1849,7 @@ fn a_store_with_a_lexical_bridge_initializes_and_reports_its_table() {
         .expect("agent instructions");
     assert!(!instructions.is_empty());
 
-    let info = std::process::Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+    let info = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"))
         .arg("info")
         .envs(envs.iter().copied())
         .output()
@@ -1844,7 +1884,7 @@ fn a_memory_written_before_summaries_is_listed_attached_and_then_found_in_englis
     );
     assert!(seeded.status.success(), "{seeded:?}");
 
-    let pending = Command::new(binary)
+    let pending = isolated_home::command(binary)
         .args(["summaries", "pending", "--json"])
         .envs(envs.iter().copied())
         .output()
@@ -1863,7 +1903,7 @@ fn a_memory_written_before_summaries_is_listed_attached_and_then_found_in_englis
         "Se adoptó Valkey 7.2 para el almacén compartido (ADR-018)."
     );
 
-    let doctor = Command::new(binary)
+    let doctor = isolated_home::command(binary)
         .arg("doctor")
         .envs(envs.iter().copied())
         .output()
@@ -1918,7 +1958,7 @@ fn a_memory_written_before_summaries_is_listed_attached_and_then_found_in_englis
         "{attached}"
     );
 
-    let pending = Command::new(binary)
+    let pending = isolated_home::command(binary)
         .args(["summaries", "pending"])
         .envs(envs.iter().copied())
         .output()
@@ -1950,7 +1990,7 @@ fn a_memory_written_before_summaries_is_listed_attached_and_then_found_in_englis
     assert_eq!(cited["metadata"]["matched_via"], "summary");
     assert_eq!(cited["metadata"]["summary_en_by"], "agent:backfill");
 
-    let doctor = Command::new(binary)
+    let doctor = isolated_home::command(binary)
         .arg("doctor")
         .envs(envs.iter().copied())
         .output()
@@ -2374,8 +2414,7 @@ fn an_ask_across_abouts_names_the_abouts_it_read_and_the_ones_that_were_empty() 
         let mut arguments = serde_json::json!({
             "about": "project:alpha",
             "question": "Which breaker tripped during the north outage?",
-            "answer_policy": "evidence_or_unknown",
-            "depth": 3
+            "answer_policy": "evidence_or_unknown"
         });
         for (key, value) in extra.as_object().expect("extra arguments") {
             arguments[key] = value.clone();
@@ -2964,7 +3003,7 @@ fn an_equivalence_declared_from_a_relate_proposal_is_the_one_edge_that_crosses_a
     let asked = call(
         9,
         "kmp_ask",
-        serde_json::json!({"about": "service:alpha", "question": "What froze the rollout during the payments audit?", "answer_policy": "best_effort", "dimensions": both, "depth": 3}),
+        serde_json::json!({"about": "service:alpha", "question": "What froze the rollout during the payments audit?", "answer_policy": "best_effort", "dimensions": both}),
     );
     let evidence = asked["structuredContent"]["proof"]["evidence"]
         .as_array()

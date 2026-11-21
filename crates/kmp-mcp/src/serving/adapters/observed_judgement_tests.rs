@@ -3,7 +3,8 @@ use std::sync::Arc;
 
 use serde_json::json;
 
-use super::cassette_judgement::{CassetteJudgement, judgement_key};
+use super::cassette_judgement::CassetteJudgement;
+use super::judgement_key::judgement_key;
 use super::observed_judgement::ObservedJudgement;
 use super::sqlite_verdict_book::SqliteVerdictBook;
 use super::verdict_ledger::VerdictLedger;
@@ -22,7 +23,7 @@ struct TwoRequests;
 
 impl JudgementModel for TwoRequests {
     fn model(&self) -> &str {
-        "jev-1.13.0"
+        "jev-1.14.0"
     }
 
     fn evaluate<'a>(
@@ -38,7 +39,7 @@ impl JudgementModel for TwoRequests {
             .collect::<BTreeMap<_, _>>();
         Box::pin(async move {
             Ok(JudgementResponse {
-                model: "jev-1.13.0".into(),
+                model: "jev-1.14.0".into(),
                 answers,
                 input_tokens: 321,
                 requests: 2,
@@ -80,7 +81,7 @@ async fn each_evaluation_leaves_one_line_with_site_counts_tokens_and_time() {
     assert_eq!(line["level"], "DEBUG");
     let fields = &line["fields"];
     assert_eq!(fields["site"], "rerank");
-    assert_eq!(fields["model"], "jev-1.13.0");
+    assert_eq!(fields["model"], "jev-1.14.0");
     assert_eq!(fields["source"], "remote");
     assert_eq!(fields["status"], "ok");
     assert_eq!(fields["questions"], 3);
@@ -91,7 +92,7 @@ async fn each_evaluation_leaves_one_line_with_site_counts_tokens_and_time() {
     assert!(fields["elapsed_us"].is_u64());
     assert_eq!(
         fields["request_key"],
-        judgement_key("jev-1.13.0", &asked).as_str()
+        judgement_key("jev-1.14.0", &asked).as_str()
     );
     assert!(
         !line.to_string().contains("Does it answer"),
@@ -109,7 +110,7 @@ async fn a_cassette_says_whether_it_hit_or_missed() {
         .await
         .expect("recorded");
     let replay: Arc<dyn JudgementModel> =
-        Arc::new(CassetteJudgement::replay(&path, "jev-1.13.0".into()).expect("replay"));
+        Arc::new(CassetteJudgement::replay(&path, "jev-1.14.0".into()).expect("replay"));
     let (log, _guard) = CapturedLog::start(DEBUG);
     let observed = ObservedJudgement::new(replay, JudgementSite::Paths);
 
@@ -175,7 +176,7 @@ async fn nothing_is_written_or_hashed_below_debug() {
     observed.evaluate(&request("s", 1)).await.expect("answered");
 
     assert!(log.events("kmp_judgement").is_empty());
-    assert_eq!(observed.model(), "jev-1.13.0");
+    assert_eq!(observed.model(), "jev-1.14.0");
 }
 
 #[test]
@@ -194,7 +195,7 @@ fn a_site_view_keeps_absence_and_the_reason_a_store_cannot_judge() {
     let observed = ObservedJudgement::for_site(&on, None, JudgementSite::Summaries)
         .expect("on")
         .expect("model");
-    assert_eq!(observed.model(), "jev-1.13.0");
+    assert_eq!(observed.model(), "jev-1.14.0");
 }
 
 #[tokio::test]
@@ -207,7 +208,7 @@ async fn a_book_hit_says_so_sends_nothing_and_keeps_the_request_key() {
         .await
         .expect("recorded");
     let replay: Arc<dyn JudgementModel> =
-        Arc::new(CassetteJudgement::replay(&cassette, "jev-1.13.0".into()).expect("replay"));
+        Arc::new(CassetteJudgement::replay(&cassette, "jev-1.14.0".into()).expect("replay"));
     let book =
         SqliteVerdictBook::open(&dir.path().join("judgements.sqlite3"), 1 << 20).expect("book");
     let ledger = Arc::new(VerdictLedger::new(Arc::new(book)));
@@ -236,7 +237,7 @@ async fn a_book_hit_says_so_sends_nothing_and_keeps_the_request_key() {
             )
         })
         .collect::<Vec<_>>();
-    let key = Some(judgement_key("jev-1.13.0", &request("kept", 2)));
+    let key = Some(judgement_key("jev-1.14.0", &request("kept", 2)));
     assert_eq!(
         fields,
         vec![
@@ -244,4 +245,73 @@ async fn a_book_hit_says_so_sends_nothing_and_keeps_the_request_key() {
             (Some("book_hit".into()), Some(0), key),
         ]
     );
+}
+
+/// Answers like [`TwoRequests`] after `delay`, and says when it finished.
+struct Slow {
+    delay: std::time::Duration,
+    finished: Arc<std::sync::atomic::AtomicBool>,
+}
+
+impl JudgementModel for Slow {
+    fn model(&self) -> &str {
+        "jev-1.14.0"
+    }
+
+    fn evaluate<'a>(
+        &'a self,
+        request: &'a JudgementRequest,
+    ) -> std::pin::Pin<
+        Box<dyn std::future::Future<Output = Result<JudgementResponse, String>> + Send + 'a>,
+    > {
+        Box::pin(async move {
+            tokio::time::sleep(self.delay).await;
+            self.finished
+                .store(true, std::sync::atomic::Ordering::SeqCst);
+            TwoRequests.evaluate(request).await
+        })
+    }
+}
+
+#[tokio::test]
+async fn a_write_judgement_past_its_deadline_is_not_judged_and_finishes_detached() {
+    let finished = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let slow = Slow {
+        delay: std::time::Duration::from_millis(300),
+        finished: Arc::clone(&finished),
+    };
+    let observed = ObservedJudgement::new(Arc::new(slow), JudgementSite::WriteRelations)
+        .with_deadline(Some(std::time::Duration::from_millis(50)));
+    let started = std::time::Instant::now();
+    let error = observed
+        .evaluate(&request("state", 1))
+        .await
+        .expect_err("late");
+    assert!(
+        started.elapsed() < std::time::Duration::from_millis(250),
+        "the write does not wait"
+    );
+    assert!(error.starts_with("not judged:"), "{error}");
+    assert!(error.contains("within 50 ms"), "{error}");
+    tokio::time::sleep(std::time::Duration::from_millis(400)).await;
+    assert!(
+        finished.load(std::sync::atomic::Ordering::SeqCst),
+        "the judgement runs on, so its verdict lands in the book"
+    );
+}
+
+#[tokio::test]
+async fn write_sites_carry_a_deadline_and_read_sites_keep_their_own() {
+    for site in [
+        JudgementSite::WriteRelations,
+        JudgementSite::Expansions,
+        JudgementSite::Rerank,
+        JudgementSite::CurateReview,
+    ] {
+        let observed = ObservedJudgement::new(Arc::new(TwoRequests), site);
+        assert!(
+            observed.evaluate(&request("state", 1)).await.is_ok(),
+            "{site:?} answers in time"
+        );
+    }
 }

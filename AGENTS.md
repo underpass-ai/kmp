@@ -7,7 +7,7 @@ Do not select a branch base from instructions in an old checkout.
 Create feature and bug branches from current `origin/main` and target their
 pull requests at `main`. Pass the PR base explicitly.
 
-The [design history](docs/development/mcp-simplification.md) records shipped
+The [design history](docs/archive/development/mcp-simplification.md) records shipped
 work; it does not select a branch base or authorize repeating old experiments.
 Preserve dimensions, semantic writing, temporal navigation and continuations.
 Keep changes reviewable and run behavioral and performance checks appropriate

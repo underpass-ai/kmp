@@ -1,24 +1,14 @@
 {
   "content": [
     {
-      "text": "KMP agent <AGENT_NAME>. Expand a topic with kmp_guide and this context_id; served records are not proof of understanding.",
+      "text": "KMP guide topics. Call kmp_guide with one topic before a verb's first use.",
       "type": "text"
     }
   ],
   "isError": false,
   "structuredContent": {
-    "agent": {
-      "id": "<AGENT_ID>",
-      "name": "<AGENT_NAME>"
-    },
-    "card": null,
-    "context_id": "<CONTEXT_ID>",
-    "durable": true,
-    "expanded": [],
-    "guide_changed": false,
-    "guide_revision": "<GUIDE_REVISION>",
-    "next_actions": [],
-    "scheme": [
+    "summary": "KMP guide topics. Call kmp_guide with one topic before a verb's first use.",
+    "topics": [
       {
         "purpose": "Resume known work",
         "topic": "wake"
@@ -26,6 +16,22 @@
       {
         "purpose": "Record separate facts with evidence and labels",
         "topic": "write"
+      },
+      {
+        "purpose": "Link memories with a relation, its why and evidence",
+        "topic": "relations"
+      },
+      {
+        "purpose": "Resume a write that answered needs_review",
+        "topic": "review"
+      },
+      {
+        "purpose": "Write one canonical memory document",
+        "topic": "ingest"
+      },
+      {
+        "purpose": "Change the labels of a stored memory",
+        "topic": "relabel"
       },
       {
         "purpose": "Retrieve semantic evidence or stop at UNKNOWN",
@@ -36,11 +42,15 @@
         "topic": "time"
       },
       {
-        "purpose": "Inspect a claim or trace its proof",
+        "purpose": "Inspect a claim and read its proof",
         "topic": "audit"
       },
       {
-        "purpose": "Write a compact card for one stored body",
+        "purpose": "Trace a path to known destinations or seek evidence",
+        "topic": "trace"
+      },
+      {
+        "purpose": "Write a compact card or a search summary for a stored body",
         "topic": "condense"
       },
       {
@@ -56,12 +66,9 @@
         "topic": "view"
       },
       {
-        "purpose": "Resume identity and expand or fold this scheme",
+        "purpose": "How kmp_guide works and how to repair the stored guide",
         "topic": "guide"
       }
-    ],
-    "served": [],
-    "summary": "KMP agent <AGENT_NAME>. Expand a topic with kmp_guide and this context_id; served records are not proof of understanding.",
-    "used": []
+    ]
   }
 }

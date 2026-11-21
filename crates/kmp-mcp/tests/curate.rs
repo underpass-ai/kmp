@@ -269,10 +269,13 @@ async fn the_internal_prepare_mode_is_not_callable_from_outside() {
 }
 
 #[tokio::test]
-async fn apply_without_an_actor_or_context_is_refused() {
+async fn apply_without_an_actor_is_not_refused_for_it() {
+    // The writer defaults to the MCP client's name; this bogus token is what
+    // refuses the call, never a missing actor.
     let (_dir, server) = seeded().await;
     let response = raw(&server, "kmp_curate", json!({"mode": "apply", "about": "service:alpha",
         "review_token": "0".repeat(64), "accepted": [{"item_id": "m0", "why": "w", "evidence": "e"}]})).await;
     assert_eq!(response["result"]["isError"], true, "{response}");
-    assert!(response.to_string().contains("actor"), "{response}");
+    let message = response["result"]["structuredContent"]["error"]["message"].to_string();
+    assert!(!message.contains("actor"), "{response}");
 }

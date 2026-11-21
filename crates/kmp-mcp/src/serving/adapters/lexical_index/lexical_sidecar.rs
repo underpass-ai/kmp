@@ -3,7 +3,9 @@ use std::sync::Arc;
 
 use kmp_domain::{GraphNeighborhoodReader, PortError};
 use kmp_embedded::EmbeddedKernelStore;
-use kmp_proto_mapping::v1beta1::{LexicalObservation, LexicalShadowWitness};
+use kmp_proto_mapping::v1beta1::{
+    BridgedRescues, LexicalObservation, LexicalShadowWitness, RankPrefixes,
+};
 
 use super::catch_up_report::CatchUpReport;
 use super::index_limits::IndexLimits;
@@ -11,6 +13,7 @@ use super::indexed_parts::IndexedParts;
 use super::indexed_plan::IndexedPlan;
 pub(crate) use super::indexed_read::IndexedRead;
 use super::lexical_maintainer::LexicalMaintainer;
+use super::parts_memo::PartsMemo;
 use super::shadow_comparison::ShadowComparison;
 use super::shadow_report::ShadowReport;
 pub(crate) use super::shadow_scope::ShadowScope;
@@ -20,6 +23,25 @@ use crate::serving::lexical_index_mode::LexicalIndexMode;
 /// Candidates beyond the head window and the tail depth top-k reads at
 /// first, for those the ranking will find ineligible (P14).
 const TOP_K_SLACK: usize = 16;
+
+/// Carriers of a bridged word top-k reads at first for the bridged rescue,
+/// which takes at most three of those a ranking rejects (P14).
+const BRIDGED_FIRST_READ: usize = 16;
+
+/// How many candidates past those top-k must read the next round reads,
+/// after a round that did not certify its answer: four times as many, or,
+/// when the round carried the whole ranking of what it read and found fewer
+/// eligible candidates than its depth (`needed`) asks, enough to find that
+/// many at the rate it found them, twice over. Which round certifies never
+/// changes the answer, only how much is read before it.
+fn next_limit(limit: usize, needed: usize, more_ranked: bool, carried: usize) -> usize {
+    let grown = limit.saturating_mul(4);
+    if more_ranked || carried >= needed {
+        return grown;
+    }
+    let rate = needed.div_ceil(carried.max(1)).saturating_mul(2);
+    grown.max(limit.saturating_mul(rate))
+}
 
 /// The file the sidecar lives in, beside the store and outside `store/`,
 /// whose format gate refuses files it does not know.
@@ -72,7 +94,9 @@ impl LexicalSidecar {
                     sidecar: Some(sidecar),
                     mode,
                     limits,
-                    prune: crate::serving::environment::lexical_maxscore(),
+                    // MaxScore against the floor (P14). Its A/B switch,
+                    // KMP_LEXICAL_MAXSCORE, was removed at 1.0.
+                    prune: true,
                 }
             }
             Err(error) => {
@@ -182,7 +206,8 @@ impl LexicalSidecar {
     /// reads the question), it reads the candidates the best rank prefixes
     /// reach for a ranking carried `depth` tail items deep, `answer`s them,
     /// and keeps the answer only when `RankPrefixes::certifies` it; otherwise
-    /// it reads four times as many, up to every candidate.
+    /// it reads more ([`next_limit`]), up to every candidate, reusing every
+    /// point read of the rounds before ([`PartsMemo`]).
     #[allow(clippy::too_many_arguments)]
     pub(crate) async fn indexed_read(
         &self,
@@ -232,22 +257,43 @@ impl LexicalSidecar {
             Err(why) => return Ok(Err(why)),
         };
         let plan_us = started.elapsed().as_micros() as u64;
+        let unanswerable = (self.mode == LexicalIndexMode::Verify)
+            .then(|| {
+                plan.prefixes
+                    .as_ref()
+                    .map(|prefixes| Arc::new(prefixes.unanswerable().clone()))
+            })
+            .flatten();
         let mut limit = self.limits.head_window + depth + TOP_K_SLACK;
+        let mut bridged_limit = BRIDGED_FIRST_READ;
+        // Every round reads at the same position: what one read, the next
+        // need not read again.
+        let memo = Arc::new(std::sync::Mutex::new(PartsMemo::default()));
         loop {
-            let (candidates, unread) = match plan.select(limit) {
+            let selection = match plan.select(limit, bridged_limit) {
                 Ok(selected) => selected,
                 Err(why) => return Ok(Err(why)),
             };
+            let last = selection.reads_everything();
+            let candidates = selection.candidates;
             let read = candidates.len();
+            // The round that reads every candidate left is the last one.
+            if last && let Ok(mut kept) = memo.lock() {
+                kept.read_through = true;
+            }
             let parts = {
                 let sidecar = Arc::clone(&sidecar);
                 let about = about.clone();
+                let memo = Arc::clone(&memo);
                 store
                     .read_points(move |reads| {
                         if reads.last_event_sequence()? != position {
                             return Ok(None);
                         }
-                        IndexedParts::new(reads, &sidecar, &about)
+                        let mut memo = memo.lock().map_err(|_| {
+                            PortError::Unavailable("lexical index: parts memo poisoned".into())
+                        })?;
+                        IndexedParts::new(reads, &sidecar, &about, &mut memo)
                             .read(&candidates)
                             .map_err(PortError::Unavailable)
                     })
@@ -257,6 +303,11 @@ impl LexicalSidecar {
             let Some(mut parts) = parts else {
                 return Ok(Err("the store moved"));
             };
+            // A round that read every candidate is the last: what earlier
+            // rounds kept is let go before the answer is ranked.
+            if last && let Ok(mut kept) = memo.lock() {
+                *kept = PartsMemo::default();
+            }
             parts.read_revision = store
                 .graph_read_revision()
                 .await
@@ -265,25 +316,45 @@ impl LexicalSidecar {
                 .ask_from_parts(query, parts, kmp_application::RenderDemand::Skip)
                 .await
                 .map_err(|error| error.to_string())?;
+            // What this round's rankings took through the bridge.
+            let rescues = BridgedRescues::default();
+            let mut indexed = plan.indexed.clone();
+            indexed.rescues = rescues.clone();
             let indexed_read = IndexedRead {
                 result,
-                indexed: plan.indexed.clone(),
+                indexed,
                 reached: plan.reached,
                 candidates: read,
                 planned: plan.candidates.len(),
                 documents: plan.documents,
                 plan_us,
                 parts_us: started.elapsed().as_micros() as u64 - plan_us,
+                unanswerable: unanswerable.clone(),
             };
             let response = answer(&indexed_read)?;
-            let certified = plan
+            let ranked = plan
                 .prefixes
                 .as_ref()
-                .is_none_or(|prefixes| prefixes.certifies(&response, unread));
-            if certified {
+                .is_none_or(|prefixes| prefixes.certifies(&response, selection.unread));
+            // A carrier left unread could have been rescued only if some
+            // ranking took fewer than it may, or one scoring no more.
+            let rescued = selection
+                .unread_bridged
+                .is_none_or(|unread| rescues.rank_above(unread));
+            if ranked && rescued {
                 return Ok(Ok((indexed_read, response)));
             }
-            limit = limit.saturating_mul(4);
+            if !ranked {
+                limit = next_limit(
+                    limit,
+                    self.limits.head_window + depth,
+                    response.more_ranked,
+                    RankPrefixes::carried(&response),
+                );
+            }
+            if !rescued {
+                bridged_limit = bridged_limit.max(selection.bridged_read).saturating_mul(4);
+            }
         }
     }
 
@@ -350,5 +421,27 @@ impl LexicalSidecar {
         };
         report.emit(about);
         Some(report)
+    }
+}
+
+#[cfg(test)]
+mod next_limit_tests {
+    use super::next_limit;
+
+    #[test]
+    fn a_round_that_left_eligible_candidates_unread_grows_fourfold() {
+        assert_eq!(next_limit(80, 64, true, 64), 320);
+        assert_eq!(next_limit(80, 64, false, 64), 320);
+    }
+
+    #[test]
+    fn a_round_that_found_too_few_eligible_reads_enough_at_their_rate() {
+        // 5 eligible in 80: 64 need 13 times as many, twice over.
+        assert_eq!(next_limit(80, 64, false, 5), 80 * 26);
+        // None found: as if one had been.
+        assert_eq!(next_limit(80, 64, false, 0), 80 * 128);
+        // Never less than fourfold.
+        assert_eq!(next_limit(80, 64, false, 40), 320);
+        assert_eq!(next_limit(usize::MAX, 64, false, 1), usize::MAX);
     }
 }

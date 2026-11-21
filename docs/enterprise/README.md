@@ -5,8 +5,11 @@ live memory across machines, agents or services. It is self-operated, free and
 open source under Apache 2.0. It is not a paid tier and does not connect to an
 Underpass-hosted memory service.
 
-Start with [embedded KMP](../embedded/README.md) unless a shared service is a
-real requirement.
+**Experimental in 1.x.** `kmp-server`, the gRPC API `v1beta1`, MCP over HTTP
+and the Valkey, NATS and Neo4j adapters are outside the 1.0 compatibility
+promise ([Stability and support](../stability.md)). Start with
+[embedded KMP](../embedded/README.md) unless a shared service is a real
+requirement.
 
 ## What changes
 
@@ -21,8 +24,11 @@ real requirement.
 
 The agent-facing MCP server uses the shared memory contract. The plugin and
 skills do not become a second protocol. Backend support is not universal:
-`kmp_summaries_audit` is unavailable over gRPC, and the embedded loopback viewer
-requires a local kernel. Check the live catalogue and backend errors.
+`kmp_curate` and `kmp_summaries_audit` are unavailable over gRPC, the
+local-store commands (`export`, `import`, `snapshot`, `demo`, `viewer` and
+others) refuse to run with a remote kernel selected, and the embedded
+loopback viewer requires a local kernel. Check the live catalogue and backend
+errors.
 
 ## Architecture
 
@@ -90,6 +96,25 @@ migration.
   requires gateway-to-kernel mTLS.
 - Neo4j client-certificate authentication is not implemented by the current
   adapter. Use a secure URI, CA trust and the database's supported credentials.
+
+## Error codes on a remote kernel
+
+The shared kernel (MCP over gRPC, the HTTP gateway and direct gRPC) is
+experimental and outside the 1.0 promise. Its error `code`s are not yet the
+ones the local engine gives for the same fault:
+
+| Fault | Local engine (`kmp-mcp`, embedded) | Remote kernel |
+|:--|:--|:--|
+| An about the store does not hold | `not_found`, naming the about (an empty `kmp_wake` is a success on both) | `not_found` or `invalid_argument`, in the kernel's node vocabulary |
+| A payload the domain refuses (`InvalidState`) | `backend_error` | `invalid_argument`: the gRPC server maps every domain error to `INVALID_ARGUMENT` |
+| gRPC `FAILED_PRECONDITION`, `PERMISSION_DENIED`, `UNAUTHENTICATED`, `RESOURCE_EXHAUSTED` | — | `backend_error` |
+| `kmp_summaries_audit`, `kmp_curate` | answered | `unavailable`: they read the local store's log and opt-ins |
+| A missing guide node | `not_found` | `unavailable` |
+
+The local commands that read this machine's store (`export`, `import`,
+`document`, `snapshot`, `summaries`, `memories`, `demo`, `viewer`,
+`consolidation`) refuse to run, exit 2, while the environment selects a remote
+kernel, and `info`/`doctor` say the memory is not on this machine.
 
 ## Implementation authority
 

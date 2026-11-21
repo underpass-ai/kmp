@@ -25,10 +25,14 @@ pub enum ToolErrorCode {
     InvalidArgument,
     /// The memory asked for is not in this store.
     NotFound,
-    /// The operation collided with current state. The message distinguishes a
-    /// retryable optimistic-concurrency miss from a reused idempotency key
-    /// whose content does not match the accepted write.
+    /// The operation collided with current state and must not be replayed
+    /// unchanged: an idempotency key already accepted with other content, a
+    /// view the person at the loom moved, a guard that needs a decision.
     Conflict,
+    /// The store moved while this write was prepared and nothing of it was
+    /// applied. Replaying the same call with the same idempotency key is
+    /// safe; the server already retried it a bounded number of times.
+    RetryableConflict,
     /// The kernel could not be reached. Retrying the same call may work.
     Unavailable,
     /// No such tool on this surface.
@@ -43,6 +47,7 @@ impl ToolErrorCode {
         Self::InvalidArgument,
         Self::NotFound,
         Self::Conflict,
+        Self::RetryableConflict,
         Self::Unavailable,
         Self::UnknownTool,
         Self::BackendError,
@@ -53,6 +58,7 @@ impl ToolErrorCode {
             Self::InvalidArgument => "invalid_argument",
             Self::NotFound => "not_found",
             Self::Conflict => "conflict",
+            Self::RetryableConflict => "retryable_conflict",
             Self::Unavailable => "unavailable",
             Self::UnknownTool => "unknown_tool",
             Self::BackendError => "backend_error",
@@ -67,9 +73,14 @@ impl ToolErrorCode {
             }
             Self::NotFound => "the memory asked for is not in this store",
             Self::Conflict => {
-                "the operation conflicted with current state; follow the message — a retryable \
-                 write conflict is safely replayed with the same idempotency key, while a key \
-                 already accepted with different content must not be reused"
+                "the operation conflicted with current state; follow the message and do not \
+                 replay it unchanged — a key already accepted with different content must not be \
+                 reused"
+            }
+            Self::RetryableConflict => {
+                "the store moved while this write was prepared and nothing was applied; the \
+                 server retried it already, and replaying the same call with the same \
+                 idempotency key is safe"
             }
             Self::Unavailable => "the kernel could not be reached; the same call may work later",
             Self::UnknownTool => "no such tool on this surface",

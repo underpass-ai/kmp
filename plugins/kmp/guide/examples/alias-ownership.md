@@ -43,10 +43,10 @@ negative result. The replay stops on any other error or incomplete page;
 larger histories require the returned pagination before claiming coverage.
 
 ```json
-{"tool":"kmp_wake","save_as":"initial","expect_error":"not_found","arguments":{"about":"example:guide:alias-ownership","budget":{"max_bytes":20000}}}
+{"tool":"kmp_wake","save_as":"initial","arguments":{"about":"example:guide:alias-ownership","budget":{"max_bytes":20000}}}
 ```
 
-A fresh missing about returns `not_found` in the embedded engine. If it
+A wake on a fresh missing about says nothing is recorded there. If it
 already exists, recover it and reuse its catalogue; do not bypass strict
 validation by pretending it is empty.
 

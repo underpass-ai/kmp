@@ -181,11 +181,12 @@ mod tests {
                 .map(|n| format!("f{n}"))
                 .chain(std::iter::once("none".to_string()))
                 .collect(),
+            described: Default::default(),
         }
     }
 
     fn body_tokens(plan: &TypeSafeBatches, batch: &BTreeMap<String, JudgementQuestion>) -> usize {
-        estimated_tokens(&typesafe_request_body("jev-1.13.0", &plan.state, batch))
+        estimated_tokens(&typesafe_request_body("jev-1.14.0", &plan.state, batch))
     }
 
     #[test]
@@ -317,6 +318,7 @@ mod tests {
                     JudgementQuestion::Choice {
                         instructions: json!("q"),
                         options,
+                        described: Default::default(),
                     },
                 )]),
             };

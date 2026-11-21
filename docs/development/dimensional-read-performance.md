@@ -25,7 +25,7 @@ Baseline: `c95a92d11d3b55c2c847c1d653dcfdd687132c58`. The same native example wa
 built on both trees with the dev profile and the workspace Cargo configuration,
 Rust 1.97.1, Linux aarch64. Binary, example and runner hashes, CPU description,
 raw samples and process resource reports are in the accompanying
-[`performance-775` evidence](../../artifacts/performance-775/paired-final).
+[`performance-775` evidence](https://github.com/underpass-ai/kmp/tree/v0.27.0/artifacts/performance-775/paired-final).
 
 Each shape uses two before and two after processes in ABBA order, without
 overlapping builds or benchmark processes. Every process seeds synthetic nodes,
@@ -142,7 +142,7 @@ A separate native MCP replay compares copies of the same four-about store:
 **28 complete results are identical** across Wake, Ask and Goto, including
 positive/negative whole-entry predicates, explicit about selection and all five
 clocks (56 read tool calls). No fields are removed or normalized for comparison.
-The [native replay evidence](../../artifacts/performance-775/native-parity)
+The [native replay evidence](https://github.com/underpass-ai/kmp/tree/v0.27.0/artifacts/performance-775/native-parity)
 contains its summary and losslessly compressed original JSONL traces; its timings
 are not interpreted because correctness replay overlapped other validation.
 Reproduce it with:

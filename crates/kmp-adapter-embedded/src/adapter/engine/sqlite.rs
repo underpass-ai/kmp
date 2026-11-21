@@ -70,6 +70,9 @@ pub(crate) struct SqliteEngine {
     /// Opened as somebody else's memory: every connection is read-only at
     /// the SQLite level, so no code path can write to it.
     read_only: bool,
+    /// The file this store leaves beside itself once it holds events; none
+    /// for an engine opened without its data directory (tests, compaction).
+    memory_proof: Option<super::super::memory_proof::MemoryProof>,
 }
 
 impl SqliteEngine {
@@ -84,6 +87,7 @@ impl SqliteEngine {
             pool: Arc::new(Mutex::new(vec![connection])),
             revision_observer: Mutex::new(None),
             read_only: false,
+            memory_proof: None,
         })
     }
 
@@ -105,7 +109,21 @@ impl SqliteEngine {
             pool: Arc::new(Mutex::new(vec![connection])),
             revision_observer: Mutex::new(None),
             read_only: true,
+            memory_proof: None,
         })
+    }
+
+    /// Keep this store's proof of memory in `data_dir`, and write it now
+    /// when the log already holds events from before proofs existed.
+    pub(crate) fn proving_memory_in(mut self, data_dir: &Path) -> Result<Self, PortError> {
+        let proof = super::super::memory_proof::MemoryProof::for_data_dir(data_dir);
+        if !proof.is_recorded() && self.begin_read()?.count(Table::EventLog)? > 0 {
+            // Best effort, like every later attempt: a proof that cannot be
+            // written never turns a working open into a failure.
+            let _ = proof.record();
+        }
+        self.memory_proof = Some(proof);
+        Ok(self)
     }
 
     fn connect(&self) -> Result<Connection, PortError> {
@@ -186,7 +204,11 @@ impl Engine for SqliteEngine {
             .map_err(|error| {
                 PortError::Unavailable(format!("embedded store write transaction failed: {error}"))
             })?;
-        Ok(Box::new(SqliteWrite { connection }))
+        Ok(Box::new(SqliteWrite {
+            connection,
+            memory_proof: self.memory_proof.as_ref(),
+            appended_events: false,
+        }))
     }
 }
 
@@ -227,6 +249,7 @@ fn open_read_only_connection(store_file: &Path) -> Result<Connection, PortError>
     connection
         .execute_batch("PRAGMA query_only=ON")
         .map_err(|error| pragma_error(store_file, "query_only", &error))?;
+    stabilize_plans(&connection, store_file)?;
     Ok(connection)
 }
 
@@ -250,7 +273,19 @@ fn open_connection(store_file: &Path) -> Result<Connection, PortError> {
     connection
         .pragma_update(None, "synchronous", "FULL")
         .map_err(|error| pragma_error(store_file, "synchronous", &error))?;
+    stabilize_plans(&connection, store_file)?;
     Ok(connection)
+}
+
+/// Cached statements are re-bound for every node a read visits. Without the
+/// planner stability guarantee SQLite re-plans an adjacency page statement
+/// on new bindings, re-parsing it per node. No plan here depends on a bound
+/// value (no statistics, no partial index, no LIKE), so nothing read changes.
+fn stabilize_plans(connection: &Connection, store_file: &Path) -> Result<(), PortError> {
+    connection
+        .set_db_config(DbConfig::SQLITE_DBCONFIG_ENABLE_QPSG, true)
+        .map(|_| ())
+        .map_err(|error| pragma_error(store_file, "query planner stability", &error))
 }
 
 fn harden_connection(connection: &Connection, store_file: &Path) -> Result<(), PortError> {
@@ -563,45 +598,6 @@ impl Ops<'_> {
             .map_err(|error| read_error(table, &error))
     }
 
-    pub(super) fn project_str_json(
-        &self,
-        table: Table,
-        key: &str,
-        fields: &[&str],
-    ) -> Result<Option<Vec<u8>>, PortError> {
-        if table.key_shape() != KeyShape::Str {
-            return Err(scan_shape_mismatch(table, KeyShape::Str));
-        }
-        let mut args = Vec::new();
-        let mut expressions = Vec::new();
-        for field in fields {
-            let path = field
-                .split('.')
-                .map(|part| serde_json::to_string(part).expect("string JSON"))
-                .fold(String::from("$"), |path, part| format!("{path}.{part}"));
-            args.push((*field).to_string());
-            args.push(path);
-            expressions.push(format!(
-                "?{}, json_extract(v, ?{})",
-                args.len() - 1,
-                args.len()
-            ));
-        }
-        args.push(key.to_string());
-        let sql = format!(
-            "SELECT json_object({}) FROM \"{table}\" WHERE k=?{}",
-            expressions.join(", "),
-            args.len()
-        );
-        self.prepare(&sql)?
-            .query_row(rusqlite::params_from_iter(args), |row| {
-                row.get::<_, String>(0)
-            })
-            .optional()
-            .map(|value| value.map(String::into_bytes))
-            .map_err(|e| read_error(table, &e))
-    }
-
     pub(super) fn scan_str3_by_first(
         &self,
         table: Table,
@@ -848,14 +844,6 @@ impl ReadTx for SqliteRead<'_> {
     fn scan_str(&self, table: Table) -> Result<Vec<StrRow>, PortError> {
         self.ops().scan_str(table)
     }
-    fn project_str_json(
-        &self,
-        table: Table,
-        key: &str,
-        fields: &[&str],
-    ) -> Result<Option<Vec<u8>>, PortError> {
-        self.ops().project_str_json(table, key, fields)
-    }
 
     fn scan_str3_by_first(&self, table: Table, first: &str) -> Result<Vec<Str3Row>, PortError> {
         self.ops().scan_str3_by_first(table, first)
@@ -903,6 +891,10 @@ impl ReadTx for SqliteRead<'_> {
 
 struct SqliteWrite<'e> {
     connection: Pooled<'e>,
+    memory_proof: Option<&'e super::super::memory_proof::MemoryProof>,
+    /// Whether this transaction appended to the event log: the commit that
+    /// makes a store hold memory is the one that must leave its proof.
+    appended_events: bool,
 }
 
 impl SqliteWrite<'_> {
@@ -932,14 +924,6 @@ impl ReadTx for SqliteWrite<'_> {
     }
     fn scan_str(&self, table: Table) -> Result<Vec<StrRow>, PortError> {
         self.ops().scan_str(table)
-    }
-    fn project_str_json(
-        &self,
-        table: Table,
-        key: &str,
-        fields: &[&str],
-    ) -> Result<Option<Vec<u8>>, PortError> {
-        self.ops().project_str_json(table, key, fields)
     }
 
     fn scan_str3_by_first(&self, table: Table, first: &str) -> Result<Vec<Str3Row>, PortError> {
@@ -986,6 +970,7 @@ impl ReadTx for SqliteWrite<'_> {
 
 impl WriteTx for SqliteWrite<'_> {
     fn insert(&mut self, table: Table, key: Key<'_>, value: &[u8]) -> Result<(), PortError> {
+        self.appended_events |= table == Table::EventLog;
         self.ops().insert(table, key, value)
     }
     fn remove(&mut self, table: Table, key: Key<'_>) -> Result<(), PortError> {
@@ -999,7 +984,15 @@ impl WriteTx for SqliteWrite<'_> {
         // drop that follows returns it clean instead of rolling anything back.
         self.connection.execute_batch("COMMIT").map_err(|error| {
             PortError::Unavailable(format!("embedded store commit failed: {error}"))
-        })
+        })?;
+        if self.appended_events
+            && let Some(proof) = self.memory_proof
+        {
+            // The events are committed whatever happens here; a proof that
+            // could not be written is tried again on the next append.
+            let _ = proof.record();
+        }
+        Ok(())
     }
 }
 
@@ -1056,6 +1049,27 @@ fn write_error(table: Table, error: &rusqlite::Error) -> PortError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn every_connection_keeps_its_cached_plans_across_bindings() {
+        // Without the planner stability guarantee SQLite re-parses a cached
+        // statement on new bindings: one adjacency page statement per node.
+        let dir = tempfile::tempdir().expect("temp dir");
+        let store_file = dir.path().join("kernel.sqlite3");
+        let connection = open_connection(&store_file).expect("connection opens");
+        assert!(
+            connection
+                .db_config(DbConfig::SQLITE_DBCONFIG_ENABLE_QPSG)
+                .expect("planner stability reads back")
+        );
+        drop(connection);
+        let reader = open_read_only_connection(&store_file).expect("reader opens");
+        assert!(
+            reader
+                .db_config(DbConfig::SQLITE_DBCONFIG_ENABLE_QPSG)
+                .expect("planner stability reads back")
+        );
+    }
 
     #[test]
     fn every_connection_treats_the_database_schema_as_untrusted() {
@@ -1182,10 +1196,6 @@ mod adjacency_tests;
 #[cfg(test)]
 #[path = "sqlite_value_len_tests.rs"]
 mod value_len_tests;
-
-#[cfg(test)]
-#[path = "sqlite_json_projection_tests.rs"]
-mod json_projection_tests;
 
 #[cfg(test)]
 #[path = "sqlite_linked_json_tests.rs"]

@@ -9,6 +9,7 @@ use serde_json::{Map, Value, json};
 
 use super::actions;
 use super::normalization::{normalized_answer_reason, normalized_ask_answer};
+use super::plan::sorts_after_evidence;
 use super::proof_on_request::MORE_ON_REQUEST_KEY;
 use super::proof_value::{empty_proof_value, proof_value, temporal_cursor_value};
 use super::request_arguments::dimension_selection_value;
@@ -38,7 +39,7 @@ pub fn wake_value(response: &WakeResponse) -> Value {
             "next_actions": wake.map(|wake| wake.next_actions.clone()).unwrap_or_default(),
             "guardrails": wake.map(|wake| wake.guardrails.clone()).unwrap_or_default()
         },
-        "proof": response.proof.as_ref().map(|proof| proof_value(proof, response.projection.is_none())).unwrap_or_else(empty_proof_value),
+        "proof": response.proof.as_ref().map(|proof| { let normalize = response.projection.is_none(); proof_value(proof, |_| normalize) }).unwrap_or_else(empty_proof_value),
         "labels": response.labels.iter().map(memory_label_value).collect::<Vec<_>>(),
         "resume_cursor": response.resume_cursor.as_ref().map(temporal_cursor_value).unwrap_or(Value::Null),
         "warnings": response.warnings
@@ -62,7 +63,12 @@ pub fn ask_value(response: &AskResponse) -> Value {
         "summary": response.summary,
         "answer": if answer.trim().is_empty() { Value::Null } else { Value::String(answer) },
         "because": response.because.iter().map(|reason| if response.projection.is_some() { raw_answer_reason_value(reason) } else { answer_reason_value(reason, evidence) }).collect::<Vec<_>>(),
-        "proof": response.proof.as_ref().map(|proof| proof_value(proof, response.projection.is_none())).unwrap_or_else(empty_proof_value),
+        // The mapping joined the path to the head's evidence (or to all of
+        // a whole reading's). Joined here to the tail a lazy reading
+        // carries, a hop placed ahead of the evidence would change with the
+        // depth read and break every continuation cursor bound to it; a hop
+        // placed after it is paged only once every evidence item is carried.
+        "proof": response.proof.as_ref().map(|proof| { let normalize = response.projection.is_none(); proof_value(proof, |relation| normalize && sorts_after_evidence(relation)) }).unwrap_or_else(empty_proof_value),
         "warnings": response.warnings
     });
     if !response.asked_as.is_empty() {

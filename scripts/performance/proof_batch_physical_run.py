@@ -59,13 +59,32 @@ def sha(path: Path) -> str:
         return hashlib.file_digest(source, "sha256").hexdigest()
 
 
-def main() -> None:
-    if len(sys.argv) not in (4, 5):
-        raise SystemExit(
-            "usage: proof_batch_physical_run.py REPOSITORY OUTPUT SCRATCH [SAMPLES]"
+USAGE = "usage: proof_batch_physical_run.py REPOSITORY OUTPUT SCRATCH PATCH_DIR [SAMPLES]"
+
+
+def patch_dir_refusal(patch_dir: Path) -> str | None:
+    """Why PATCH_DIR cannot be used, or None. The patches lived under the
+    untracked artifacts/ folder, so they are an explicit input now."""
+    if not (patch_dir / "manifest.json").is_file():
+        return (
+            f"PATCH_DIR {patch_dir} holds no manifest.json. The instrumentation patches are no "
+            "longer tracked; restore them from the v0.27.0 tag, for example: git archive v0.27.0 "
+            "artifacts/proof-batch-physical-20260915/instrumentation-patches | tar -x -C <dir>"
         )
-    repository, output, scratch = [Path(value).resolve() for value in sys.argv[1:4]]
-    samples = sys.argv[4] if len(sys.argv) == 5 else "20"
+    missing = [name for name in PATCH_NAMES if not (patch_dir / name).is_file()]
+    if missing:
+        return f"PATCH_DIR {patch_dir} lacks {', '.join(missing)}"
+    return None
+
+
+def main() -> None:
+    if len(sys.argv) not in (5, 6):
+        raise SystemExit(USAGE)
+    repository, output, scratch, patch_dir = [Path(value).resolve() for value in sys.argv[1:5]]
+    samples = sys.argv[5] if len(sys.argv) == 6 else "20"
+    refusal = patch_dir_refusal(patch_dir)
+    if refusal:
+        raise SystemExit(refusal)
     if output.exists() or scratch.exists():
         raise SystemExit("OUTPUT and SCRATCH must not exist")
     output.mkdir(parents=True)
@@ -87,7 +106,6 @@ def main() -> None:
 
     save_status()
 
-    patch_dir = repository / "artifacts/proof-batch-physical-20260915/instrumentation-patches"
     isolated: Path | None = None
     frozen: Path | None = None
     prepared_control_output = ""

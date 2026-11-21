@@ -9,13 +9,14 @@
 
 use std::pin::Pin;
 use std::sync::Arc;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use sha2::{Digest, Sha256};
 
-use super::cassette_judgement::judgement_key;
+use super::judgement_key::judgement_key;
 use super::ledgered_judgement::LedgeredJudgement;
 use super::verdict_ledger::VerdictLedger;
+use crate::serving::environment::judgement_deadline;
 use crate::serving::judgement_origin::JudgementOrigin;
 use crate::serving::judgement_request::JudgementRequest;
 use crate::serving::judgement_response::JudgementResponse;
@@ -27,14 +28,37 @@ const TARGET: &str = "kmp_mcp::judgement";
 /// A judgement model that reports, per call, which site spent it, how many
 /// questions and provider requests it took, its input tokens, where the
 /// answers came from and how long it took. Answers pass through unchanged.
+///
+/// The sites a committed write asks (relation proposals, search expansions)
+/// wait at most their deadline here, per judgement: past it the call fails
+/// as "not judged", never as a no, and runs on detached so its verdict
+/// still lands in the book. Read sites keep their own first-page deadline.
 pub(super) struct ObservedJudgement {
     inner: Arc<dyn JudgementModel>,
     site: JudgementSite,
+    deadline: Option<Duration>,
 }
 
 impl ObservedJudgement {
     pub(super) fn new(inner: Arc<dyn JudgementModel>, site: JudgementSite) -> Self {
-        Self { inner, site }
+        let deadline = matches!(
+            site,
+            JudgementSite::WriteRelations | JudgementSite::Expansions
+        )
+        .then(|| judgement_deadline(site))
+        .flatten();
+        Self {
+            inner,
+            site,
+            deadline,
+        }
+    }
+
+    /// The same judgement with another write deadline (tests).
+    #[cfg(test)]
+    pub(super) fn with_deadline(mut self, deadline: Option<Duration>) -> Self {
+        self.deadline = deadline;
+        self
     }
 
     /// The store's judgement for one site: behind its verdict book when it
@@ -142,7 +166,28 @@ impl JudgementModel for ObservedJudgement {
     > {
         Box::pin(async move {
             let started = Instant::now();
-            let (mut outcome, origin) = self.inner.evaluate_traced(request).await;
+            let (mut outcome, origin) = match self.deadline {
+                None => self.inner.evaluate_traced(request).await,
+                Some(deadline) => {
+                    let (inner, asked) = (Arc::clone(&self.inner), request.clone());
+                    // Detached: a late judgement still lands in the book.
+                    let judged = tokio::spawn(async move { inner.evaluate_traced(&asked).await });
+                    match tokio::time::timeout(deadline, judged).await {
+                        Ok(Ok(traced)) => traced,
+                        Ok(Err(_)) => (
+                            Err("not judged: the judgement task failed".to_string()),
+                            JudgementOrigin::Remote,
+                        ),
+                        Err(_) => (
+                            Err(format!(
+                                "not judged: Jev did not answer within {} ms",
+                                deadline.as_millis()
+                            )),
+                            JudgementOrigin::Remote,
+                        ),
+                    }
+                }
+            };
             if let Ok(response) = &mut outcome {
                 response.elapsed_us = started.elapsed().as_micros() as u64;
             }

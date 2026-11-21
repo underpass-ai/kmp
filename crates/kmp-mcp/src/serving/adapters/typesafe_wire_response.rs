@@ -58,7 +58,7 @@ fn probability(value: Option<&Value>) -> Result<f64, String> {
 
 fn typed_answer(raw: &Value, question: &JudgementQuestion) -> Result<JudgementAnswer, String> {
     match question {
-        JudgementQuestion::Noul { .. } => {
+        JudgementQuestion::Noul { .. } | JudgementQuestion::CriteriaNoul { .. } => {
             if raw.get("type").and_then(Value::as_str) != Some("noul") {
                 return Err("TypeSafe answered a noul with another type".into());
             }
@@ -150,6 +150,7 @@ mod tests {
                 JudgementQuestion::Choice {
                     instructions: json!("q"),
                     options: vec!["a".into(), "b".into()],
+                    described: Default::default(),
                 },
             ),
         ])
@@ -161,7 +162,7 @@ mod tests {
 
     fn valid() -> Value {
         json!({
-            "model": "jev-1.13.0",
+            "model": "jev-1.14.0",
             "answers": {
                 "n": {"type": "noul", "noul": 0.95},
                 "c": {"type": "choice", "choice": "a",
@@ -174,7 +175,7 @@ mod tests {
     #[test]
     fn valid_answers_are_typed_and_usage_is_kept() {
         let response = wire(valid())
-            .into_response("jev-1.13.0", &questions())
+            .into_response("jev-1.14.0", &questions())
             .expect("valid");
         assert_eq!(response.input_tokens, 296);
         assert_eq!(response.requests, 1);
@@ -201,7 +202,7 @@ mod tests {
 
     fn valid_score() -> Value {
         json!({
-            "model": "jev-1.13.0",
+            "model": "jev-1.14.0",
             "answers": {"s": {"type": "score", "score": 0.4, "confidence": 0.8,
                 "legend": {"0": "answers", "1": "partly", "2": "unrelated"},
                 "probabilities": {"0": 0.7, "1": 0.2, "2": 0.1}}},
@@ -212,7 +213,7 @@ mod tests {
     #[test]
     fn a_score_keeps_its_levels_in_the_order_asked() {
         let response = wire(valid_score())
-            .into_response("jev-1.13.0", &scored())
+            .into_response("jev-1.14.0", &scored())
             .expect("valid");
         assert_eq!(
             response.answers["s"],
@@ -238,7 +239,7 @@ mod tests {
         for case in cases {
             assert!(
                 wire(case.clone())
-                    .into_response("jev-1.13.0", &scored())
+                    .into_response("jev-1.14.0", &scored())
                     .is_err(),
                 "accepted {case}"
             );
@@ -249,7 +250,7 @@ mod tests {
     fn answers_that_do_not_match_the_questions_are_rejected() {
         let mut cases = Vec::new();
         let mut other_model = valid();
-        other_model["model"] = json!("jev-1.14.0");
+        other_model["model"] = json!("jev-1.13.0");
         cases.push(other_model);
         let mut missing = valid();
         missing["answers"]
@@ -281,7 +282,7 @@ mod tests {
         for case in cases {
             assert!(
                 wire(case.clone())
-                    .into_response("jev-1.13.0", &questions())
+                    .into_response("jev-1.14.0", &questions())
                     .is_err(),
                 "accepted {case}"
             );

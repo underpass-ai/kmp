@@ -52,6 +52,7 @@ impl EmbeddedKernelStore {
         let engine = format_version::check_or_stamp_as(data_dir, wanted)?;
 
         let store_file = format_version::store_file_path_for(data_dir, engine);
+        super::vanished_database::refuse_vanished_database(data_dir, &store_file)?;
         fs::create_dir_all(store_file.parent().expect("store file has a parent")).map_err(
             |error| {
                 PortError::Unavailable(format!(
@@ -61,8 +62,10 @@ impl EmbeddedKernelStore {
             },
         )?;
 
-        let engine: Arc<dyn Engine> =
-            Arc::new(super::engine::sqlite::SqliteEngine::open_file(&store_file)?);
+        let engine: Arc<dyn Engine> = Arc::new(
+            super::engine::sqlite::SqliteEngine::open_file(&store_file)?
+                .proving_memory_in(data_dir)?,
+        );
         let store = Self { engine };
         super::card_history_format::upgrade_stamp(data_dir)?;
         super::node_card_adoption::adopt(&store)?;

@@ -14,10 +14,13 @@ use super::diagnosis_render::{section, sgr};
 use super::durability_probe::committed_bundle_finding;
 use super::embedded_memory_probe::{compiled_formats, data_dir_finding};
 use super::engines_probe::engines_findings;
+use super::environment_probe::{environment_findings, unread_switch_findings};
 use super::search_summary_probe::search_summary_finding;
 use super::startup_log_probe::startup_history;
 use super::store_config_probe::store_config_findings;
+use super::store_readability_probe::store_readability_finding;
 use super::telemetry_probe::telemetry_finding;
+use super::typesafe_model_probe::typesafe_model_finding;
 use super::viewer_probe::viewer_finding;
 
 /// Everything one doctor run found, and the verdict it earned. Rendering
@@ -68,10 +71,21 @@ pub(crate) fn observe_doctor(lifecycle: Vec<LifecycleFinding>) -> DoctorObservat
     let backend = backend_finding();
     let backend_level = backend.severity();
     sections.push(ReportSection::single("Backend", backend));
+    let mut environment = environment_findings();
+    environment.extend(unread_switch_findings());
+    let environment_level = worst_severity(environment.iter().map(|finding| finding.severity()));
+    sections.push(ReportSection::new("Environment", environment));
 
     let (data_dir, resolved) = data_dir_finding();
     let data_dir_level = data_dir.severity();
     sections.push(ReportSection::single("Memory", data_dir));
+    let readable = resolved.as_ref().and_then(store_readability_finding);
+    let readable_level = readable
+        .as_ref()
+        .map_or(DiagnosticSeverity::Ok, |finding| finding.severity());
+    if let Some(readable) = readable {
+        sections.push(ReportSection::single("Database", readable));
+    }
     let durability = resolved.as_ref().and_then(committed_bundle_finding);
     let durability_level = durability
         .as_ref()
@@ -79,10 +93,12 @@ pub(crate) fn observe_doctor(lifecycle: Vec<LifecycleFinding>) -> DoctorObservat
     if let Some(durability) = durability {
         sections.push(ReportSection::single("Durability", durability));
     }
-    let store_config = resolved
+    let mut store_config = resolved
         .as_ref()
         .map(store_config_findings)
         .unwrap_or_default();
+    // Doctor only (info stays offline): is the pinned TypeSafe model served?
+    store_config.extend(resolved.as_ref().and_then(typesafe_model_finding));
     let store_config_level = worst_severity(store_config.iter().map(|finding| finding.severity()));
     if !store_config.is_empty() {
         sections.push(ReportSection::new("Store config", store_config));
@@ -141,12 +157,14 @@ pub(crate) fn observe_doctor(lifecycle: Vec<LifecycleFinding>) -> DoctorObservat
 
     let worst = worst_severity([
         data_dir_level,
+        readable_level,
         durability_level,
         store_config_level,
         surface_level,
         lifecycle_level,
         engines_level,
         backend_level,
+        environment_level,
         history_level,
         agent_policy_level,
         telemetry_level,

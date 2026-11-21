@@ -1,37 +1,24 @@
-use crate::contract::schema::definition::tool_definition_with_output;
+use crate::contract::schema::definition::{ToolEffect, tool_definition_with_output};
+use crate::guide::GuideTopic;
 use serde_json::{Value, json};
 
 pub(crate) fn definition() -> Value {
+    let topics: Vec<&str> = GuideTopic::all().iter().map(|topic| topic.name).collect();
     tool_definition_with_output(
         "kmp_guide",
-        false,
-        "Open the brief capability map and persistent agent context. Start once with a unique registration_key; preserve the returned agent_id and context_id. Resume or expand a topic using context_id. After compaction use agent_id plus a new context_key, retaining the same agent. fold hides a topic without erasing its delivery record. This records served guidance, not understanding or authorization. Missing installed assets return explicit guide-sync repair instructions; preserve the selected store when applying them.",
+        ToolEffect::Read,
+        "Explain one topic before its first use: a worked card, its rules and its arguments; without a topic, list the topics.",
         json!({"type":"object","additionalProperties":false,"properties":{
-            "registration_key":{"type":"string","minLength":1,"description":"Unique logical agent registration. Reuse only to retry that registration; a different agent needs another key."},
-            "context_id":{"type":"string","minLength":1,"description":"Exact active context returned by KMP; enough to resume that agent."},
-            "agent_id":{"type":"string","minLength":1,"description":"Stable identity, used with context_key to start a fresh context after compaction or a task change."},
-            "context_key":{"type":"string","minLength":1,"description":"Unique logical context reset for this agent; reuse on retry."},
-            "topic":{"type":"string","enum":["wake","write","ask","time","audit","condense","relate","curate","view","guide"],"description":"Expand one small worked card; extended guidance remains linked."},
-            "fold":{"type":"boolean","description":"Hide topic from the expanded scheme. Prior deliveries remain recorded."}
+            "topic":{"type":"string","enum":topics,"description":"The topic to explain. Omit to list the topics."}
         }}),
         json!({"type":"object","additionalProperties":false,"properties":{
-            "summary":{"type":"string","description":"Identity and next guide operation."},
-            "agent":{"type":"object","additionalProperties":false,"required":["id","name"],"properties":{
-                "id":{"type":"string","description":"Stable opaque identity; preserve across contexts."},
-                "name":{"type":"string","description":"Random persistent display name; not an authorization credential."}
-            }},
-            "context_id":{"type":"string","description":"Exact token to resume this agent context."},
-            "guide_revision":{"type":"string","description":"Content revision used for this scheme and its delivery records."},
-            "guide_changed":{"type":"boolean","description":"This context previously used another guide revision; rediscover required topics."},
-            "durable":{"type":"boolean","description":"Whether agent metadata survives a server restart."},
-            "scheme":{"type":"array","description":"Available topics; expanded lists the currently opened ones.","items":{"type":"object","properties":{"topic":{"type":"string"},"purpose":{"type":"string"}}}},
-            "expanded":{"type":"array","items":{"type":"string"},"description":"Topics opened in this context and revision, excluding folded ones."},
-            "served":{"type":"array","items":{"type":"string"},"description":"Topic cards and exact guide/example refs delivered in this context and revision; not learned or retained."},
-            "used":{"type":"array","description":"Observed work calls in this context and revision, never a learning score."},
-            "card":{"type":["object","null"],"description":"One requested canonical worked card; null for the map or a fold.","properties":{"ref":{"type":"string"},"text":{"type":"string"},
-                "parameters":{"type":"object","additionalProperties":{"type":"array","items":{"type":"string"}},"description":"Argument guide for each tool this topic teaches, one `path: description` line per documented argument. tools/list advertises types and constraints only."},
-                "relation_vocabulary":{"type":"array","items":{"type":"string"},"description":"Topic write only: every writer relation as `name (quality; classes; when to use)`."}}},
-            "next_actions":{"type":"array","description":"Complete optional calls for the extended verb."}
+            "summary":{"type":"string","description":"What was returned and how to read it."},
+            "topics":{"type":"array","description":"Without a topic: every topic and what it teaches.","items":{"type":"object","properties":{"topic":{"type":"string"},"purpose":{"type":"string"}}}},
+            "topic":{"type":"string","description":"The topic explained."},
+            "ref":{"type":"string","description":"The same card's node in the stored agent guide, guide:kmp-agent."},
+            "text":{"type":"string","description":"The worked card."},
+            "parameters":{"type":"object","additionalProperties":{"type":"array","items":{"type":"string"}},"description":"Argument guide for each tool this topic teaches, one `path: description` line per argument it owns. tools/list advertises types and constraints only."},
+            "relation_vocabulary":{"type":"array","items":{"type":"string"},"description":"Topic relations only: every writer relation as `name (quality; classes; when to use)`."}
         }}),
     )
 }

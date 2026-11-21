@@ -193,8 +193,19 @@ def main():
     parser.add_argument('--runner-binary', type=Path)
     parser.add_argument('--checkpoint-only', action='store_true')
     parser.add_argument('--checkpoint-payload-bytes', type=int, default=131072)
-    parser.add_argument('--clients-input', type=Path, default=ROOT/'artifacts/performance-772/clients.json')
+    parser.add_argument(
+        '--clients-input', type=Path,
+        help='clients.json of the #772 run, needed by --checkpoint-only; artifacts/ is no longer '
+             'tracked, so restore it from the v0.27.0 tag: '
+             'git show v0.27.0:artifacts/performance-772/clients.json > clients.json',
+    )
     args = parser.parse_args()
+    if args.checkpoint_only and not args.build_only:
+        if args.clients_input is None:
+            parser.error('--checkpoint-only needs --clients-input FILE (the #772 clients.json; '
+                         'git show v0.27.0:artifacts/performance-772/clients.json > clients.json)')
+        if not args.clients_input.is_file():
+            parser.error(f'--clients-input {args.clients_input}: no such file')
     if args.samples < 32:
         parser.error('at least 32 samples exercise two periodic durable quality batches')
     binary = args.runner_binary.resolve() if args.runner_binary else ROOT/'target/debug/sqlite-clients-runner'

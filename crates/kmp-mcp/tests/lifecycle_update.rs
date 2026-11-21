@@ -1348,3 +1348,88 @@ fn the_table_comes_from_the_release_the_plan_targets() {
 
     assert_eq!(releases.bridge_asked_for(), vec![target.tag()]);
 }
+
+/// S11: a host whose inventory cannot be read is left alone, with its
+/// reason, and the hosts that answered still converge.
+#[test]
+fn an_unreadable_host_inventory_never_stops_the_other_hosts() {
+    let target = ReleaseVersion::current();
+    let hosts = FakeHostGateway::with_installations(vec![installation(
+        Host::Claude,
+        target.as_str(),
+        "/tmp/claude",
+    )])
+    .on_path(vec![Host::Claude, Host::Hermes])
+    .with_unreadable_inventory(Host::Hermes, "Hermes MCP config is not a mapping");
+    let releases = FakeReleaseRepository::publishing(target.clone());
+    let engines = FakeEngineStore::running(EngineArtifact::verified(
+        target.clone(),
+        b"running-engine".to_vec(),
+    ));
+    let setup = |hosts_named: BTreeSet<Host>| {
+        SetupKmp::new(
+            &hosts,
+            &releases,
+            &engines,
+            &FakePluginCache::default(),
+            &FakeBridgeStore::default(),
+        )
+        .execute(request(LifecycleAction::Setup, hosts_named, None))
+    };
+
+    let receipt = setup(BTreeSet::new()).expect("Claude converges without Hermes");
+    let hermes = receipt
+        .hosts()
+        .iter()
+        .find(|host| host.host() == Host::Hermes)
+        .expect("the skipped Hermes is reported");
+    assert_eq!(hermes.status(), ConvergenceStatus::Skipped);
+    assert!(
+        hermes
+            .warning()
+            .is_some_and(|warning| warning.contains("not a mapping")),
+        "{:?}",
+        hermes.warning()
+    );
+    assert!(!hosts.provisions().contains(&Host::Hermes));
+
+    let named = setup(BTreeSet::from([Host::Hermes])).expect_err("named Hermes fails");
+    assert!(named.to_string().contains("not a mapping"), "{named}");
+}
+
+/// S13: a plugin the host lists whose directory is hollow is refreshed, not
+/// kept and called unchanged; S12: a host still hollow after convergence
+/// fails instead of reporting "completed".
+#[test]
+fn setup_never_completes_on_an_installation_that_is_not_on_disk() {
+    let target = ReleaseVersion::current();
+    let releases = FakeReleaseRepository::publishing(target.clone());
+    let engines = FakeEngineStore::running(EngineArtifact::verified(
+        target.clone(),
+        b"running-engine".to_vec(),
+    ));
+    let hosts = FakeHostGateway::with_installations(vec![installation(
+        Host::Claude,
+        target.as_str(),
+        "/tmp/claude",
+    )])
+    .on_path(vec![Host::Claude])
+    .with_hollow(Host::Claude);
+
+    let outcome = SetupKmp::new(
+        &hosts,
+        &releases,
+        &engines,
+        &FakePluginCache::default(),
+        &FakeBridgeStore::default(),
+    )
+    .execute(request(LifecycleAction::Setup, BTreeSet::new(), None));
+
+    assert_eq!(
+        hosts.refreshes(),
+        vec![Host::Claude],
+        "a hollow plugin is reinstalled"
+    );
+    let error = outcome.expect_err("still hollow after the refresh");
+    assert!(error.to_string().contains("hollow"), "{error}");
+}

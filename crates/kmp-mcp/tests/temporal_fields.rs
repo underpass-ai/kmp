@@ -209,13 +209,24 @@ async fn invalid_field_selections_explain_the_allowed_vocabulary() {
         args["fields"] = fields;
         let result = raw(&server, "kmp_time", args).await;
         assert_eq!(result["isError"], true, "{result}");
+        // The published schema refuses each of these before the read runs
+        // (E1 of the 1.0 review), and names the field.
         let feedback = &result["structuredContent"]["feedback"][0];
-        assert_eq!(feedback["code"], "READ_INVALID_FIELDS");
-        assert_eq!(
-            feedback["allowed"],
-            json!(["ref", "kind", "text", "coordinates", "metadata"])
+        assert_eq!(feedback["code"], "SCHEMA_VIOLATION", "{result}");
+        assert!(
+            feedback["field"]
+                .as_str()
+                .is_some_and(|field| field.starts_with("fields")),
+            "{result}"
         );
     }
+    let mut args = query();
+    args["fields"] = json!(["unknown"]);
+    let result = raw(&server, "kmp_time", args).await;
+    assert_eq!(
+        result["structuredContent"]["feedback"][0]["allowed"],
+        json!(["ref", "kind", "text", "coordinates", "metadata"])
+    );
 }
 
 #[tokio::test]

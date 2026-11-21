@@ -11,11 +11,13 @@ use crate::serving::judgement_request::JudgementRequest;
 use crate::serving::judgement_response::JudgementResponse;
 use crate::serving::ports::judgement_model::JudgementModel;
 
-/// Says yes to passages that contain `word`, and counts its calls.
+/// Says yes to passages that contain `word`, cannot settle on passages that
+/// say "mended", says no to the rest, and counts its calls and the state.
 struct KeywordJudge {
     word: &'static str,
     fail: bool,
     calls: Mutex<usize>,
+    states: Mutex<Vec<serde_json::Value>>,
 }
 
 impl JudgementModel for KeywordJudge {
@@ -30,18 +32,22 @@ impl JudgementModel for KeywordJudge {
         Box<dyn std::future::Future<Output = Result<JudgementResponse, String>> + Send + 'a>,
     > {
         *self.calls.lock().expect("calls") += 1;
+        self.states
+            .lock()
+            .expect("states")
+            .push(request.state.clone());
         let answers = request
             .questions
             .iter()
             .map(|(key, question)| {
                 let yes = match question {
-                    JudgementQuestion::Noul { instructions } => {
-                        if instructions["passage"]
-                            .as_str()
-                            .unwrap_or_default()
-                            .contains(self.word)
-                        {
+                    JudgementQuestion::Noul { instructions }
+                    | JudgementQuestion::CriteriaNoul { instructions, .. } => {
+                        let passage = instructions["passage"].as_str().unwrap_or_default();
+                        if passage.contains(self.word) {
                             0.9
+                        } else if passage.contains("mended") {
+                            0.5
                         } else {
                             0.1
                         }
@@ -80,6 +86,7 @@ fn judge(fail: bool) -> Arc<KeywordJudge> {
         word: "repaired",
         fail,
         calls: Mutex::new(0),
+        states: Mutex::new(Vec::new()),
     })
 }
 
@@ -90,6 +97,7 @@ async fn passages_are_ordered_by_the_judgement_and_frozen_for_pages() {
     let pool = vec![
         source("entry:a", "The car was fixed by Ana."),
         source("entry:b", "A technician repaired the automobile."),
+        source("entry:c", "Someone mended something."),
     ];
     let first = reranker
         .rank("Who fixed the car?", &pool, false)
@@ -98,10 +106,19 @@ async fn passages_are_ordered_by_the_judgement_and_frozen_for_pages() {
     assert!(first.warning.is_none());
     let ranking = first.ranking.expect("ranking");
     let order = format!("{ranking:?}");
-    assert!(order.contains("entry:b"), "{order}");
+    let (b, c) = (
+        order.find("entry:b").expect("yes is kept"),
+        order.find("entry:c").expect("unsettled is kept"),
+    );
+    assert!(b < c, "an unsettled passage ranks below every yes: {order}");
     assert!(
         !order.contains("entry:a"),
         "a passage judged unlikely to answer stays out: {order}"
+    );
+    assert_eq!(
+        model.states.lock().expect("states")[0],
+        serde_json::json!({"user_question": "Who fixed the car?"}),
+        "the question is a named field of the state"
     );
     let page = reranker
         .rank("Who fixed the car?", &pool, true)

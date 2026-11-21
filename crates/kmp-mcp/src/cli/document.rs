@@ -35,6 +35,23 @@ pub(super) async fn run_document_command(args: &[&str]) -> i32 {
         return 2;
     };
 
+    // Committed memory holds bundles only. A rendered document written over
+    // `.kmp/memory.jsonl`, however it is named, would erase the project's
+    // memory from the working tree and commit Markdown in its place.
+    if let Some(path) = &out
+        && super::output_destination::OutputDestination::resolve(path.clone(), None).is_committed
+    {
+        eprintln!(
+            "kmp-mcp: document refused; nothing was written. `{}` is the project's committed \
+             memory (`{}`), which holds an event bundle, and a Markdown document written there \
+             would replace every event in it. Choose another --out file, or leave --out off to \
+             print the document.",
+            path.display(),
+            kmp_embedded::PROJECT_BUNDLE_PATH
+        );
+        return 2;
+    }
+
     let resolved = match kmp_mcp::lifecycle::resolve_memory_for_use() {
         Ok(resolved) => resolved,
         Err(error) => {
@@ -42,13 +59,7 @@ pub(super) async fn run_document_command(args: &[&str]) -> i32 {
             return 2;
         }
     };
-    let engine = match kmp_embedded::resolve_engine_for_data_dir_from_env(resolved.path()) {
-        Ok(engine) => engine,
-        Err(error) => {
-            eprintln!("kmp-mcp: {error}");
-            return 2;
-        }
-    };
+    let engine = kmp_embedded::default_engine_for_data_dir(resolved.path());
     let kernel = match kmp_embedded::EmbeddedKernel::open_with_engine(resolved.path(), engine) {
         Ok(kernel) => kernel,
         Err(error) => {

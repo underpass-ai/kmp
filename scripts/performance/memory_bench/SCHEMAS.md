@@ -741,7 +741,7 @@ jev = "replay"
 git_ref = "main"
 
 [store_files]
-"typesafe.json" = { json = { endpoint = "https://api.typesafe.ai/v1/systemone", model = "jev-1.13.0", timeout_ms = 20000 } }
+"typesafe.json" = { json = { endpoint = "https://api.typesafe.ai/v1/systemone", model = "jev-1.14.0", timeout_ms = 20000 } }
 "rerank.json" = { json = { pool_size = 40 } }
 
 [env]
@@ -867,7 +867,7 @@ store key, and the stores built under v1 are found again.
 
 | Kind | Function | Material |
 |---|---|---|
-| `result` | `result_key(binary_sha256, config_digest, store_key, questions_digest, mode, nonce=None)` | section 8 of the spec; `nonce` only for `jev = "record"` runs, which are never reused |
+| `result` | `result_key(binary_sha256, config_digest, store_key, questions_digest, mode, nonce=None, calls_digest=None)` | section 8 of the spec; `nonce` only for `jev = "record"` runs, which are never reused; `calls_digest` (`question.calls_digest`) is the first call each question becomes, so a change in `Question.first_call` is a new run; a run sealed without it keeps its key |
 | `world` | `world_key(generator, generator_version, seed, topology, max_level, block_size)` | |
 | `store` | `store_key(source, n, bundle_format, reader_sha256, build, writer_sha256=None, batch_size=None, store_mode="shared")` | `source` is `synth_source(generator, generator_version, seed, topology, world_digest)` or `bundle_source(content_digest, label)` or, for a public dataset (BT17), `dataset_source(corpus, lock_sha256, selection_digest, adapter_version)`; `build` ∈ `ingest`, `import`, `copy` |
 | `report` | `report_key(result_keys, options)` | result keys sorted |
@@ -1070,7 +1070,6 @@ line and only when they apply (an absent field means "does not apply", never zer
 | `client_version` | string | with `client_name` | `clientInfo.version`, ≤ 32 chars (empty when not a string) |
 | `is_continuation` | bool | every tool call | the call pages an earlier one (`continuation` handle or `page.cursor`) instead of starting a new call; always `false` for tools that do not page |
 | `subject_fingerprint` | hex64 | `kmp_ask` (question), `kmp_wake` (intent) | the whole HMAC-SHA256 under the store salt of the question or intent after Unicode NFC, lower case and whitespace collapsed to one space (punctuation kept); a page carries its first call's |
-| `context_fingerprint` | hex64 | any call with a `context_id` (reads and writes) | HMAC-SHA256 of the guidance `context_id` |
 | `answer_status` | `answered`, `partial`, `unknown` | successful `kmp_ask` the anchored gate settled | as returned |
 | `unknown_reason` | enum | with `answer_status = unknown` | as returned (`no_candidates`, `no_bearing`, `out_of_window`, `anchor_absent_in_selection`, `attribute_not_found`) |
 | `confidence` | enum | successful `kmp_ask`, `kmp_wake` with a proof | `proof.confidence` as returned |
@@ -1098,7 +1097,7 @@ carry the same outcome fields, `is_continuation` (`page.cursor` set), `client_na
 session's host; else the `user-agent`), `client_version` (`kmp-client-version`) and
 `subject_fingerprint`, keyed by the server's salt: `KMP_TELEMETRY_SALT_PATH`, else
 `telemetry-salt` in `KMP_DATA_DIR`, else in `$XDG_DATA_HOME/kmp/server` (same creation
-rules). The API has no guidance context, so no `context_fingerprint`.
+rules).
 
 Counting calls: `is_continuation = false` counts calls, `true` counts pages; group by
 `client_name` to separate hosts from the harnesses (`kmp-guide`, `kmp-lifecycle`, the bench).
@@ -1114,7 +1113,7 @@ with a frozen selection (continuation page) evaluates nothing.
 ```json
 {"timestamp":"2026-09-25T22:48:54.599332Z","level":"DEBUG","target":"kmp_mcp::judgement",
  "fields":{"message":"judgement evaluated","event":"kmp_judgement","site":"rerank",
-           "model":"jev-1.13.0","source":"cassette_hit","status":"ok","questions":3,
+           "model":"jev-1.14.0","source":"cassette_hit","status":"ok","questions":3,
            "answers":3,"requests":1,"http_requests":0,"input_tokens":395,"elapsed_us":127,
            "request_key":"a0b4a155271abd4b5cbb4c446fba3ccb7a96299de1b60a27e222b270aded6b2b"}}
 ```
@@ -1122,7 +1121,7 @@ with a frozen selection (continuation page) evaluates nothing.
 | Field | Type | Meaning |
 |---|---|---|
 | `site` | enum | who spent it, below |
-| `model` | string | pinned model (`jev-1.13.0`) |
+| `model` | string | pinned model (`jev-1.14.0`) |
 | `source` | `remote`, `cassette_hit`, `cassette_miss`, `book_hit` | provider over the network; answered from `KMP_TYPESAFE_CASSETTE`; not in the cassette (replay: the evaluation fails; record: the provider was asked and the answer kept); answered from the verdict book (P5, `<data dir>/judgements.sqlite3`) with no provider request. A binary without the book never logs `book_hit`; the bench accepts it already (`domain/run_record.JEV_SOURCES`) and counts it as a replayed answer (`runtime/judgement_log.REPLAY_SOURCES`, `jev_cost` `book_hits`) |
 | `status` | `ok`, `error` | |
 | `questions` | int | typed questions in the request (one per passage for rerank/wake focus) |
@@ -1151,6 +1150,7 @@ Sites (stable words; new ones may be added):
 | `labels` | `kmp_curate` `mode: labels` | `typesafe.json` | t |
 | `summaries` | `kmp_summaries_audit` meaning check | `typesafe.json` | s/b |
 | `doubt_band` | `kmp_ask` in the doubt band (B1 veto, B2 promotion) | `ask-judge.json` | p |
+| `cross_language` | `kmp_ask` judged across a language (translated-answer veto, cross-language UNKNOWN rescue) | `ask-cross-language.json` | p |
 | `expansions` | search expansions proposed at write (`kmp_write_memory` `search_expansions`), P15 | `write-expansions.json` | r |
 
 Call record mapping (`domain/run_record.py` `JevEvaluation`): `site`, `questions`,
@@ -1349,7 +1349,7 @@ verification: synth 10^3–10^5 on both topologies, 2 questions per type, `timeo
   baseline of every number both headlines hold). The section never votes
   (`applicable = false`, `verdict = null`).
 - **`kmp.bench.judged.v1`** (`reports/<judged_key>/judged.json`): one arm of a judged
-  corpus (`retrieval` plain/narrow/wide, `jev` replay) on one binary: `key`, `corpus`,
+  corpus (`retrieval` plain/narrow/wide/shipped-bridge, `jev` replay) on one binary: `key`, `corpus`,
   `arm`, `variant`, `binary_sha256`, `config_digest`, `rows` (the scorecard rows by
   name), `unverified_stores` (stores whose files a binary without `kmp_store_config`
   could not acknowledge), `stores`, `seconds`, `created_at`. The key digests the
@@ -1383,7 +1383,7 @@ binary this way (`KMP_BENCH_BINARY=target/release/kmp-mcp`).
 | `fixture_key` | hex64 | the key above; replay refuses a manifest for another key |
 | `sample` | int ≥ 0 | sample index; each sample records and replays alone |
 | `backend` | `cassette`, `book` | per-body cassette (every binary up to P5) or the P5 verdict book |
-| `model` | string | pinned model (`jev-1.13.0`) |
+| `model` | string | pinned model (`jev-1.14.0`) |
 | `file` | string or null | `cassette.json` or `judgements.sqlite3`; null when nothing was written |
 | `sha256` | hex64 or null | of that file |
 | `request_keys` | [hex64] | sorted `request_key`s the sample's `kmp_judgement` lines named |
@@ -1393,7 +1393,7 @@ binary this way (`KMP_BENCH_BINARY=target/release/kmp-mcp`).
 ```json jev-fixture
 {"schema": "kmp.bench.jev_fixture.v1",
  "fixture_key": "7777777777777777777777777777777777777777777777777777777777777777",
- "sample": 0, "backend": "cassette", "model": "jev-1.13.0", "file": "cassette.json",
+ "sample": 0, "backend": "cassette", "model": "jev-1.14.0", "file": "cassette.json",
  "sha256": "6666666666666666666666666666666666666666666666666666666666666666",
  "request_keys": ["a0b4a155271abd4b5cbb4c446fba3ccb7a96299de1b60a27e222b270aded6b2b"],
  "by_source": {"remote": 1}, "telemetry": true}
@@ -1501,7 +1501,7 @@ client mirrors the binary's retry policy; `limitations` says so.
 |---|---|
 | `schema`, `bench_version`, `status` | `ran` or `skipped` (then `reason`, empty `levels`) |
 | `mode`, `upstream`, `key` | `real` / `self_check`; the provider URL or `loopback stand-in`; `{source, recorded: false}` |
-| `settings` | `concurrency` (2–4), `requests` per level and pass, `sites`, `deadlines_ms[site]`, `plan` (faults cycled by arrival: `pass`, `429[:s]`, `delay:<ms>`, `timeout:<s>`), `policy` (`max_retries`, `max_wait_s`, `default_wait_s`, `timeout_s`) |
+| `settings` | `concurrency` (2–4), `requests` per level and pass, `sites`, `deadlines_ms[site]`, `plan` (faults cycled by arrival: `pass`, `429[:s]`, `delay:<ms>`, `timeout:<s>`), `policy` (`max_retries`, `max_wait_s`, `first_backoff_ms`, `timeout_s`) |
 | `levels[]` | `concurrency`, `all` and `by_site[site]` rows, `proxy` (`clean_requests`, `faulted_requests`, `faults` by label) |
 | row | `n`, `added_ms` (`max`, `p99` or null with `p99_absent_reason` below n = 100, `mean`; added = faulted minus clean wall time of the same request), `deadline_ms`, `within_deadline`, `within_deadline_rate`, `retries`, `waited_s`, `degraded` (requests that gave up), `warned` and `warnings` (the binary's message per way of giving up), `clean_errors` |
 | `elapsed_s`, `limitations` | |
@@ -1512,6 +1512,6 @@ client mirrors the binary's retry policy; `limitations` says so.
  "settings": {"concurrency": [2, 3, 4], "requests": 40, "sites": ["rerank", "wake_focus", "paths", "labels"],
               "deadlines_ms": {"labels": 20000, "paths": 20000, "rerank": 20000, "wake_focus": 20000},
               "plan": "pass,429:1,pass,delay:1500,pass,timeout:25,pass,429,pass,pass",
-              "policy": {"max_retries": 2, "max_wait_s": 5, "default_wait_s": 1, "timeout_s": 20.0}},
+              "policy": {"max_retries": 2, "max_wait_s": 5, "first_backoff_ms": 500, "timeout_s": 20.0}},
  "levels": [], "limitations": ["kmp-mcp pins https://api.typesafe.ai ..."]}
 ```

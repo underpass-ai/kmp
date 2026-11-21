@@ -1,8 +1,10 @@
 //! Every bundle the repository ships as an example — and its own memory —
 //! replays into an empty store with this binary. A bundle a reader cannot
 //! import is not an example.
+#[path = "support/isolated_home.rs"]
+mod isolated_home;
+
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 use serde_json::Value;
 
@@ -30,7 +32,7 @@ fn every_shipped_bundle_imports_into_an_empty_store() {
     for bundle in bundles {
         let scratch = tempfile::tempdir().expect("scratch");
         let store = scratch.path().join("store");
-        let output = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+        let output = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"))
             .arg("import")
             .arg(&bundle)
             .env("KMP_MCP_DATA_DIR", &store)

@@ -12,30 +12,32 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 
 use kmp_adapter_embedded::{
-    BundleHeader, EmbeddedKernelStore, bundle_excluding_abouts, merge_bundles, verify_bundle,
+    BundleHeader, EmbeddedKernelStore, HistoryRelation, bundle_excluding_abouts,
+    compare_bundle_histories, merge_bundles, verify_bundle,
 };
 use kmp_domain::PortError;
 
 use crate::bundle_file::{sync_parent, unique_name};
 pub use crate::bundle_file::{write_bundle_atomically, write_bundle_if_absent};
 use crate::committed_tail::CommittedTail;
+use crate::history_advice::{diverged_advice, store_ahead_advice};
 use crate::read_head::ReadHead;
 use crate::tail_memo::TailMemo;
 use crate::{ResolvedDataDir, project_bundle_path};
 
 pub const PENDING_EXPORT_DIR: &str = "bundle-export-pending";
-const EXPORT_LOCK_FILE: &str = "commit-native-bundle.lock";
+pub(crate) const EXPORT_LOCK_FILE: &str = "commit-native-bundle.lock";
 
 /// The committed head bundle paired with the machine store it protects.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CommitNativeBundle {
-    data_dir: PathBuf,
-    bundle_path: PathBuf,
-    excluded_abouts: Vec<String>,
+    pub(crate) data_dir: PathBuf,
+    pub(crate) bundle_path: PathBuf,
+    pub(crate) excluded_abouts: Vec<String>,
     /// This process's last publish: while the committed file and the store
     /// stand where it left them, the next write is checked and published
     /// from their tails (DESIGN L6, write in O(delta)).
-    published: TailMemo,
+    pub(crate) published: TailMemo,
 }
 
 impl CommitNativeBundle {
@@ -81,6 +83,11 @@ impl CommitNativeBundle {
         &self.bundle_path
     }
 
+    /// The machine store this bundle protects.
+    pub fn data_dir(&self) -> &Path {
+        &self.data_dir
+    }
+
     /// Proves that the live store and committed bundle are the same history,
     /// then marks a write as needing an export before the store can change.
     /// The returned guard holds the inter-process lock through publication.
@@ -88,6 +95,21 @@ impl CommitNativeBundle {
         &self,
         store: &EmbeddedKernelStore,
     ) -> Result<PendingBundleExport, PortError> {
+        self.try_begin_write(store).await?.ok_or_else(|| {
+            PortError::Conflict(format!(
+                "another commit-native memory write holds `{}`; retry after it completes",
+                self.data_dir.join(EXPORT_LOCK_FILE).display()
+            ))
+        })
+    }
+
+    /// `begin_write`, answering `None` while another writer holds the lock:
+    /// it holds it only while it commits and publishes, so a caller with a
+    /// runtime can wait its turn instead of refusing the write.
+    pub async fn try_begin_write(
+        &self,
+        store: &EmbeddedKernelStore,
+    ) -> Result<Option<PendingBundleExport>, PortError> {
         let pending_dir = self.data_dir.join(PENDING_EXPORT_DIR);
         fs::create_dir_all(&pending_dir).map_err(|error| {
             PortError::Unavailable(format!(
@@ -108,22 +130,30 @@ impl CommitNativeBundle {
                     lock_path.display()
                 ))
             })?;
-        publish_lock.try_lock().map_err(|error| match error {
-            std::fs::TryLockError::WouldBlock => PortError::Conflict(format!(
-                "another commit-native memory write holds `{}`; retry after it completes",
-                lock_path.display()
-            )),
-            std::fs::TryLockError::Error(error) => PortError::Unavailable(format!(
-                "could not lock commit-native export `{}`: {error}",
-                lock_path.display()
-            )),
-        })?;
+        match publish_lock.try_lock() {
+            Ok(()) => {}
+            Err(std::fs::TryLockError::WouldBlock) => return Ok(None),
+            Err(std::fs::TryLockError::Error(error)) => {
+                return Err(PortError::Unavailable(format!(
+                    "could not lock commit-native export `{}`: {error}",
+                    lock_path.display()
+                )));
+            }
+        }
 
+        // A marker left by a write that stopped: this process holds the lock,
+        // so no writer is still running, and the recovery that is provably
+        // safe on open is just as safe here.
+        if !pending_bundle_exports(&self.data_dir).is_empty() {
+            self.reconcile_locked(store)?;
+        }
         let pending = pending_bundle_exports(&self.data_dir);
         if !pending.is_empty() {
             return Err(PortError::Conflict(format!(
-                "{} commit-native export marker(s) are still pending in `{}`; reconcile the \
-                 canonical bundle explicitly before another memory write",
+                "{} commit-native export marker(s) are still pending in `{}` and the committed \
+                 bundle is not a prefix of the store, so they cannot be cleared on their own; \
+                 stop other KMP sessions, run `kmp-mcp export`, inspect the diff, then run \
+                 `kmp-mcp export --repair-pending`",
                 pending.len(),
                 pending_dir.display()
             )));
@@ -141,13 +171,13 @@ impl CommitNativeBundle {
             }
         };
         let marker = self.mark_pending(&pending_dir)?;
-        Ok(PendingBundleExport {
+        Ok(Some(PendingBundleExport {
             marker,
             publish_lock,
             canonical_before,
             live_before,
             tail: std::sync::Mutex::new(tail),
-        })
+        }))
     }
 
     /// The full check: the live store and the committed bundle hold the same
@@ -167,22 +197,46 @@ impl CommitNativeBundle {
                     ))
                 })?;
                 let authored_bundle = bundle_excluding_abouts(&bundle, &self.excluded_abouts)?;
-                let canonical_header = verify_bundle(&authored_bundle)?;
-                // Equal-length histories can still be different branches, so
-                // compare their decoded event streams rather than trusting
-                // metadata alone. Prefixes are valid bundles but not a safe
-                // base for a new project write: Git and SQLite must agree
-                // exactly before either can advance.
-                merge_bundles(&authored_bundle, &live_before, "commit-native-preflight")?;
-                if canonical_header.event_count != live_header.event_count {
-                    return Err(PortError::Conflict(format!(
-                        "committed memory bundle `{}` has {} events while the live store has {}; \
-                         refusing to change SQLite until the two histories are explicitly \
-                         reconciled",
-                        self.bundle_path.display(),
-                        canonical_header.event_count,
-                        live_header.event_count
-                    )));
+                // Equal-length histories can still be different branches and
+                // a count says nothing about which side is ahead, so the
+                // decoded event streams are compared. Git and SQLite must
+                // agree exactly before either can advance; a bundle ahead of
+                // the store (a pull during this session) is caught up first.
+                let relation = compare_bundle_histories(&live_before, &authored_bundle)?;
+                match relation {
+                    HistoryRelation::Equal { .. } => {}
+                    HistoryRelation::BundleAhead { .. } => {
+                        store
+                            .fast_forward_to_bundle(
+                                authored_bundle.clone(),
+                                self.excluded_abouts.clone(),
+                                kmp_application::projection_mutations_for_context_event,
+                            )
+                            .await?;
+                        let live_now = self.export_authored_bundle(store).await?;
+                        let caught_up = compare_bundle_histories(&live_now, &authored_bundle)?;
+                        if !matches!(caught_up, HistoryRelation::Equal { .. }) {
+                            return Err(PortError::Conflict(format!(
+                                "committed memory bundle `{}` was ahead of the live store and \
+                                 could not be caught up ({caught_up:?}); nothing was written",
+                                self.bundle_path.display()
+                            )));
+                        }
+                        return Ok((Some(bundle), live_now));
+                    }
+                    HistoryRelation::StoreAhead { .. } => {
+                        return Err(PortError::Conflict(store_ahead_advice(
+                            &self.bundle_path,
+                            &relation,
+                        )));
+                    }
+                    HistoryRelation::Diverged { .. } => {
+                        return Err(PortError::Conflict(diverged_advice(
+                            &self.bundle_path,
+                            &self.data_dir,
+                            &relation,
+                        )));
+                    }
                 }
                 Some(bundle)
             }
@@ -445,5 +499,20 @@ mod tests {
 
         assert!(matches!(error, PortError::Conflict(_)));
         assert!(pending_bundle_exports(&data_dir).is_empty());
+        assert!(
+            native
+                .try_begin_write(kernel.store())
+                .await
+                .expect("a held lock is not an error here")
+                .is_none(),
+            "a caller that can wait is told the lock is busy"
+        );
+        drop(competing_writer);
+        let pending = native
+            .try_begin_write(kernel.store())
+            .await
+            .expect("free lock")
+            .expect("the write begins once the lock is free");
+        pending.complete().expect("complete");
     }
 }

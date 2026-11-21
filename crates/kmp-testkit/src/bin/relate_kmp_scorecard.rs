@@ -214,7 +214,6 @@ async fn run_case(case: &JudgedCase) -> Result<Outcome, Box<dyn Error>> {
     loop {
         let mut arguments = json!({
             "about": case.about,
-            "budget": {"depth": 3},
             "page": {"entries": 64}
         });
         if let Some(dimensions) = &case.dimensions {

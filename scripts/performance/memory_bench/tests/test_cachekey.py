@@ -51,6 +51,25 @@ class KeysTest(unittest.TestCase):
         self.assertEqual(BENCH_VERSION, 'kmp.memory_bench.v4')
         self.assertEqual(_result(), 'd2e70c7611d187f162269d8d85af82c4489737d192baeeab6c934c33e84bdf71')
 
+    def test_the_calls_a_question_set_becomes_are_part_of_the_result_key(self):
+        # A run sealed before calls_digest existed keeps its key; a new one never reuses it.
+        self.assertEqual(_result(), _result(calls_digest=None))
+        self.assertNotEqual(_result(), _result(calls_digest='a' * 64))
+        self.assertNotEqual(_result(calls_digest='a' * 64), _result(calls_digest='b' * 64))
+        from ..domain import question as q
+        record = {'schema': q.SCHEMA, 'id': 'c-1', 'corpus': 'synth-v1', 'type': 'path_between',
+                  'about': 'service:billing', 'tool': 'kmp_curate',
+                  'arguments': {'mode': 'paths', 'from': 'service:billing:b02',
+                                'to': 'service:billing:b03', 'max_hops': 6},
+                  'gold': {'answerable': 'KNOWN',
+                           'path': {'from': 'service:billing:b02', 'to': 'service:billing:b03',
+                                    'steps': ['service:billing:b02', 'service:billing:b03']}}}
+        question = q.Question.from_dict(record)
+        self.assertEqual(q.calls_digest([question], 4096), q.calls_digest([question], 4096))
+        with mock.patch.object(q, 'current_arguments', lambda tool, arguments: {**arguments, 'x': 1}):
+            changed = q.calls_digest([question], 4096)
+        self.assertNotEqual(changed, q.calls_digest([question], 4096))
+
     def test_every_component_changes_the_result_key(self):
         base = _result()
         variants = [_result(mode='full'), _result(bench_version='kmp.memory_bench.v5'),

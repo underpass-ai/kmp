@@ -22,6 +22,7 @@ use super::bridged_term::BridgedTerm;
 use super::candidate_temporal_state::CandidateTemporalState;
 use super::concept_coverage::ConceptCoverage;
 use super::content_scores::ContentScores;
+use super::cross_language::CrossLanguage;
 use super::doubt_verdicts::DoubtVerdicts;
 use super::expansion_rescue::ExpansionRescue;
 use super::gate_doubt::GateDoubt;
@@ -42,6 +43,7 @@ use super::search_terms::{
     concept_count, informative_term_counts, informative_terms, informative_tokens, matching_terms,
     search_key, strict_answer_focus_terms,
 };
+use super::stated_by::StatedBy;
 
 pub(super) const ANSWER_CORE_LIMIT: usize = 5;
 
@@ -96,7 +98,12 @@ pub(super) struct AnswerEvidenceRanker<'a> {
     /// are only those the lexical index read (DESIGN L6, P14): what the
     /// store's associations are counted over, however many candidates the
     /// floor bound left unread.
-    indexed_seed_documents: Option<std::sync::Arc<Vec<super::term_counts::TermCounts>>>,
+    indexed_seed_documents: Option<std::sync::Arc<super::seed_documents::SeedDocuments>>,
+    /// The index rows of the candidates an indexed ask reads, by id.
+    indexed_rows:
+        Option<std::sync::Arc<std::collections::BTreeMap<String, super::lexical_row::LexicalRow>>>,
+    /// Where an indexed ask's top-k learns what the bridged rescue took.
+    bridged_rescues: Option<super::bridged_rescues::BridgedRescues>,
     /// Whether an expansion rescue must answer the strict focus (P15; the
     /// store's `expansion_rescue_focus`, on by default).
     expansion_focus: bool,
@@ -120,6 +127,8 @@ impl Default for AnswerEvidenceRanker<'_> {
             indexed_collection: None,
             indexed_vocabulary: None,
             indexed_seed_documents: None,
+            indexed_rows: None,
+            bridged_rescues: None,
             expansion_focus: true,
             prepared_cache: None,
             head_window: HEAD_WINDOW,
@@ -239,6 +248,8 @@ impl<'a> AnswerEvidenceRanker<'a> {
             indexed_collection: None,
             indexed_vocabulary: None,
             indexed_seed_documents: None,
+            indexed_rows: None,
+            bridged_rescues: None,
             expansion_focus: true,
             prepared_cache: None,
             head_window: HEAD_WINDOW,
@@ -309,7 +320,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
     /// fields instead of the candidates it is given (DESIGN L6, P14).
     pub(super) fn with_indexed_seed_documents(
         mut self,
-        documents: std::sync::Arc<Vec<super::term_counts::TermCounts>>,
+        documents: std::sync::Arc<super::seed_documents::SeedDocuments>,
     ) -> Self {
         self.indexed_seed_documents = Some(documents);
         self
@@ -399,7 +410,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
             self.bridge,
             std::sync::Arc::clone(&collection),
             self.indexed_vocabulary.as_deref().map(Vec::as_slice),
-            self.indexed_seed_documents.as_deref().map(Vec::as_slice),
+            self.indexed_seed_documents.as_deref(),
         );
         self.observe(&prepared, &collection, &lexicon);
         self.rank_prepared(
@@ -439,7 +450,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
             if keep {
                 let terms = evidence
                     .iter()
-                    .map(|item| AnswerCandidateTerms::from_evidence(item, &self.context))
+                    .map(|item| self.terms_of(item))
                     .collect::<Vec<_>>();
                 cache.put(evidence.clone(), aliased, terms.clone());
                 return evidence.into_iter().zip(terms).collect();
@@ -448,10 +459,47 @@ impl<'a> AnswerEvidenceRanker<'a> {
         evidence
             .into_iter()
             .map(|item| {
-                let terms = AnswerCandidateTerms::from_evidence(&item, &self.context);
+                let terms = self.terms_of(&item);
                 (item, terms)
             })
             .collect()
+    }
+
+    /// One candidate's terms: from its index row when the ask is answered
+    /// from the lexical index and the row is held (the counts the index
+    /// read it with), otherwise read from its text.
+    fn terms_of(&self, item: &MemoryEvidence) -> AnswerCandidateTerms {
+        match self
+            .indexed_rows
+            .as_ref()
+            .and_then(|rows| rows.get(&item.id))
+        {
+            Some(row) => AnswerCandidateTerms::from_counted(
+                item,
+                &self.context,
+                row.counted_surface(self.context.identifier_aliases),
+            ),
+            None => AnswerCandidateTerms::from_evidence(item, &self.context),
+        }
+    }
+
+    /// The rows of the candidates an ask answered from the lexical index
+    /// reads ([`super::indexed_ask::IndexedAsk::rows`]).
+    /// Records what every bridged rescue this ranker runs takes (P14).
+    pub(super) fn with_bridged_rescues(
+        mut self,
+        rescues: super::bridged_rescues::BridgedRescues,
+    ) -> Self {
+        self.bridged_rescues = Some(rescues);
+        self
+    }
+
+    pub(super) fn with_indexed_rows(
+        mut self,
+        rows: std::sync::Arc<std::collections::BTreeMap<String, super::lexical_row::LexicalRow>>,
+    ) -> Self {
+        self.indexed_rows = Some(rows);
+        self
     }
 
     /// Reads the candidates' terms from `cache` when an earlier reading of
@@ -532,6 +580,9 @@ impl<'a> AnswerEvidenceRanker<'a> {
                 .cmp(&left.relevance)
                 .then_with(|| left.stable_key.cmp(&right.stable_key))
         });
+        if let Some(witness) = self.witness {
+            witness.record_eligible(candidates.iter().map(|candidate| candidate.item.id.clone()));
+        }
         let scores = ContentScores::read(candidates.iter().map(|candidate| {
             (
                 candidate.item.id.as_str(),
@@ -648,7 +699,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
                     self.bridge,
                     std::sync::Arc::clone(&collection),
                     self.indexed_vocabulary.as_deref().map(Vec::as_slice),
-                    self.indexed_seed_documents.as_deref().map(Vec::as_slice),
+                    self.indexed_seed_documents.as_deref(),
                 );
                 self.observe(&prepared, &collection, &lexicon);
                 let (evidence, scores) = self.rank_prepared(
@@ -679,7 +730,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
             self.bridge,
             std::sync::Arc::clone(&collection),
             self.indexed_vocabulary.as_deref().map(Vec::as_slice),
-            self.indexed_seed_documents.as_deref().map(Vec::as_slice),
+            self.indexed_seed_documents.as_deref(),
         );
         self.observe(&prepared, &collection, &lexicon);
         let unfiltered = self
@@ -759,12 +810,14 @@ impl<'a> AnswerEvidenceRanker<'a> {
                     .filter(|(item, _)| within.is_none_or(|ids| ids.contains(&item.id)))
                     .map(|(item, terms)| (*item, terms)),
                 &rescue,
-                |concept, terms| {
+                |concept, item, terms| {
                     if concept.literal {
-                        terms.content.contains(&concept.key)
+                        terms
+                            .content
+                            .contains(&concept.key)
+                            .then_some(StatedBy::OwnWords)
                     } else {
-                        lexicon.content_focus_matches(&BTreeSet::from([concept.key.clone()]), terms)
-                            > 0
+                        lexicon.content_statement(&concept.key, item, terms)
                     }
                 },
             )
@@ -885,6 +938,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
             .collect::<BTreeSet<_>>();
         let mut blocked = self.context.lifecycle.superseded_refs().clone();
         blocked.extend(self.context.lifecycle.expired_refs().cloned());
+        blocked.extend(self.context.lifecycle.pending_refs().cloned());
         let equivalents = self.context.reach_graph.equivalents_of(&seeds, &blocked);
         if equivalents.is_empty() {
             return (Vec::new(), rejected);
@@ -961,6 +1015,14 @@ impl<'a> AnswerEvidenceRanker<'a> {
                 .cmp(left_score)
                 .then_with(|| stable_evidence_key(left).cmp(&stable_evidence_key(right)))
         });
+        if let Some(rescues) = &self.bridged_rescues {
+            let taken = bridged
+                .iter()
+                .take(MAX_BRIDGED_CANDIDATES)
+                .map(|(score, _, _)| *score)
+                .collect::<Vec<_>>();
+            rescues.record(&taken, MAX_BRIDGED_CANDIDATES);
+        }
         (
             bridged
                 .into_iter()
@@ -1036,6 +1098,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
         // edge pointing at them.
         let mut blocked = self.context.lifecycle.superseded_refs().clone();
         blocked.extend(self.context.lifecycle.expired_refs().cloned());
+        blocked.extend(self.context.lifecycle.pending_refs().cloned());
         blocked.extend(seeds.iter().cloned());
 
         let reached =
@@ -1134,7 +1197,8 @@ impl<'a> AnswerEvidenceRanker<'a> {
     }
 
     /// The best share of the question any retained item covers, counting a
-    /// concept the table bridged as covered.
+    /// concept the table bridged onto a memory written in another language
+    /// as covered ([`CrossLanguage`]).
     fn bridged_coverage(&self, question: &str, evidence: &[MemoryEvidence]) -> f64 {
         if self.bridge.is_silent() {
             return 0.0;
@@ -1147,11 +1211,18 @@ impl<'a> AnswerEvidenceRanker<'a> {
             evidence.iter().map(|item| item.text.as_str()),
             self.bridge,
         );
+        let crossing = CrossLanguage::of_question(question);
+        let translations = CrossLanguage::translations(&bridged);
         evidence
             .iter()
             .map(|item| {
+                let translated = if crossing.crosses_to(&item.text) {
+                    translations.as_slice()
+                } else {
+                    &[]
+                };
                 BridgedKey::coverage(
-                    &bridged,
+                    translated,
                     &question_counts,
                     &AnswerCandidateTerms::from_evidence(item, &self.context),
                 )
@@ -1275,6 +1346,8 @@ mod tests {
             indexed_collection: None,
             indexed_vocabulary: None,
             indexed_seed_documents: None,
+            indexed_rows: None,
+            bridged_rescues: None,
             expansion_focus: true,
             prepared_cache: None,
             head_window: HEAD_WINDOW,
@@ -1996,6 +2069,8 @@ mod tests {
             indexed_collection: None,
             indexed_vocabulary: None,
             indexed_seed_documents: None,
+            indexed_rows: None,
+            bridged_rescues: None,
             expansion_focus: true,
             prepared_cache: None,
             head_window: HEAD_WINDOW,
@@ -2432,6 +2507,8 @@ mod tests {
             indexed_collection: None,
             indexed_vocabulary: None,
             indexed_seed_documents: None,
+            indexed_rows: None,
+            bridged_rescues: None,
             expansion_focus: true,
             prepared_cache: None,
             head_window: HEAD_WINDOW,
@@ -2494,13 +2571,35 @@ mod tests {
         let ranker = ranker_bridging_with(&table);
 
         let ranked = ranker.rank(
-            "valvula noche",
+            "¿Qué válvula de la noche?",
             MemoryAnswerPolicy::EvidenceOrUnknown,
             english_shift_report(),
         );
 
         assert_eq!(ranked[0].id, "detail:e1");
         assert!(!was_reached_indirectly(&ranked[0]));
+    }
+
+    #[test]
+    fn a_question_that_leans_in_no_language_is_not_translated_into_an_answer() {
+        let table = spanish_english_toy();
+        let ranker = ranker_bridging_with(&table);
+
+        // Bare keywords carry no function word: nothing says the question
+        // and the memory are in two languages, so the table may rank the
+        // memory but never answers with it.
+        let ranked = ranker.rank(
+            "valvula noche",
+            MemoryAnswerPolicy::EvidenceOrUnknown,
+            english_shift_report(),
+        );
+
+        let valve = ranked
+            .iter()
+            .find(|item| item.id == "detail:e1")
+            .expect("the bridged memory arrives as proof");
+        assert!(was_reached_indirectly(valve));
+        assert_eq!(valve.metadata[REACHED_BY_KEY], REACHED_BY_BRIDGE);
     }
 
     #[test]
@@ -2536,8 +2635,14 @@ mod tests {
         // Both concepts bridged, none shared: medium, because the table's
         // opinion is not the reader's words.
         assert_eq!(
-            ranker.confidence("valvula noche", valve),
+            ranker.confidence("¿Qué válvula de la noche?", valve),
             MemoryConfidence::Medium
+        );
+        // The same words with no grammar to read a language from: the table
+        // translates nothing.
+        assert_eq!(
+            ranker.confidence("valvula noche", valve),
+            MemoryConfidence::Low
         );
         // Two of four bridged and nothing shared: not enough to say so.
         assert_eq!(

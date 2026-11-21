@@ -1,497 +1,299 @@
-# Actualizar la superficie de KMP hacia el agente
+# Updating KMP's agent-facing surface
 
-Este procedimiento sirve a quien mantiene KMP, sea una persona o un agente.
-La superficie incluye lo que el agente recibe al conectarse, las herramientas
-que descubre, las skills que invoca, la guía que consulta y las respuestas
-con las que decide el siguiente movimiento. Cambiar una de esas partes puede
-exigir actualizar las demás.
+This procedure is for whoever maintains KMP, a person or an agent. The surface
+is what an agent receives when it connects, the tools it discovers, the skills
+it invokes, the guide it consults and the answers it uses to choose its next
+move. Changing one of these parts may require updating the others.
 
-El resultado debe permitir usar la capacidad con evidencia y un coste de
-contexto conocido. Una descripción más corta no es una mejora si provoca
-llamadas incorrectas, pierde prueba o confunde los relojes.
+The result must let an agent use the capability with evidence and at a known
+context cost. A shorter description is not an improvement if it causes wrong
+calls, loses proof or confuses the clocks.
 
-## Dónde se cambia cada cosa
+The per-increment notes that used to follow this procedure (Trace routing,
+seek, proof materialization, read notices, Condense candidates) are archived in
+[agent-surface-increments.md](../archive/development/agent-surface-increments.md).
 
-Las rutas son relativas a la raíz del repositorio.
+## Where each thing changes
 
-| Qué cambia | Fuente que se edita | Qué debe acompañarlo |
+Paths are relative to the repository root.
+
+| What changes | Source to edit | What must go with it |
 | --- | --- | --- |
-| Comportamiento del núcleo | Dominio, casos de uso y adaptadores que implementan la operación | Prueba de comportamiento y contrato MCP correspondiente |
-| Argumentos, resultados y descripción de una herramienta | [contract/tools](../../crates/kmp-mcp/src/contract/tools/) y [contract/schema](../../crates/kmp-mcp/src/contract/schema/); registro en [registry.rs](../../crates/kmp-mcp/src/contract/registry.rs) | Fixture de superficie, guía del verbo y ejemplo afectado |
-| Explicación de un argumento | La `description` del esquema en [contract/tools](../../crates/kmp-mcp/src/contract/tools/); `tools/list` la elimina y `kmp_guide` la sirve en `card.parameters` del tema que enseña la herramienta, según `TOPIC_TOOLS` en [guide_scheme.rs](../../crates/kmp-mcp/src/guidance/guide_scheme.rs) y la proyección de [parameter_guide.rs](../../crates/kmp-mcp/src/contract/parameter_guide.rs) | Todo tool nuevo debe pertenecer a un tema; `parameter_guide_audit` lo comprueba |
-| Reglas comunes al conectar un agente | [agent_policy/instructions.rs](../../crates/kmp-mcp/src/agent_policy/instructions.rs), servido por [handshake.rs](../../crates/kmp-mcp/src/contract/handshake.rs) | Casos de routing y captura de initialize y del catálogo que expone el host |
-| Vocabulario de relaciones | `KnownMemoryRelationType` y su especificación en [relation_type.rs](../../crates/kmp-domain/src/value_objects/relation_type.rs) | Proyección [relation_vocabulary.rs](../../crates/kmp-mcp/src/contract/schema/relation_vocabulary.rs), casos positivos/negativos y enseñanza de why/evidence |
-| Entrada breve del agente | [guide/agent-entry.md](../../plugins/kmp/guide/agent-entry.md) | Regenerar el índice y comprobar su tamaño; no insertar el manual completo |
-| Explicación extendida o ejemplo | [editorial.json](../../plugins/kmp/guide/editorial.json) y sus `text_file` en `verbs/`, `topics/` o `examples/` | Referencia válida, prueba nativa y lectura selectiva |
-| Correspondencia entre herramienta y verbo | `tool_verb` en [GuideRequestMapper](../../crates/kmp-release/src/application/mappers/guide_request_mapper.rs) | Todo tool público debe resolver a un verbo indexado |
-| Ayuda ante un rechazo de uso | [tool_error_help.rs](../../crates/kmp-mcp/src/serving/tool_error_help.rs) y su envoltorio en `tool_result.rs` | Elegir por código/ruta tipados, conservar feedback y ejecutar las lecturas sugeridas |
-| Cómo se entra desde Codex o Claude | [skills](../../plugins/kmp/skills/), [adaptadores Claude](../../plugins/kmp/claude/commands/) y [capabilities.json](../../plugins/kmp/capabilities.json) | Paridad de capacidades y acceso a la misma entrada; evitar otra copia del manual |
-| Relato público del producto | Bloque `kmp:public-overview` de [plugins/kmp/README.md](../../plugins/kmp/README.md) | Sincronizar README de repositorio y crate; revisar guía humana |
-| Siembra de la guía en la primera lectura y demo | [guide/asset_locator.rs](../../crates/kmp-mcp/src/guide/asset_locator.rs), [serving/guide_seed.rs](../../crates/kmp-mcp/src/serving/guide_seed.rs), [demo.rs](../../crates/kmp-mcp/src/demo.rs) y su paquete en `fixtures/demo/` | Pruebas `guide_seed`, `guide_repair` y `demo_cli`; `verbs/guide.md`, las skills de guía y setup, y `examples/retry-budget` regenerado con `scripts/examples/refresh.sh` |
+| Kernel behaviour | Domain, use cases and adapters that implement the operation | A behaviour test and the matching MCP contract |
+| A tool's arguments, results and description | [contract/tools](../../crates/kmp-mcp/src/contract/tools/) and [contract/schema](../../crates/kmp-mcp/src/contract/schema/); registered in [registry.rs](../../crates/kmp-mcp/src/contract/registry.rs) | Surface fixture, the verb's guide and the affected example |
+| The explanation of an argument | The schema `description` in [contract/tools](../../crates/kmp-mcp/src/contract/tools/). `tools/list` strips it (except the short lines in `ADVERTISED_LINES`) and `kmp_guide` serves it in the `parameters` of the topic that owns that path, following `serves` in [guide_topic.rs](../../crates/kmp-mcp/src/guide/guide_topic.rs) and the projection in [parameter_guide.rs](../../crates/kmp-mcp/src/contract/parameter_guide.rs) | Every new tool must belong to a topic. `parameter_guide_audit` checks that exactly one topic serves each argument, and `tests/guide_topics.rs` that no card exceeds 2,000 tokens |
+| What `tools/list` publishes of each schema | [published_law.rs](../../crates/kmp-mcp/src/contract/published_law.rs): types, enums and `required`; the rest lives in the full contract the validator reads | `published_law_audit` builds, for each unpublished constraint, a call that breaks only that one and checks the refusal; `tests/schema_contract_fuzz.rs` fuzzes the published schema, the closed objects and the documented rules |
+| A rule across arguments (`if`/`anyOf`/`oneOf`…) | The conditional is tagged with `cross_field_rule::tagged(id, …)` in the definition; its wording and its fix are in [cross_field_rule.rs](../../crates/kmp-mcp/src/contract/cross_field_rule.rs) | The card of the topic that owns the argument serves it under `rules`; the refusal names it (``Rule `id` `` and `feedback[].rule`); an untagged conditional fails `published_law_audit` |
+| A tool's MCP annotations | `ToolEffect` in [definition.rs](../../crates/kmp-mcp/src/contract/schema/definition.rs) | `tests/read_only_tools.rs`: a read leaves the store and its sidecars byte-identical; an idempotent writer does not write on the repeat; `chatgpt-app-submission.json` carries the same values |
+| Rules common to every connecting agent | [agent_policy/instructions.rs](../../crates/kmp-mcp/src/agent_policy/instructions.rs), served by [handshake.rs](../../crates/kmp-mcp/src/contract/handshake.rs) | Routing cases, and captures of `initialize` and of the catalogue the host exposes |
+| The relation vocabulary | `KnownMemoryRelationType` and its specification in [relation_type.rs](../../crates/kmp-domain/src/value_objects/relation_type.rs) | The projection [relation_vocabulary.rs](../../crates/kmp-mcp/src/contract/schema/relation_vocabulary.rs), positive and negative cases, and teaching of why/evidence |
+| The agent's short entry | [guide/agent-entry.md](../../plugins/kmp/guide/agent-entry.md) | Regenerate the index and check its size; do not paste the whole manual in |
+| Extended explanation or example | [editorial.json](../../plugins/kmp/guide/editorial.json) and its `text_file` entries in `verbs/`, `topics/` or `examples/` | A valid reference, a native test and selective reading |
+| Mapping from tool to verb | `tool_verb` in [GuideRequestMapper](../../crates/kmp-release/src/application/mappers/guide_request_mapper.rs) | Every public tool must resolve to an indexed verb |
+| Help on a usage refusal | [tool_error_help.rs](../../crates/kmp-mcp/src/serving/tool_error_help.rs) and its wrapper in [tool_result.rs](../../crates/kmp-mcp/src/serving/tool_result.rs): one line `Help: kmp_guide {"topic":…}` | Choose the topic by the typed path of the feedback, keep the feedback, and check that the topic exists |
+| How Codex or Claude enter | [skills](../../plugins/kmp/skills/), [Claude adapters](../../plugins/kmp/claude/commands/) and [capabilities.json](../../plugins/kmp/capabilities.json) | Capability parity and access to the same entry; avoid another copy of the manual |
+| The product's public story | The `kmp:public-overview` block of [plugins/kmp/README.md](../../plugins/kmp/README.md) | Sync the repository and crate READMEs; review the human guide |
+| Installing the stored guide, and the demo | [guide/asset_locator.rs](../../crates/kmp-mcp/src/guide/asset_locator.rs) (where an installed guide may be), [serving/guide_repair.rs](../../crates/kmp-mcp/src/serving/guide_repair.rs) (the `GUIDE_UNAVAILABLE` repair), `kmp-mcp guide sync`, [demo.rs](../../crates/kmp-mcp/src/demo.rs) and its packet in `fixtures/demo/` | Tests `guide_sync`, `guide_repair` and `demo_cli`; `verbs/guide.md`, the guide and setup skills, and `examples/retry-budget` regenerated with `scripts/examples/refresh.sh`. No read seeds the guide: `kmp_guide` serves its cards from the engine, and `kmp_inspect` of a guide node the store lacks answers `GUIDE_UNAVAILABLE` |
 
-## Añadir un verbo: lo que hizo falta para `kmp_condense`
+## Adding a verb: what `kmp_condense` needed
 
-Un verbo nuevo no termina en `contract/tools/` ni en el registro. Este es el
-recorrido completo del último que se añadió, como referencia de qué se toca y
-por qué, no como lista que una CI deba comprobar.
+A new verb does not end in `contract/tools/` or in the registry. This is the
+whole path of the last one added, as a reference for what is touched and why,
+not as a list a CI should check.
 
-| Pieza | Por qué |
+| Piece | Why |
 | --- | --- |
-| `contract/tools/condense.rs` y `contract/registry.rs` | La herramienta y su sitio en la superficie |
-| `serving/adapters/embedded_backend.rs`, `serving/adapters/grpc/tools.rs` | El verbo existe en los dos backends o no existe |
-| `serving/adapters/fixture_backend.rs` y su fixture de respuesta | El backend de ejemplos responde a todo lo que anuncia |
-| `tool_error_help.rs` | Un rechazo devuelve su propio verbo y su propia lección; apuntar a la lección de otro movimiento responde peor que no responder |
-| `guide_request_mapper.rs::tool_verb` | Todo tool público resuelve a un verbo indexado |
-| `guidance/guide_scheme.rs`, `contract/tools/guide.rs`, `guide/cards/` y su relación al verbo | El tema existe en el esquema progresivo y sirve una ficha y ampliación ejecutables; indexar el verbo solo no lo hace descubrible |
-| `guide/editorial.json` más su `text_file` | La fuente canónica de la guía; regenerar con `guide assets write` |
-| `plugins/kmp/capabilities.json` | El generador compara la lista viva contra este inventario y falla si divergen |
-| `distribution/mcpb/manifest.json` | Lo que instala el host |
-| Bloque `kmp:public-overview` y `readme sync` | Las tres superficies públicas describen la misma superficie |
-| `tests/tool_surface_parity.rs` | Fija definición y respuesta |
-| `plugins/kmp/skills/kmp-moves/SKILL.md` | La skill que enumera los movimientos vivos |
-| Tabla de propiedad y lista de movimientos del README raíz | Describen la misma superficie |
+| `contract/tools/condense.rs` and `contract/registry.rs` | The tool and its place on the surface |
+| `serving/adapters/embedded_backend.rs`, `serving/adapters/grpc/tools.rs` | The verb exists in both backends or it does not exist |
+| `serving/adapters/fixture_backend.rs` and its response fixture | The examples backend answers everything it announces. It is compiled only in debug builds and with the `eval-hooks` feature |
+| `tool_error_help.rs` | A refusal returns its own verb and its own lesson; pointing at another move's lesson answers worse than not answering |
+| `guide_request_mapper.rs::tool_verb` | Every public tool resolves to an indexed verb |
+| `guide/guide_topic.rs`, `guide/cards/` (the editorial source and the compiled copy in `crates/kmp-mcp/src/guide/cards/`) and its link to the verb | The topic exists in the index and serves a card compiled into the engine; indexing the verb alone does not make it discoverable |
+| `guide/editorial.json` and its `text_file` | The canonical source of the guide; regenerate with `guide assets write` |
+| `plugins/kmp/capabilities.json` | The generator compares the live list against this inventory and fails if they differ |
+| `distribution/mcpb/manifest.json` | What the host installs |
+| The `kmp:public-overview` block and `readme sync` | The three public surfaces describe the same surface |
+| `tests/tool_surface_parity.rs` | Pins the definition and the response |
+| `plugins/kmp/skills/kmp-moves/SKILL.md` | The skill that lists the live moves |
+| The ownership table and the list of moves in the root README | They describe the same surface |
 
-No todo verbo tiene enlace gRPC. `kmp_summaries_audit` se lee del propio log
-de eventos del almacén —incluidas las revisiones anteriores de cada entrada—
-y el servicio tipado no expone ese flujo: en modo gRPC vivo devuelve
-`unavailable` diciéndolo, y su descripción y la tabla del README del crate lo
-declaran. Un verbo así sigue necesitando backend de ejemplos, fixture de
-respuesta y paridad; lo que no debe hacer es responder desde las proyecciones
-una lectura más débil con el mismo nombre.
+Not every verb has a gRPC binding. `kmp_summaries_audit` reads the store's own
+event log, earlier revisions of each entry included, and the typed service
+does not expose that stream. `kmp_curate` has no gRPC binding either. In live
+gRPC mode both answer `unavailable` and say so
+(`crates/kmp-mcp/src/serving/adapters/grpc/tools.rs`); their descriptions and
+the crate README's table state it. Such a verb still needs the examples
+backend, a response fixture and parity. What it must not do is answer a weaker
+read under the same name from the projections.
 
-Los recuentos fijos («dieciséis herramientas», «doce de memoria») se han
-retirado de la prosa donde no aportaban nada: cada verbo nuevo los dejaba
-desfasados en cuatro sitios a la vez. Donde el listado sí ayuda —la skill de
-movimientos y la tabla del README— se mantiene la lista y se apunta a
-`tools/list` como autoridad. No hay prueba de recuento ni gate nuevo.
+Fixed counts ("sixteen tools", "twelve memory tools") were removed from prose
+where they added nothing: each new verb left them stale in four places at once.
+Where the list helps (the moves skill and the README table) the list stays and
+points at `tools/list` as the authority. There is no count test and no new
+gate.
 
-La respuesta de `kmp_condense` no está fijada en ese parity: una tarjeta declara
-el digest del registro que el almacén tiene, y ese valor no se repite entre
-sembrados. La llamada positiva se cubre con descriptor dinámico en
-`kmp-mcp/tests/reader_cards.rs` y `kmp-transport-grpc/tests/condense_parity.rs`,
-que leen el descriptor del store y escriben contra él por MCP y por gRPC. Si
-alguien resuelve el digest en tiempo de llamada dentro del parity, la excepción
-documentada allí sobra; quitar la herramienta del bucle no es la alternativa.
+The `kmp_condense` response is not pinned in that parity test: a card declares
+the digest of the record the store holds, and that value differs between
+seeded stores. The positive call is covered with a dynamic descriptor in
+`kmp-mcp/tests/reader_cards.rs` and `kmp-transport-grpc/tests/condense_parity.rs`,
+which read the descriptor from the store and write against it over MCP and over
+gRPC. If someone resolves the digest at call time inside the parity test, the
+exception documented there is no longer needed; taking the tool out of the
+loop is not the alternative.
 
-Al medir el ciclo, separar magnitudes: `search.max_body_record_bytes` acota
-registros de `Details`, no el tamaño total de la respuesta ni la memoria del
-proceso. Los bytes de respuesta no son tokens ni pico de RAM, y una tarjeta más
-corta que su cuerpo no garantiza que un ciclo completo amortice.
+When measuring the cycle, keep the quantities apart:
+`search.max_body_record_bytes` bounds `Details` records, not the total size of
+the response nor the process's memory. Response bytes are not tokens nor peak
+RAM, and a card shorter than its body does not guarantee that a whole cycle
+pays back.
 
-`guide/AGENT.md`, `guide/guide.requests.json` y `guide/memory.jsonl` son salidas
-generadas. No corregirlas a mano: corregir la fuente y regenerar las tres.
-Los fixtures de contrato son evidencia revisable; no se actualizan sólo para
-hacer pasar un test que ha detectado un cambio inesperado.
+`guide/AGENT.md`, `guide/guide.requests.json` and `guide/memory.jsonl` are
+generated outputs. Do not correct them by hand: correct the source and
+regenerate all three. The contract fixtures are reviewable evidence; they are
+not updated just to make a test pass that caught an unexpected change.
 
-## 1. Definir el cambio desde el uso
+## 1. Define the change from its use
 
-Describir el caso que cambia y el resultado observable antes/después. Identificar
-qué debe aprender el agente, qué argumento utiliza, qué devuelve KMP y qué
-prueba permite confiar en ello. Incluir la ruta temporal y relacional cuando
-la tarea requiere recorrer una historia; un ejemplo de Ask no cubre ese uso.
+Describe the case that changes and the observable result before and after.
+Identify what the agent must learn, which argument it uses, what KMP returns
+and what proof lets it trust that. Include the temporal and relational path
+when the task requires walking a history; an Ask example does not cover that
+use.
 
-Anotar las superficies afectadas con la tabla anterior. Si sólo cambia una
-explicación, el comportamiento del núcleo no necesita cambiar. Si se añade
-un tool, revisar también inventario, registro, mapping de guía, fixtures,
-`distribution/mcpb/manifest.json` y el descubrimiento real en el host.
-El manifiesto enumera las herramientas del paquete que instala el host;
-comprobarlo con `bash scripts/ci/mcp-registry.sh`. Evitar repetir un recuento fijo en varios tests.
+Mark the affected surfaces with the table above. If only an explanation
+changes, kernel behaviour need not change. If a tool is added, also review the
+inventory, the registry, the guide mapping, the fixtures,
+`distribution/mcpb/manifest.json` and real discovery in the host. The manifest
+lists the tools of the package the host installs; check it with
+`bash scripts/ci/mcp-registry.sh`. Avoid repeating a fixed count in several
+tests.
 
-## 2. Colocar la explicación donde se consulta
+## 2. Put the explanation where it is looked up
 
-La escritura completa una clase omitida sólo si `writer_spec` del dominio tiene
-una única clase permitida. Al modificar ese vocabulario, revisar también las
-relaciones que exigen `class` en el schema y su feedback `allowed_values`; ambos
-se proyectan del dominio. Una clase explícita nunca se reemplaza. Los ids locales
-con o sin `@` resuelven sólo coincidencias exactas dentro del paquete; no convertir
-errores locales en consejos para enlazar otros abouts. Comprobar nombres futuros,
-desconocidos, refs canónicos, prueba, recibo y replay tras reinicio. Conservar la
-observación explícita del paquete: completar la clase no autoriza inferir relojes
-ni elegir el tipo de memoria a partir de la prosa.
+A write completes an omitted class only if the domain's `writer_spec` allows a
+single class. When changing that vocabulary, also review the relations that
+require `class` in the schema and their `allowed_values` feedback; both are
+projected from the domain. An explicit class is never replaced. Local ids,
+with or without `@`, resolve only exact matches inside the packet; do not turn
+local errors into advice to link other abouts. Check future names, unknown
+names, canonical refs, proof, receipt and replay after a restart. Keep the
+packet's explicit observation: completing the class does not authorize
+inferring clocks or choosing the memory kind from the prose.
 
-Mantener la entrada breve como mapa. El detalle de un verbo debe explicar
-cuándo usarlo, cuándo elegir otro, entrada mínima, resultado, errores o límites
-y siguiente movimiento. Las skills dirigen a esa entrada y reutilizan lo ya
-leído; no vuelven a cargar toda la guía para cada operación.
+Keep the short entry as a map. A verb's detail must explain when to use it,
+when to choose another, the minimal input, the result, errors or limits and the
+next move. Skills point to that entry and reuse what was already read; they do
+not reload the whole guide for each operation.
 
-En `editorial.json`, cada entrada tiene un `id` estable y **una** fuente:
-`text` o `text_file`. `guide_title` la incluye como verbo/tema en el índice;
-`example_title` la incluye como lección. El builder conserva el cuerpo como
-nodo KMP y genera sus referencias completas. El lector copia esas referencias,
-no las reconstruye. Mantener el `id` de un concepto existente y regenerar su
-contenido evita romper referencias por un cambio de redacción.
+In `editorial.json`, each entry has a stable `id` and **one** source: `text` or
+`text_file`. `guide_title` includes it as a verb or topic in the index;
+`example_title` includes it as a lesson. The builder keeps the body as a KMP
+node and generates its full references. The reader copies those references; it
+does not rebuild them. Keeping the `id` of an existing concept and regenerating
+its content avoids breaking references because of a wording change.
 
-Un ejemplo nuevo debe contener fuentes explícitas, decisiones de escritura
-justificadas, llamadas con refs devueltas, resultado esperado y límites. Separar
-fuentes disponibles de preguntas futuras. Incluir un contraejemplo cuando
-haya una confusión probable: compartir etiqueta no prueba identidad; ocurrido
-ayer no significa observado ayer. Un replay escrito demuestra un contrato;
-no demuestra que otro LLM haya aprendido a usarlo.
+A new example must contain explicit sources, justified write decisions, calls
+with returned refs, the expected result and limits. Keep available sources
+apart from future questions. Include a counter-example where a confusion is
+likely: sharing a label does not prove identity; occurred yesterday does not
+mean observed yesterday. A written replay demonstrates a contract; it does not
+show that another LLM learned to use it.
 
-En escritura, consumir toda la lista `feedback`: cada registro que falla durante
-la compilación independiente aporta su primer error, con código, ruta y acción
-si existe. Conservar esos campos al agrupar; no reconstruir reparaciones desde
-el mensaje general. La forma del paquete, sus identidades y los fallos del
-backend pueden detener la validación antes. Tampoco es una lista exhaustiva de
-todos los errores de un mismo registro. Comprobar que el rechazo completo no
-escribe nada y que las acciones siguen siendo ejecutables después de agrupar.
+On a write, consume the whole `feedback` list: each record that fails during
+independent compilation contributes its first error, with code, path and action
+when there is one. Keep those fields when grouping; do not rebuild repairs from
+the general message. The packet's shape, its identities and backend failures
+may stop validation earlier. Nor is it an exhaustive list of every error of one
+record. Check that the complete refusal writes nothing and that the actions are
+still executable after grouping.
 
-La autoverificación del escritor debe comparar fuentes con lo que realmente
-guardó: reloj de observación frente a ocurrencia, vigencia, prueba y una ruta
-dimensional útil. Reutilizar el contexto ya disponible y ampliar sólo lo necesario.
-La cobertura del paquete no demuestra cobertura de la fuente; el lint literal
-de `summary_en` no comprueba equivalencia semántica. El comparador de
-identificadores reconoce fechas completas con mes escrito en español/inglés y
-YYYY-MM-DD. Una fecha con mes escrito y sin año conserva mes/día como `--MM-DD`;
-una fecha completa del rendering puede cubrir esos componentes, sin que el lint
-valide su año añadido. Enseñar a mantener el año ausente si la evidencia no lo
-justifica. Una fecha fuente completa nunca pierde el año. Otros formatos
-conservan comparación literal. Probar que un número
-ajeno a la fecha no queda cubierto por ella y que los textos almacenados y los
-tokens de recuperación permanecen intactos. Enseñar ejemplos concretos de esas diferencias, claves estables para una
-misma ruta y hechos con ciclos de vida separados. No imponer cuotas de tipos o
-etiquetas ni convertir esta revisión informativa en un gate editorial.
+The writer's self-check must compare the sources with what it actually stored:
+observation clock against occurrence, validity, proof and a useful dimensional
+path. Reuse the context already available and widen only what is needed.
+Packet coverage does not show source coverage; the literal lint of
+`summary_en` does not check semantic equivalence. The identifier comparator
+recognizes full dates with the month written in Spanish or English, and
+YYYY-MM-DD. A date with a written month and no year keeps month and day as
+`--MM-DD`; a full date in the rendering may cover those components, without the
+lint validating the added year. Teach keeping the year absent when the
+evidence does not justify it. A full source date never loses its year. Other
+formats keep literal comparison. Test that a number unrelated to the date is
+not covered by it, and that stored texts and retrieval tokens stay intact.
+Teach concrete examples of these differences, stable keys for the same path
+and facts with separate lifecycles. Do not impose quotas of kinds or labels,
+nor turn this informative review into an editorial gate.
 
-Al cambiar la representación de una continuación, comprobar la reconstrucción
-completa desde sus páginas contra una lectura sin paginar. En Inspect,
-`page.repeat_object=false` sólo sirve con un cursor y el objeto inicial
-conservado; `object_reused=true` y `object.ref` identifican lo reutilizado.
-Texto, metadatos, fuente y pruebas siguen vinculados al cursor, aunque no se
-repitan. Inspect devuelve en `next_actions` un handle a la llamada completa; si no cabe un
-elemento, su presupuesto ofrece al menos `page.minimum_progress_bytes`; prefiere
-la inspección completa cuando cabe en los 10.000 bytes habituales, para evitar
-reintentos de un elemento por llamada. Conservar el
-significado de `required_bytes`: la inspección completa con su objeto. Contar la
-acción y la advertencia en el suelo de respuesta, y ejecutar el reintento para
-comprobar que avanza. Un conflicto devuelve en feedback un reinicio sin `page`,
-que recupera el objeto nuevo aunque las páginas anteriores lo reutilizasen. Verificar el rechazo si cambian y medir bytes y llamadas de todo el
-recorrido, incluida la primera página; omitir un cuerpo repetido no autoriza
-resumir ni eliminar evidencia.
+When changing the representation of a continuation, check the complete
+reconstruction from its pages against an unpaged read. In Inspect,
+`page.repeat_object=false` works only with a cursor and the initial object
+kept; `object_reused=true` and `object.ref` identify what was reused. Text,
+metadata, source and proof stay bound to the cursor even when not repeated.
+Inspect returns in `next_actions` a handle to the complete call. If one item
+does not fit, its budget offers at least `page.minimum_progress_bytes`; it
+prefers the complete inspection when that fits in the usual 10,000 bytes, to
+avoid one-item-per-call retries. Keep the meaning of `required_bytes`: the
+complete inspection with its object. Count the action and the warning in the
+response floor, and run the retry to check that it advances. A conflict
+returns in feedback a restart without `page`, which recovers the new object
+even if earlier pages reused it. Verify the refusal if they change, and measure
+bytes and calls of the whole journey, first page included; leaving out a
+repeated body does not authorize summarizing or removing evidence.
 
-Wake y Ask envían su núcleo estable una sola vez: una continuación
-(`page.cursor` más allá de la primera página) devuelve sólo los elementos de
-expansión nuevos, marca `projection.core_reused=true` y no repite resumen,
-respuesta, `scope`, prueba fijada ni avisos del núcleo. `page.repeat_core=true`
-lo devuelve otra vez al host que perdió la primera página; la acción que
-propone esa respuesta vuelve a la continuación incremental. `projection` es el
-único bloque de progreso (el antiguo `truncation` repetía sus contadores).
-Probar que la primera página más todas las continuaciones reproduce la lectura
-completa con presupuesto grande, y que el cursor sigue rechazando otra
-selección con y sin `repeat_core`.
+Wake and Ask send their stable core only once: a continuation (`page.cursor`
+past the first page) returns only the new expansion items, sets
+`projection.core_reused=true` and does not repeat the summary, answer, `scope`,
+pinned proof or core warnings. `page.repeat_core=true` returns it again for the
+host that lost the first page; the action that answer proposes goes back to the
+incremental continuation. `projection` is the only progress block (the former
+`truncation` repeated its counters). Test that the first page plus every
+continuation reproduces the complete read with a large budget, and that the
+cursor still refuses another selection with and without `repeat_core`.
 
-Un Ask que la puerta deja `answered` no ofrece continuación por debajo de
-`budget.detail: "full"`: su primera página lleva el núcleo citado y lo que
-quepa, `projection.more_on_request` cuenta el resto (campo 12 de
-`RecallProjection`) y `next_action` es nulo. Si el núcleo se acortó, el
-reinicio propone sólo el margen que cabe el núcleo entero. `partial` y
-`unknown` siguen paginando. Una continuación y el reinicio de una página
-acortada se cortan de la lectura congelada de la primera página: el eco de la
-petición no nombra un `detail` que el llamador no nombró, porque para el
-núcleo `balanced` y "sin nivel" son consultas distintas.
+An Ask the gate leaves `answered` offers no continuation below
+`budget.detail: "full"`: its first page carries the cited core and whatever
+fits, `projection.more_on_request` counts the rest (field 12 of
+`RecallProjection`) and `next_action` is null. If the core was shortened, the
+restart proposes only the margin that fits the whole core. `partial` and
+`unknown` keep paging. A continuation, and the restart of a shortened page, are
+cut from the frozen read of the first page: the echo of the request does not
+name a `detail` the caller did not name, because for the core `balanced` and
+"no level" are different queries.
 
-En un Ask, el núcleo estable sólo lleva de `proof.superseded` las sustituciones
-que tocan una memoria citada (la sustituida o la que sustituye). El resto es
-expansión de la sección `proof.superseded`, detrás de la evidencia ordenada:
-pagina como cualquier otra y, en una primera página `answered`, cuenta en
-`projection.more_on_request`. Un Wake conserva todas sus marcas en el núcleo, y
-la sección sólo aparece en `projection.sections` cuando pagina algo. Un ítem
-`reached_by: lifecycle` es expansión como los demás rescates: va en la primera
-página de un `answered` si cabe y, si no, cuenta en `more_on_request`.
+In an Ask, the stable core carries from `proof.superseded` only the
+supersessions that touch a cited memory (the superseded one or the one that
+supersedes). The rest is expansion of the `proof.superseded` section, behind
+the ordered evidence: it pages like any other and, on an `answered` first page,
+counts in `projection.more_on_request`. A Wake keeps all its marks in the core,
+and the section appears in `projection.sections` only when it pages something.
+A `reached_by: lifecycle` item is expansion like the other rescues: it goes on
+the first page of an `answered` if it fits and, if not, counts in
+`more_on_request`.
 
-Al cambiar etiquetas temporales, probar una entrada antigua con una pertenencia
-posterior: ésta no puede satisfacer un selector ni aparecer en las coordenadas
-del Goto anterior. Mantener etiquetas múltiples y filtros de otras dimensiones
-(#560), ausencia de reloj, extremos inclusivo/exclusivo y continuaciones. La
-prueba conserva antecedentes anteriores al intervalo, pero sus pertenencias
-respetan su corte superior. Esta comprobación es conductual, no editorial.
+When changing temporal labels, test an old entry with a later membership: the
+membership cannot satisfy a selector nor appear in the coordinates of the
+earlier Goto. Keep multiple labels and filters of other dimensions (#560), an
+absent clock, inclusive and exclusive ends, and continuations. The test keeps
+antecedents earlier than the interval, but their memberships respect its upper
+cut. This check is behavioural, not editorial.
 
-En los verbos temporales, `page` cuenta elementos de entradas y prueba del mismo
-paquete; `selection` identifica la selección limitada del núcleo. Ejecutar
-`next_actions` sin cambios: la continuación de página es un handle a la llamada
-completa y la navegación repite su llamada; primero reconstruir ese paquete y
-después navegar la historia que quede fuera. No convertir `page.next_cursor` en
-una referencia de memoria. Una prueba de continuación debe conservar los filtros,
-el reloj y la prueba, y comprobar que el cursor rechaza cambios del contenido.
-Medir el recorrido completo: cuatro páginas pueden costar más tokens que una
-respuesta grande aunque permitan avanzar con un límite menor por respuesta.
+In the temporal verbs, `page` counts items of entries and proof of the same
+packet; `selection` identifies the core's bounded selection. Run `next_actions`
+unchanged: the page continuation is a handle to the complete call and
+navigation repeats its call. First rebuild that packet, then navigate the
+history that remains outside. Do not turn `page.next_cursor` into a memory
+reference. A continuation test must keep the filters, the clock and the proof,
+and check that the cursor refuses changes to the content. Measure the whole
+journey: four pages may cost more tokens than one large answer, even though
+they allow progress with a smaller limit per response.
 
-Al cambiar `fields`, comprobar qué se proyecta: en los verbos temporales sólo
-las entradas; prueba y auditoría dependen de `include`. Conservar identidad,
-declarar campos omitidos y ejecutar las acciones de ampliación con el mismo
-alcance, verbo, cursor/corte, intervalo, ventana y límites. Comparar también la
-prueba: conservar sólo el nombre del reloj no conserva el instante. Si varias
-entradas comparten una acción de paquete completo, ejecutarla una sola vez.
-Un cambio en contenido oculto también debe invalidar el cursor.
-La composición SQLite de `EmbeddedKernel` fija una vista de lectura para toda
-una operación de memoria: abouts, comprobación de pertenencia, grafo, cuerpos y
-fuentes. Los clones de sus puertos comparten esa vista; no entra en un cursor ni
-se persiste entre llamadas. Los errores al abrirla se propagan, sin volver a
-puertos en vivo. Composiciones sobre almacenes separados necesitan un proveedor
-que pueda garantizar ese estado conjunto; no se promete una transacción
-distribuida. Probar cambios concurrentes reales, ausencia de datos y cancelación
-además de equivalencia de bytes. La declaración de consistencia debe indicar
-el alcance de una llamada, no de toda la conversación.
+When changing `fields`, check what is projected: in the temporal verbs only the
+entries; proof and audit depend on `include`. Keep identity, declare omitted
+fields, and run the widening actions with the same scope, verb, cursor or cut,
+interval, window and limits. Compare the proof too: keeping only the clock's
+name does not keep the instant. If several entries share a full-packet action,
+run it once. A change in hidden content must also invalidate the cursor.
+The SQLite composition of `EmbeddedKernel` pins one read view for a whole
+memory operation: abouts, membership check, graph, bodies and sources. Clones
+of its ports share that view; it does not enter a cursor and is not persisted
+between calls. Errors opening it propagate, without falling back to live
+ports. Compositions over separate stores need a provider that can guarantee
+that joint state; a distributed transaction is not promised. Test real
+concurrent changes, missing data and cancellation, as well as byte
+equivalence. The consistency statement must give the scope of one call, not of
+the whole conversation.
 
-La ampliación es una lectura nueva, no una promesa de snapshot. Medir tanto
-navegación selectiva como ampliación de todos los resultados.
+Widening is a new read, not a snapshot promise. Measure both selective
+navigation and widening of every result.
 
-Al cambiar la selección por `refs`, comprobar que se aplica antes del límite de
-entradas/ventana, manteniendo ámbito, etiquetas y relojes. El cursor se resuelve
-contra la historia admitida; el foco no recorta las fuentes de dependencia.
-Conservar el corte de la pregunta aunque la memoria elegida sea anterior. Medir
-la igualdad del comportamiento sin `refs`, la recuperación de una prueba justo
-en el corte y la exclusión de la posterior. Distinguir refs no coincidentes,
-historia fuera del paquete y prueba pendiente de paginar; ninguno prueba ausencia
-global. Actualizar el protobuf canónico y el vendorizado, los dos adaptadores y
-el ejemplo ejecutable junto con el contrato MCP.
+When changing selection by `refs`, check that it applies before the entry or
+window limit, keeping scope, labels and clocks. The cursor resolves against the
+admitted history; the focus does not cut the dependency sources. Keep the
+question's cut even when the chosen memory is older. Measure equal behaviour
+without `refs`, recovery of proof exactly at the cut and exclusion of later
+proof. Tell apart refs that do not match, history outside the packet and proof
+still to be paged; none of them proves global absence. Update the canonical and
+the vendored protobuf, both adapters and the runnable example together with the
+MCP contract.
 
-La regla de no repetir es sobre la carga en contexto. Un archivo fuente y sus
-assets generados no son dos manuales que el agente deba leer. Las reglas comunes
-que ya llegan en initialize tampoco necesitan copiarse íntegramente en cada
-descripción. Comprobar lo que el host presenta antes de atribuirle al servidor
-una repetición añadida fuera del MCP nativo.
+The no-repetition rule is about the load in context. A source file and its
+generated assets are not two manuals the agent must read. The common rules that
+already arrive in `initialize` need not be copied whole into every description
+either. Check what the host presents before blaming the server for a
+repetition added outside native MCP.
 
-Los campos del schema ya declaran tipos, valores admitidos, límites y defaults.
-Sus descripciones explican las decisiones que esos campos no expresan: qué
-reloj seleccionar, qué oculta un filtro, cómo continuar y qué cuenta como prueba.
-Los ejemplos y el detalle consultable pueden desarrollar esas explicaciones.
-Al acortar descripciones, comparar también el resto del schema antes y después:
-una reducción de texto no debería ocultar la pérdida de un campo o una condición.
-Esa comparación es evidencia de la revisión, no un nuevo gate editorial.
+The full contract's fields declare types, accepted values, bounds and
+defaults; `tools/list` publishes only types, enums and `required` (see
+[published law](#published-law-cross-field-rules-and-annotations)). Argument
+descriptions, which `kmp_guide` serves in each card's `parameters`, explain the
+decisions those fields do not express: which clock to select, what a filter
+hides, how to continue and what counts as proof. Examples and the guide cards
+can develop those explanations. When shortening descriptions, compare the rest
+of the schema before and after too: a text reduction should not hide the loss
+of a field or a condition. That comparison is review evidence, not a new
+editorial gate.
 
-Las instrucciones de initialize contienen sólo decisiones comunes entre verbos:
-activación, recuperación inicial, elección temporal/semántica, continuidad,
-identificadores, prueba y frontera de confianza. El uso específico pertenece
-al tool: Ask explica su reintento y UNKNOWN; Forward explica el límite inclusivo
-del intervalo; los campos del escritor explican resumen de búsqueda y evidencia.
-El detalle y los ejemplos viven en la guía consultable. Algunos hosts anteponen
-initialize a cada descripción: medir esa representación evita multiplicar un
-manual común. No acoplar esta distribución a tests de frases o de orden del texto.
+The `initialize` instructions contain only decisions common to every verb:
+activation, initial recovery, temporal versus semantic choice, continuity,
+identifiers, proof and the trust boundary. Specific use belongs to the tool's
+guide card: the `ask` card explains its retry and UNKNOWN; the `time` card
+explains the inclusive bound of a forward interval; the `write` card explains
+the search summary and evidence. A tool description is one sentence. Some hosts
+put `initialize` in front of every description: measuring that representation
+avoids multiplying a common manual. Do not couple this split to tests of
+sentences or of text order.
 
-### Huellas de selección y cambios del transporte
+## 3. Regenerate with the matching engine
 
-En Wake, `scope.selection` identifica la prueba y las secciones sujetas al reloj
-y al intervalo o instante declarados en `proof`. `scope.context` identifica el
-contexto del about, cuyo tiempo es `unbounded`; puede describir recuerdos fuera
-de esa selección histórica. `scope.dimensions` declara los filtros aplicados a
-ambos grupos, con sus valores y predicados. El catálogo conserva las etiquetas
-de las entradas que pasan: filtrar por una etiqueta no elimina sus otras etiquetas.
-Conservar esta señal dentro del presupuesto y a través del transporte tipado.
-Verificar una ventana con prueba, otra sin prueba pero con contexto, y filtros
-dimensionales; un about inexistente es un caso distinto. `wake.objective` procede
-del solicitante, no es evidencia recuperada. Enseñar estas diferencias en el
-verbo y en una lección con fuentes, también visible en ChronoLoom.
+From the repository root, use a separate target if there is a frozen binary
+kept for measurements. Do not overwrite it, and do not sync development
+examples into the personal store.
 
-Trace y Relate calculan su huella sobre la selección completa antes de cortar
-la página. Al añadir un campo a esos resultados, incluirlo en la huella si
-cambia contenido, evidencia o alcance observables. El orden de mapas de metadata
-no tiene significado: su representación para el hash debe ser determinista.
-No ligar el hash sólo a la página que cabe ni transferir toda la selección al
-cliente para validarla. El MCP liga la huella a la consulta y cuenta también
-las acciones de continuación dentro del presupuesto de respuesta.
-
-Los campos de transporte se editan en `api/proto` y se sincronizan con la copia
-de `crates/kmp-proto/proto`. El MCP y el kernel deben compartir ese contrato;
-un backend sin huella se rechaza explícitamente. Comprobar continuación, cambio
-en una página posterior y acción de reinicio en los transportes afectados.
-Esta explicación es mantenimiento informativo; no añade un control de CI.
-
-### Continuaciones de Ask y Wake
-
-`kmp-proto-mapping/src/v1beta1/recall_projection.rs` cuenta la acción antes
-que la expansión. `recall_actions.rs` construye la llamada y su presupuesto
-suficiente. Al añadir un argumento a Ask/Wake, actualizar su conversión a
-argumentos nativos, la identidad del cursor y la prueba que ejecuta la llamada
-recibida. Conservar selección temporal, dimensiones y `asked_as`; omitir
-`max_entries` ilimitado en vez de enviar un cero rechazado por el MCP.
-
-La respuesta MCP usa `projection.next_action: {tool, arguments}`. El proto
-transporta `RecallCall` en `next_call`, con argumentos JSON para conservar
-enteros exactamente; el antiguo campo de prosa queda sin emitir y no tiene
-adaptador de compatibilidad. Los errores tipados transportan `restart` y el
-MCP lo expone como `feedback[].action`. Mantener ambas copias del proto y
-comprobar ejecución equivalente en los transportes.
-
-### Acciones de continuación mínimas (#544 C3)
-
-Una página no repite la petición. El proyector (gRPC, `next_call`) sigue
-emitiendo la llamada completa; el servidor MCP la guarda y devuelve
-`{"continuation":"read_<32 hex>"}`. Sólo se acortan continuaciones: una acción
-con `page.cursor` (Wake, Ask, Trace, Relate, Inspect, verbos temporales) o una
-escritura que reanuda su revisión (`review_token`). Un reinicio sin cursor
-(`core_text_shortened`, `feedback[].action`) y la navegación temporal repiten su
-llamada porque el agente tiene que leerlas para elegir.
-
-| Pieza | Dónde |
-| --- | --- |
-| Acortar y resolver | `serving/read_continuations.rs` (`shorten_read_actions`, `resolve_read_arguments`) |
-| Almacén sin contexto | tabla `open_continuations` en `agent-users.sqlite3` junto al store (`sqlite_read_continuations.rs`); en memoria si el servidor no tiene ruta |
-| Almacén con `context_id` | `read_continuations`, como antes |
-| Esquema de entrada | `contract/registry.rs`: con `continuation` sólo se admite, en Wake/Ask, `page.repeat_core` |
-
-El handle son 128 bits aleatorios: nombra una llamada, no concede nada. HTTP
-resuelve antes de autorizar y autoriza la llamada resuelta. La llamada guardada
-conserva su cursor, así que un cambio de selección sigue rechazándose con
-`conflict` y un reinicio completo en `feedback[].action`. Otros argumentos junto
-al handle se rechazan con `invalid_argument`; para cambiar el tamaño de página o
-el presupuesto se envían los argumentos originales con `page.cursor` (el camino
-sin estado sigue vigente). Retención: 24 h, 256 llamadas por directorio, 32 KiB
-por llamada. Un handle caducado o de otro store devuelve
-`CONTINUATION_UNAVAILABLE`. Los fixtures de `tool_surface_parity` redactan el
-handle; la paridad con kernel real (`kmp-tests-kernel`) compara con los
-argumentos de continuación enmascarados, porque el backend directo no tiene
-estado de servidor.
-
-Una acción sin cursor tras `core_text_shortened` restaura el núcleo con una
-lectura nueva: descartar la reconstrucción parcial anterior. Las continuaciones
-ordinarias añaden sólo expansiones. Probar el recorrido completo contra una
-lectura amplia del mismo store, restauración desde 512 bytes, límites y errores
-sin analizar el texto del diagnóstico. Medir argumentos más respuestas de todo
-el recorrido, incluyendo reinicios. La recuperación propone el tamaño suficiente
-más 10.000 bytes para expansión; ofrecer sólo el mínimo puede multiplicar llamadas.
-En paridad, aislar XDG_DATA_HOME para que el almacén local no cargue una tabla
-léxica personal ausente en el servidor de prueba; comparar la misma configuración
-de recuperación en ambos caminos. La comprobación nativa no mide aprendizaje
-LLM ni facturación del host. Estas instrucciones son documentación informativa.
-
-`projection.sections.*.remaining` cuenta la cola elegible después de la página,
-sin núcleo repetido ni expansiones de páginas anteriores. Calcularlo sobre esa
-cola, no restando lo devuelto de un total, que vuelve a contar lo ya leído.
-
-Contadores de sección (`kmp.recall.projection.v3`, #544 C3). Un contador a cero
-se omite y una sección sin ninguno también. Cada causa de omisión sigue
-distinguible:
-
-| Contador | Página | Qué dice | Antes |
-| --- | --- | --- | --- |
-| `core` | la que lleva el núcleo | elementos del núcleo en la sección | igual |
-| `excluded_by_detail` | la que lleva el núcleo | excluidos por `budget.detail` en la sección | `total - eligible` |
-| `returned_on_page` | todas | expansión nueva en esta página | igual |
-| `remaining` | todas | expansión elegible pendiente | igual |
-| `eligible` | — | `core` + todos los `returned_on_page` + el último `remaining` | retirado |
-| `total` | — | `eligible + excluded_by_detail` | retirado |
-
-`page.offset` (páginas anteriores), `selection_omitted` (tope de entradas) y
-`core_text_shortened` siguen en `projection`. Proto: `RecallProjectionSection`
-reserva 4/5 (`eligible`, `total`) y añade `excluded_by_detail = 7`. Temporal e
-Inspect aplican la misma regla a `page.sections` (`returned_on_page`,
-`remaining`; sin `total`), e Inspect retira `page.omitted`, que repetía
-`remaining`. Serializarlo también en `RecallProjectionSection` y en ambos sentidos del
-mapping; los metadatos forman parte del presupuesto antes de seleccionar texto.
-Validar primera, intermedias y última página, núcleo acortado y exclusiones por
-detalle/capacidad. Cero no expresa suficiencia semántica. El reinicio del núcleo
-acortado tiene prioridad sobre el aviso de continuar páginas; conservar además
-los indicadores de exclusión y la acción ejecutable.
-La reserva de bytes usa el aviso más largo entre los que realmente se emiten;
-evitar un párrafo de planificación mayor que todos ellos, que puede desplazar
-evidencia y añadir páginas sin comunicar más información al agente.
-
-### Asesor del host
-
-La skill `kmp-expert` usa un subagente del host con una responsabilidad limitada:
-explicar el protocolo. Su helper reúne las entradas de `guide:kmp-agent` del
-asset canónico, incluidos todos los ejemplos, y conserva una copia por hash en
-la caché de la tarea. No añade un LLM al kernel ni otro catálogo de ejemplos.
-Al modificar la guía, regenerar el asset; el hash cambia y la próxima preparación
-usa el contenido nuevo. El manifiesto registra referencias, hashes y líneas para
-comprobar que se entregó todo sin truncamiento. Esa comprobación de entrega no
-demuestra aprendizaje ni evita el coste de cargar un contexto nuevo.
-
-El asesor tiene su propia identidad y contexto. La identidad persiste; el
-contenido del contexto lo conserva el host. Tras compactación se recarga la guía
-completa. La carga local no escribe las marcas `served` del MCP. Comparar la
-revisión del archivo con la del store antes de consultar. El agente de trabajo
-conserva la decisión sobre las fuentes y ejecuta las propuestas autorizadas.
-Verificar el flujo con consultas reales de un subagente y contabilizar ambos
-participantes. Esta evaluación es informativa, sin gates editoriales nuevos.
-
-### Descubrimiento progresivo y errores
-
-`kmp_guide` sirve el esquema y una ficha por consulta. Identidad y contextos
-viven en `agent-users.sqlite3` junto al store embedded; para gRPC son metadatos
-locales del cliente, separados por endpoint. No forman parte de la memoria,
-la evidencia, los bundles ni la autorización. Una conexión compartida no
-identifica al agente: el cliente conserva los ids devueltos.
-
-La clave de registro identifica un agente lógico y hace idempotente su alta.
-`context_id` basta para continuar; `agent_id` con una nueva `context_key`
-identifica un reinicio de contexto tras compactación. `served` registra entrega,
-no aprendizaje ni retención. `fold` cambia lo expandido y conserva esa entrega.
-Un cambio de revisión de guía abre una vista nueva de entregas sin borrar el
-historial. El cliente debe recuperar las fichas que necesite de nuevo.
-
-Las fichas breves viven en `guide/cards/`; los verbos extendidos en `verbs/`.
-El mapper estampa el digest del asset en cada nodo: cambiar contenido exige
-regenerar el conjunto. Al añadir un tema, actualizar catálogo progresivo, schema, ficha,
-verbo y relación entre ambos; ejecutar las acciones de ampliación devueltas.
-Initialize y las skills entran por el esquema; el Markdown es la alternativa.
-No duplicar ambas cargas. Reutilizar el target de este checkout para iterar;
-no repetir suites ya aprobadas si no cambia el comportamiento que comprueban.
-
-
-La entrada generada muestra los grupos de verbos y dos mapas de ejemplos. Los
-temas y lecciones completos siguen en KMP. Consultar el verbo antes del primer
-uso si no está en contexto y abrir el ejemplo necesario; no cargar todos los
-cuerpos para completar el índice. El registro de una consulta anterior no prueba
-comprensión ni presencia en el contexto actual.
-
-La ayuda de rechazo se decide por nombre de herramienta, código y ruta del
-feedback, nunca analizando su mensaje. `help.guide` y `help.examples` contienen
-llamadas completas a nodos existentes. Conservar las acciones directas de
-reparación y reinicio, los códigos del backend y la ausencia de escrituras en
-un rechazo. La consulta de guía no reintenta ni sincroniza automáticamente. Los
-fallos de infraestructura y de lectura de la guía no generan un bucle de ayuda.
-UNKNOWN sigue siendo una respuesta semántica válida.
-
-Probar que los enlaces se ejecutan contra los assets generados, incluyendo las
-herramientas que comparten verbo. Medir la entrada y las lecturas posteriores:
-mover una lista a un nodo no elimina su coste cuando ese nodo se consulta. La
-misma ayuda aparece en texto para hosts que no muestran structuredContent;
-contar por separado esa representación y el sobre completo.
-
-### Contexto previo de escritura
-
-Al cambiar qué relaciones requieren revisión, mantener coherentes el predicado
-nativo `memory/write_neighborhood.rs`, el compilador, `needs_review` y la
-recomendación. `strict:false` y los enlaces locales no eluden la condición.
-SQLite admite varias sesiones sobre el mismo almacén. Comparar las revisiones
-antes y después de leer cada about evita aceptar una vecindad mezclada. El commit
-SQLite vuelve a comprobar todos los abouts leídos, incluidos extremos extranjeros,
-y guarda evento, recibo y proyección en una transacción. El bloqueo local del
-servicio sólo ordena su instancia; no demuestra exclusión entre procesos.
-Los adaptadores de eventos y proyección separados conservan ese límite local:
-esta garantía entre motores corresponde al backend SQLite. Conservar la
-comprobación de idempotencia antes de exigir contexto nuevo a una operación ya
-aceptada. Ninguna transacción queda abierta mientras el agente revisa la respuesta.
-Las operaciones directas de mantenimiento/importación de puertos requieren un
-almacén sin escritores activos; no son escrituras coordinadas del servicio.
-
-El token incorpora la propuesta lógica y el material seleccionado completo,
-incluidas omisiones. Las continuaciones usan el directorio existente: resuelven
-antes de autorizar, mantienen el verbo y la identidad del lote, sobreviven a una
-reconexión dentro de su caducidad y nunca conceden permisos. Si no se puede
-retener el lote, devolver la acción completa. Un reconocimiento de entrega no
-es una prueba de comprensión ni de suficiencia semántica.
-
-Verificar contexto cambiado, reintento aceptado, misma tanda, ámbitos ajenos,
-restricción antigua, contradicciones, texto largo con negación final y costes
-del resultado MCP completo. Mostrar índices de enlaces como índices del paquete,
-no como refs. Conservar las omisiones y la expansión nativa. Actualizar ficha,
-verbo, entrada, instrucciones de sesión y ejemplos: cada ejemplo afectado debe
-mostrar explícitamente preparación y reanudación; el replay no debe confirmarlas
-a escondidas. No añadir gates editoriales al CI por estas recomendaciones.
-
-## 3. Regenerar con el motor correspondiente
-
-Desde la raíz del repo, usar un target separado si hay un binario congelado
-para mediciones. No sobrescribirlo ni sincronizar ejemplos de desarrollo en
-el store personal.
-
-Al alternar worktrees, preferir un target de desarrollo por checkout. Un target
-compartido puede conservar assets de otro checkout aunque el binario arranque.
-Si ocurre, limpiar sólo el crate afectado y reconstruir sus dependientes antes
-de generar o revisar. Comprobar el resultado visible y registrar el hash del
-binario usado; no asumir que una captura representa el código por su ruta.
+When switching between worktrees, prefer one development target per checkout.
+A shared target may keep another checkout's assets even though the binary
+starts. If that happens, clean only the affected crate and rebuild its
+dependents before generating or reviewing. Check the visible result and record
+the hash of the binary used; do not assume a capture represents the code
+because of its path.
 
 ```bash
 export CARGO_TARGET_DIR="$PWD/target/guide-development"
@@ -500,73 +302,74 @@ cargo run --locked --quiet -p kmp-release -- guide assets write \
   --binary "$CARGO_TARGET_DIR/debug/kmp-mcp"
 ```
 
-La generación usa el contrato vivo del binario y reconstruye los dos abouts
-de guía. Revisar juntos fuente y salidas. Si cambia el relato público:
+Generation uses the binary's live contract and rebuilds the two guide abouts.
+Review source and outputs together. If the public story changes:
 
 ```bash
 cargo run --locked --quiet -p kmp-release -- readme sync
 ```
 
-Si cambia intencionalmente lo que MCP anuncia o devuelve, regenerar sus
-fixtures y revisar el diff completo. Este paso no corresponde a una mera
-reorganización editorial:
+If what MCP announces or returns changes on purpose, regenerate its fixtures
+and review the whole diff. This step does not apply to a mere editorial
+reorganization:
 
 ```bash
 KMP_BLESS_TOOL_SURFACE=1 cargo test --locked -p kmp-mcp --test tool_surface_parity
 ```
 
-## 4. Revisar el uso y comprobar el comportamiento
+## 4. Review the use and check the behaviour
 
-Si se modifica la expansión temporal con `include.dependencies`, revisar en
-conjunto los cuatro verbos (Goto, Near, Forward y Rewind), `TemporalInclude`
-y las respuestas protobuf canónicas y vendorizadas, los adaptadores gRPC,
-la selección de grupos y la proyección/paginación MCP. `entries` conserva la
-selección histórica; los registros de apoyo completos van en `proof.entries`
-y los miembros en `proof.groups`. No contar esos apoyos como nuevas
-coincidencias ni interpretar cobertura estructural como respuesta verificada.
+If temporal widening with `include.dependencies` changes, review together the
+four moves of `kmp_time` (`goto`, `near`, `forward` and `rewind`),
+`TemporalInclude` and the canonical and vendored protobuf responses, the gRPC
+adapters, group selection and the MCP projection and paging. `entries` keeps
+the historical selection; complete supporting records go in `proof.entries`
+and the members in `proof.groups`. Do not count those supports as new matches,
+nor read structural coverage as a verified answer.
 
-Las comprobaciones deben usar fuentes antiguas y recientes relacionadas y
-ejercitar reloj ausente, relación futura o caducada, predicado dimensional,
-límite de expansión, reducción de campos y reconstrucción de todas las páginas.
-Cambiar sólo un registro de apoyo debe invalidar una continuación anterior.
-Comprobar el servicio gRPC real con repositorios de prueba y, por separado,
-la transmisión/proyección MCP de sus campos; un servidor simulado por sí solo
-no verifica la selección. Actualizar `verbs/time.md`, el ejemplo
-`examples/alias-ownership.md` y su evidencia editorial, regenerar los assets y
-ejecutar ese ejemplo contra el binario nuevo. Esta pauta documenta cómo
-mantener la superficie; no añade un gate editorial al CI.
+The checks must use related old and recent sources and exercise an absent
+clock, a future or expired relation, a dimensional predicate, the widening
+limit, field reduction and reconstruction of every page. Changing only one
+supporting record must invalidate an earlier continuation. Check the real gRPC
+service with test repositories and, separately, the MCP transmission and
+projection of its fields; a simulated server alone does not verify the
+selection. Update `verbs/time.md`, the example
+`plugins/kmp/guide/examples/alias-ownership.md` and its editorial evidence,
+regenerate the assets and run that example against the new binary. This
+guidance documents how to maintain the surface; it adds no editorial gate to
+CI.
 
-Al añadir un lugar nuevo con texto de memoria, revisar también las rutas
-tipadas del compositor: pasajes, definiciones de referencias y fuentes de spans.
-`proof.entries` participa en los tres; los identificadores de miembros de
-`proof.groups` permanecen literales. Probar expansión exacta, paginación y
-omisión de grupos sin reintroducir una fuente por la tabla de pasajes. Mantener
-los metadatos y las acciones fuera de la sustitución de texto.
+When adding a new place that carries memory text, also review the composer's
+typed paths: passages, reference definitions and span sources. `proof.entries`
+takes part in all three; member identifiers in `proof.groups` stay literal.
+Test exact widening, paging and group omission without reintroducing a source
+through the passage table. Keep metadata and actions outside text
+substitution.
 
-Para un cambio de guía o routing, ejecutar:
+For a guide or routing change, run:
 
 ```bash
 cargo test --locked -p kmp-release --test guide_editorial_contract \
   --test plugin_package_contract
-cargo test --locked -p kmp-mcp --test guide_sync
+cargo test --locked -p kmp-mcp --test guide_sync --test guide_topics
 cargo test --locked -p kmp-adapter-embedded --test guide_bundle
 python3 scripts/ci/kmp-capability-contract.py
 ```
 
-La redacción, extensión y organización de la guía se revisan informativamente.
-No crear validadores de frases, límites arbitrarios de tamaño o simulaciones
-que sólo comparen trazas ya escritas en fixtures. Tampoco hace falta un dominio
-ni capas de aplicación dedicadas a imponer ese procedimiento. Las pruebas
-nativas comprueban la operación que ejecuta KMP; el documento explica su uso.
+Wording, length and organization of the guide are reviewed informatively. Do
+not create sentence validators, arbitrary size limits or simulations that only
+compare traces already written into fixtures. Nor is a domain or dedicated
+application layers needed to enforce this procedure. Native tests check the
+operation KMP runs; the document explains its use.
 
-Ejecutar además las pruebas del comportamiento afectado. Para Rust, usar fmt
-y clippy conforme a [Testing](testing.md). Elegir los checks según el cambio;
-no actualizar expectativas de evidencia, relojes o selección sin justificarlo.
+Also run the tests of the affected behaviour. For Rust, use fmt and clippy as
+in [Testing](testing.md). Choose the checks by the change; do not update
+expectations about evidence, clocks or selection without justifying it.
 
-Reproducir una lección afectada en un store aislado:
+Replay an affected lesson in an isolated store:
 
 ```bash
-guide_review_dir="artifacts/guide-review-$(date -u +%Y%m%dT%H%M%SZ)"
+guide_review_dir="tmp/guide-review-$(date -u +%Y%m%dT%H%M%SZ)"
 mkdir -p "$guide_review_dir"
 python3 scripts/guide_examples/replay.py \
   --binary "$CARGO_TARGET_DIR/debug/kmp-mcp" \
@@ -575,528 +378,534 @@ python3 scripts/guide_examples/replay.py \
   --result "$guide_review_dir/result.json"
 ```
 
-Usar el caso nuevo cuando exista. Comprobar lectura de la entrada una vez,
-acceso al verbo necesario, continuación de páginas y reuso de guía mientras
-el mismo asset permanezca en contexto. No reutilizar respuestas de memoria
-cambiante como si fueran documentación estática. Tras compactación, cambio
-de store o de asset, revalidar lo que sigue disponible.
+Use the new case when there is one. Check that the entry is read once, that
+the needed verb is reached, that pages are continued and that the guide is
+reused while the same asset stays in context. Do not reuse answers from
+changing memory as if they were static documentation. After compaction, a
+change of store or of asset, revalidate what is still available.
 
-Para cambios en representación, navegación o guía humana, añadir `--hold-view`
-al replay y revisar el contexto en ChronoLoom: about, reloj, intervalo,
-memorias, etiquetas, dirección de relaciones y fuentes. Guardar la observación
-y cerrar el visor temporal. No conservar URLs de capacidad con sus credenciales.
+For changes in representation, navigation or the human guide, add
+`--hold-view` to the replay and review the context in ChronoLoom: about, clock,
+interval, memories, labels, direction of relations and sources. Save the
+observation and close the temporary viewer. Do not keep capability URLs with
+their credentials.
 
-## 5. Medir lo que realmente ve el agente
+## 5. Measure what the agent actually sees
 
-Registrar por separado estas representaciones:
+Record these representations separately:
 
-- respuesta MCP nativa de initialize;
-- respuesta MCP nativa de tools/list, con descripciones y schemas;
-- catálogo o metadatos que expone el host;
-- skill y entrada inicial;
-- consultas de guía y resultados del recorrido de trabajo.
+- the native MCP response to `initialize`;
+- the native MCP response to `tools/list`, with descriptions and schemas;
+- the catalogue or metadata the host exposes;
+- the skill and the initial entry;
+- guide lookups and the results of the working journey.
 
-Comparar también la firma callable que ve el agente con el schema nativo.
-Un objeto válido en tools/list puede aparecer como `unknown` si el host prioriza
-una composición condicional y omite sus propiedades hermanas. Revisar ese caso
-con la representación observada, mantener las restricciones del contrato y
-registrar la comprobación después de cargar el cambio. Una proyección local no
-prueba que una sesión abierta haya renovado sus herramientas.
+Also compare the callable signature the agent sees with the native schema. An
+object valid in `tools/list` may appear as `unknown` if the host favours a
+conditional composition and drops its sibling properties. Review that case
+with the observed representation, keep the contract's constraints, and record
+the check after loading the change. A local projection does not prove that an
+open session has renewed its tools.
 
-Contar bytes y tokens con el nombre, versión y configuración del tokenizer.
-Conservar texto o trazas y hashes. Comparar primer uso, primera consulta a un
-verbo, repetición de ese verbo y recorrido completo con cobertura equivalente.
-Si se elimina detalle del contexto inicial, contar también la lectura posterior
-de ese detalle. No sumar dos representaciones alternativas como si ambas se
-inyectaran, ni presentar estos conteos como facturación o ahorro monetario.
+Count bytes and tokens with the tokenizer's name, version and configuration.
+Keep text or traces and hashes. Compare first use, first lookup of a verb,
+repetition of that verb and a whole journey with equivalent coverage. If
+detail is removed from the initial context, count the later read of that detail
+too. Do not add two alternative representations as if both were injected, nor
+present these counts as billing or a money saving.
 
-Para errores de escritura, asignar código y ruta donde se valida el campo.
-No deducirlos del texto del error. Conservar la categoría de un fallo del backend;
-una instrucción de reparación no debe convertirlo en un error del llamante.
-Si se propone una lectura, incluir nombre y argumentos completos y probar que
-puede ejecutarse. Si falta evidencia, señalar el campo sin fabricar un payload.
-El vocabulario de tipos del escritor vive en
-`contract/writer_memory_kinds.rs`: schema, validación y `allowed_values` lo
-consumen directamente. Al ampliarlo, enseñar cuándo corresponde el tipo y
-verificar rechazo, elección basada en fuente y commit; nunca añadir un reemplazo
-automático deducido del nombre inválido. Revisar también los errores de esquema anteriores al planner y los índices del
-paquete. Las pruebas deben recorrer rechazo, lectura/corrección y commit, con
-verificación de que el paquete rechazado no produjo escrituras parciales.
+For write errors, assign a code and a path where the field is validated. Do
+not deduce them from the error text. Keep the category of a backend failure; a
+repair instruction must not turn it into a caller error. If a read is
+proposed, include the full name and arguments and test that it can run. If
+evidence is missing, point at the field without fabricating a payload. The
+writer's kind vocabulary lives in `contract/writer_memory_kinds.rs`: the
+schema, validation and `allowed_values` consume it directly. When extending it,
+teach when the kind applies and verify refusal, source-based choice and
+commit; never add an automatic replacement deduced from the invalid name. Also
+review the schema errors that come before the planner and the packet indexes.
+Tests must walk refusal, read and correction, and commit, verifying that the
+refused packet produced no partial writes.
 
-Cuando el cambio dependa de cómo aprende o decide un LLM, probarlo por separado
-con fuentes nuevas y preguntas ocultas al escritor, dentro del presupuesto y
-estado de pausa autorizados. La validación nativa no reanuda por sí sola una
-medición con modelos.
+When the change depends on how an LLM learns or decides, test it separately
+with new sources and questions hidden from the writer, within the authorized
+budget and pause state. Native validation does not resume a measurement with
+models by itself.
 
-## 6. Dejar un cierre que permita continuar
+## 6. Leave a close that lets the work continue
 
-La entrega debe identificar commit, fuentes modificadas, assets regenerados,
-pruebas ejecutadas, coste antes/después y límites. Indicar si sólo está en una
-rama, si se ha mergeado o si ya está instalado. Una sesión abierta puede seguir
-exponiendo metadatos anteriores: no confundir el código entregado con la
-superficie que esa sesión utiliza.
+The delivery must name the commit, the sources changed, the assets
+regenerated, the tests run, the cost before and after, and the limits. Say
+whether it is only on a branch, merged or already installed. An open session
+may keep exposing earlier metadata: do not confuse the delivered code with the
+surface that session uses.
 
-Conservar los defectos y acciones pendientes en su issue. Un incremento de
-Markdown no completa una revisión de toda la superficie. Los bugs siguen su
-PR y checks; los cambios de capacidad siguen el flujo de iteración acordado.
-La publicación e instalación se rigen por [Releasing](releasing.md).
+Keep defects and pending actions in their issue. A Markdown increment does not
+complete a review of the whole surface. Bugs follow their PR and checks;
+capability changes follow the agreed iteration flow. Publishing and
+installing follow [Releasing](releasing.md).
 
-Actualizar este procedimiento cuando cambie un propietario, un asset, una
-regla de carga o un comando. `AGENTS.md`, el índice de desarrollo y el README
-de la guía deben seguir apuntando aquí, para que una persona y un agente
-encuentren el mismo contrato de mantenimiento.
+Update this procedure when an owner, an asset, a loading rule or a command
+changes. `AGENTS.md`, the development index and the guide README must keep
+pointing here, so a person and an agent find the same maintenance contract.
 
 Writer receipts use the accepted command event and idempotency index. Keep the
 compact acknowledgment, native/gRPC ingest mapping and Inspect audit detail in
 step. Verify actual returned actions across restart, subsequent memory changes
-and export/import; previews and refusals must create neither a receipt nor memory.
-Coverage describes submitted declarations, never completeness against sources the
-writer did not submit. Do not add graph memories or another CI rule for receipts.
-
-### Contexto y recomendaciones del agente
-
-Los argumentos comunes context_id/purpose se agregan en el registro de tools.
-CallGuidance los resuelve y elimina antes de compilar, calcular idempotencia o
-llamar al backend. No son una autorización. El escritor y Relabel pueden tomar
-actor del perfil; un actor explícito prevalece. AgentDirectory guarda uso y
-entregas fuera del grafo. Una entrega no acredita aprendizaje.
-
-GuidanceRecommendation elige por campos tipados del resultado, conserva las
-acciones nativas y declara cuándo inicia otra selección. Un verbo nuevo necesita
-su ruta de ayuda, criterios de recomendación sólo si tiene una señal real, y
-comprobación de que la acción devuelta se ejecuta sin perder reloj o alcance.
-No crear reglas por palabras de mensajes de error ni puntuaciones de confianza
-sin fundamento. La tabla consultable está en verbs/guide.md.
-
-La ayuda de trabajo se serializa una vez en un bloque de texto kmp_guidance:
-structuredContent conserva su contrato y presupuesto. Medir ambos costes y
-comprobar que el host entrega el bloque adicional al modelo. Una aplicación que
-sólo conserva structuredContent oculta la ayuda. El fallo de metadatos después
-de una escritura aceptada debe conservar la aceptación y el recibo; el contador
-de uso nunca certifica una nueva escritura frente a un replay.
-
-### Ejemplos de inferencia
-
-Los archivos de api/examples/inference-prompts son ejemplos adaptables, no
-un segundo contrato del MCP. Un consumidor construye su petición desde
-inputSchema del tools/list vigente. No exigir igualdad de todo el schema
-entre un ejemplo estático y el motor: una capacidad opcional nueva no invalida
-por sí sola un ejemplo que no la usa. Revisar el comportamiento ilustrado al
-modificarlo; mantener las pruebas del contrato nativo y del vocabulario real.
-
-
-### Señales del resultado de escritura
-
-El valor por defecto de observación se resuelve en `kmp-application/memory`,
-usando el mismo instante que asigna la ingestión. El compilador semántico activa
-`default_observation_to_ingestion` en el comando canónico; el adaptador gRPC
-transmite esa política. No calcular la fecha en MCP antes del digest: el mismo
-reintento tendría otro contenido. El digest usa el comando sin resolver y el
-recibo guarda la memoria y procedencia resueltas. La ingestión canónica sin esa
-política conserva los tiempos ausentes. Las coordenadas ya ingeridas de una
-actualización de resumen se conservan, incluida una observación desconocida.
-
-Al cambiar los valores por defecto, revisar schema de raíz y de registro,
-herencia y null explícito, compiladores normal/batch/resumen, protobuf en ambas
-copias, mapping y aplicación. Mantener `clock_defaults` (plan) separado de
-`clocks` (resultado aceptado), y comprobar preview, rechazo atómico, reintento,
-reinicio e importación. Actualizar fichas write/time, verbos extendidos y ejemplo
-four-clocks; explicar el contrato humano en el nodo advanced:clocks. Esta lista
-es una pauta de mantenimiento, no un validador editorial del CI.
-
-La decisión committed/replayed procede de update_context en el punto que
-comprueba idempotencia. No inferirla de un reintento del host ni de la identidad
-persistente del agente. El resumen de relojes procede de la memoria canónica del
-comando aceptado; guardar ese resumen en su recibo y recuperarlo en un replay,
-sin sustituirlo por los relojes de una traducción nueva. Contar memorias una vez,
-no pertenencias dimensionales. Convertir el instante interno mediante el mapping
-temporal existente antes de mostrárselo al agente.
-
-Un preview no guardó relojes y un error de transporte no demuestra rechazo sin
-persistencia. Mantener validated/rejected/unconfirmed distinguibles. Verificar
-reintento tras reinicio, escritura posterior e importación, así como los transportes
-embedded/gRPC. Medir el coste del recibo completo; preservar el acceso al detalle
-sin volver a copiar toda la evidencia ni crear memorias de telemetría.
-
-`relations` muestra triples `{from, rel, to}` derivados de las relaciones
-canónicas del plan. Los extremos locales se acortan a `@id`, resolubles mediante
-`local_refs`; los externos conservan el ref. No reconstruirlos desde el diagnóstico
-ni deduplicar por nombre de relación: dos enlaces del mismo tipo pueden tener
-distintos destinos. Comprobar preview, commit y replay contra el recibo real.
-
-Al modificar una relación, describir sus roles de origen y destino en
-`KnownMemoryRelationType::writer_spec`, revisar la ficha de escritura, el verbo
-y los ejemplos afectados, y regenerar los assets. Incluir un contraejemplo de
-dirección o alcance cuando evite ambigüedad. `supersedes` marca todo el destino
-SUPERSEDED; `corrects` no cambia su estado de ciclo de vida. No prometer que la
-aceptación o la categoría rich verifican el significado. Esta revisión editorial
-es informativa: no añadir un gate de frases o tamaño al CI.
-
-## Continuaciones retenidas en el contexto del agente
-
-Los nueve verbos de lectura admiten la alternativa `{continuation: id}` sola.
-El registro central conserva los requisitos de la llamada inicial en otra rama
-del schema; no debilitar sus `required`/alternativas al añadir esta entrada.
-`serving/read_continuations.rs` transforma únicamente acciones nativas devueltas,
-cuando el identificador no aumenta su tamaño. El directorio SQLite existente
-conserva sus argumentos completos como metadatos: 24 horas, 16 por contexto,
-256 por directorio y 32 KiB por llamada. No contiene páginas de evidencia ni
-forma parte del bundle. Fallos de retención conservan la acción completa.
-
-Resolver antes de autorizar en HTTP, bajo los permisos actuales, y ejecutar esa
-misma petición resuelta. La identidad de guía no sustituye la identidad del
-transporte. Verificar raw, abouts, ámbitos dimensionales, all_abouts y refs en
-el recorrido HTTP real. No ampliar permisos porque se conoce un identificador.
-
-Comprobar replay de una página, progreso al ejecutar su siguiente acción,
-reinicio del proceso, caducidad/cupo, cambios de evidencia y mezcla de argumentos.
-Conservar reloj, propósito, contexto, selección, cursor y aumento de presupuesto.
-Los suelos y mínimos de progreso nativos se calculan antes de abreviar; no
-agrandar el paquete al codificar y recalcular `projection.budget.used_bytes`.
-Medir el recorrido completo y la entrada extra del schema/guía, no sólo el ahorro
-de la petición siguiente. La llamada sin contexto sigue siendo explícita.
-El ejemplo `budget-proof` ejecuta ambos caminos. Son recomendaciones de
-mantenimiento y pruebas de comportamiento; no nuevos gates editoriales.
-
-### Output schemas bajo demanda
-
-`tools/list` no anuncia `outputSchema` por defecto; MCP lo hace opcional y
-`structuredContent` se sigue devolviendo. Los schemas siguen en código
-(`contract/`) como contrato de las respuestas y los tests validan contra
-`tools_list_result()` o `kmp_mcp_tools_list_result_with_output_schemas`, nunca
-contra el catálogo por defecto. `KMP_MCP_OUTPUT_SCHEMAS=1` los anuncia para un
-host que valide la salida; sin definir equivale a `0` y cualquier otro valor
-detiene el arranque. `serving/output_schema_projection.rs` los quita al final, después
-de cualquier proyección que los amplíe; una proyección que parchee
-`outputSchema` debe comprobar antes que existe. `fixtures/contract/tools_list_with_output_schemas.json`
-fija el catálogo con schemas; `tools_list.json` y `tools_list_with_apps.json`
-fijan el anunciado.
-
-### Proyección opcional de pasajes compartidos
-
-`KMP_MCP_PASSAGES=shared` activa la representación en el host; no cambia los
-argumentos de lectura. `serving/passage_projection.rs` adapta initialize,
-tools/list y las nueve respuestas de lectura después de sus presupuestos y
-recomendaciones. La biblioteca `kmp-proto-mapping::context_projection` conserva
-el códec reversible y la composición por grupos completos. Mantener tablas
-locales por respuesta, fuentes distintas aunque compartan texto y read actions
-intactas. Ver [contrato y límites](context-projection.md).
-
-Comprobar las dos configuraciones y sus schemas anunciados. Los archivos de guía
-se generan desde el contrato normal y enseñan también el modo opcional. El ahorro
-del tráfico MCP y el del contexto compuesto son mediciones distintas; sumar la
-instrucción y el schema adicionales del modo activado. No introducir una política
-de tokenizer en el kernel ni inferir límites de fuente para unir citas solapadas.
-
-La composición se ofrece por `kmp-mcp context project|expand [FILE|-]`, sin abrir
-un store ni ejecutar las lecturas declaradas. Al cambiar el contrato de contexto,
-actualizar su versión, decoder, CLI y ejemplo ejecutable; rechazar versiones no
-soportadas y conservar el binario congelado para leer artefactos anteriores.
-Expandir cada tabla nativa dentro de su propia página antes de reunir grupos.
-Los límites de citas los aporta el host: verificar ref, hash, UTF-8 y texto entero,
-sin atribuir veracidad a esa coincidencia. Al lector se le dan fragmentos ordenados
-que concatena sin separadores; no necesita calcular offsets. Comprobar fuente
-omitida por presupuesto, testimonios independientes y recuperación exacta de
-restricciones, conflictos y UNKNOWN. Medir también bindings, tablas y manifiestos;
-el ahorro del cuerpo de texto por sí solo no representa el contexto completo.
-
-### Trace con selección temporal
-
-`as_of`, `interval` o una lista `to` activan el recorrido acotado. Las coordenadas
-canónicas de `contains_entry` y las aristas se leen en la misma transacción;
-no usar el payload original del nodo después de relabel. El predicado temporal
-compartido vive en dominio; los adaptadores aplican el presupuesto antes de leer.
-Los índices por tipo evitan recorrer todo el fanout para localizar coordenadas.
-Comprobar consultas SQLite reales, no sólo cuántas filas devuelve el resultado.
-
-Al modificar esta superficie, conservar e incluir en el fingerprint el reloj,
-el corte resuelto, el estado de resolución, el trabajo de coordenadas y los
-índices de relaciones sin reloj. Probar corte inclusivo, intervalo semiabierto,
-ref sin reloj, presupuesto agotado durante admisión, arista posterior entre
-extremos antiguos y cambio concurrente de coordenadas. La página continúa el
-resultado seleccionado; no continúa la búsqueda ni promete un snapshot entre
-llamadas. Mantener la advertencia de que una ruta no determina verdad ni
-completitud de pruebas. Estas indicaciones son informativas, sin gate editorial.
-
-
-### Relojes propios de las relaciones
-
-La declaración semántica se fecha en ingest, una vez por comando aceptado.
-`MemoryRelationClocks` separa esos relojes de la pertenencia dimensional;
-`connect_to` no exige más campos. En lotes semánticos, observación procede de la declaración del miembro: herencia
-del paquete, override propio o ingesta exacta para null. El compilador fija esa
-procedencia antes de unir planes; no inferirla de un extremo al ingerir. Ocurrencia y vigencia sólo
-se conservan cuando están declaradas explícitamente para esa relación.
-La restauración canónica conserva relojes históricos; el replay usa el recibo.
-No fechar aristas antiguas durante su proyección. Un UPSERT nuevo representa
-la declaración almacenada actual; esto no añade versiones históricas de aristas.
-
-Mantener juntos protobuf canónico y vendorizado, mapper de ingest, proyección de
-payload, respuestas MCP directas y compactas de recall, VisualRelation y
-ChronoLoom (HTTP y MCP App). Las relaciones semánticas muestran `clocks` sin
-necesitar una dimensión; los enlaces estructurales conservan su coordenada.
-No duplicar los relojes en ambos grupos de una relación semántica. Dos valores
-explícitos incompatibles se rechazan. `clocks.relations` del recibo cuenta
-cobertura de enlaces; los contadores de entradas conservan su significado.
-
-Verificar extremos antiguos con declaración tardía, corte inclusivo y extremo
-superior exclusivo, omisión, overrides de registro, restauración y replay tras
-reinicio. Los relojes de la declaración no garantizan verdad ni completitud.
-Una proyección visual selecciona entradas: sus enlaces muestran las fechas,
-pero no sustituyen una lectura temporal de prueba. Actualizar guía, tarjetas y
-fixture del contrato en el mismo cambio, sin gate editorial.
-
-### Asociaciones de evidencia y sus relojes
-
-`memory.evidence[].time` conserva el instante de la fuente. `support_clocks`
-fecha la declaración de sus asociaciones: observación propia, del paquete o
-ingesta si falta, e ingesta aceptada por KMP. El lote semántico preserva la
-observación efectiva del miembro también aquí, incluido null que limpia la raíz.
-Con default_observation_to_ingestion, un objeto explícito de relojes sin observación
-ni ingesta restaurada recibe el instante de ingesta; un objeto ausente conserva
-la herencia canónica del paquete. Ver [diseño y controles](batch-proof-observation.md). No copiar fechas de los extremos ni retimar
-la fuente. Al cambiar este contrato, revisar el DTO canónico, ambos protobufs,
-traductor de ingest, proyección del evento y mappers de evidencia en recall,
-temporal e Inspect. La admisión temporal debe filtrar candidatos y soportes,
-no sólo esconder la arista en la respuesta. Probar fuente antigua/asociación
-posterior, cortes inclusivos/exclusivos, replay y restauración. Sin campos nuevos
-obligatorios para el escritor ni relojes inventados al reproyectar eventos antiguos.
-
-
-### Trace candidate routes
-
-Candidate discovery lives in domain (`bounded_trace_search` and
-`TraceCandidateFrontier`); storage admission stays in `TraceTemporalAdmission`
-and `TraceReadBudget`. Change both protobuf copies, proto request/result mapping,
-MCP request parser, trace projection and tool schema together. `follow` replaces
-global filters; `paths_per_target` changes the route quota, not proof truth.
-Preserve arrows and shared global indexes across pages. Count rejected cycle
-attempts in max_states, cache only completely expanded adjacency, and retain
-early routes at a later work cutoff. Test mixed direction, reconvergence, hubs,
-deep paths, temporal exclusions, quotas, zero hops and cursor reconstruction.
-See [candidate discovery design](trace-alternatives.md). Guidance and cost
-accounting remain documentation, with no new CI gate.
-
-
-### Trace material selection
-
-Native `select_trace_material` selects over the bounded candidate catalogue;
-`TraceMaterialSelection` validates explicit caller requirements. Change the two
-protobufs, request maps, route/clock reindexing, full-candidate cursor digest,
-MCP parser/schema/projection and optional expansion action together. The expansion
-belongs in `search.material.expand_candidates`, never mandatory `next_actions`.
-It must preserve all selection arguments except select and the old page cursor.
-
-Update the audit card, audit verb and bounded-trace example together, then
-regenerate the installed guides and surface fixtures. Verify AND/OR, shared
-material, zero benefit, infeasible requirements, hidden-candidate changes and
-pagination. Measure the entire response and any optional expansion separately;
-material nodes are not tokens. Keep calibration frozen for comparisons and
-retain failed runs. See [mathematical policy](trace-material-selection.md).
-These maintenance instructions add no editorial CI gate.
-
-
-### Trace dimensional routing
-
-Reuse DimensionSelection/LabelSelector/EntryLabels and their parser. Hard
-search.dimensions and soft search.prefer_dimensions are separate choices; do
-not silently turn the latter into admission. Trace reads memberships only on
-the selected clock inside the same bounded ReadTx. Keep scope current_about.
-
-Maintain both protobuf copies, request maps, queue scheduling, stats projection,
-material-selection reindexing and cursor binding together. Explain preference
-counts as observations, not truth. Unconfigured calls keep their prior output
-and BFS cost. Update audit card, extended verb and bounded-trace example, then
-regenerate. Validate a useful hint, a misleading hint with a bridge, temporal
-multivalue/negative selectors, hard exclusion, dense fanout, stale labels and
-full response costs. Do not tune the fixed 3:1 schedule on those controls.
-See [policy and known limits](trace-dimensional-routing.md). No editorial gate.
-
-### Resumable focused Trace exploration
-
-When changing discovery scheduling, keep the announced routing order, counters,
-extended audit guide and bounded-trace example consistent. A resumed expansion
-turn is not a new path state: S counts eligible extension attempts; N/E count
-actual references/rows. Report coordinate work and empty storage end probes.
-Share partial adjacency between alternatives in one ReadTx, retain per-path
-offsets, and give resumed queue entries fresh tickets so stale heap/FIFO entries
-cannot consume them twice. Leaf claims require full admitted adjacency exhaustion.
-Compare exact default BFS responses, late edges, misleading bridges, reconvergence,
-mixed directions/clocks and depth/work cuts. Freeze the page quantum before
-measurement; document its tradeoffs without a new size or editorial CI gate.
-See [policy and controls](trace-page-exploration.md).
-
-### Seed-based joint evidence paths
-
-`search.seek` compiles native relations and witness constraints in proto mapping.
-Keep both protobuf copies, MCP parser/schema, embedded/gRPC dispatch, result
-projection, cursor fingerprint and three-section pagination together. No caller
-variables or destination gold refs. Every role has one main witness; via/after
-retain its position. Shared labels are joint intersections, same_ref is exact
-reference equality, and missing labels/clocks never become known by joining.
-Do not add private witness bindings to the solver merely for display: that would
-change ambiguity. Witness refs are projected from the validated seek request.
-
-Update the audit card, extended verb, evidence-seek lesson and typed error help;
-regenerate guide assets and review both tool catalog fixtures. Validate incoming
-arrows, deep/unlabelled bridges, incompatible/unknown groups, hidden-group cursor
-changes, all page sections, work cuts and old Trace. Context review is optional,
-separate from continuations and only offered at an equivalent explicit cut.
-Measure complete native calls against frozen controls; do not claim NLP or agent
-understanding from a deterministic compiler replay. These are maintenance
-instructions, not new editorial CI gates.
-
-For contextual seek, keep `via:"context"`, typed `context`, `context_discovery`
-and `context_hops` consistent through the same boundaries. The witness offset
-comes from the candidate's actual prefix depth. Include discovery mode and
-prefix lengths in the fingerprint. Document minimum-hop selection and retained
-ties, temporal/ownership/proof admission, explicit obligation input and required
-semantic review. Verify unknown/future links, mixed directions, joint conflicts,
-cycles, deep chains, all pages and embedded/gRPC parity. A discovered contextual
-prefix does not entail a claim about the seed. Compression is a later optional
-reader projection; add no writer fields or editorial CI gate here.
-
-For relation endpoint equality, maintain TraceReferenceEndpoint in both protobufs,
-JSON same_ref members, zero-position contextual capture, candidate.anchor, binding
-endpoints and their whole-selection fingerprint together. Anchor means traversal
-start of the main relation, after via/context; it is the stored target when the
-move is incoming. Preserve role-string witness shorthand. Groups partition
-endpoints so one role can join an action and a person separately. Test different
-actions with the same witnesses/labels, convergence, fixed prefixes, unknowns,
-disjoint endpoint validation, paging and real gRPC. Update the reduced audit card,
-extended audit, human guide and evidence-seek example. Contextual compatibility
-remains a lead requiring original source review, not logical entailment.
-
-### Trace: mantener separados los modos
-
-Al cambiar opciones de Trace, asignarlas a destinos conocidos o a evidencia desde
-semilla. Mantener `oneOf`/campos permitidos en el esquema y el rechazo agrupado
-antes de interpretar cuerpos incompatibles; no añadir un selector redundante.
-Las definiciones compartidas permanecen únicas para conservar la validación
-recursiva de campos desconocidos. Verificar ambas familias válidas y la reparación
-de mezclas con `to`, opciones de destino y límites comunes.
-
-Actualizar tarjeta, verbo ampliado, guía humana y ejemplos en el mismo cambio.
-Contrastar misma acción frente a copia/publicación distintas y escribir el reloj
-explícito en ejemplos históricos. Comparar resultados válidos completos y medir
-esquema, tarjeta y rechazos, sin inferir comprensión de agentes del replay.
-[Diseño y aceptación](trace-search-modes.md); instrucciones informativas, sin CI
-editorial adicional.
-
-### Aviso principal de lectura incompleta
-
-`tool_result::packet_is_partial` deriva el estado de entrega de page.has_more,
-projection.page.has_more y projection.core_text_shortened. El primer texto de
-lecturas parciales y la ayuda opcional usan esa misma función. No confundir con
-selection.has_more, límites de búsqueda o la vecindad previa del escritor.
-Mantener el objeto estructurado y sus presupuestos intactos: el aviso pertenece
-al sobre, no a la fuente. Probar continuación real sin contexto, con contexto,
-UNKNOWN completo, núcleo abreviado y otra posición histórica tras página completa.
-Actualizar entrada, tarjeta temporal, verbo y ejemplo de presupuesto; medir el
-sobre completo además del cuerpo. [Diseño](read-progress.md), sin CI editorial.
-
-
-### Joint Trace proof materialization
-
-`search.proof` is shared by destination and seed modes. Keep both protobufs,
-request mappings, shared object/support/gap projection and whole-selection
-fingerprint together. Page order must agree between kernel slices and MCP byte
-projection. Preserve source provenance, attachment admission, missing bodies,
-unknown proof and contextual review state. A body change outside the current
-page still invalidates the cursor. Do not count existing snapshots/source batches
-as a new improvement. Validate both modes, shared/foreign/missing sources, clocks,
-N/E cutoffs, concurrent revisions and transport parity before paired timings.
-`budget.max_bytes` is a response ceiling, not an allocation guarantee. Update
-audit, bounded-trace/evidence-seek lessons and both generated guides together.
-See [contract and limits](joint-evidence-materialization.md).
-
-
-### Lectura, ampliación y tarjetas: comprobar el recorrido
-
-Las lecturas compactas de prueba incorporan `proof.condense_candidates`: una
-lista acotada de identidades y costes, calculada en dominio sobre toda la tabla
-seleccionada antes de paginar. `shared_by` cuenta rutas devueltas o grupos de
-seek con relojes conocidos y todos sus testigos de bindings, incluidos sus
-soportes admitidos, una vez por ruta/grupo. Los grupos pendientes de revisión
-no suman compartición. La entrega de evidencia canónica es independiente del
-recuento, que tampoco verifica significado. El fingerprint de
-la selección incluye la lista; el manifiesto de cuerpos conserva su identidad.
-Mantener política, ambos protobufs, mappers y schema junto a las guías de
-Condense. El lector copia `source` y `expect`, lee el cuerpo y redacta su tarjeta.
-
-Comprobar prioridad, desempate, cupo, suelo, tarjetas válidas/posteriores al
-corte, CAS de tarjetas obsoletas, cambios de fuente y páginas sin objetos del
-listado. Comparar los bytes de la lista en embedded y gRPC. Medir el recorrido
-completo: repetir una recomendación en cada página añade coste. El ensayo
-reproducible y sus límites se describen en
-[condense-candidates.md](condense-candidates.md); no supone ahorro de tokens
-ni aprendizaje del lector y no incorpora gates editoriales.
-
-Mantener alineados Trace, Condense, fichas `audit`/`condense`, verbos, ejemplo
-`reader-cards` y ayuda ante rechazos. El verbo audit sirve como mapa; el detalle
-de navegación se consulta en `advanced:audit-reference`. No cargar ambos por
-defecto. Conservar refs al mover prosa y revisar los enlaces regenerados.
-
-El descriptor para Condense procede de Trace con `proof:true` y una opción de
-cuerpos activa, por ejemplo `proof_refs:[]`; Inspect no expone ese digest. El
-lector debe leer el cuerpo canónico correspondiente antes de redactar. El paso
-a compact es una lectura nueva: conservar consulta/relojes, quitar
-`proof_refs`, `expect_selection` y el cursor viejo. Una tarjeta ausente o no
-vigente no provoca fallback canónico. Separar final de páginas, inventario de
-refs leídos y suficiencia semántica; una cola de expansiones vacía no prueba
-que se leyeran refs anteriores omitidos por lotes manuales.
-
-Antes de comprobar aprendizaje con agentes, sembrar guía y caso en un store
-aislado; verificar registro, ficha, verbo y ejemplo con una identidad de
-preparación distinta. Congelar binario, asset y hashes. `GUIDE_UNAVAILABLE`
-invalida una prueba de uso con guía, aunque sí documente respuesta al schema.
-El driver ejecuta las llamadas elegidas por el lector, sin seguir acciones ni
-corregir argumentos a escondidas. Conservar errores y recuperación. Medir por
-separado texto, sobre MCP y catálogo con tokenizer identificado; bytes o palabras
-no se presentan como tokens ni una captura local como coste del host completo.
-
-Al publicar, comprobar el paquete generado y su `tools/list`, además del código.
-La herramienta del binario candidato no aparece automáticamente en una sesión
-que conserva un registro anterior: documentar la versión instalada, la vía de
-actualización y el reinicio necesario. No afirmar activación por haber compilado.
-Estas comprobaciones son evidencia de entrega, sin gates editoriales nuevos.
-
-### Selected-node framing in ChronoLoom
+and export/import; previews and refusals must create neither a receipt nor
+memory. Coverage describes submitted declarations, never completeness against
+sources the writer did not submit. Do not add graph memories or another CI rule
+for receipts.
+
+# Contract notes
+
+How specific parts of the surface work today, and what to keep together when
+changing them.
+
+## Selection fingerprints and transport changes
+
+In Wake, `scope.selection` identifies the proof and the sections subject to the
+clock and to the interval or instant declared in `proof`. `scope.context`
+identifies the about's context, whose time is `unbounded`; it may describe
+memories outside that historical selection. `scope.dimensions` declares the
+filters applied to both groups, with their values and predicates. The
+catalogue keeps the labels of the entries that pass: filtering by one label
+does not remove their other labels. Keep this signal inside the budget and
+across the typed transport. Verify a window with proof, another without proof
+but with context, and dimensional filters; an about that does not exist is a
+different case. `wake.objective` comes from the requester; it is not retrieved
+evidence. Teach these differences in the verb and in a lesson with sources,
+also visible in ChronoLoom.
+
+Trace and Relate compute their fingerprint over the complete selection before
+cutting the page. When adding a field to those results, include it in the
+fingerprint if it changes observable content, evidence or scope. The order of
+metadata maps has no meaning: its representation for the hash must be
+deterministic. Do not bind the hash only to the page that fits, nor send the
+whole selection to the client to validate it. MCP binds the fingerprint to the
+query and also counts the continuation actions inside the response budget.
+
+Transport fields are edited in `api/proto` and synced with the copy in
+`crates/kmp-proto/proto`. MCP and the kernel must share that contract; a
+backend without a fingerprint is refused explicitly. Check continuation, a
+change on a later page and the restart action in the affected transports. This
+explanation is informative maintenance; it adds no CI check.
+
+## Ask and Wake continuations
+
+`kmp-proto-mapping/src/v1beta1/recall_projection.rs` counts the action before
+the expansion. `recall_actions.rs` (same directory) builds the call and its
+sufficient budget. When adding an argument to Ask or Wake, update its
+conversion to native arguments, the cursor identity and the test that runs the
+received call. Keep the temporal selection, the dimensions and `asked_as`;
+leave out an unlimited `max_entries` instead of sending a zero that MCP
+refuses.
+
+The MCP response uses `projection.next_action: {tool, arguments}`. The proto
+carries `RecallCall` in `next_call`, with JSON arguments so integers stay
+exact; the old prose field is no longer emitted and has no compatibility
+adapter. Typed errors carry `restart`, and MCP exposes it as
+`feedback[].action`. Keep both copies of the proto and check equivalent
+execution across the transports.
+
+## Continuation handles
+
+A page does not repeat the request. The projector (gRPC, `next_call`) still
+emits the complete call; the MCP server stores it and returns
+`{"continuation":"read_<32 hex>"}`. Only continuations are shortened: an action
+with `page.cursor` (Wake, Ask, Trace, Relate, Inspect, the temporal moves) or a
+write that resumes its review (`review_token`). A restart without a cursor
+(`core_text_shortened`, `feedback[].action`) and temporal navigation repeat
+their call, because the agent has to read them to choose.
+
+| Piece | Where |
+| --- | --- |
+| Shorten and resolve | `serving/read_continuations.rs` (`shorten_read_actions`, `resolve_read_arguments`) |
+| Store | table `open_continuations` in `continuations.sqlite3` beside the store (`continuation/adapters/sqlite_continuation_store.rs`); in memory if the server has no path. A 0.27.0 `agent-users.sqlite3` is no longer opened |
+| Input schema | `contract/registry.rs`: beside `continuation`, any declared argument may be resent, and the rule `continuation-alone` refuses a value the retained call does not have |
+
+The handle is 128 random bits: it names a call and grants nothing. HTTP
+resolves before authorizing and authorizes the resolved call. The stored call
+keeps its cursor, so a change of selection is still refused with `conflict`
+and a full restart in `feedback[].action`. Any argument of the retained call
+may be sent beside the handle with the value the call already has, and is
+ignored: the answer is the continuation's own. A different value is refused
+with `invalid_argument` under `continuation-alone`, naming the argument
+(`feedback[].field`, code `CONTINUATION_ARGUMENT_DIFFERS`); Wake and Ask also
+accept `page.repeat_core`. To change the page size or the budget, send the
+original arguments with `page.cursor` (the stateless path still works).
+Retention: 24 h, 256 calls per directory, 32 KiB per call
+(`sqlite_continuation_store.rs`). A handle that expired or belongs to another
+store returns `CONTINUATION_UNAVAILABLE`. The `tool_surface_parity` fixtures
+redact the handle; parity with the real kernel (`kmp-tests-kernel`) compares
+with the continuation arguments masked, because the direct backend has no
+server state.
+
+An action without a cursor after `core_text_shortened` restores the core with a
+new read: discard the earlier partial reconstruction. Ordinary continuations
+add only expansions. Test the whole journey against a wide read of the same
+store, restoring from 512 bytes, limits and errors, without parsing the
+diagnostic text. Measure arguments plus responses of the whole journey,
+restarts included. Recovery proposes the sufficient size plus 10,000 bytes for
+expansion; offering only the minimum can multiply calls. In parity tests,
+isolate `XDG_DATA_HOME` so the local store does not load a personal lexical
+table that the test server lacks; compare the same retrieval configuration on
+both paths. The native check does not measure LLM learning or host billing.
+These instructions are informative documentation.
+
+`projection.sections.*.remaining` counts the eligible queue after the page,
+without the repeated core or expansions of earlier pages. Compute it over that
+queue, not by subtracting what was returned from a total, which counts again
+what was already read.
+
+Section counters (`kmp.recall.projection.v3`). A counter at zero is omitted,
+and so is a section with none. Each cause of omission stays distinguishable:
+
+| Counter | Page | What it says | Before v3 |
+| --- | --- | --- | --- |
+| `core` | the one carrying the core | core items in the section | same |
+| `excluded_by_detail` | the one carrying the core | excluded by `budget.detail` in the section | `total - eligible` |
+| `returned_on_page` | all | new expansion on this page | same |
+| `remaining` | all | eligible expansion still pending | same |
+| `eligible` | — | `core` + every `returned_on_page` + the last `remaining` | retired |
+| `total` | — | `eligible + excluded_by_detail` | retired |
+
+`page.offset` (earlier pages), `selection_omitted` (entry cap) and
+`core_text_shortened` stay in `projection`. Proto: `RecallProjectionSection`
+reserves 4/5 (`eligible`, `total`) and adds `excluded_by_detail = 7`. The
+temporal moves and Inspect apply the same rule to `page.sections`
+(`returned_on_page`, `remaining`; no `total`), and Inspect retires
+`page.omitted`, which repeated `remaining`. Serialize it in
+`RecallProjectionSection` too, and in both directions of the mapping; metadata
+is part of the budget before text is selected. Validate first, middle and last
+pages, a shortened core and exclusions by detail or capacity. Zero does not
+express semantic sufficiency. The restart of a shortened core takes priority
+over the notice to continue pages; also keep the exclusion indicators and the
+executable action. The byte reserve uses the longest notice among those
+actually emitted; avoid a planning paragraph longer than all of them, which
+can displace evidence and add pages without telling the agent more.
+
+## Published law, cross-field rules and annotations
+
+`tools/list` publishes what an agent needs for a valid first call: types,
+enums, `required` (with the single `if`/`else` that says a continuation needs
+nothing else) and the `pattern` of `memories[].id`, which the agent invents.
+The rest of the law is stated once: the server instructions say that every
+object refuses the keys its schema does not list (the validator closes by
+default every `type: object` node without `additionalProperties`); each rule
+across arguments is documented in its topic's card and named with its fix in
+the refusal; bounds that only repeat a check stay in the full contract. Do not
+use `$ref` or `$defs`. When adding a conditional, tag it and write the rule;
+when adding a bound that prevents a wrong first call, add it to
+`PUBLISHED_BOUNDS`.
+
+A tool's description is one sentence: what it is for and when to choose it
+over its neighbours. Everything else goes to its card (at most 2,000 tokens;
+split the topic if it does not fit). The annotations are true:
+`readOnlyHint: true` only if the call does not change memory (what it may
+leave is the log, quality telemetry, a continuation handle when there are more
+pages and, with Jev, cached verdicts); `openWorldHint` is false except on the
+tools that the session store's Jev opt-in makes send text to TypeSafe
+(`KernelMcpToolBackend::open_world_tools`, applied in `tools/list`);
+`destructiveHint` and `idempotentHint` are omitted when they equal their MCP
+default. `kmp_inspect` is read-only: inspecting a guide node the store lacks
+answers `GUIDE_UNAVAILABLE` with the repair instead of seeding the guide.
+
+## Guide topics and errors
+
+`kmp_guide` is a stateless lookup: without `topic` it returns the index; with
+`topic`, that topic's card and the prose of the arguments it owns. The cards
+are compiled into the engine from `crates/kmp-mcp/src/guide/cards/`, an exact
+copy of `plugins/kmp/guide/cards/` (the editorial source of the stored guide;
+`tests/guide_topics.rs` checks that they match). It neither reads nor seeds the
+store and answers the same way on every install. There is no identity, context
+or delivery record.
+
+When adding a topic, update `guide_topic.rs`, the card in both places, its
+entry in `editorial.json` and its link to the verb; regenerate the assets.
+`initialize` and the skills name `kmp_guide {topic}`; the Markdown is the
+alternative. Do not load both.
+
+The generated entry shows the verb groups and two maps of examples. The full
+topics and lessons stay in KMP. Look up the verb before its first use if it is
+not in context, and open the example needed; do not load every body to
+complete the index. Having looked a topic up earlier does not prove
+understanding, nor that it is still in the current context.
+
+Refusal help is decided by tool name, code and feedback path, never by parsing
+the message: one line `Help: kmp_guide {"topic":…}` with the topic that owns
+the first refused argument. Keep the direct repair and restart actions, the
+backend codes and the absence of writes in a refusal. A guide lookup neither
+retries nor syncs automatically. Infrastructure failures and guide read
+failures do not create a help loop. UNKNOWN is still a valid semantic answer.
+
+Test that the topic pointed at exists and explains the refused tool. Measure
+the entry and the later reads: moving a list into a card does not remove its
+cost when that card is looked up.
+
+## Write-time context
+
+When changing which relations require review, keep the native predicate
+`memory/write_neighborhood.rs`, the compiler, `needs_review` and the
+recommendation consistent. `strict:false` and local links do not get around
+the condition. SQLite allows several sessions over the same store. Comparing
+the revisions before and after reading each about avoids accepting a mixed
+neighbourhood. The SQLite commit checks every about read again, foreign
+endpoints included, and stores event, receipt and projection in one
+transaction. The service's local lock only orders its own instance; it does not
+show exclusion between processes. Separate event and projection adapters keep
+that local limit: this guarantee across engines belongs to the SQLite backend.
+Keep the idempotency check before requiring new context for an operation
+already accepted. No transaction stays open while the agent reviews the
+answer. Direct maintenance or import operations on ports require a store with
+no active writers; they are not coordinated writes of the service.
+
+The token includes the logical proposal and the complete selected material,
+omissions included. Continuations use the existing directory: they resolve
+before authorizing, keep the verb and the identity of the batch, survive a
+reconnection within their expiry and never grant permissions. If the batch
+cannot be retained, return the complete action. An acknowledgment of delivery
+is not proof of understanding nor of semantic sufficiency.
+
+Verify changed context, an accepted retry, the same batch, foreign scopes, an
+old constraint, contradictions, long text with a final negation and the costs
+of the complete MCP result. Show link indexes as packet indexes, not as refs.
+Keep the omissions and the native widening. Update the card, the verb, the
+entry, the session instructions and the examples: each affected example must
+show preparation and resumption explicitly; the replay must not confirm them
+behind the scenes. Do not add editorial CI gates for these recommendations.
+
+## Default writer
+
+`serving/default_actor.rs` fills `actor` on `kmp_write_memory`, `kmp_relabel`,
+`kmp_condense` and `kmp_curate` apply when it is missing: the `clientInfo.name`
+of `initialize`, or `mcp-client`. It applies before planning, so the
+idempotency digest and the retained continuation carry it. An explicit actor
+wins.
+
+## Inference examples
+
+The files in `api/examples/inference-prompts` are adaptable examples, not a
+second MCP contract. A consumer builds its request from the `inputSchema` of
+the current `tools/list`. Do not require equality of the whole schema between
+a static example and the engine: a new optional capability does not by itself
+invalidate an example that does not use it. Review the behaviour illustrated
+when changing it; keep the tests of the native contract and of the real
+vocabulary.
+
+## Write result signals
+
+The default observation is resolved in `kmp-application/memory`, using the
+same instant ingestion assigns. The semantic compiler turns on
+`default_observation_to_ingestion` in the canonical command; the gRPC adapter
+carries that policy. Do not compute the date in MCP before the digest: the same
+retry would have different content. The digest uses the unresolved command,
+and the receipt stores the resolved memory and provenance. Canonical ingestion
+without that policy keeps absent times absent. The already ingested
+coordinates of a summary update are kept, an unknown observation included.
+
+When changing the defaults, review the root and record schemas, inheritance and
+explicit null, the normal, batch and summary compilers, the protobuf in both
+copies, the mapping and the application. Keep `clock_defaults` (plan) apart
+from `clocks` (accepted result), and check preview, atomic refusal, retry,
+restart and import. Update the write and time cards, the extended verbs and the
+four-clocks example; explain the human contract in the `advanced:clocks` node.
+This list is maintenance guidance, not an editorial CI validator.
+
+The committed/replayed decision comes from `update_context` at the point that
+checks idempotency. Do not infer it from a host retry or from a persistent
+agent identity. The clock summary comes from the canonical memory of the
+accepted command; store that summary in its receipt and read it back on a
+replay, without replacing it with the clocks of a new translation. Count
+memories once, not dimensional memberships. Convert the internal instant
+through the existing temporal mapping before showing it to the agent.
+
+A preview stored no clocks, and a transport error does not show a refusal
+without persistence. Keep validated, rejected and unconfirmed distinguishable.
+Verify a retry after restart, a later write and import, and the embedded and
+gRPC transports. Measure the cost of the complete receipt; keep access to the
+detail without copying all the evidence again or creating telemetry memories.
+
+`relations` shows `{from, rel, to}` triples derived from the plan's canonical
+relations. Local endpoints are shortened to `@id`, resolvable through
+`local_refs`; external ones keep the ref. Do not rebuild them from the
+diagnostic, nor deduplicate by relation name: two links of the same type can
+have different targets. Check preview, commit and replay against the real
+receipt.
+
+When changing a relation, describe its source and target roles in
+`KnownMemoryRelationType::writer_spec`, review the write card, the verb and the
+affected examples, and regenerate the assets. Include a counter-example of
+direction or scope when it avoids ambiguity. `supersedes` marks the whole
+target SUPERSEDED; `corrects` does not change its lifecycle state. Do not
+promise that acceptance or the rich category verifies meaning. This editorial
+review is informative: do not add a sentence or size gate to CI.
+
+## Output schemas on request
+
+`tools/list` does not announce `outputSchema` by default; MCP makes it
+optional, and `structuredContent` is still returned. The schemas stay in code
+(`contract/`) as the contract of the responses, and tests validate against
+`tools_list_result()` or `kmp_mcp_tools_list_result_with_output_schemas`, never
+against the default catalogue. `KMP_MCP_OUTPUT_SCHEMAS=on` announces them for a
+host that validates output; it reads the on/off set every switch reads (`on`,
+`off`, `true`, `false`, `1`, `0`, `yes`, `no`, any case), unset or blank means
+off, and any other value stops startup. `serving/output_schema_projection.rs`
+removes them at the end, after any projection that widens them; a projection
+that patches `outputSchema` must check first that it exists.
+`fixtures/contract/tools_list_with_output_schemas.json` pins the catalogue with
+schemas; `tools_list.json` and `tools_list_with_apps.json` pin the announced
+one.
+
+## Optional shared-passage projection
+
+`KMP_MCP_PASSAGES=shared` turns on the representation at the host; it does not
+change the read arguments. `serving/passage_projection.rs` adapts
+`initialize`, `tools/list` and the read responses after their budgets and
+recommendations. The library `kmp-proto-mapping::context_projection` keeps the
+reversible codec and the composition by whole groups. Keep tables local to
+each response, distinct sources even when they share text, and read actions
+intact. See [contract and limits](context-projection.md).
+
+Check both configurations and their announced schemas. The guide files are
+generated from the normal contract and also teach the optional mode. The
+saving in MCP traffic and the saving in composed context are different
+measurements; add the extra instruction and schema of the active mode. Do not
+put a tokenizer policy into the kernel, nor infer source limits to merge
+overlapping quotes.
+
+Composition is offered through `kmp-mcp context project|expand [FILE|-]`,
+without opening a store or running the declared reads. When changing the
+context contract, update its version, decoder, CLI and runnable example;
+refuse unsupported versions and keep the frozen binary to read earlier
+artifacts. Expand each native table inside its own page before gathering
+groups. Quote limits come from the host: verify ref, hash, UTF-8 and whole
+text, without attributing truth to that match. The reader is given ordered
+fragments it concatenates with no separators; it need not compute offsets.
+Check a source left out by budget, independent testimonies and exact recovery
+of constraints, conflicts and UNKNOWN. Measure bindings, tables and manifests
+too; the saving on the text body alone does not represent the whole context.
+
+## Trace with a temporal selection
+
+`as_of`, `interval` or a `to` list turn on the bounded walk. The canonical
+coordinates of `contains_entry` and the edges are read in the same
+transaction; do not use the node's original payload after a relabel. The
+shared temporal predicate lives in domain; the adapters apply the budget
+before reading. Indexes by type avoid walking the whole fan-out to find
+coordinates. Check real SQLite queries, not only how many rows the result
+returns.
+
+When changing this surface, keep and include in the fingerprint the clock, the
+resolved cut, the resolution state, the coordinate work and the indexes of
+relations without a clock. Test an inclusive cut, a half-open interval, a ref
+without a clock, a budget exhausted during admission, a later edge between old
+endpoints and a concurrent change of coordinates. The page continues the
+selected result; it does not continue the search nor promise a snapshot
+between calls. Keep the warning that a route does not establish truth or
+completeness of proof. These notes are informative, with no editorial gate.
+
+## Relations' own clocks
+
+The semantic declaration is dated at ingest, once per accepted command.
+`MemoryRelationClocks` separates those clocks from dimensional membership;
+`connect_to` requires no more fields. In semantic batches, observation comes
+from the member's declaration: inherited from the packet, its own override, or
+exact ingestion for null. The compiler fixes that provenance before joining
+plans; do not infer it from an endpoint at ingest. Occurrence and validity are
+kept only when they are declared explicitly for that relation. Canonical
+restore keeps historical clocks; replay uses the receipt. Do not date old edges
+during their projection. A new UPSERT represents the current stored
+declaration; this does not add historical versions of edges.
+
+Keep together the canonical and vendored protobuf, the ingest mapper, the
+payload projection, the direct and compact MCP recall responses,
+`VisualRelation` and ChronoLoom (HTTP and MCP App). Semantic relations show
+`clocks` without needing a dimension; structural links keep their coordinate.
+Do not duplicate the clocks in both groups of a semantic relation. Two explicit
+incompatible values are refused. `clocks.relations` in the receipt counts link
+coverage; the entry counters keep their meaning.
+
+Verify old endpoints with a late declaration, an inclusive cut and an
+exclusive upper end, omission, record overrides, restore and replay after
+restart. Declaration clocks do not guarantee truth or completeness. A visual
+projection selects entries: its links show the dates, but they do not replace
+a temporal proof read. Update the guide, the cards and the contract fixture in
+the same change, with no editorial gate.
+
+## Evidence associations and their clocks
+
+`memory.evidence[].time` keeps the source's instant. `support_clocks` dates the
+declaration of its associations: its own observation, the packet's, or
+ingestion when missing, and the ingestion KMP accepted. The semantic batch
+keeps the member's effective observation here too, including a null that
+clears the root. With `default_observation_to_ingestion`, an explicit clocks
+object with no observation and no restored ingestion gets the ingestion
+instant; an absent object keeps the packet's canonical inheritance. See the
+[design and controls](../archive/development/batch-proof-observation.md). Do
+not copy dates from the endpoints nor re-time the source. When changing this
+contract, review the canonical DTO, both protobufs, the ingest translator, the
+event projection and the evidence mappers in recall, temporal and Inspect.
+Temporal admission must filter candidates and supports, not just hide the edge
+in the response. Test an old source with a later association, inclusive and
+exclusive cuts, replay and restore. No new mandatory fields for the writer, and
+no invented clocks when re-projecting old events.
+
+## Host adviser
+
+The `kmp-expert` skill uses a host subagent with a limited responsibility:
+explaining the protocol. Its helper gathers the `guide:kmp-agent` entries of
+the canonical asset, every example included, and keeps a copy by hash in the
+task cache. It adds no LLM to the kernel and no other catalogue of examples.
+When changing the guide, regenerate the asset; the hash changes and the next
+preparation uses the new content. The manifest records refs, hashes and lines,
+to check that everything was delivered without truncation. That delivery check
+does not show learning, nor avoid the cost of loading a new context.
+
+The adviser has its own context, which the host keeps. After compaction it
+reloads the complete guide. Compare the asset's revision with the store's
+installed guide before consulting. The working agent keeps the decision about
+the sources and runs the authorized proposals. Verify the flow with real
+subagent consultations and count both participants. This evaluation is
+informative, with no new editorial gates.
+
+## Selected-node framing in ChronoLoom
 
 The app-only `kmp_view_read_nodes` uses the same `ReadNodes` operation as HTTP
 `/api/nodes`. Keep the protocol copies, request validation, the viewer's HTTP
-view and the MCP JSON mapper, app negotiation gate and both browser transports
-aligned. Model-only tool lists
-do not gain this data tool. A node header with incomplete coordinates must not
-be used to frame an exact focus; omitted refs are not missing refs. Framing reads
-all named refs together instead of combining cached scene coordinates with new
-inspections. Foci larger than 64 refs send the returned `snapshot` as
-`expect_snapshot` in each following batch; they share a 32,768-edge ceiling and
-reject any intervening commit, including body-only writes. A batch also stops
-with `node_budget` after 4,096 distinct nodes, counting requested refs and the
-coordinate scopes reached through them. Observer identities
-include a random incarnation, so a server restart cannot reuse a prior identity.
-No snapshot is retained between calls. Check late responses after a changed
-focus/about/clock and preserve the old window on a conflict or incomplete batch.
+view and the MCP JSON mapper, the app negotiation gate and both browser
+transports aligned. Model-only tool lists do not gain this data tool. A node
+header with incomplete coordinates must not be used to frame an exact focus;
+omitted refs are not missing refs. Framing reads all named refs together
+instead of combining cached scene coordinates with new inspections. Foci
+larger than 64 refs send the returned `snapshot` as `expect_snapshot` in each
+following batch; they share a 32,768-edge ceiling and reject any intervening
+commit, including body-only writes. A batch also stops with `node_budget` after
+4,096 distinct nodes, counting requested refs and the coordinate scopes reached
+through them. Observer identities include a random incarnation, so a server
+restart cannot reuse a prior identity. No snapshot is retained between calls.
+Check late responses after a changed focus, about or clock, and keep the old
+window on a conflict or an incomplete batch.
 
-The operation reuses the bounded snapshot adjacency port and loads no canonical
-bodies or proof sources. It does not replace bounded Trace proof materialization,
-change historical admission, or promise a snapshot across the later projection
-request. Validate headers and complete coordinates against individual Inspect on
-one quiescent fixture before measuring, retain empty/missing/foreign cases and
-real concurrent snapshot tests, and report complete framing journeys separately
-from storage latency. See `kmp-viewer/examples/node_batch_benchmark.rs` and
+The operation reuses the bounded snapshot adjacency port and loads no
+canonical bodies or proof sources. It does not replace bounded Trace proof
+materialization, change historical admission, or promise a snapshot across the
+later projection request. Validate headers and complete coordinates against
+individual Inspect on one quiescent fixture before measuring, keep empty,
+missing and foreign cases and real concurrent snapshot tests, and report
+complete framing journeys separately from storage latency. See
+`crates/kmp-viewer/examples/node_batch_benchmark.rs` and
 `scripts/performance/node_batch_framing.py`.
 
-### Optional consolidated views
+## Optional consolidated views
 
-The embedded `consolidation sources|write|read|project` CLI is a separate optional
-view contract, not another MCP verb. Keep source stamps, compact acceptance
-receipts, immutable expansion, stale handling and explicit clock restrictions
-aligned with `advanced:consolidation` in both generated guide abouts. Verify the
-real CLI through restart, source mutation, invalid requests and an exact audit
-expansion. Measure preparation and write cost as well as selected context; retain
-writer mistakes and budget failures when comparing readers. Semantic fidelity is
-external to deterministic quote/dependency validation. See the
-[contract](incremental-consolidation.md) and
-[development evidence](incremental-consolidation-evaluation.md).
+The embedded `kmp-mcp consolidation sources|write|read|project` CLI is a
+separate optional view contract, not another MCP verb. Keep source stamps,
+compact acceptance receipts, immutable expansion, stale handling and explicit
+clock restrictions aligned with `advanced:consolidation` in both generated
+guide abouts. Verify the real CLI through restart, source mutation, invalid
+requests and an exact audit expansion. Measure preparation and write cost as
+well as the selected context; keep writer mistakes and budget failures when
+comparing readers. Semantic fidelity is external to deterministic quote and
+dependency validation. See the [contract](incremental-consolidation.md) and the
+[development evidence](../archive/development/incremental-consolidation-evaluation.md).

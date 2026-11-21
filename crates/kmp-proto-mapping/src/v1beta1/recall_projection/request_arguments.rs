@@ -28,10 +28,7 @@ pub(super) fn wake_arguments(request: &WakeRequest) -> Value {
     arguments.insert("about".to_string(), json!(request.about));
     insert_non_empty(&mut arguments, "role", &request.role);
     insert_non_empty(&mut arguments, "intent", &request.intent);
-    arguments.insert(
-        "budget".to_string(),
-        budget_value(request.budget.as_ref(), 1_600, 2),
-    );
+    arguments.insert("budget".to_string(), budget_value(request.budget.as_ref()));
     if let Some(dimensions) = request.dimensions.as_ref() {
         arguments.insert(
             "dimensions".to_string(),
@@ -65,10 +62,7 @@ pub(super) fn ask_arguments(request: &AskRequest) -> Value {
             }
         ),
     );
-    arguments.insert(
-        "budget".to_string(),
-        budget_value(request.budget.as_ref(), 2_400, 2),
-    );
+    arguments.insert("budget".to_string(), budget_value(request.budget.as_ref()));
     if let Some(dimensions) = request.dimensions.as_ref() {
         arguments.insert(
             "dimensions".to_string(),
@@ -87,15 +81,12 @@ pub(super) fn ask_arguments(request: &AskRequest) -> Value {
     Value::Object(arguments)
 }
 
-fn budget_value(
-    budget: Option<&kmp_proto::v1beta1::MemoryBudget>,
-    default_tokens: u32,
-    default_depth: u32,
-) -> Value {
+/// The `budget` a returned Wake or Ask action repeats. `tokens` and `depth`
+/// are not echoed: they left those tools' MCP contract at 1.0, and an action
+/// must be a call the server accepts.
+fn budget_value(budget: Option<&kmp_proto::v1beta1::MemoryBudget>) -> Value {
     let budget = budget.cloned().unwrap_or_default();
     let mut value = json!({
-        "tokens": if budget.tokens == 0 { default_tokens } else { budget.tokens },
-        "depth": if budget.depth == 0 { default_depth } else { budget.depth },
         "max_entries": budget.max_entries,
         "max_bytes": if budget.max_bytes == 0 {
             DEFAULT_MAX_BYTES as u64

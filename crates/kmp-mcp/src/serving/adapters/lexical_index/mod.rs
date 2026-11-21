@@ -20,6 +20,7 @@ mod kept_relation;
 mod lexical_maintainer;
 pub(crate) mod lexical_sidecar;
 mod node_state;
+mod parts_memo;
 mod refreshed;
 mod relation_key;
 mod row_writer;
@@ -30,6 +31,7 @@ mod sidecar_candidates;
 mod sidecar_meta;
 mod sqlite_lexical_sidecar;
 mod term_postings;
+mod top_k_selection;
 mod working_set;
 
 fn storage(error: impl std::fmt::Display) -> String {
@@ -50,3 +52,9 @@ mod indexed_ask_tests;
 
 #[cfg(test)]
 mod maxscore_parity_tests;
+
+#[cfg(test)]
+mod parts_memo_tests;
+
+#[cfg(test)]
+mod reach_removal_tests;

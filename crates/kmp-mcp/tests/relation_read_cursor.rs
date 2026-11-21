@@ -35,7 +35,7 @@ async fn relation_continuations_execute_without_reconstructing_selection() {
         (
             "kmp_trace",
             json!({"about":ABOUT,"from":format!("{ABOUT}:observation:3"),
-            "to":format!("{ABOUT}:observation:0"),"goal":"audit","budget":{"max_bytes":100000}}),
+            "to":format!("{ABOUT}:observation:0"),"budget":{"max_bytes":100000}}),
             &["trace"][..],
         ),
         (

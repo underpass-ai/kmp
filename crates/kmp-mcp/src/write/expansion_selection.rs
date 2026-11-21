@@ -31,7 +31,16 @@ pub(crate) struct ExpansionSelection {
     judged_by: Option<String>,
     jev: Option<Value>,
     not_judged: Option<String>,
+    /// Expansions the judge left unanswered: not judged, not refused.
+    unanswered: usize,
 }
+
+/// An expansion Jev reads as stating something its memory does not, at
+/// this probability or above, is refused: the single cut the one compound
+/// question had, kept when it was split in two (the guide's 0.3 no-line
+/// refused good expansions on the held-out set, jev-evaluation.md
+/// 2026-11-21).
+const ADDS_AT: f64 = 0.5;
 
 impl ExpansionSelection {
     /// The shape of one memory's `search_expansions`: at most
@@ -117,8 +126,11 @@ impl ExpansionSelection {
         })
     }
 
-    /// Keeps what the judge accepted at its bar. An answer that is not an
-    /// enabled judgement keeps nothing and says why.
+    /// Keeps what the judge accepted at its bar: an expansion read as
+    /// belonging to its memory at `accept_at` or above and as adding nothing
+    /// it does not state (below [`ADDS_AT`]). An expansion the judge did not
+    /// answer is not judged, never refused. An answer that is not an enabled
+    /// judgement keeps nothing and says why.
     pub(crate) fn apply(&mut self, answer: &Value) {
         if answer.get("enabled") != Some(&Value::Bool(true)) {
             self.not_judged = Some(
@@ -149,27 +161,42 @@ impl ExpansionSelection {
             .iter()
             .filter(|proposal| !proposal.linted.is_empty())
         {
-            let yes = verdicts
+            let verdict = verdicts
                 .iter()
-                .find(|verdict| verdict["ref"].as_str() == Some(proposal.reference.as_str()))
-                .and_then(|verdict| verdict["yes"].as_array())
-                .cloned()
-                .unwrap_or_default();
+                .find(|verdict| verdict["ref"].as_str() == Some(proposal.reference.as_str()));
+            let read = |field: &str| {
+                verdict
+                    .and_then(|verdict| verdict[field].as_array())
+                    .cloned()
+                    .unwrap_or_default()
+            };
+            let (yes, adds) = (read("yes"), read("adds"));
             let mut kept = Vec::new();
             for (index, expansion) in proposal.linted.iter().enumerate() {
-                match yes.get(index).and_then(Value::as_f64) {
-                    Some(probability) if probability >= accept_at => kept.push(expansion.clone()),
-                    probability => self.refused.push(json!({
-                        "ref": proposal.reference,
-                        "expansion": expansion,
-                        "why": match probability {
-                            Some(probability) => format!(
-                                "Jev reads it as not belonging to the memory ({probability:.2} < {accept_at:.2})"
-                            ),
-                            None => "Jev did not answer for it".to_string(),
-                        },
-                    })),
-                }
+                let why = match (
+                    yes.get(index).and_then(Value::as_f64),
+                    adds.get(index).and_then(Value::as_f64),
+                ) {
+                    (Some(belongs), Some(added)) if belongs >= accept_at && added < ADDS_AT => {
+                        kept.push(expansion.clone());
+                        continue;
+                    }
+                    (Some(belongs), Some(_)) if belongs < accept_at => format!(
+                        "Jev reads it as not belonging to the memory ({belongs:.2} < {accept_at:.2})"
+                    ),
+                    (Some(_), Some(added)) => format!(
+                        "Jev reads it as stating something the memory does not ({added:.2})"
+                    ),
+                    _ => {
+                        self.unanswered += 1;
+                        continue;
+                    }
+                };
+                self.refused.push(json!({
+                    "ref": proposal.reference,
+                    "expansion": expansion,
+                    "why": why,
+                }));
             }
             if !kept.is_empty() {
                 self.stored.insert(proposal.reference.clone(), kept);
@@ -225,6 +252,11 @@ impl ExpansionSelection {
         }
         if let Some(reason) = &self.not_judged {
             report["not_stored"] = json!(reason);
+        } else if self.unanswered > 0 {
+            report["not_stored"] = json!(format!(
+                "Jev did not answer for {} expansion(s): not judged, so not stored",
+                self.unanswered
+            ));
         }
         report
     }
@@ -274,7 +306,7 @@ mod tests {
         );
         selection.apply(&json!({
             "enabled": true, "accept_at": 0.7, "judged_by": "jev noul>=0.70",
-            "verdicts": [{"ref": "p:a:e1", "yes": [0.9, 0.2]}],
+            "verdicts": [{"ref": "p:a:e1", "yes": [0.9, 0.2], "adds": [0.1, 0.1]}],
             "jev": {"requests": 1, "input_tokens": 90}
         }));
         let report = selection.report();
@@ -333,8 +365,37 @@ mod tests {
         selection.apply(&json!({"enabled": true, "accept_at": 0.5, "verdicts": []}));
         assert!(
             !selection.stores_any(),
-            "an unanswered expansion is refused"
+            "an unanswered expansion is not kept"
+        );
+        let report = selection.report();
+        assert_eq!(
+            report["refused"].as_array().expect("refused").len(),
+            1,
+            "only the lint's refusal: an unanswered one is not judged, never refused"
+        );
+        assert!(
+            report["not_stored"]
+                .as_str()
+                .expect("not stored")
+                .contains("not judged")
         );
         selection
+    }
+
+    #[test]
+    fn an_expansion_that_adds_a_fact_is_refused_with_its_reason() {
+        let mut selection = selection();
+        selection.apply(&json!({
+            "enabled": true, "accept_at": 0.5,
+            "verdicts": [{"ref": "p:a:e1", "yes": [0.9, 0.9], "adds": [0.6, 0.2]}]
+        }));
+        let report = selection.report();
+        assert_eq!(report["stored"]["p:a:e1"], json!(["launch delay audit"]));
+        assert!(
+            report["refused"][1]["why"]
+                .as_str()
+                .expect("why")
+                .contains("something the memory does not (0.60)")
+        );
     }
 }

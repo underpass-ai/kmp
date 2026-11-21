@@ -108,8 +108,7 @@ async fn read_span(clocks: Option<Value>, end: &str) -> Reading {
         2,
         "kmp_relate",
         json!({"about":ABOUT,"dimensions":{"scope":"current_about"},
-            "interval":{"start":SPAN_START,"end":end},
-            "budget":{"depth":3},"page":{"entries":64}}),
+            "interval":{"start":SPAN_START,"end":end},"page":{"entries":64}}),
     )
     .await;
     let relations = page["declared"].as_array().expect("declared");

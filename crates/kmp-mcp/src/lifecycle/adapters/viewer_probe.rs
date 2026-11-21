@@ -9,7 +9,9 @@ pub(crate) fn viewer_finding() -> LifecycleFinding {
             DiagnosticSeverity::Ok,
             "ChronoLoom comes with an embedded session",
         )
-        .with_detail("ask the agent to open it — only that session knows its capability link"),
+        .with_detail(
+            "ask the agent to open it; the session listens only from then, and only it knows the capability link",
+        ),
         None => LifecycleFinding::new(
             DiagnosticSeverity::Warn,
             "declined — no viewer this session",

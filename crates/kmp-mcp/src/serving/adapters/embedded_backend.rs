@@ -1,11 +1,12 @@
+use super::cross_language_judge::CrossLanguageJudge;
 use super::curate_doubt_cache::CurateDoubtCache;
 use super::curate_review_cache::CurateReviewCache;
 use super::doubt_band_judge::DoubtBandJudge;
 use super::embedded::{
-    EmbeddedAskTool, EmbeddedCondenseTool, EmbeddedCurateTool, EmbeddedIngestTool,
-    EmbeddedInspectTool, EmbeddedNearTool, EmbeddedReadTelemetry, EmbeddedRelabelTool,
-    EmbeddedRelateTool, EmbeddedSummariesAuditTool, EmbeddedTemporalMoveTool, EmbeddedTraceTool,
-    EmbeddedVisualProjectionTool, EmbeddedWakeTool, FrozenRecallReads,
+    CommittedHistoryNotice, EmbeddedAskTool, EmbeddedCondenseTool, EmbeddedCurateTool,
+    EmbeddedIngestTool, EmbeddedInspectTool, EmbeddedNearTool, EmbeddedReadTelemetry,
+    EmbeddedRelabelTool, EmbeddedRelateTool, EmbeddedSummariesAuditTool, EmbeddedTemporalMoveTool,
+    EmbeddedTraceTool, EmbeddedVisualProjectionTool, EmbeddedWakeTool, FrozenRecallReads,
 };
 use super::judgement_reranker::JudgementReranker;
 use super::lexical_index::lexical_sidecar::LexicalSidecar;
@@ -24,7 +25,6 @@ use crate::curate::domain::lifecycle_mode::LifecycleMode;
 use crate::curate::domain::partner_cap::PartnerCap;
 use crate::curate::domain::partner_filter::PartnerFilter;
 use crate::curate::domain::paths_corridor::PathsCorridor;
-use crate::serving::environment::{EVAL_PARTNER_FACTS_ENV, optional_env_string};
 use crate::serving::judgement_site::JudgementSite;
 use crate::serving::lexical_index_mode::LexicalIndexMode;
 use crate::serving::ports::judgement_model::JudgementModel;
@@ -45,6 +45,8 @@ pub struct EmbeddedKernelMcpBackend {
     kernel: EmbeddedKernel,
     data_dir: String,
     commit_native: Option<CommitNativeBundle>,
+    /// What reads say while the store and its committed bundle disagree.
+    committed_history: CommittedHistoryNotice,
     /// The word table `ask` bridges languages with, read once beside the
     /// store. Silent when none is installed.
     lexical_bridge: LexicalBridge,
@@ -67,6 +69,9 @@ pub struct EmbeddedKernelMcpBackend {
     wake_focus: Result<Option<Arc<WakeFocusJudge>>, String>,
     /// The ask doubt band judged by the same model (`ask-judge.json`).
     doubt_band: Result<Option<Arc<DoubtBandJudge>>, String>,
+    /// The same model as the cross-language judge of Ask
+    /// (`ask-cross-language.json`).
+    cross_language: Result<Option<Arc<CrossLanguageJudge>>, String>,
     /// Relations proposed after each write, opted into by
     /// `write-relations.json` beside `typesafe.json`.
     write_relations: bool,
@@ -124,6 +129,12 @@ impl EmbeddedKernelMcpBackend {
     ) -> Result<Self, String> {
         let kernel = EmbeddedKernel::open_with_engine(data_dir, engine)
             .map_err(|error| error.to_string())?;
+        // Before anything reads: a pull or a fresh clone is caught up, and an
+        // interrupted write is published, whenever the histories prove it.
+        let committed_history = commit_native
+            .as_ref()
+            .map(|bundle| CommittedHistoryNotice::on_open(bundle, kernel.store()))
+            .unwrap_or_default();
         let loads = StoreConfigLoads::load(data_dir, VerdictBookAccess::Open);
         loads.report(data_dir).emit();
         let StoreConfigLoads {
@@ -132,6 +143,7 @@ impl EmbeddedKernelMcpBackend {
             rerank,
             wake_focus,
             doubt_band,
+            cross_language,
             write_relations,
             write_expansions,
             lexical_bridge,
@@ -155,6 +167,7 @@ impl EmbeddedKernelMcpBackend {
             kernel,
             data_dir: data_dir.display().to_string(),
             commit_native,
+            committed_history,
             lexical_bridge,
             lexical_cache: Arc::default(),
             frozen_recalls: ProcessFrozenRecalls::default(),
@@ -164,10 +177,12 @@ impl EmbeddedKernelMcpBackend {
             rerank,
             wake_focus,
             doubt_band,
+            cross_language,
             write_relations: write_relations.is_some(),
             write_expansions,
             lifecycle,
-            partner_cap: optional_env_string(EVAL_PARTNER_FACTS_ENV)
+            // An evaluation hook; a release build reads only curate.json.
+            partner_cap: crate::environment::eval_hooks::partner_facts()
                 .as_deref()
                 .and_then(PartnerCap::named)
                 .unwrap_or(partner_cap),
@@ -233,15 +248,47 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
         !self.lexical_bridge.is_silent()
     }
 
+    /// Each tool whose Jev opt-in took effect when the store opened: the
+    /// review and summary audit with `typesafe.json` and a key, Wake with
+    /// `wake-focus.json`, Ask with `rerank.json`, `ask-judge.json` or
+    /// `ask-cross-language.json`, the
+    /// writer with `write-relations.json` or `write-expansions.json`.
+    fn open_world_tools(&self) -> Vec<&'static str> {
+        if !matches!(self.judgement, Ok(Some(_))) {
+            return Vec::new();
+        }
+        let mut tools = vec!["kmp_curate", "kmp_summaries_audit"];
+        if matches!(self.wake_focus, Ok(Some(_))) {
+            tools.push("kmp_wake");
+        }
+        if matches!(self.rerank, Ok(Some(_)))
+            || matches!(self.doubt_band, Ok(Some(_)))
+            || matches!(self.cross_language, Ok(Some(_)))
+        {
+            tools.push("kmp_ask");
+        }
+        if self.write_relations || matches!(self.write_expansions, Ok(Some(_))) {
+            tools.push("kmp_write_memory");
+        }
+        tools
+    }
+
     fn call_tool<'a>(&'a self, name: &'a str, arguments: &'a Value) -> KernelMcpToolFuture<'a> {
         Box::pin(async move {
+            let writes = writes_memory(name);
+            if !writes && let Some(bundle) = &self.commit_native {
+                self.committed_history.refresh(bundle, self.kernel.store());
+            }
             let outcome = self.dispatch(name, arguments).await;
             // A write the log now holds is followed by the lexical sidecar
             // at once (DESIGN L6); asks follow whatever other writers did.
-            if outcome.is_ok() && writes_memory(name) {
+            if outcome.is_ok() && writes {
                 self.lexical.catch_up(self.kernel.store(), None).await;
+                if let Some(bundle) = &self.commit_native {
+                    self.committed_history.note_published(bundle);
+                }
             }
-            outcome
+            outcome.map(|result| self.committed_history.qualify(name, result))
         })
     }
 }
@@ -297,6 +344,7 @@ impl EmbeddedKernelMcpBackend {
                     )
                     .with_gate(self.ask_gate)
                     .with_doubt_band(&self.doubt_band)
+                    .with_cross_language(&self.cross_language)
                     .with_lexical_sidecar(&self.lexical, self.kernel.store())
                     .call(arguments)
                     .await

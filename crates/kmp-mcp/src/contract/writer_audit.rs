@@ -33,7 +33,7 @@ mod tests {
         );
     }
     /// The vocabulary is generated from the writer spec and served by
-    /// `kmp_guide` topic `write`; `tools/list` keeps the doctrine and names
+    /// `kmp_guide` topic `relations`; `tools/list` keeps the doctrine and names
     /// where the vocabulary lives, in both the writer's and the batch surface.
     #[test]
     fn relation_vocabulary_documentation_matches_the_writer_spec() {
@@ -54,7 +54,7 @@ mod tests {
                 "documentation states the anemic-fallback doctrine"
             );
             assert!(
-                doc.contains("kmp_guide topic write"),
+                doc.contains("kmp_guide topic relations"),
                 "documentation names where the vocabulary lives"
             );
         }
@@ -79,27 +79,46 @@ mod tests {
         }
     }
     #[test]
-    fn each_verb_publishes_the_defaults_its_backend_uses() {
+    fn each_verb_publishes_only_the_budget_fields_its_read_honours() {
+        // E11: one shared budget declared five fields on six tools; trace,
+        // relate and curate ignored most of them and `tokens` changed nothing
+        // anywhere. Each tool now declares the fields its read applies, with
+        // the defaults its backend uses.
         let tools = tools_list_result();
         let tools = tools["tools"].as_array().expect("tools");
-        let defaults = [
-            ("kmp_wake", 1_600, 2),
-            ("kmp_ask", 2_400, 2),
-            ("kmp_relate", 2_400, 2),
-            ("kmp_time", 2_400, 3),
-            ("kmp_trace", 1_600, 1),
+        let honoured: [(&str, &[&str], Option<u64>); 6] = [
+            ("kmp_wake", &["detail", "max_bytes", "max_entries"], None),
+            ("kmp_ask", &["detail", "max_bytes", "max_entries"], None),
+            ("kmp_relate", &["max_bytes"], None),
+            (
+                "kmp_time",
+                &["depth", "detail", "max_bytes", "max_entries"],
+                Some(3),
+            ),
+            ("kmp_trace", &["max_bytes"], None),
+            ("kmp_curate", &[], None),
         ];
-
-        for (name, tokens, depth) in defaults {
+        for (name, fields, depth) in honoured {
             let tool = tools
                 .iter()
                 .find(|tool| tool["name"] == name)
                 .unwrap_or_else(|| panic!("{name}"));
             let budget = &tool["inputSchema"]["properties"]["budget"]["properties"];
-            assert_eq!(budget["tokens"]["default"], tokens, "{name} tokens");
-            assert_eq!(budget["depth"]["default"], depth, "{name} depth");
-            assert_eq!(budget["max_bytes"]["default"], 10_000);
-            assert_eq!(budget["detail"]["default"], "balanced");
+            let mut declared = budget
+                .as_object()
+                .map(|fields| fields.keys().map(String::as_str).collect::<Vec<_>>())
+                .unwrap_or_default();
+            declared.sort_unstable();
+            assert_eq!(declared, fields, "{name} budget fields");
+            if let Some(depth) = depth {
+                assert_eq!(budget["depth"]["default"], depth, "{name} depth");
+            }
+            if fields.contains(&"max_bytes") {
+                assert_eq!(budget["max_bytes"]["default"], 10_000);
+            }
+            if fields.contains(&"detail") {
+                assert_eq!(budget["detail"]["default"], "balanced");
+            }
         }
     }
 }

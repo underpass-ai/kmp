@@ -1,3 +1,5 @@
-Usage: kmp-mcp export [file] [--about <about>]... [--repair-pending]
+Usage: kmp-mcp export [file] [--about <about>]... [--repair-pending] [--overwrite-committed]
 
 --about matches an opaque about exactly and may be repeated. Filtered bundles preserve aggregate revisions and use bundle-local event positions starting at 1.
+
+With no file, export writes the project's committed `.kmp/memory.jsonl`. A full export first catches the store up with a committed file a pull brought ahead. Export refuses to replace any committed `.kmp/memory.jsonl` whose events it would not keep — with no file or the file named in any form, with or without --about, whichever rule chose the store — and names what it would drop; --overwrite-committed replaces it anyway. Any other file is written as asked.

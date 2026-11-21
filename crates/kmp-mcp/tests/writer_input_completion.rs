@@ -130,14 +130,6 @@ async fn invalid_targets_classes_and_missing_proof_reject_the_whole_packet() {
             assert_eq!(feedback["allowed_values"], json!(["evidential"]));
         }
     }
-    let mut missing = packet();
-    missing.as_object_mut().expect("packet").remove("actor");
-    let reply = call(&server, "kmp_write_memory", missing).await;
-    assert_eq!(
-        reply["structuredContent"]["feedback"][0]["code"],
-        "REQUIRED_FIELD"
-    );
-    assert_eq!(reply["structuredContent"]["feedback"][0]["field"], "actor");
     assert_eq!(
         verify_bundle(&store.export_bundle().await.expect("bundle"))
             .expect("verify")

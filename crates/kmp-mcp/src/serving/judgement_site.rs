@@ -29,12 +29,15 @@ pub(crate) enum JudgementSite {
     DoubtBand,
     /// Search expansions proposed at write (`write-expansions.json`).
     Expansions,
+    /// `kmp_ask` judged across a language (`ask-cross-language.json`): a
+    /// translated answer's veto, an UNKNOWN's rescue.
+    CrossLanguage,
 }
 
 impl JudgementSite {
     /// Every site, for what must cover them all (the verdict book retiring
     /// superseded templates).
-    pub(crate) const ALL: [Self; 11] = [
+    pub(crate) const ALL: [Self; 12] = [
         Self::Rerank,
         Self::WakeFocus,
         Self::CurateReview,
@@ -46,6 +49,7 @@ impl JudgementSite {
         Self::Summaries,
         Self::DoubtBand,
         Self::Expansions,
+        Self::CrossLanguage,
     ];
 
     pub(crate) fn as_str(self) -> &'static str {
@@ -61,6 +65,7 @@ impl JudgementSite {
             Self::Summaries => "summaries",
             Self::DoubtBand => "doubt_band",
             Self::Expansions => "expansions",
+            Self::CrossLanguage => "cross_language",
         }
     }
 
@@ -70,18 +75,44 @@ impl JudgementSite {
     pub(crate) fn template(self) -> VerdictTemplate {
         VerdictTemplate {
             id: self.as_str(),
-            version: 1,
+            version: self.template_version(),
         }
     }
 
-    /// How long a first page may wait for Jev before it degrades, warned,
-    /// to the deterministic path (DESIGN L4 4b): 1.5 s for ask re-ranking
-    /// and the ask doubt band, 3 s for the first page of a focused wake,
-    /// none for curate, whose agent asked for the judgement itself.
+    /// Version 2: the questions were rewritten to TypeSafe's guide
+    /// (2026-11-21: companion nouls instead of `none`, described options,
+    /// the recording order stated, named state). Wake focus and labels kept
+    /// their questions (measured worse in the new form) and cross-language
+    /// was written to the guide.
+    fn template_version(self) -> u16 {
+        match self {
+            Self::WakeFocus | Self::Labels | Self::CrossLanguage => 1,
+            Self::Rerank
+            | Self::CurateReview
+            | Self::CurateFocus
+            | Self::WriteRelations
+            | Self::Precheck
+            | Self::Paths
+            | Self::Summaries
+            | Self::DoubtBand
+            | Self::Expansions => 2,
+        }
+    }
+
+    /// How long a first page, or a committed write, may wait for Jev before
+    /// it goes on without the judgement, warned (DESIGN L4 4b): 1.5 s for ask
+    /// re-ranking, the ask doubt band and its cross-language judge; 3 s for
+    /// the first page of a focused wake and for the judgements a committed
+    /// write asks (its relation proposals, its search expansions); none for
+    /// curate, whose agent asked for the judgement itself.
     pub(crate) fn deadline(self) -> Option<Duration> {
         match self {
-            Self::Rerank | Self::DoubtBand => Some(Duration::from_millis(1_500)),
-            Self::WakeFocus => Some(Duration::from_millis(3_000)),
+            Self::Rerank | Self::DoubtBand | Self::CrossLanguage => {
+                Some(Duration::from_millis(1_500))
+            }
+            Self::WakeFocus | Self::WriteRelations | Self::Expansions => {
+                Some(Duration::from_millis(3_000))
+            }
             _ => None,
         }
     }
@@ -135,7 +166,7 @@ mod tests {
     }
 
     #[test]
-    fn only_first_pages_of_reads_carry_a_deadline() {
+    fn first_pages_of_reads_and_judgements_of_writes_carry_a_deadline() {
         assert_eq!(
             JudgementSite::Rerank.deadline(),
             Some(std::time::Duration::from_millis(1_500))
@@ -149,9 +180,32 @@ mod tests {
             Some(std::time::Duration::from_millis(1_500))
         );
         assert_eq!(JudgementSite::DoubtBand.as_str(), "doubt_band");
+        assert_eq!(
+            JudgementSite::CrossLanguage.deadline(),
+            Some(std::time::Duration::from_millis(1_500))
+        );
+        assert_eq!(JudgementSite::CrossLanguage.as_str(), "cross_language");
+        assert_eq!(
+            JudgementSite::WriteRelations.deadline(),
+            Some(std::time::Duration::from_millis(3_000))
+        );
+        assert_eq!(
+            JudgementSite::Expansions.deadline(),
+            Some(std::time::Duration::from_millis(3_000))
+        );
         assert_eq!(JudgementSite::CurateReview.deadline(), None);
+        assert_eq!(JudgementSite::Labels.deadline(), None);
         assert_eq!(JudgementSite::Paths.deadline(), None);
         assert_eq!(JudgementSite::Paths.template().id, "paths");
+    }
+
+    #[test]
+    fn sites_rewritten_to_the_guide_ask_a_new_template_version() {
+        assert_eq!(JudgementSite::Rerank.template().version, 2);
+        assert_eq!(JudgementSite::Precheck.template().version, 2);
+        assert_eq!(JudgementSite::WakeFocus.template().version, 1);
+        assert_eq!(JudgementSite::Labels.template().version, 1);
+        assert_eq!(JudgementSite::CrossLanguage.template().version, 1);
     }
 
     #[test]

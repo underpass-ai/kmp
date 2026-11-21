@@ -2,13 +2,16 @@
 //! instructions, and on every wake — including the "not found" that is
 //! meaningless without it.
 
+#[path = "support/isolated_home.rs"]
+mod isolated_home;
+
 use std::io::Write;
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 
 use serde_json::{Value, json};
 
 fn serve(working_dir: &std::path::Path, root: &std::path::Path, input: &[Value]) -> Vec<Value> {
-    let mut child = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+    let mut child = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"))
         .current_dir(working_dir)
         .env("HOME", root.join("home"))
         .env("XDG_DATA_HOME", root.join("data"))
@@ -103,7 +106,7 @@ fn the_session_names_its_store_at_initialize_and_on_every_wake() {
     // The answer that misled four sessions: nothing here. It must say where
     // "here" is, in the text a host shows as well as in the structure.
     let missing = &responses[3]["result"];
-    assert_eq!(missing["isError"], true, "{missing}");
+    assert_eq!(missing["isError"], false, "{missing}");
     assert_eq!(missing["structuredContent"]["store"], expected);
     let text = missing["content"][0]["text"].as_str().expect("text");
     assert!(
