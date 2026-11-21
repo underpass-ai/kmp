@@ -270,7 +270,8 @@ KMP never translates or rewrites stored evidence. With a lexical-bridge table
 beside the store (`<data dir>/lexical-bridge.kmpb`, built by the repository's
 `scripts/lexical-bridge/`), `kmp_ask` reaches memory written in another
 language on its own and names the word pairs that carried a citation, at
-medium confidence at most. A writer can attach an English rendering of a
+medium confidence at most; inside one language the table only ranks and
+never makes an answer. A writer can attach an English rendering of a
 memory as the reserved entry metadata key `summary_en`; `kmp_ask` searches it
 and never cites it, the kernel lints it, and `kmp_write_memory` takes it as
 `memories[].summary_en` (or attaches it to an older memory with

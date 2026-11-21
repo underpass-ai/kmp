@@ -409,6 +409,31 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
 
 ### Fixed
 
+- `kmp_ask` no longer answers what is not stored when the lexical-bridge table
+  `kmp-mcp setup` installs is present. The table is built from a multilingual
+  embedding, so besides translations it pairs neighbours inside one language
+  (`deadline≈final`, `prefix≈prefer`, `deploy≈job`), and the anchored gate and
+  the ⌈2/3⌉ focus of `evidence_or_unknown` counted such a pair as stating what
+  the question asked. With the shipped table, 13 of 360 synthetic questions
+  whose attribute is not stored were answered at `high` (none without it), on
+  the frozen real store 2 of 64 negatives were answered, and every zero-overlap
+  paraphrase the table answered cited the wrong memory. Now a bridged pair
+  counts as stating a concept only when the question and the memory are
+  written in two different languages, each read from its function words, and
+  never when either word of the pair is a function word (`sobre≈about`). An
+  answer the anchored gate gives only because the table translated a concept
+  is `medium` at most, as the languages page always said. A question that
+  leans in no language (bare keywords) is no longer translated into an answer:
+  the table still ranks the memory it reaches, which arrives in the proof
+  marked `reached_by: bridge`. The languages are read from Spanish and
+  English function words only, from as few as one: a question in another
+  language is not translated at all, and a keyword question with one stray
+  Spanish function word (`la deadline #10132 svc-013`) still reads as Spanish
+  and can be answered at `medium` from an English memory. Without a table
+  nothing changes.
+  `scripts/ci/retrieval-baseline.sh` now also scores the judged collection
+  and a set of synthetic stress cases with the shipped table, and a
+  `kmp-mcp` test asks the stress negatives with it on every run.
 - `typesafe.json` accepts only a pinned release, `<family>-<major>.<minor>.<patch>`.
   An alias such as `jev-preview` used to validate and then fail every
   answer, because the provider answers with the release the alias resolves

@@ -4,6 +4,8 @@ mod anchor_strength;
 #[cfg(test)]
 mod anchored_alias_tests;
 #[cfg(test)]
+mod anchored_bridge_tests;
+#[cfg(test)]
 mod anchored_content_tests;
 mod anchored_gate;
 #[cfg(test)]
@@ -41,6 +43,7 @@ mod content_scores;
 #[cfg(test)]
 mod counted_surface_tests;
 mod counted_text;
+mod cross_language;
 mod decided_selection;
 mod dimensions;
 mod doubt_band;
@@ -139,6 +142,7 @@ mod semantic_candidate_ranking;
 mod semantic_recall_tests;
 mod semantic_source;
 mod shortlisted_partners;
+mod stated_by;
 mod subject_concept;
 mod temporal_admission;
 mod temporal_dependencies;

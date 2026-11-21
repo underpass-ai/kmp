@@ -22,6 +22,7 @@ use super::bridged_term::BridgedTerm;
 use super::candidate_temporal_state::CandidateTemporalState;
 use super::concept_coverage::ConceptCoverage;
 use super::content_scores::ContentScores;
+use super::cross_language::CrossLanguage;
 use super::doubt_verdicts::DoubtVerdicts;
 use super::expansion_rescue::ExpansionRescue;
 use super::gate_doubt::GateDoubt;
@@ -42,6 +43,7 @@ use super::search_terms::{
     concept_count, informative_term_counts, informative_terms, informative_tokens, matching_terms,
     search_key, strict_answer_focus_terms,
 };
+use super::stated_by::StatedBy;
 
 pub(super) const ANSWER_CORE_LIMIT: usize = 5;
 
@@ -795,12 +797,14 @@ impl<'a> AnswerEvidenceRanker<'a> {
                     .filter(|(item, _)| within.is_none_or(|ids| ids.contains(&item.id)))
                     .map(|(item, terms)| (*item, terms)),
                 &rescue,
-                |concept, terms| {
+                |concept, item, terms| {
                     if concept.literal {
-                        terms.content.contains(&concept.key)
+                        terms
+                            .content
+                            .contains(&concept.key)
+                            .then_some(StatedBy::OwnWords)
                     } else {
-                        lexicon.content_focus_matches(&BTreeSet::from([concept.key.clone()]), terms)
-                            > 0
+                        lexicon.content_statement(&concept.key, item, terms)
                     }
                 },
             )
@@ -1172,7 +1176,8 @@ impl<'a> AnswerEvidenceRanker<'a> {
     }
 
     /// The best share of the question any retained item covers, counting a
-    /// concept the table bridged as covered.
+    /// concept the table bridged onto a memory written in another language
+    /// as covered ([`CrossLanguage`]).
     fn bridged_coverage(&self, question: &str, evidence: &[MemoryEvidence]) -> f64 {
         if self.bridge.is_silent() {
             return 0.0;
@@ -1185,11 +1190,18 @@ impl<'a> AnswerEvidenceRanker<'a> {
             evidence.iter().map(|item| item.text.as_str()),
             self.bridge,
         );
+        let crossing = CrossLanguage::of_question(question);
+        let translations = CrossLanguage::translations(&bridged);
         evidence
             .iter()
             .map(|item| {
+                let translated = if crossing.crosses_to(&item.text) {
+                    translations.as_slice()
+                } else {
+                    &[]
+                };
                 BridgedKey::coverage(
-                    &bridged,
+                    translated,
                     &question_counts,
                     &AnswerCandidateTerms::from_evidence(item, &self.context),
                 )
@@ -2535,13 +2547,35 @@ mod tests {
         let ranker = ranker_bridging_with(&table);
 
         let ranked = ranker.rank(
-            "valvula noche",
+            "¿Qué válvula de la noche?",
             MemoryAnswerPolicy::EvidenceOrUnknown,
             english_shift_report(),
         );
 
         assert_eq!(ranked[0].id, "detail:e1");
         assert!(!was_reached_indirectly(&ranked[0]));
+    }
+
+    #[test]
+    fn a_question_that_leans_in_no_language_is_not_translated_into_an_answer() {
+        let table = spanish_english_toy();
+        let ranker = ranker_bridging_with(&table);
+
+        // Bare keywords carry no function word: nothing says the question
+        // and the memory are in two languages, so the table may rank the
+        // memory but never answers with it.
+        let ranked = ranker.rank(
+            "valvula noche",
+            MemoryAnswerPolicy::EvidenceOrUnknown,
+            english_shift_report(),
+        );
+
+        let valve = ranked
+            .iter()
+            .find(|item| item.id == "detail:e1")
+            .expect("the bridged memory arrives as proof");
+        assert!(was_reached_indirectly(valve));
+        assert_eq!(valve.metadata[REACHED_BY_KEY], REACHED_BY_BRIDGE);
     }
 
     #[test]
@@ -2577,8 +2611,14 @@ mod tests {
         // Both concepts bridged, none shared: medium, because the table's
         // opinion is not the reader's words.
         assert_eq!(
-            ranker.confidence("valvula noche", valve),
+            ranker.confidence("¿Qué válvula de la noche?", valve),
             MemoryConfidence::Medium
+        );
+        // The same words with no grammar to read a language from: the table
+        // translates nothing.
+        assert_eq!(
+            ranker.confidence("valvula noche", valve),
+            MemoryConfidence::Low
         );
         // Two of four bridged and nothing shared: not enough to say so.
         assert_eq!(

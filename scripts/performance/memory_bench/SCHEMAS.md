@@ -1348,7 +1348,7 @@ verification: synth 10^3–10^5 on both topologies, 2 questions per type, `timeo
   baseline of every number both headlines hold). The section never votes
   (`applicable = false`, `verdict = null`).
 - **`kmp.bench.judged.v1`** (`reports/<judged_key>/judged.json`): one arm of a judged
-  corpus (`retrieval` plain/narrow/wide, `jev` replay) on one binary: `key`, `corpus`,
+  corpus (`retrieval` plain/narrow/wide/shipped-bridge, `jev` replay) on one binary: `key`, `corpus`,
   `arm`, `variant`, `binary_sha256`, `config_digest`, `rows` (the scorecard rows by
   name), `unverified_stores` (stores whose files a binary without `kmp_store_config`
   could not acknowledge), `stores`, `seconds`, `created_at`. The key digests the

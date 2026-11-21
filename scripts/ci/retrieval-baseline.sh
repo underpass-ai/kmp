@@ -16,6 +16,11 @@
 # it (the rule of v0.23.0; reported, never gated) with:
 #
 #   RETRIEVAL_ASK_GATE=off bash scripts/ci/retrieval-baseline.sh
+#
+# With no arguments it then scores the judged collection and the shipped-bridge
+# stress cases again with the table `kmp-mcp setup` installs, each against its
+# own baseline (retrieval-baseline-shipped-bridge.tsv,
+# retrieval-bridge-stress-baseline.tsv); RETRIEVAL_BASELINE=write records all three.
 
 set -euo pipefail
 
@@ -31,3 +36,24 @@ export KMP_LEXICAL_BRIDGE="${KMP_LEXICAL_BRIDGE:-${ROOT_DIR}/crates/kmp-testkit/
 cargo run --locked --quiet -p kmp-testkit --bin retrieval_kmp_scorecard -- \
   "${1:-crates/kmp-testkit/judged/retrieval_cases.json}" \
   "${2:-docs/development/retrieval-baseline.tsv}"
+
+# The table `kmp-mcp setup` installs for every user is not the judged fixture:
+# it is a multilingual embedding that also pairs neighbours inside one
+# language. The promise that `kmp_ask` never answers what is not stored has to
+# hold with it too, so the judged collection and the shipped-bridge stress
+# cases (synthetic negatives and cross-language questions,
+# crates/kmp-mcp/tests/fixtures/lexical_bridge_stress/) are scored with it,
+# each against its own recorded rows. Only when no collection was named.
+if [[ $# -eq 0 ]]; then
+  shipped="${ROOT_DIR}/distribution/lexical-bridge/kmp-lexical-bridge.kmpb"
+  echo
+  echo "== the judged collection with the shipped lexical-bridge table"
+  KMP_LEXICAL_BRIDGE="${shipped}" cargo run --locked --quiet -p kmp-testkit --bin retrieval_kmp_scorecard -- \
+    crates/kmp-testkit/judged/retrieval_cases.json \
+    docs/development/retrieval-baseline-shipped-bridge.tsv
+  echo
+  echo "== the shipped-bridge stress cases with the shipped lexical-bridge table"
+  KMP_LEXICAL_BRIDGE="${shipped}" cargo run --locked --quiet -p kmp-testkit --bin retrieval_kmp_scorecard -- \
+    crates/kmp-mcp/tests/fixtures/lexical_bridge_stress/cases.json \
+    docs/development/retrieval-bridge-stress-baseline.tsv
+fi

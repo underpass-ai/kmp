@@ -3,12 +3,14 @@ use super::association_index::AssociationIndex;
 use super::bridged_key::BridgedKey;
 use super::bridged_term::BridgedTerm;
 use super::counted_text::CountedText;
+use super::cross_language::CrossLanguage;
 use super::lexical_bridge::LexicalBridge;
 use super::lexical_collection::LexicalCollection;
 use super::lexical_field::ranked_score;
 use super::morphology::Morphology;
-use super::search_terms::informative_term_counts;
+use super::search_terms::{informative_term_counts, matching_terms};
 use super::seed_documents::SeedDocuments;
+use super::stated_by::StatedBy;
 use super::term_counts::TermCounts;
 use kmp_proto::v1beta1::MemoryEvidence;
 use std::collections::{BTreeMap, BTreeSet};
@@ -32,6 +34,12 @@ pub(super) struct Lexicon {
     /// The word pairs the table vouched for between this question and these
     /// candidates, so a hit can say which ones carried it.
     bridged: Vec<BridgedKey>,
+    /// The pairs the table may vouch for a concept with: [`Self::bridged`]
+    /// without the function words ([`CrossLanguage::translations`]).
+    translations: Vec<BridgedKey>,
+    /// Which memories the table may vouch for: those written in another
+    /// language than the question.
+    crossing: CrossLanguage,
 }
 
 impl Lexicon {
@@ -95,6 +103,12 @@ impl Lexicon {
             associated,
             collection,
             floor,
+            translations: CrossLanguage::translations(&bridged),
+            crossing: if bridged.is_empty() {
+                CrossLanguage::default()
+            } else {
+                CrossLanguage::of_question(question)
+            },
             bridged,
         }
     }
@@ -164,13 +178,25 @@ impl Lexicon {
     }
 
     /// How many of the focus concepts this candidate answers, in its own words
-    /// or through the table.
+    /// or, when it is written in another language than the question, through
+    /// the table ([`CrossLanguage`]).
     pub(super) fn focus_matches(
         &self,
         focus_terms: &BTreeSet<String>,
+        item: &MemoryEvidence,
         terms: &AnswerCandidateTerms,
     ) -> usize {
-        BridgedKey::focus_matches(&self.bridged, focus_terms, terms)
+        let own_words = BridgedKey::focus_matches(&[], focus_terms, terms);
+        if self.translations.is_empty() {
+            return own_words;
+        }
+        let translated = BridgedKey::focus_matches(&self.translations, focus_terms, terms);
+        // The language is read only when the table would add something.
+        if translated > own_words && self.crossing.crosses_to(&item.text) {
+            translated
+        } else {
+            own_words
+        }
     }
 
     /// At most how many focus concepts a candidate whose searchable words
@@ -185,14 +211,23 @@ impl Lexicon {
         BridgedKey::focus_bound(&self.bridged, focus_terms, searchable, direct)
     }
 
-    /// How many of the focus concepts this candidate states in its own
-    /// words, or through the table onto them: its content alone.
-    pub(super) fn content_focus_matches(
+    /// How this candidate states one concept the anchored gate asks of it,
+    /// in what it says and nothing else (its text and its search summary):
+    /// in its own words, through the table onto a memory written in another
+    /// language than the question, or not at all.
+    pub(super) fn content_statement(
         &self,
-        focus_terms: &BTreeSet<String>,
+        concept_key: &str,
+        item: &MemoryEvidence,
         terms: &AnswerCandidateTerms,
-    ) -> usize {
-        BridgedKey::content_matches(&self.bridged, focus_terms, terms)
+    ) -> Option<StatedBy> {
+        let concept = BTreeSet::from([concept_key.to_string()]);
+        if !matching_terms(&concept, &terms.content).is_empty() {
+            return Some(StatedBy::OwnWords);
+        }
+        (BridgedKey::content_matches(&self.translations, &concept, terms) > 0
+            && self.crossing.crosses_to(&item.text))
+        .then_some(StatedBy::Translation)
     }
 
     pub(super) fn content_score(&self, terms: &AnswerCandidateTerms) -> i64 {

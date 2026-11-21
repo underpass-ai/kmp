@@ -83,6 +83,7 @@ impl<'d> GateDoubt<'d> {
                     reason: UnknownReason::Unspecified,
                     core: ids.collect(),
                     missing: Vec::new(),
+                    translated: false,
                 };
             } else {
                 verdict.core.extend(ids);
@@ -169,6 +170,7 @@ mod tests {
             reason: UnknownReason::Unspecified,
             core: core.iter().map(|id| id.to_string()).collect(),
             missing: Vec::new(),
+            translated: false,
         }
     }
 
