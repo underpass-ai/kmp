@@ -45,7 +45,7 @@ pub(super) fn apply_wake_value(mut response: WakeResponse, value: &Value) -> Wak
     if let Some(proof) = response.proof.as_mut()
         && let Some(projected) = value.get("proof")
     {
-        apply_proof_value(proof, projected);
+        apply_proof_value(proof, projected, true);
     }
     response.labels = value
         .get("labels")
@@ -62,7 +62,7 @@ pub(super) fn apply_wake_value(mut response: WakeResponse, value: &Value) -> Wak
         response.resume_cursor = None;
         response.dimension_selection = None;
         if let Some(proof) = response.proof.as_mut() {
-            clear_proof_core(proof, value);
+            clear_proof_core(proof, value, true);
         }
     }
     response
@@ -114,7 +114,7 @@ pub(super) fn apply_ask_value(mut response: AskResponse, value: &Value) -> AskRe
     if let Some(proof) = response.proof.as_mut()
         && let Some(projected) = value.get("proof")
     {
-        apply_proof_value(proof, projected);
+        apply_proof_value(proof, projected, false);
     }
     response.warnings = strings_at(value, "/warnings");
     response.projection = value.get("projection").and_then(projection_from_value);
@@ -122,19 +122,25 @@ pub(super) fn apply_ask_value(mut response: AskResponse, value: &Value) -> AskRe
         // A continuation carries no core: nothing of it survives from the
         // fresh read this page was cut from.
         if let Some(proof) = response.proof.as_mut() {
-            clear_proof_core(proof, value);
+            clear_proof_core(proof, value, false);
         }
     }
     response
 }
 
-fn apply_proof_value(proof: &mut kmp_proto::v1beta1::Proof, value: &Value) {
-    let index = ProofEvidenceIndex::new(&proof.evidence);
-    let normalized_relations = proof
-        .path
-        .iter()
-        .map(|relation| normalized_proof_relation(relation, &index))
-        .collect::<Vec<_>>();
+/// `rejoin`: whether the JSON joined the path to the proof's evidence
+/// (a wake's); an ask's path is joined by the mapping (`ask_value`).
+fn apply_proof_value(proof: &mut kmp_proto::v1beta1::Proof, value: &Value, rejoin: bool) {
+    let normalized_relations = if rejoin {
+        let index = ProofEvidenceIndex::new(&proof.evidence);
+        proof
+            .path
+            .iter()
+            .map(|relation| normalized_proof_relation(relation, &index))
+            .collect::<Vec<_>>()
+    } else {
+        proof.path.clone()
+    };
     let path = value
         .get("path")
         .and_then(Value::as_array)
@@ -326,9 +332,9 @@ fn core_reused(projection: &Option<RecallProjection>) -> bool {
 }
 
 /// Keep only the proof items this continuation carries.
-fn clear_proof_core(proof: &mut kmp_proto::v1beta1::Proof, value: &Value) {
+fn clear_proof_core(proof: &mut kmp_proto::v1beta1::Proof, value: &Value, rejoin: bool) {
     let empty = Value::Object(Default::default());
-    apply_proof_value(proof, value.get("proof").unwrap_or(&empty));
+    apply_proof_value(proof, value.get("proof").unwrap_or(&empty), rejoin);
     proof.interval = None;
     proof.axis = 0;
     proof.as_of = None;

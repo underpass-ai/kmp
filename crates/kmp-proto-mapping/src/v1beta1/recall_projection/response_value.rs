@@ -62,7 +62,11 @@ pub fn ask_value(response: &AskResponse) -> Value {
         "summary": response.summary,
         "answer": if answer.trim().is_empty() { Value::Null } else { Value::String(answer) },
         "because": response.because.iter().map(|reason| if response.projection.is_some() { raw_answer_reason_value(reason) } else { answer_reason_value(reason, evidence) }).collect::<Vec<_>>(),
-        "proof": response.proof.as_ref().map(|proof| proof_value(proof, response.projection.is_none())).unwrap_or_else(empty_proof_value),
+        // The mapping joined the path (to the head's evidence, or to all of
+        // a whole reading's): joined again here to the tail a lazy reading
+        // carries, a hop would change with the depth read and break every
+        // continuation cursor bound to it.
+        "proof": response.proof.as_ref().map(|proof| proof_value(proof, false)).unwrap_or_else(empty_proof_value),
         "warnings": response.warnings
     });
     if !response.asked_as.is_empty() {
