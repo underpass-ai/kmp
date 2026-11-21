@@ -678,11 +678,7 @@ fn trace_probe_arguments(
     json!({
         "about": event.about,
         "from": expected.current_question_ref,
-        "to": target_ref,
-        "goal": "MemoryArena staged MCP navigation probe",
-        "budget": {
-            "depth": 1
-        }
+        "to": target_ref
     })
 }
 

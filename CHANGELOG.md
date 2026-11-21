@@ -157,10 +157,14 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
   `kmp_time`. `depth` (top-level and `budget.depth`) is gone from `kmp_wake`,
   `kmp_ask` and `kmp_relate`: every entry sits one hop from its scope, and
   1, 2 and 25 answered the same, across abouts and under a dimension filter;
-  `kmp_time` keeps it. `kmp_trace.budget` keeps only `max_bytes`,
-  `kmp_relate.budget` only `max_bytes`, and `kmp_curate` has no `budget`. The
-  `kmp_trace.role` alias of `goal` is gone. Each is refused as an unknown
-  argument; returned actions no longer repeat them.
+  `kmp_time` keeps `budget.depth` and loses its top-level `depth` alias.
+  `kmp_trace.budget` keeps only `max_bytes`, `kmp_relate.budget` only
+  `max_bytes`, and `kmp_curate` has no `budget`. `kmp_trace.goal` and its
+  `role` alias are gone: traces with different goals answered byte for byte
+  the same. Each is refused as an unknown argument; returned actions no
+  longer repeat them. The two removals pay for the `date-time` formats below
+  within the 7,500-token `tools/list` ceiling. The memory bench, the testkit scorecards
+  and the real-kernel integration test no longer send them.
 - **A read never writes the store.** `kmp_inspect` of a guide node the store
   lacks answers `GUIDE_UNAVAILABLE` with the repair instead of seeding the
   guide; `kmp_guide` serves every topic from the engine and `kmp-mcp guide
@@ -174,6 +178,21 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
   key's description now states.
 
 ### Changed — surface honesty
+
+- **Timestamp arguments publish `"format": "date-time"`** in `tools/list`,
+  so an agent sees that a clock wants an RFC 3339 instant with its zone
+  before it sends a bare date. It is an annotation: the reader of the
+  argument still refuses `2026-08-01`, with the same wording. A test drives
+  the validator over every string of a probe call per tool and holds the
+  tagged set equal to the set it reads as timestamps.
+- **A bidirectional trace that breaks its shape is refused under the rule
+  `trace.bidirectional`** at the boundary, naming the argument the call sent
+  that it does not take (`search.paths_per_target`, a `to` array, `as_of`,
+  another search option), with the fix and `feedback[].rule`. It used to
+  restate the whole shape from deep in the request mapping.
+- `page.entries` on `kmp_wake`, `kmp_ask` and `kmp_time` counts projection
+  records (a label, a path step, an evidence item, a state line), not
+  memories; the field and the three guide cards say so.
 
 - An about the store does not hold is refused the same way by every read
   rooted at it (`kmp_ask`, `kmp_relate`, `kmp_time`, `kmp_trace`,

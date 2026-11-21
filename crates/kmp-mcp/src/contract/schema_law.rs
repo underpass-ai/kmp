@@ -52,7 +52,9 @@ pub(crate) const KEYWORDS: &[&str] = &[
     // The rule a conditional enforces (`cross_field_rule`): read by the
     // check for the refusal's wording, never published.
     "x-kmp-rule",
-    // Annotations.
+    // Annotations. `format` included: a timestamp's form is checked by the
+    // reader of the argument (`clock::require_rfc3339`), never by the law.
+    "format",
     "default",
     "description",
     "title",

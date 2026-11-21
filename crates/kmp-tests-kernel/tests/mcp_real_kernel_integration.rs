@@ -914,7 +914,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
                 "limit": {
                     "entries": 5
                 },
-                "depth": 3
+                "budget": {"depth": 3}
             }),
         )
         .await;
@@ -1013,8 +1013,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
             json!({
                 "about": ROOT_NODE_ID,
                 "from": ROOT_NODE_ID,
-                "to": TASK_ID,
-                "goal": DEVELOPER_ROLE
+                "to": TASK_ID
             }),
         )
         .await;

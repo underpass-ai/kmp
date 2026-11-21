@@ -163,12 +163,12 @@ pub(crate) fn recall_page_schema() -> Value {
             "entries": {
                 "type": "integer",
                 "minimum": 1,
-                "description": "Optional maximum expansion items on this page; the normative byte ceiling still applies."
+                "description": "Optional maximum expansion items on this page. An item is one projection record (a label, a path step, an evidence item, a state line), not one memory: page.total counts records. The normative byte ceiling still applies."
             },
             "cursor": {
                 "type": "string",
                 "minLength": 1,
-                "description": "Opaque projection.page.next_cursor. Repeat all bound recall arguments unchanged; only page.entries, budget.tokens, and budget.max_bytes may vary."
+                "description": "Opaque projection.page.next_cursor. Repeat all bound recall arguments unchanged; only page.entries and budget.max_bytes may vary."
             },
             "repeat_core": {
                 "type": "boolean",

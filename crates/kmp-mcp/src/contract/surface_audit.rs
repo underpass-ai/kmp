@@ -308,7 +308,6 @@ mod tests {
                     "about",
                     "axis",
                     "budget",
-                    "depth",
                     "dimensions",
                     "fields", // MCP entry projection; not a kernel query filter.
                     "include",
@@ -334,8 +333,7 @@ mod tests {
         assert_eq!(
             memory_keys("kmp_trace"),
             expected(&[
-                "about", "as_of", "axis", "budget", "from", "goal", "interval", "page", "search",
-                "to",
+                "about", "as_of", "axis", "budget", "from", "interval", "page", "search", "to",
             ])
         );
         assert_eq!(
@@ -346,9 +344,8 @@ mod tests {
         );
 
         // These shared shapes are one-to-one with MemoryBudget,
-        // DimensionSelection and PageRequest. `depth` at the root of `kmp_time` is an
-        // explicit compatibility alias for MemoryBudget.depth. Trace.role, an
-        // alias for TraceRequest.goal, and budget.tokens left at 1.0 (E11).
+        // DimensionSelection and PageRequest. The root `depth` aliases,
+        // Trace.goal and its alias role, and budget.tokens left at 1.0 (E11).
         // Inspect.budget and Inspect.page are
         // transport-only result projection and never cross the gRPC request;
         // its budget may only carry max_bytes.

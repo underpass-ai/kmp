@@ -395,8 +395,7 @@ recovering the durable work, then navigates that view with intents.
     "from": "${recovered_handoff.object.ref}",
     "to": "${recovered_constraint.object.ref}",
     "budget": {
-      "max_bytes": 16000,
-      "depth": 6
+      "max_bytes": 16000
     }
   }
 }
@@ -598,8 +597,7 @@ read and reconsideration. Never reopen the view merely to navigate.
     "from": "${recovered_decision.object.ref}",
     "to": "${recovered_constraint.object.ref}",
     "budget": {
-      "max_bytes": 16000,
-      "depth": 4
+      "max_bytes": 16000
     }
   }
 }

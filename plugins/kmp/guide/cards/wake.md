@@ -11,6 +11,8 @@ unbounded next-action summary as proof of the selected historical state.
 Execute `projection.next_action` until the relevant packet is complete. Then
 navigate history when the task asks what happened, or inspect a relied-on ref.
 Missing memory means there is nothing known in that selection; do not invent it.
+`page.entries` counts projection records (a label, a path step, an evidence
+item, a state line), not memories; `page.total` counts the same records.
 
 More: `guide:kmp-agent:example:shared-resumption` and
 `guide:kmp-agent:example:budget-proof`.

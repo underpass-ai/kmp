@@ -75,12 +75,11 @@ class RetrievalCollectionTest(unittest.TestCase):
     def test_ask_arguments_are_the_scorecards(self):
         plain = case().ask_arguments()
         self.assertEqual({'about': 'project:a', 'question': 'q?', 'answer_policy': 'evidence_or_unknown',
-                          'depth': 3, 'budget': {'tokens': 2048, 'detail': 'balanced',
-                                                 'max_entries': 10}}, plain)
+                          'budget': {'detail': 'balanced', 'max_entries': 10}}, plain)
         timed = case(interval={'start': 'a', 'end': 'b'}, axis='occurred',
                      dimensions={'scope': 'abouts'}).ask_arguments(5)
         self.assertEqual(5, timed['budget']['max_entries'])
-        self.assertEqual(('interval', 'axis', 'dimensions'), tuple(timed)[5:])
+        self.assertEqual(('interval', 'axis', 'dimensions'), tuple(timed)[4:])
 
     def test_a_malformed_case_or_duplicate_id_is_refused(self):
         with self.assertRaises(jr.JudgedCaseInvalid):

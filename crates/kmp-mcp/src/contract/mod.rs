@@ -20,6 +20,7 @@ mod summaries_audit_surface;
 mod surface_audit;
 pub(crate) mod temporal_entry_field;
 pub(crate) mod time_move;
+mod timestamp_format;
 pub(crate) mod tools;
 pub(crate) mod validator;
 mod validator_switches_audit;

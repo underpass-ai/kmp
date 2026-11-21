@@ -365,7 +365,7 @@ Allowed action shapes:
 
 {{"action":{{"type":"tool_call","tool":"kmp_inspect","arguments":{{"about":"...","ref":"...","include":{{"details":true,"incoming":true,"outgoing":true,"raw":false}}}}}}}}
 
-{{"action":{{"type":"tool_call","tool":"kmp_trace","arguments":{{"about":"...","from":"...","to":"...","goal":"Kernel operator trace probe"}}}}}}
+{{"action":{{"type":"tool_call","tool":"kmp_trace","arguments":{{"about":"...","from":"...","to":"...",}}}}}}
 
 {{"action":{{"type":"stop","answer_policy":"evidence_or_unknown","final_refs":["..."],"reason":"sufficient_evidence"}}}}
 

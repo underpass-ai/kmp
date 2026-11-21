@@ -205,6 +205,47 @@ fn compiled_cards_match_the_editorial_sources() {
     }
 }
 
+/// `page.entries` on a recall or history read pages over projection records
+/// (labels, path steps, evidence items, state lines), not over memories. An
+/// agent that reads it as "two memories per page" pages far more than it
+/// expects, so the unit is stated where it is chosen: in the field's own
+/// guide line and on every card for a verb that takes it.
+#[test]
+fn the_page_unit_is_named_where_page_entries_is_chosen() {
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .expect("runtime");
+    runtime.block_on(async {
+        let server = KernelMcpServer::fixture();
+        for topic in ["wake", "ask", "time"] {
+            let card = call(&server, "kmp_guide", json!({"topic":topic})).await;
+            let text = card["structuredContent"]["text"].as_str().expect("text");
+            assert!(
+                text.contains("`page.entries`") && text.contains("records"),
+                "the {topic} card names the unit page.entries counts: {text}"
+            );
+        }
+        // tools/list publishes no descriptions; the argument guide a card
+        // carries is where the field's own wording reaches the agent.
+        for (topic, tool) in [("wake", "kmp_wake"), ("ask", "kmp_ask")] {
+            let card = call(&server, "kmp_guide", json!({"topic":topic})).await;
+            let lines = card["structuredContent"]["parameters"][tool]
+                .as_array()
+                .unwrap_or_else(|| panic!("the {topic} card guides {tool}'s arguments: {card}"));
+            let entries = lines
+                .iter()
+                .filter_map(Value::as_str)
+                .find(|line| line.starts_with("page.entries"))
+                .unwrap_or_else(|| panic!("{tool}: page.entries is guided: {lines:?}"));
+            assert!(
+                entries.contains("projection record") && entries.contains("not one memory"),
+                "{tool}: page.entries names its unit: {entries}"
+            );
+        }
+    });
+}
+
 #[tokio::test]
 async fn the_lookup_reads_and_writes_no_store_and_refuses_session_arguments() {
     let dir = tempfile::tempdir().expect("store");

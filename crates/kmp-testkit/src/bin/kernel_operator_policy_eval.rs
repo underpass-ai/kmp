@@ -575,8 +575,7 @@ fn deterministic_action(trajectory: &Trajectory) -> Value {
             "arguments": {
                 "about": trajectory.about,
                 "from": current_ref,
-                "to": trace_target_ref,
-                "goal": "Kernel operator deterministic trace probe"
+                "to": trace_target_ref
             }
         }),
         Some(_) => {
@@ -1149,7 +1148,6 @@ mod tests {
                 "about": "about:1",
                 "from": "node:1",
                 "to": "node:3",
-                "budget": { "depth": 2 },
                 "page": { "entries": 16, "cursor": "page:next" }
             }
         });
@@ -1240,7 +1238,6 @@ mod tests {
                 "about": "about:1",
                 "from": "node:1",
                 "to": "node:3",
-                "budget": { "depth": 2 },
                 "page": { "entries": 16, "cursor": "page:next" }
             }
         });
@@ -1251,7 +1248,6 @@ mod tests {
                 "about": "about:1",
                 "from": "node:1",
                 "to": "node:3",
-                "budget": { "depth": 2 },
                 "page": { "entries": 16, "cursor": "page:other" }
             }
         });

@@ -134,7 +134,6 @@ async fn grpc_backend_maps_kernel_memory_service_responses_to_kmp_tools() {
             "about": "node",
             "from": "node:root",
             "to": "node:target",
-            "goal": "prove path",
             "as_of": {"time":"2026-09-10T10:00:00.500Z"},
             "axis":"observed"
         }),
@@ -149,7 +148,8 @@ async fn grpc_backend_maps_kernel_memory_service_responses_to_kmp_tools() {
         trace["result"]["structuredContent"]["trace"][0]["to"],
         "node:target"
     );
-    assert_eq!(recorded.traces().await[0].goal, "prove path");
+    // `goal` left the MCP contract at 1.0 (E11): nothing is forwarded.
+    assert_eq!(recorded.traces().await[0].goal, "");
     let recorded_trace = &recorded.traces().await[0];
     assert_eq!(
         recorded_trace.axis,
@@ -227,7 +227,7 @@ async fn grpc_backend_maps_temporal_tools_to_kernel_memory_service() {
                 "relations": true,
                 "raw_refs": false
             },
-            "depth": 4
+            "budget": {"depth": 4}
         }),
     )
     .await;

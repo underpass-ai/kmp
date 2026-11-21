@@ -21,17 +21,14 @@ impl MemoryBudgetMapper {
             .map(Self::detail_level_from_object)
             .transpose()?
             .unwrap_or(MemoryDetailLevel::Unspecified as i32);
-        let depth = match JsonFieldReader::optional_positive_u32_field(arguments, "depth", "depth")?
-        {
-            Some(depth) => depth,
-            None => budget
-                .map(|budget| {
-                    JsonFieldReader::optional_positive_u32_field(budget, "depth", "budget.depth")
-                })
-                .transpose()?
-                .flatten()
-                .unwrap_or(default_depth),
-        };
+        // Only `budget.depth` (kmp_time): the top-level alias left at 1.0.
+        let depth = budget
+            .map(|budget| {
+                JsonFieldReader::optional_positive_u32_field(budget, "depth", "budget.depth")
+            })
+            .transpose()?
+            .flatten()
+            .unwrap_or(default_depth);
         let max_entries = budget
             .map(|budget| {
                 JsonFieldReader::optional_positive_u32_field(

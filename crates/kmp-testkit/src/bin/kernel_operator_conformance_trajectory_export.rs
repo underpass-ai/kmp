@@ -704,36 +704,33 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             "trace-first-page",
             "Trace a path using an explicit first page limit.",
             json!({
-                "current_ref": prior_observation_ref,
-                "trace_target_ref": final_decision_ref,
-                "known_refs": [
-                    "incident:mobile-login:entry:observation:refresh-race-confirmed",
-                    prior_observation_ref,
-                    stale_decision_ref,
-                    final_decision_ref
-                ],
-                "last_tool": "kmp_time",
-                "last_move": "forward",
-                "last_observed_refs": [final_decision_ref],
-                "last_result_page": null,
-                "remaining_budget": budget(3),
-                "requested_trace": requested_trace(
-                    prior_observation_ref,
-                    final_decision_ref,
-                    "Trace why the refresh retry decision was chosen.",
-                    json!({ "entries": 16 })
-                ),
-                "operator_state": { "decision": "trace_first_page" }
-            }),
+                            "current_ref": prior_observation_ref,
+                            "trace_target_ref": final_decision_ref,
+                            "known_refs": [
+                                "incident:mobile-login:entry:observation:refresh-race-confirmed",
+                                prior_observation_ref,
+                                stale_decision_ref,
+                                final_decision_ref
+                            ],
+                            "last_tool": "kmp_time",
+                            "last_move": "forward",
+                            "last_observed_refs": [final_decision_ref],
+                            "last_result_page": null,
+                            "remaining_budget": budget(3),
+                            "requested_trace": requested_trace(
+                                prior_observation_ref,
+                                final_decision_ref,
+                                json!({ "entries": 16 })
+
+            ),
+                            "operator_state": { "decision": "trace_first_page" }
+                        }),
             read_tools.clone(),
             tool_call(
                 "kmp_trace",
                 json!({
                     "from": prior_observation_ref,
                     "to": final_decision_ref,
-                    "goal": "Trace why the refresh retry decision was chosen.",
-                    "role": "operator",
-                    "budget": { "depth": 2 },
                     "page": { "entries": 16 }
                 }),
             ),
@@ -756,35 +753,32 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             "trace-first-page-after-new-target",
             "Start a new trace first page after the target changes.",
             json!({
-                "current_ref": prior_timeout_ref,
-                "trace_target_ref": final_decision_ref,
-                "known_refs": [
-                    prior_timeout_ref,
-                    prior_observation_ref,
-                    final_decision_ref
-                ],
-                "last_tool": "kmp_time",
-                "last_move": "near",
-                "last_observed_refs": [prior_timeout_ref, prior_observation_ref],
-                "last_result_page": null,
-                "remaining_budget": budget(3),
-                "requested_trace": requested_trace(
-                    prior_timeout_ref,
-                    final_decision_ref,
-                    "Trace why the timeout hypothesis was superseded.",
-                    json!({ "entries": 16 })
-                ),
-                "operator_state": { "decision": "trace_first_page" }
-            }),
+                            "current_ref": prior_timeout_ref,
+                            "trace_target_ref": final_decision_ref,
+                            "known_refs": [
+                                prior_timeout_ref,
+                                prior_observation_ref,
+                                final_decision_ref
+                            ],
+                            "last_tool": "kmp_time",
+                            "last_move": "near",
+                            "last_observed_refs": [prior_timeout_ref, prior_observation_ref],
+                            "last_result_page": null,
+                            "remaining_budget": budget(3),
+                            "requested_trace": requested_trace(
+                                prior_timeout_ref,
+                                final_decision_ref,
+                                json!({ "entries": 16 })
+
+            ),
+                            "operator_state": { "decision": "trace_first_page" }
+                        }),
             read_tools.clone(),
             tool_call(
                 "kmp_trace",
                 json!({
                     "from": prior_timeout_ref,
                     "to": final_decision_ref,
-                    "goal": "Trace why the timeout hypothesis was superseded.",
-                    "role": "operator",
-                    "budget": { "depth": 2 },
                     "page": { "entries": 16 }
                 }),
             ),
@@ -807,40 +801,37 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             "trace-continue-page",
             "Continue a partial trace using the returned page cursor.",
             json!({
-                "current_ref": prior_observation_ref,
-                "trace_target_ref": final_decision_ref,
-                "known_refs": [
-                    "incident:mobile-login:entry:observation:refresh-race-confirmed",
-                    prior_observation_ref,
-                    stale_decision_ref,
-                    final_decision_ref
-                ],
-                "last_tool": "kmp_trace",
-                "last_observed_refs": [prior_observation_ref, final_decision_ref],
-                "last_result_page": {
-                    "entries": 16,
-                    "has_more": true,
-                    "next_cursor": "trace:page:2"
-                },
-                "last_result_partial": true,
-                "remaining_budget": budget(2),
-                "requested_trace": requested_trace(
-                    prior_observation_ref,
-                    final_decision_ref,
-                    "Continue the partial trace.",
-                    json!({ "entries": 16, "cursor": "trace:page:2" })
-                ),
-                "operator_state": { "decision": "continue_page" }
-            }),
+                            "current_ref": prior_observation_ref,
+                            "trace_target_ref": final_decision_ref,
+                            "known_refs": [
+                                "incident:mobile-login:entry:observation:refresh-race-confirmed",
+                                prior_observation_ref,
+                                stale_decision_ref,
+                                final_decision_ref
+                            ],
+                            "last_tool": "kmp_trace",
+                            "last_observed_refs": [prior_observation_ref, final_decision_ref],
+                            "last_result_page": {
+                                "entries": 16,
+                                "has_more": true,
+                                "next_cursor": "trace:page:2"
+                            },
+                            "last_result_partial": true,
+                            "remaining_budget": budget(2),
+                            "requested_trace": requested_trace(
+                                prior_observation_ref,
+                                final_decision_ref,
+                                json!({ "entries": 16, "cursor": "trace:page:2" })
+
+            ),
+                            "operator_state": { "decision": "continue_page" }
+                        }),
             read_tools.clone(),
             tool_call(
                 "kmp_trace",
                 json!({
                     "from": prior_observation_ref,
                     "to": final_decision_ref,
-                    "goal": "Continue the partial trace.",
-                    "role": "operator",
-                    "budget": { "depth": 2 },
                     "page": { "entries": 16, "cursor": "trace:page:2" }
                 }),
             ),
@@ -863,35 +854,32 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             "trace-continue-third-page",
             "Continue a longer trace with the second returned cursor.",
             json!({
-                "current_ref": prior_observation_ref,
-                "trace_target_ref": final_decision_ref,
-                "known_refs": [prior_observation_ref, stale_decision_ref, final_decision_ref],
-                "last_tool": "kmp_trace",
-                "last_observed_refs": [prior_observation_ref, stale_decision_ref],
-                "last_result_page": {
-                    "entries": 16,
-                    "has_more": true,
-                    "next_cursor": "trace:page:3"
-                },
-                "last_result_partial": true,
-                "remaining_budget": budget(2),
-                "requested_trace": requested_trace(
-                    prior_observation_ref,
-                    final_decision_ref,
-                    "Continue the longer partial trace.",
-                    json!({ "entries": 16, "cursor": "trace:page:3" })
-                ),
-                "operator_state": { "decision": "continue_page" }
-            }),
+                            "current_ref": prior_observation_ref,
+                            "trace_target_ref": final_decision_ref,
+                            "known_refs": [prior_observation_ref, stale_decision_ref, final_decision_ref],
+                            "last_tool": "kmp_trace",
+                            "last_observed_refs": [prior_observation_ref, stale_decision_ref],
+                            "last_result_page": {
+                                "entries": 16,
+                                "has_more": true,
+                                "next_cursor": "trace:page:3"
+                            },
+                            "last_result_partial": true,
+                            "remaining_budget": budget(2),
+                            "requested_trace": requested_trace(
+                                prior_observation_ref,
+                                final_decision_ref,
+                                json!({ "entries": 16, "cursor": "trace:page:3" })
+
+            ),
+                            "operator_state": { "decision": "continue_page" }
+                        }),
             read_tools.clone(),
             tool_call(
                 "kmp_trace",
                 json!({
                     "from": prior_observation_ref,
                     "to": final_decision_ref,
-                    "goal": "Continue the longer partial trace.",
-                    "role": "operator",
-                    "budget": { "depth": 2 },
                     "page": { "entries": 16, "cursor": "trace:page:3" }
                 }),
             ),
@@ -1985,30 +1973,27 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             "holdout-trace-first-page",
             "Trace the checkout path from gateway observation to pool decision.",
             json!({
-                "current_ref": observation_ref,
-                "trace_target_ref": decision_ref,
-                "known_refs": [observation_ref, stale_hypothesis_ref, decision_ref],
-                "last_tool": "kmp_time",
-                "last_move": "forward",
-                "last_observed_refs": [decision_ref],
-                "last_result_page": null,
-                "remaining_budget": budget(2),
-                "requested_trace": requested_trace(
-                    observation_ref,
-                    decision_ref,
-                    "Trace why the gateway connection pool decision was selected.",
-                    json!({ "entries": 14 })
-                )
-            }),
+                            "current_ref": observation_ref,
+                            "trace_target_ref": decision_ref,
+                            "known_refs": [observation_ref, stale_hypothesis_ref, decision_ref],
+                            "last_tool": "kmp_time",
+                            "last_move": "forward",
+                            "last_observed_refs": [decision_ref],
+                            "last_result_page": null,
+                            "remaining_budget": budget(2),
+                            "requested_trace": requested_trace(
+                                observation_ref,
+                                decision_ref,
+                                json!({ "entries": 14 })
+
+            )
+                        }),
             read_tools.clone(),
             tool_call(
                 "kmp_trace",
                 json!({
                     "from": observation_ref,
                     "to": decision_ref,
-                    "goal": "Trace why the gateway connection pool decision was selected.",
-                    "role": "operator",
-                    "budget": { "depth": 2 },
                     "page": { "entries": 14 }
                 }),
             ),
@@ -2027,34 +2012,31 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             "holdout-trace-continue-page",
             "Continue the checkout trace using the visible page cursor.",
             json!({
-                "current_ref": observation_ref,
-                "trace_target_ref": decision_ref,
-                "known_refs": [observation_ref, stale_hypothesis_ref, decision_ref],
-                "last_tool": "kmp_trace",
-                "last_observed_refs": [observation_ref, stale_hypothesis_ref],
-                "last_result_page": {
-                    "entries": 14,
-                    "has_more": true,
-                    "next_cursor": "checkout-trace:page:2"
-                },
-                "last_result_partial": true,
-                "remaining_budget": budget(2),
-                "requested_trace": requested_trace(
-                    observation_ref,
-                    decision_ref,
-                    "Continue the checkout trace.",
-                    json!({ "entries": 14, "cursor": "checkout-trace:page:2" })
-                )
-            }),
+                            "current_ref": observation_ref,
+                            "trace_target_ref": decision_ref,
+                            "known_refs": [observation_ref, stale_hypothesis_ref, decision_ref],
+                            "last_tool": "kmp_trace",
+                            "last_observed_refs": [observation_ref, stale_hypothesis_ref],
+                            "last_result_page": {
+                                "entries": 14,
+                                "has_more": true,
+                                "next_cursor": "checkout-trace:page:2"
+                            },
+                            "last_result_partial": true,
+                            "remaining_budget": budget(2),
+                            "requested_trace": requested_trace(
+                                observation_ref,
+                                decision_ref,
+                                json!({ "entries": 14, "cursor": "checkout-trace:page:2" })
+
+            )
+                        }),
             read_tools.clone(),
             tool_call(
                 "kmp_trace",
                 json!({
                     "from": observation_ref,
                     "to": decision_ref,
-                    "goal": "Continue the checkout trace.",
-                    "role": "operator",
-                    "budget": { "depth": 2 },
                     "page": { "entries": 14, "cursor": "checkout-trace:page:2" }
                 }),
             ),
@@ -2452,34 +2434,31 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 &trace_first_step,
                 &trace_goal,
                 json!({
-                    "current_ref": observation_ref,
-                    "trace_target_ref": decision_ref,
-                    "known_refs": [observation_ref, stale_ref, decision_ref],
-                    "last_tool": "kmp_time",
-                    "last_move": "forward",
-                    "last_observed_refs": [decision_ref],
-                    "last_result_page": null,
-                    "remaining_budget": budget(2),
-                    "requested_trace": requested_trace(
-                        &observation_ref,
-                        &decision_ref,
-                        &trace_goal,
-                        json!({ "entries": 14 })
-                    ),
-                    "operator_state": {
-                        "decision": "trace_first_page",
-                        "scenario": slug
-                    }
-                }),
+                                    "current_ref": observation_ref,
+                                    "trace_target_ref": decision_ref,
+                                    "known_refs": [observation_ref, stale_ref, decision_ref],
+                                    "last_tool": "kmp_time",
+                                    "last_move": "forward",
+                                    "last_observed_refs": [decision_ref],
+                                    "last_result_page": null,
+                                    "remaining_budget": budget(2),
+                                    "requested_trace": requested_trace(
+                                        &observation_ref,
+                                        &decision_ref,
+                                        json!({ "entries": 14 })
+
+                ),
+                                    "operator_state": {
+                                        "decision": "trace_first_page",
+                                        "scenario": slug
+                                    }
+                                }),
                 read_tools.clone(),
                 tool_call(
                     "kmp_trace",
                     json!({
                         "from": observation_ref,
                         "to": decision_ref,
-                        "goal": trace_goal,
-                        "role": "operator",
-                        "budget": { "depth": 2 },
                         "page": { "entries": 14 }
                     }),
                 ),
@@ -2505,38 +2484,35 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 &trace_continue_step,
                 &trace_continue_goal,
                 json!({
-                    "current_ref": observation_ref,
-                    "trace_target_ref": decision_ref,
-                    "known_refs": [observation_ref, stale_ref, decision_ref],
-                    "last_tool": "kmp_trace",
-                    "last_observed_refs": [observation_ref, stale_ref],
-                    "last_result_page": {
-                        "entries": 14,
-                        "has_more": true,
-                        "next_cursor": trace_cursor
-                    },
-                    "last_result_partial": true,
-                    "remaining_budget": budget(2),
-                    "requested_trace": requested_trace(
-                        &observation_ref,
-                        &decision_ref,
-                        &trace_continue_goal,
-                        json!({ "entries": 14, "cursor": trace_cursor })
-                    ),
-                    "operator_state": {
-                        "decision": "continue_page",
-                        "scenario": slug
-                    }
-                }),
+                                    "current_ref": observation_ref,
+                                    "trace_target_ref": decision_ref,
+                                    "known_refs": [observation_ref, stale_ref, decision_ref],
+                                    "last_tool": "kmp_trace",
+                                    "last_observed_refs": [observation_ref, stale_ref],
+                                    "last_result_page": {
+                                        "entries": 14,
+                                        "has_more": true,
+                                        "next_cursor": trace_cursor
+                                    },
+                                    "last_result_partial": true,
+                                    "remaining_budget": budget(2),
+                                    "requested_trace": requested_trace(
+                                        &observation_ref,
+                                        &decision_ref,
+                                        json!({ "entries": 14, "cursor": trace_cursor })
+
+                ),
+                                    "operator_state": {
+                                        "decision": "continue_page",
+                                        "scenario": slug
+                                    }
+                                }),
                 read_tools.clone(),
                 tool_call(
                     "kmp_trace",
                     json!({
                         "from": observation_ref,
                         "to": decision_ref,
-                        "goal": trace_continue_goal,
-                        "role": "operator",
-                        "budget": { "depth": 2 },
                         "page": { "entries": 14, "cursor": trace_cursor }
                     }),
                 ),
@@ -3610,9 +3586,6 @@ fn push_writer_pre_read_trace(
                 json!({
                     "from": entry_ref,
                     "to": target_ref,
-                    "goal": "Prove the writer pre-read relation target before writing memory.",
-                    "role": "operator",
-                    "budget": { "depth": 2 },
                     "page": { "entries": 16 }
                 }),
             ),
@@ -3793,9 +3766,6 @@ fn push_writer_pre_read_trace_continue(
                 json!({
                     "from": entry_ref,
                     "to": target_ref,
-                    "goal": "Continue the writer pre-read trace page before writing memory.",
-                    "role": "operator",
-                    "budget": { "depth": 2 },
                     "page": { "entries": 16, "cursor": page_cursor }
                 }),
             ),
@@ -4079,13 +4049,10 @@ fn requested_bounds(limit: Value, window: Value) -> Value {
     })
 }
 
-fn requested_trace(from: &str, to: &str, goal: &str, page: Value) -> Value {
+fn requested_trace(from: &str, to: &str, page: Value) -> Value {
     json!({
         "from": from,
         "to": to,
-        "goal": goal,
-        "role": "operator",
-        "budget": { "depth": 2 },
         "page": page
     })
 }

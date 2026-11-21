@@ -38,7 +38,7 @@ async fn short_recall_temporal_trace_and_relate_preserve_complete_evidence() {
         ),
         (
             "kmp_trace",
-            json!({"about":ABOUT,"from":refs["decision"],"to":refs["source"],"goal":"audit the stated reason"}),
+            json!({"about":ABOUT,"from":refs["decision"],"to":refs["source"],}),
         ),
         (
             "kmp_relate",

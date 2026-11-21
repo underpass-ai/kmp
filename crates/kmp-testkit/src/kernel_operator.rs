@@ -311,7 +311,7 @@ fn validate_temporal_arguments(
             "budget",
             "window",
         ],
-        &["depth"],
+        &[],
     )?;
     required_non_empty_string(arguments, "about", "action.arguments")?;
     validate_temporal_cursor(
@@ -338,7 +338,6 @@ fn validate_temporal_arguments(
         required_value(arguments, "window", "action.arguments")?,
         "action.arguments.window",
     )?;
-    validate_optional_positive_integer(arguments, "depth", "action.arguments")?;
     if !kernel_operator_allowed_read_tools()
         .iter()
         .any(|allowed| allowed == tool)
@@ -352,18 +351,15 @@ fn validate_trace_arguments(arguments: &Value) -> Result<(), String> {
     exact_keys(
         arguments,
         "action.arguments",
-        &["about", "from", "to", "budget"],
-        &["goal", "role", "page"],
+        &["about", "from", "to"],
+        &["budget", "page"],
     )?;
     required_non_empty_string(arguments, "about", "action.arguments")?;
     required_non_empty_string(arguments, "from", "action.arguments")?;
     required_non_empty_string(arguments, "to", "action.arguments")?;
-    validate_budget(
-        required_value(arguments, "budget", "action.arguments")?,
-        "action.arguments.budget",
-    )?;
-    validate_optional_non_empty_string(arguments, "goal", "action.arguments")?;
-    validate_optional_non_empty_string(arguments, "role", "action.arguments")?;
+    if let Some(budget) = arguments.get("budget") {
+        validate_budget(budget, "action.arguments.budget")?;
+    }
     if let Some(page) = arguments.get("page") {
         validate_page(page, "action.arguments.page")?;
     }

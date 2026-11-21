@@ -90,7 +90,6 @@ pub(crate) fn time_tool_definition(description: &str) -> Value {
                     }
                 }
             },
-            "depth": integer_schema("Optional graph traversal depth. Applies in embedded and live gRPC modes; it overrides budget.depth."),
             "page": {
                 "type":"object", "additionalProperties":false,
                 "properties": {
