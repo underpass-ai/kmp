@@ -212,10 +212,13 @@ because it adds latency and bytes to every Ask.
 The pin moved from `jev-1.13.0` to `jev-1.14.0`. Both models were recorded
 the same day, three independent samples each, so the version change is not
 confused with day-to-day drift. Sample 1 of 1.14 is the committed cassette;
-it was chosen before any score was read. Every figure below is a replay.
+it was chosen before any score was read. The committed columns are replays;
+the sample columns are the recording runs themselves (the committed 1.14
+sample replays to the same numbers).
 
-**The guarded floors that moved** (`jev-baseline.tsv`; the other 32 rows are
-equal in all seven runs):
+**The guarded floors that moved** (`jev-baseline.tsv`; the other 24 of its
+37 rows are equal in all seven columns: the committed 1.13 cassette and six
+samples recorded today):
 
 | Metric (floor) | 1.13 committed | 1.13 today, s1/s2/s3 | 1.14, s1 (committed)/s2/s3 |
 |---|---|---|---|
@@ -230,23 +233,26 @@ equal in all seven runs):
 | `suspect_recall` (0.7500) | 0.7500 | 0.7500 in each | 0.7500 / 0.8750 / **0.6250** |
 | `precheck_available` (1.0000) | 1.0000 | 1.0000 in each | 1.0000 / 1.0000 / **0.8750** |
 | `precheck_right` (0.8750) | 0.8750 | 0.8750 in each | 0.8750 / 0.8750 / **0.8571** |
+| `precheck_right_no_direction` (0.7500) | 0.7500 | 0.7500 in each | 0.7500 / 0.7500 / **0.7143** |
 | `path_found_with_jev` (0.8000) | 0.8000 | 0.8000 in each | 0.8000 / 0.8000 / **0.6000** |
 
 The committed 1.14 sample breaks one floor, `proposed_hops_right`, so
 `scripts/ci/jev-baseline.sh` fails. The floor is left as it is: lowering it
 is the maintainer's reviewed change. A 1.13 sample recorded today breaks two
 floors too (`ask_*_rerank` in s2), so a single sample of either model can
-fall under a floor; 1.14's sample 3 broke six.
+fall under a floor. Floors broken per sample: 1.13 today 0 / 2 / 0; 1.14
+1 / 0 / 8.
 
 The 35 retrieval cases with re-ranking (narrow and wide) give the same
-answer, case by case, in all seven runs: MRR 0.9643, R@1 0.900, R@5 1.000.
+answer, case by case, in all seven columns: MRR 0.9643, R@1 0.900, R@5 1.000.
 
 **What flips, case by case** (1.13 committed vs 1.14, with how many of the
 three 1.14 samples agree):
 
 - Missing-relation typing, 3/3: `replacement` b12→b13 goes from
   `supersedes` (accepted) to `contradicts` (not accepted); `paraphrase`
-  b01→b16 from `answers` (not accepted) to `supports` (accepted, 2/3);
+  b01→b16 from `answers` (not accepted) to `supports` (accepted; in s3
+  the pair is not proposed at all);
   `causal-decision` from `triggers` to `chosen_because` (both accepted).
   `missing_typed` does not move.
 - Label proposal on `project:atlas:g04`, 3/3: 1.13 proposed
@@ -254,21 +260,34 @@ three 1.14 samples agree):
 - Write-time partners: the same partners are found with fewer proposals
   per fact (for example b01→b03 among 2 instead of 3), and the share typed
   as a reader accepts rises to 0.7273.
-- Paths: 1.14 types `g30 → g05` as `follows`/`triggers` at 0.43–0.48 where
-  1.13 said `contributes_to` at 0.99, and it judges `g30 → g31` at 0.48–0.54
-  where 1.13 committed had 0.49, so the corridor search g30 → g32 returns the
-  second path again (see the corridor notes above). Several proposed steps now sit
-  between 0.30 and 0.35, on the `STEP_AT` 0.3 line (`b02 → b01` 0.30–0.33,
-  `p01 → b06` 0.33, `b06 → p11` 0.35). That is why the hop count and the
-  wrong hops move from sample to sample (0.9130, 0.9474 and 0.9375
-  right): it is mostly probabilities crossing the step line, not a
-  different ranking. The one wrong hop of 1.13 (`b02 → b03`) is still
-  proposed.
-- Sample 3 only: two kernel pairs of the atlas review (`cause` g03–g13,
-  `paraphrase` g06–g16) were missing from the review the scorecard reads, so
-  the pre-write check and one path search that depend on them had nothing
-  to work on. It did not happen in the other two 1.14 samples nor in any
-  1.13 run.
+- Paths, every proposed hop checked against the gold edges:
+
+  | Run | right / proposed | wrong hops |
+  |---|---|---|
+  | 1.13 committed, s1 | 16 / 17 | `b02 → b03` (0.54, 0.56) |
+  | 1.13 s2, s3 | 19 / 20 | `b02 → b03` (0.54, 0.63) |
+  | 1.14 s1 (committed) | 21 / 23 | `b02 → b03` (0.62), `p01 → b06` `same_event_as` (0.33) |
+  | 1.14 s2 | 18 / 19 | `b02 → b03` (0.63) |
+  | 1.14 s3 | 15 / 16 | `b02 → b03` (0.65) |
+
+  The wrong direct hop `b02 → b03` is the same in every run of both models.
+  The extra wrong hop that puts the committed sample under its floor,
+  `p01 → b06`, scored 0.33, just over the `STEP_AT` 0.3 line, and comes
+  with a third route the other samples do not take: a probability crossing
+  the step line, not a different ranking of the right hops. The
+  denominators move because 1.14 returns more or fewer routes. In the
+  corridor search g30 → g32, 1.14 judges `g30 → g31` at 0.50–0.54 and
+  returns the second route through it in all three samples (the September
+  1.13 samples had it at 0.49, under the 0.5 line; the committed 1.13
+  cassette returns one route). 1.14 also types `g30 → g05` as
+  `follows`/`triggers` at 0.43–0.48 where 1.13 said `contributes_to` at
+  0.99, which lowers the routes' confidence without changing their hops.
+- Sample 3 only: the review did not propose two gold pairs, payments
+  `paraphrase` b01–b16 (a Jev partner choice not made) and atlas `cause`
+  g03–g13 (a kernel pair), so the pre-write check of g03–g13 had nothing to
+  check. Its path search b01 → p11 found no route; in s1 and s2 that route's
+  steps scored 0.34–0.43, near the step line, so a crossing is the likely
+  cause (not verified). It did not happen in s1, s2 or any 1.13 run.
 
 **Thresholds tuned on 1.13 probabilities.** None was retuned.
 
@@ -296,9 +315,15 @@ the provider; two alternating rounds of each model):
 | `jev-1.13.0` | 150 | 149 | 213 | 2,812 |
 | `jev-1.14.0` | 147 | 153 | 213 | 2,846 |
 
-Recording everything (seven scorecard samples, the margin and corridor
-arms, four latency rounds) cost about 4.0 M input tokens, 0.17 USD at the
-listed price.
+Recording everything (six scorecard samples, the margin and corridor arms,
+four latency rounds) cost at least 4.08 M input tokens, about 0.17 USD at
+the listed price. The count adds the cassette entries and the latency
+lines; a request asked twice before its first answer was kept is counted
+once by a cassette, so the figure is a lower bound.
+
+The guarded retrieval cases (false answer, stale serve, high confidence)
+are not part of the re-ranking arms, so no guard figure with Jev exists
+for either model; their floors hold without Jev.
 
 ## The cascade (P9, 2026-09-27, three recorded samples)
 

@@ -14,4 +14,4 @@ source = "TypeSafe price list used by BENCH_SPEC section 9 (0.042 $/M input toke
 
 [jev."jev-1.14.0"]
 input_usd_per_mtok = 0.042
-source = "Third-party listings (TypeSafe publishes no price page; its models.md states the same price as jev-1.13.0). Unverified against an invoice."
+source = "Third-party listings, second-hand; TypeSafe publishes no price page. Unverified against an invoice."
