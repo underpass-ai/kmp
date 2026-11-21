@@ -4,7 +4,11 @@ One fictional checkout service and the two months in which its retry policy
 changed. This is the memory `kmp-mcp demo` writes under the about
 `example:kmp-demo`; the packet lives at
 [`crates/kmp-mcp/fixtures/demo/kmp-demo.requests.json`](../../crates/kmp-mcp/fixtures/demo/kmp-demo.requests.json)
-so the binary ships it, and [`memory.jsonl`](memory.jsonl) is its export.
+so the binary ships it, and [`memory.jsonl`](memory.jsonl) is an export of
+the same memories. The two are separate event histories: load one or the
+other into a store, never both. Importing this bundle with `import --from`
+into a store where `kmp-mcp demo` already wrote is refused ("histories
+diverge at revision 1") and writes nothing.
 
 ## What is inside
 

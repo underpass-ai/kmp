@@ -1,8 +1,13 @@
 # ChronoLoom layer map — the target before fixing #463
 
+> Status: done. The refactor this map planned landed, #463 is closed, and
+> `crates/kmp-viewer/src/view/` now has the `domain`, `ports`, `application`
+> and `adapters` layers it describes. The map is kept because the code links
+> to it; read the per-file rows as the plan the code followed.
+
 This is the checked-in architecture map the ChronoLoom refactor requires
 before any code moves, in the tradition of
-[kmp-mcp-layer-map.md](kmp-mcp-layer-map.md) for
+[kmp-mcp-layer-map.md](../archive/architecture/kmp-mcp-layer-map.md) for
 [#404](https://github.com/underpass-ai/kmp/issues/404). It covers both halves
 of the shared loom implicated in
 [#463](https://github.com/underpass-ai/kmp/issues/463): the **view aggregate**
@@ -51,7 +56,7 @@ The same bar as #404, held on every slice at once:
 | File (lines) | What it is |
 |:--|:--|
 | `view_state.rs` (1200) | Twelve types in one file: value collections (`TimeRange`, `Focus`, `Projection`, `TraceSelection`, `Provenance`), the aggregate state (`ViewState`), the command (`ViewPatch`), errors, outcome, the entry record, the idempotency record, and `ViewRegistry` — storage, locking, TTL pruning, optimistic concurrency, idempotency replay, undo history and the change bell, all in the same type. Domain types carry `serde` and are the wire format. |
-| `routes.rs` (657) | Memory read routes and the four view-control routes on one impl, plus query-parameter decoding free functions — the extraction the [2026-08-28 audit](conformance-audit-2026-08-28.md) row 8 already prescribed. |
+| `routes.rs` (657) | Memory read routes and the four view-control routes on one impl, plus query-parameter decoding free functions — the extraction the [2026-08-28 audit](../archive/architecture/conformance-audit-2026-08-28.md) row 8 already prescribed. |
 | `views.rs` (580) | Already the wire DTO + mapper layer for the memory read routes. Stays; the view context gets the same treatment. |
 | `lib.rs` (254) | Server composition + capability auth. Stays composition. |
 | `http.rs` (343) | Hand-rolled HTTP transport. Stays a transport adapter. |

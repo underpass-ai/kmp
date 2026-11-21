@@ -1,19 +1,27 @@
 # Architecture
 
 This section is technical by design. It describes the executable boundaries
-shared by the embedded and enterprise compositions; it does not describe the
-archived product plans.
+shared by the embedded and enterprise compositions.
 
-The current [architecture conformance audit](conformance-audit-2026-08-28.md)
-checks SOLID, domain types, dependency direction and module ownership, then
-orders the findings into small behaviour-preserving PRs. The
-[kmp-mcp layer map](kmp-mcp-layer-map.md) executes its `kmp-mcp` findings for
-#404: every file's target context and layer, and the slice order. The
-[ChronoLoom layer map](chronoloom-layer-map.md) gives the viewer's view
-aggregate and browser application the same treatment ahead of the #463 fix.
-[ChronoLoom and labels](chronoloom-labels.md) maps the label projection contract.
-[ChronoLoom shared scene](chronoloom-shared-scene.md) supersedes its proposed
-row layout with about planes and maps the human handoff and renderer boundaries.
+The 1.0 compatibility promise covers the local path only: the MCP tools over
+stdio, the CLI, the store format, export/import and the viewer. MCP over
+HTTP, the gRPC API (`v1beta1`), the non-embedded adapters (Valkey, NATS,
+Neo4j) with `kmp-server`, and semantic retrieval are experimental and outside
+that promise.
+
+Pages in this section:
+
+- [ChronoLoom layer map](chronoloom-layer-map.md): the layers of the viewer's
+  view aggregate and browser application, as the #463 refactor laid them out.
+- [ChronoLoom shared scene](chronoloom-shared-scene.md): about planes, the
+  human handoff and the renderer boundaries.
+- [Authored card history](authored-card-history.md): how `kmp_condense` cards
+  are stored, exported and read at a past instant.
+- `kmp-mcp-conformance.tsv`: the input of `scripts/ci/kmp-mcp-architecture-gate.sh`.
+
+The 2026-08-28 conformance audit, the `kmp-mcp` layer map for #404 and the
+ChronoLoom labels target are dated records of finished work; they are in the
+[archive](../archive/README.md#architecture-records).
 
 ## System map
 
@@ -40,8 +48,9 @@ flowchart TB
 The plugin is not a kernel adapter. It packages discovery and orchestration.
 `kmp-mcp` is the protocol boundary. Both composition roots call the same
 application use cases through the MCP contract. Backend availability is
-explicit: summaries audit is unavailable over gRPC, and the embedded loopback
-viewer needs the local kernel. The live `tools/list` defines discovery.
+explicit: `kmp_summaries_audit` and `kmp_curate` are unavailable over gRPC
+(they answer `unavailable`), and the embedded loopback viewer needs the local
+kernel. The live `tools/list` defines discovery.
 
 ## Layer ownership
 
@@ -132,7 +141,8 @@ since abouts are never joined by relations. `kmp_trace` and `kmp_inspect`
 audit graph structure and evidence. Semantic
 Ask is not a substitute for temporal navigation: it enumerates nothing. It
 does stand where it is asked — `as_of` at an instant, `interval` within a
-half-open span, `axis` on one of the five clocks — so a question that carries
+half-open span, `axis` on one of the four clocks (`occurred`, `observed`, `ingested`,
+`validity`) — so a question that carries
 a date is answered from what was in effect then, with supersession and expiry
 read as they stood then and the proof declaring where it stood.
 
@@ -141,7 +151,7 @@ read as they stood then and the proof declaring where it stood.
 ```mermaid
 flowchart LR
     START[kmp-mcp starts] --> B{KMP_MCP_BACKEND}
-    B -->|fixture| F[Reference fixtures; no persistence]
+    B -->|fixture, debug and eval-hooks builds only| F[Reference fixtures; no persistence]
     B -->|grpc| R{Endpoint set?}
     R -->|no| FAIL[Fail fast]
     R -->|yes| G[gRPC kernel]
@@ -153,7 +163,11 @@ flowchart LR
 ```
 
 An endpoint may select gRPC when the backend is otherwise unspecified. Invalid
-explicit combinations fail instead of silently opening a different store.
+explicit combinations fail instead of silently opening a different store. A
+release binary accepts only `embedded` and `grpc`; any other value, `fixture`
+included, stops startup with the accepted values. Under gRPC the CLI verbs that
+work on the local store (`export`, `import`, `snapshot`, `demo`, `viewer`, …)
+refuse to run.
 
 ## Trust boundaries
 

@@ -24,7 +24,8 @@ acceptance even after the head moves; a fresh read checks current dependencies.
 
 The CLI is `kmp-mcp consolidation sources|write|read|project [FILE|-]`. JSON and
 file handling belong at this boundary, not in storage policy. The workflow and
-field semantics are in the installed guide's `advanced:consolidation` entry.
+field semantics are in the longer installed guide's `advanced:consolidation`
+entry (`kmp-mcp guide sync`; source `plugins/kmp/guide/topics/consolidation.md`).
 No new MCP/gRPC operation is advertised. Existing canonical ingest and lossless
 presentation deduplication (#537) are unchanged: they cannot by themselves provide
 atomic dependency validation or immutable independently addressed view revisions.
@@ -70,8 +71,9 @@ Capture limits are 64 refs, 256 incident relations/ref, 1 MiB/node or detail rec
 ## Durability boundary
 
 Three additive SQLite tables contain heads, immutable views and retry receipts.
-They survive restart and projection rebuilds. Like reader cards, these optional
-views are outside the canonical event-log bundle; an event-only export/import
+They survive restart and projection rebuilds. Unlike reader cards, whose
+revisions travel in the bundle as `node_cards` events (event format 3), these
+optional views are outside the canonical event-log bundle; an event-only export/import
 retains canonical memory but does not transfer consolidated views. A full SQLite
 backup retains them. This limitation is visible in the guide, not an implicit
 promise of bundle portability.
@@ -87,7 +89,7 @@ CLI tests execute capture → write → compact projection → immutable expansi
 then mutation → stale result against a real store. Invalid boundary requests do
 not open a store.
 
-The [development comparison](incremental-consolidation-evaluation.md) records
+The [development comparison](../archive/development/incremental-consolidation-evaluation.md) records
 source-only, formed, presentation-deduplicated and consolidated readers at
 100%, 75% and 50% budgets, whole CLI costs, a failed writer interpretation and
 a short-source control where consolidation costs more context. It separates
