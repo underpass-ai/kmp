@@ -369,3 +369,134 @@ upgrade pays it once (4.6 s and 55 s).
   grows ask by ask on the heavy anchored questions. The single-process
   latency run peaks lower than before (823 → 557 MB at 10^4, 5.1 → 3.9 GB at
   10^5).
+
+## Reads at scale, third pass: the table a user runs with (1.0)
+
+Users run with the lexical bridge table `kmp setup` installs, and with it
+an ask at 10^4 still read the whole about. This pass makes the indexed ask
+with the shipped table read what an answer can use, fixes a continuation
+bug the second pass found, and speeds up wake pages. Base: `integration/v1.0`
+at bec68380. Evidence: `artifacts/kmp-1.0-2026-11-20/read-perf-3/`
+(maintainer workspace).
+
+**Why the table's ask read everything.** The lead was the language rule of
+#942: the table vouches for a focus concept only across two languages. That
+is true of the focus, but the second pass's bound already set aside 4,807 of
+the 4,839 planned candidates on the measured question. What forced the read
+was the bridged rescue: a ranking rescues up to three rejected candidates
+that carry a word the table bridged the question to, in any language and
+through any word (`bridged_candidates`), so top-k read every carrier of a
+bridged word, about 4,800 of them, past the 35 % bound. A stored language
+lean could not silence that rescue, so none is stored.
+
+**What changed (answers unchanged except the fix in the first bullet).**
+
+- **Lazy continuations with causal hops (fix).** An ask's mapping joins its
+  proof path to the head's evidence (P14), but its JSON joined the path
+  again to every evidence item the reading carried, tail included. A hop
+  whose relation evidence ranked in the tail changed with the depth read
+  (inline `evidence` on one page, `evidence_refs` on the next). A causal hop
+  (`depends_on`) sorts ahead of the evidence in a page, so its cursor no
+  longer matched and every continuation past that depth was refused
+  `READ_SELECTION_CHANGED`, with or without the lexical index (reproduced on
+  80c51e15 and 2ffd4957, the bases this pass started from). The JSON of an ask now keeps the path the
+  mapping joined, and a reading that carries its whole ranking (the entries
+  cap, semantic retrieval, re-ranking) joins its path to all of it in the
+  mapping, as its JSON always rendered it. First pages and whole readings
+  are unchanged; continuation pages change only where a hop met a tail item,
+  the pages that were refused.
+- **The best carriers of a bridged word.** Top-k reads the carriers by the
+  direct score their rows give, at least 16 and down to the fourth that no
+  reading can find eligible, and certifies from what every ranking's rescue
+  took (`BridgedRescues`): three, each strictly above the best carrier left
+  unread (`lexical-sidecar.md`). The focus bound counts the table's
+  translations only, and none when the question leans in no language. On
+  the measured question with the table: 4,815 candidates read → 108, and the
+  ask is answered from the index instead of the whole about.
+- **Wake pages.** Reading a projected page back onto the typed response
+  rendered and joined all 23,199 hops of a 10^4 wake's proof path to find
+  the few the page carried (70–77 ms of every page). Only the hops sharing
+  endpoints and type with a carried item are now joined and rendered.
+
+Before (bec68380) → after, one about, p50 of seven calls (first wake: one
+call; write: five), release builds without `eval-hooks`, cores 5–9, back to
+back under the build lock, 21 Nov 2026, load average 2–5:
+
+| memories | first wake | wake | ask | time (rewind) | write | peak RSS |
+|---:|---:|---:|---:|---:|---:|---:|
+| 1,000, shipped table | 91 → 84 ms | 59 → 52 ms | 253 → 249 ms | 12 → 12 ms | 6 → 6 ms | 136 → 136 MB |
+| 10,000, shipped table | 690 → 649 ms | 146 → 96 ms | 3,088 → 453 ms | 145 → 139 ms | 7 → 7 ms | 856 → 599 MB |
+| 100,000, shipped table | 8.0 → 7.6 s | 7.7 → 7.3 s | 32.1 → 5.0 s | 4.0 → 4.0 s | 8 → 3 ms | 6.4 → 4.3 GB |
+| 1,000 | 117 → 94 ms | 58 → 52 ms | 228 → 228 ms | 12 → 12 ms | 6 → 5 ms | 119 → 119 MB |
+| 10,000 | 677 → 636 ms | 149 → 98 ms | 342 → 334 ms | 142 → 138 ms | 7 → 8 ms | 559 → 546 MB |
+| 100,000 | 8.1 → 7.7 s | 7.8 → 7.4 s | 2.96 → 2.92 s | 4.0 → 4.0 s | 8 → 8 ms | 3.9 → 4.0 GB |
+
+The first wake at 10^3 moves between 84 and 117 ms from run to run on both
+binaries.
+
+**Gold questions at 10^4** (148 asks with their first continuation pages,
+every second question of the bench's ≤ 10^4 levels), each binary alone
+under the build lock: with the shipped table, ask p50 991 → 492 ms, p90
+3.6 → 2.3 s, all 148 asks 213 → 143 s, asks within 500 ms 24 → 78, first
+wake p50 688 → 644 ms; without it, ask p50 383 → 378 ms, p90 1.67 → 1.68 s,
+148 asks 102.6 → 102.2 s, first wake p50 693 → 639 ms. Peak RSS of the
+replaying process 1,227 → 920 MB with the table, 865 → 1,010 MB without
+(inconclusive, as the second pass found).
+
+**Where the first wake goes now (10^4, timers in a throwaway build).** The
+kernel read 290 ms (graph load 165, details 21, bundle 92),
+`wake_response_rendering` 97 ms, the JSON of the whole packet 165 ms (its
+proof path of 23,199 hops alone 109 ms), a clone of the response and its
+JSON kept for continuations 40 ms, the projection 40 ms; reading the page
+back now a few ms.
+
+**Parity** (against bec68380, the base last merged).
+
+- Gold calls at 10^4, call by call (148 asks with their first continuation
+  pages, the five wakes, the rewind): 206 of 206 equal without the table,
+  207 of 207 with the shipped table. At 10^5, every 20th question with its
+  first page: 32 of 32 equal (run twice); with the table, every 40th: 15 of
+  15 equal.
+- `KMP_LEXICAL_INDEX=verify` (the `eval-hooks` build of this branch) over
+  the gold asks at 10^4: 157 of 157 indexed answers equal the whole about's,
+  without the table and with it; of the 65,044 (83,031 with the table)
+  candidates the whole about found eligible, none is among the 373,709
+  (516,968) the index set aside (`unanswerable_eligible = 0`).
+- `retrieval-baseline.sh` (the judged collection, and with the shipped
+  table both the judged collection and the stress negatives),
+  `jev-baseline.sh` and `relate-baseline.sh` hold with no refresh;
+  `shipped_lexical_bridge.rs` passes, and so do the cross-language judge's
+  pinned pool and recorded verdicts (`cross_language_judge.rs`).
+- `quick-a` (eval-hooks builds, variant names of equal length): the perf
+  change alone is `neutral` with parity 1.0 on the real store (124 of 124
+  scored) and on synth 10^3 (88), against bec68380 with the path fix
+  cherry-picked; the retrieval and Jev judged corpora hold. Against bec68380
+  itself the real store reports parity 0.49 (`regresion` on parity, every
+  quality metric equal): one continuation call (a `continuation` handle)
+  renders a hop with its inline evidence instead of a ref to an evidence
+  item outside the head (the fix above), one item fewer fits the page, the
+  journey makes one more call, and the 138 calls
+  after it differ only in their request `id`. The same comparison with the
+  fix alone gives the same 140 differences.
+
+**Writes, sidecar, round trip.** No index version change: the sidecar stays
+`lexical-index-6` and its size is unchanged (39.7 MB at 10^4, 389.3 MB at
+10^5); a sidecar the base built is read as it is (first ask 387 ms at 10^4,
+3.2 s at 10^5, the same answer). Writes at 10^4 with the table after the
+sidecar is built, 30 single-memory writes per binary: p50 3.4 → 3.3 ms, p90
+6.2 → 7.0 ms, max 18.6 → 18.5 ms (both binaries carry #948's one-off proof
+file on a store's first event). A store went this build → v0.27.1 → this
+build, every call answered (v0.27.1 rebuilds its `-4` sidecar, this build
+its `-6`).
+
+**Targets.**
+
+| target | result |
+|---|---|
+| 10^4 ask ≤ 500 ms with the shipped table, the measured question | **met**: 453 ms (3,088 before) |
+| 10^4 ask ≤ 500 ms with the shipped table, gold p50 | **met, narrowly**: 492 ms (991 before) |
+| nothing slower without the table or at 10^3 | **met** (within run-to-run noise) |
+| writes ≤ 10 ms | **met**: p50 3.3 ms, steady writes p90 7 ms |
+| 10^4 first wake ≤ 500 ms | **not met**: 636–649 ms. The kernel read (about 290 ms) and the mapping (about 100 ms) alone use most of the budget; the JSON of the whole packet (165 ms, its 23,199-hop path 109 ms) is rendered before the page is cut, and its response and JSON are cloned for continuations (40 ms) |
+| 10^4 time ≤ 100 ms | **not met**: 138–139 ms. Not attempted beyond what the second pass found: each call filters the kept index's whole bundle by dimension, validates it and reads every entry's proof labels |
+| 10^5 with the table | ask 32.1 → 5.0 s; wake and time unchanged (whole-about reads) |
