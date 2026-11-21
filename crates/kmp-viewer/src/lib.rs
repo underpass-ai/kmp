@@ -390,7 +390,8 @@ pub fn loopback_socket_addr(addr: &str) -> io::Result<SocketAddr> {
             io::ErrorKind::InvalidInput,
             format!(
                 "viewer address `{addr}` is not a loopback address; the viewer serves private \
-                 memory and only binds 127.0.0.1 or [::1]"
+                 memory and only binds a loopback address: 127.0.0.0/8 (such as 127.0.0.1) or \
+                 [::1]"
             ),
         ));
     }
@@ -400,6 +401,18 @@ pub fn loopback_socket_addr(addr: &str) -> io::Result<SocketAddr> {
 #[cfg(test)]
 mod tests {
     use super::ViewerCapability;
+
+    #[test]
+    fn the_refusal_states_the_rule_the_check_applies() {
+        for accepted in ["127.0.0.1:7317", "127.0.0.2:7420", "[::1]:7317"] {
+            assert!(super::loopback_socket_addr(accepted).is_ok(), "{accepted}");
+        }
+        let refused = super::loopback_socket_addr("0.0.0.0:7317")
+            .expect_err("not loopback")
+            .to_string();
+        assert!(refused.contains("127.0.0.0/8"), "{refused}");
+        assert!(refused.contains("[::1]"), "{refused}");
+    }
 
     #[test]
     fn session_capabilities_are_random_wide_and_cookie_isolated() {

@@ -411,6 +411,10 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
 
 ### Fixed
 
+- The viewer's refusal of a non-loopback address states the rule it
+  applies: it binds a loopback address, any of 127.0.0.0/8 (such as
+  `127.0.0.1`) or `[::1]`. It said "only binds 127.0.0.1 or [::1]" while
+  `127.0.0.2:7420` was accepted.
 - A missing TypeSafe key names the file that was looked for
   (`$XDG_CONFIG_HOME/typesafe.env`, else `~/.config/typesafe.env`) instead of
   always `~/.config/typesafe.env`. An incomplete `typesafe.json` or a

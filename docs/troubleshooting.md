@@ -35,7 +35,7 @@ The host shows no `kmp_*` tools. Follow the
 |:--|:--|:--|
 | `FAIL  KMP_LEXICAL_INDEX holds a value kmp-mcp refuses` / ``KMP_LEXICAL_INDEX=`maybe` is not a value kmp-mcp accepts; it accepts on, off, true, false, 1, 0, yes, no`` | A switch value this build does not accept. The server does not start; other verbs exit 2. | Fix the value or unset the variable. Accepted values: [configuration](embedded/configuration.md#environment-switches). |
 | ``KMP_MCP_DATA_DIR=`relative/path` is not a value kmp-mcp accepts; it accepts an absolute path (no ~, not relative).`` | Relative store path. | Use an absolute path, or unset it. |
-| ``viewer address `0.0.0.0:7317` is not a loopback address`` | The viewer serves private memory and binds loopback only. | A loopback address, `off`, or unset `KMP_VIEWER_ADDR`. |
+| ``viewer address `0.0.0.0:7317` is not a loopback address; the viewer serves private memory and only binds a loopback address: 127.0.0.0/8 (such as 127.0.0.1) or [::1]`` | The viewer serves private memory and binds loopback only. | A loopback address, `off`, or unset `KMP_VIEWER_ADDR`. |
 | ``FAIL  `fixture` is not a backend`` | The test backend is not in a release binary. | Unset `KMP_MCP_BACKEND`. |
 | `warn  KMP_MCP_ENGINE is set, and this build reads no such switch` | A typo, a switch removed at 1.0, or another program's variable. | Unset it. |
 | `kmp-mcp export: this command works on the local store, and the environment selects a remote gRPC kernel …` | `KMP_MCP_BACKEND=grpc` or `KMP_KERNEL_GRPC_ENDPOINT` is set. | Unset both to work on this machine's store. |
