@@ -43,44 +43,52 @@ The table's translation can be wrong, and it reaches more than it can
 answer. A store that opted into TypeSafe Jev can have it judge both, with
 `ask-cross-language.json` (`{"veto": true, "rescue": true}`; each effect is
 off unless named, and without the file or without `typesafe.json` the answer
-is the deterministic one):
+is the deterministic one). Jev answers one Noul per passage — "Does `passage`
+state the answer to `user_question`?", with both languages given as facts —
+and code decides: yes at or above the line, no at or below 0.3, unsettled in
+between.
 
-- **veto**: an answer that stands only through the table's translation is
-  asked about, one passage at a time ("does it state the answer? It may be
-  written in another language"); a citation Jev finds at least `veto_at`
-  (0.5) likely not to state it leaves, and the answer is what it is without
-  it — usually UNKNOWN;
-- **rescue**: an UNKNOWN to a question with no required anchor, for which the
-  table reached memories written in the other language, is asked about up to
-  eight of them and whether they answer the question at all; the likeliest
-  is cited only when both judgements reach `rescue_at` (0.9). It is the
-  stored text, marked `judged_by`, never `high`, and the summary says it
-  rests on Jev's judgement. An anchored question is never rescued.
+- **veto** (`keep_at` 0.7): an answer that stands only through the table's
+  translation keeps a citation only on a yes; a no or an unsettled judgement
+  takes it out, and the answer is what it is without it — usually UNKNOWN;
+- **rescue** (`rescue_at` 0.9): an UNKNOWN to a question with no required
+  anchor, for which the table reached memories written in the other
+  language, is asked about up to eight of them and, in a companion Noul,
+  whether they answer the question at all; the likeliest is cited only when
+  both read yes at 0.9. It is the stored text, marked `judged_by`, never
+  `high` (`low` or `medium`), and the summary says it rests on Jev's
+  judgement. An anchored question is never rescued.
 
 Measured on 2026-11-21 with `jev-1.14.0` and the shipped table, synthetic
-data only (synth-v1 mono 1000, seeds 7 11 13 17 19 23), three fresh samples,
-counts that held in at least two of them:
+data only (synth-v1 mono 1000), three fresh samples, counts that held in at
+least two of them. The tuning seeds (7 11 13 17 19 23) are the ones probe F3
+chose the rescue line on; the held-out seeds (29 31 37 41 43 47) were never
+used for a line.
 
 | | Off | Veto | Veto + rescue |
 |:--|--:|--:|--:|
-| English question, Spanish memory: answered right (of 36) | 11 | 11 | 30 (19 rescued) |
-| Spanish question, English memory: answered right (of 36) | 16 | 16 | 30 (14 rescued) |
-| Zero-overlap paraphrase, same language (of 72) | 0 | 0 | 0 |
-| Same questions, answer removed from the store (of 144) | 2 | 0 | 0 |
+| English question, Spanish memory: answered right (of 36), tuning / held-out | 11 / 6 | 11 / 6 | 28 / 29 |
+| Spanish question, English memory: answered right (of 36), tuning / held-out | 16 / 7 | 16 / 7 | 26–27 / 23 |
+| Zero-overlap paraphrase, same language (of 72) | 0 / 0 | 0 / 0 | 0 / 0 |
+| Same questions, answer removed from the store (of 144) | 2 / 0 | 0 / 0 | 0 / 0 |
 | Judged negatives of the retrieval collection (of 11) | 0 | 0 | 0 |
-| Anchored stress negatives (of 360) | 0 | 0 | 0 |
-| Their Spanish renderings (of 264) | 6 | 2 | 2 |
-| Their bare keywords, with a stray `de` / `la` (of 360 each) | 20 / 20 | 13 / 11 | 13 / 11 |
+| Anchored stress negatives (of 360) | 0 / 0 | 0 / 0 | 0 / 0 |
+| Their Spanish renderings (of 264) | 6 / 13 | 0 / 2 | 0 / 2 |
+| Their bare keywords (of 360) | 8 / 15 | 8 / 15 | 8 / 15 |
+| Bare keywords with a stray `de` / `la` (of 360 each) | 20 / 20 · 42 / 42 | 8 / 8 · 16 / 16 | 8 / 8 · 16 / 16 |
 
 No right answer became UNKNOWN, and no rescue cited a wrong memory, in any
-sample. What is left: the keyword answers that read `high` (8 in each
-keyword set) come from a literal `status` and are the same with no table at
-all, so the judge never sees them; the others are citations Jev also reads
-as stating the answer (it judges a memory that names both identifiers and
-the topic as stating it). A paraphrase in the same language is outside the
-judge's reach: the table reaches nothing across a language there.
-About 7 % of these asks reach Jev (140 of 2,003), at about 1,450 input tokens
-each and a median of 0.15 s of Jev time (0.3 s added to the ask).
+sample of either set. What is left: the keyword answers at `high` (8 tuning,
+15 held-out, in every keyword set) come from a literal `status` and are the
+same with no table at all, so the judge never sees them; the rest (2 Spanish
+renderings and 1 stray-word keyword question held-out) are citations Jev also
+reads as stating the answer, memories that name both identifiers and the
+topic. A paraphrase in the same language is outside the judge's reach: the
+table reaches nothing across a language there. About 7–9 % of these asks
+reach Jev, at about 1,400–1,500 input tokens each, a median of 0.15 s of Jev
+time and 0.3 s added to the ask (p95 about 1 s); 1 or 2 judgements in a
+sample of 140–185 took longer than the 1.5 s first-page deadline, which leaves
+today's answer on that page.
 
 ## English search summaries
 
