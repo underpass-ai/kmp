@@ -57,6 +57,12 @@ the stored text untouched.
 
 ## Limits
 
+The language a question and a memory lean in is read from Spanish and English
+function words only, from as few as one. A question or a memory in another
+language leans in neither, so the table translates nothing for it; and a
+single stray function word (`la`, `de`, `ha`) can make an otherwise keyword
+question lean Spanish.
+
 Questions in Chinese, Japanese or Thai are not segmented by word yet. Their
 stored memory remains byte-exact and inspectable; word-based semantic
 retrieval in those scripts is not supported.

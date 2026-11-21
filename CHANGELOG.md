@@ -406,7 +406,12 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
   is `medium` at most, as the languages page always said. A question that
   leans in no language (bare keywords) is no longer translated into an answer:
   the table still ranks the memory it reaches, which arrives in the proof
-  marked `reached_by: bridge`. Without a table nothing changes.
+  marked `reached_by: bridge`. The languages are read from Spanish and
+  English function words only, from as few as one: a question in another
+  language is not translated at all, and a keyword question with one stray
+  Spanish function word (`la deadline #10132 svc-013`) still reads as Spanish
+  and can be answered at `medium` from an English memory. Without a table
+  nothing changes.
   `scripts/ci/retrieval-baseline.sh` now also scores the judged collection
   and a set of synthetic stress cases with the shipped table, and a
   `kmp-mcp` test asks the stress negatives with it on every run.
