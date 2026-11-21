@@ -141,10 +141,25 @@ mod tests {
                 .expect("required")
                 .contains(&json!("actor"))
         );
+        // Beside a handle any declared argument is accepted by the law; the
+        // server compares its value with the retained call.
+        let mut declared: Vec<_> = tools[1]["inputSchema"]["properties"]
+            .as_object()
+            .expect("properties")
+            .keys()
+            .cloned()
+            .map(Value::String)
+            .collect();
+        declared.sort_by_key(|key| key.to_string());
+        let mut alongside = tools[1]["inputSchema"]["then"]["propertyNames"]["enum"]
+            .as_array()
+            .expect("alongside")
+            .clone();
+        alongside.sort_by_key(|key| key.to_string());
+        assert_eq!(alongside, declared);
         assert_eq!(
-            tools[1]["inputSchema"]["then"],
-            json!({"propertyNames":{"enum":["continuation","about","actor"]},
-                   "x-kmp-rule":"continuation-alone"})
+            tools[1]["inputSchema"]["then"]["x-kmp-rule"],
+            "continuation-alone"
         );
         assert_eq!(
             tools[1]["inputSchema"]["properties"]["memories"]["items"]["properties"]["connect_to"]

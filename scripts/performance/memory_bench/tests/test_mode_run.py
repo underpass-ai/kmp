@@ -100,6 +100,13 @@ class ModesTest(unittest.TestCase):
         self.assertFalse(sections.applicable(verdict('neutral', parity=False)))
         self.assertTrue(sections.applicable(verdict('regresion', n=0)))
 
+    def test_unscored_journeys_are_counted_per_arm(self):
+        # report_section fails a section with any: a partial score is not a result.
+        report = {'headlines': [{'arm': 'baseline', 'errors': 16}, {'arm': 'candidate', 'errors': 16},
+                                {'arm': 'candidate', 'errors': 0}]}
+        self.assertEqual(sections.unscored_journeys(report), {'baseline': 16, 'candidate': 16})
+        self.assertEqual(sections.unscored_journeys({'headlines': [{'arm': 'baseline', 'errors': 0}]}), {})
+
 
 class RealSectionTest(unittest.TestCase):
     def test_strata_take_the_first_questions_by_id(self):

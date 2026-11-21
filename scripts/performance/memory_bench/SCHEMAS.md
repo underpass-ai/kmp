@@ -867,7 +867,7 @@ store key, and the stores built under v1 are found again.
 
 | Kind | Function | Material |
 |---|---|---|
-| `result` | `result_key(binary_sha256, config_digest, store_key, questions_digest, mode, nonce=None)` | section 8 of the spec; `nonce` only for `jev = "record"` runs, which are never reused |
+| `result` | `result_key(binary_sha256, config_digest, store_key, questions_digest, mode, nonce=None, calls_digest=None)` | section 8 of the spec; `nonce` only for `jev = "record"` runs, which are never reused; `calls_digest` (`question.calls_digest`) is the first call each question becomes, so a change in `Question.first_call` is a new run; a run sealed without it keeps its key |
 | `world` | `world_key(generator, generator_version, seed, topology, max_level, block_size)` | |
 | `store` | `store_key(source, n, bundle_format, reader_sha256, build, writer_sha256=None, batch_size=None, store_mode="shared")` | `source` is `synth_source(generator, generator_version, seed, topology, world_digest)` or `bundle_source(content_digest, label)` or, for a public dataset (BT17), `dataset_source(corpus, lock_sha256, selection_digest, adapter_version)`; `build` ∈ `ingest`, `import`, `copy` |
 | `report` | `report_key(result_keys, options)` | result keys sorted |

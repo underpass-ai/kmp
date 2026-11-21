@@ -107,26 +107,22 @@ pub(crate) fn tools_list_result_with_apps(apps: bool) -> Value {
             if crate::continuation::ReadContinuation::supports(&name) {
                 let recall = matches!(name.as_str(), "kmp_wake" | "kmp_ask");
                 let description = if recall {
-                    "Returned call handle; use alone, or with page.repeat_core=true. Unavailable: submit the original call again."
+                    "Returned call handle; send it alone or with arguments equal to its call's, or with page.repeat_core=true. Unavailable: submit the original call again."
                 } else if name == "kmp_write_memory" {
-                    "Returned call handle for the pending write and its review token; use alone. Resuming rechecks context before commit. Unavailable: submit the original call again."
+                    "Returned call handle for the pending write and its review token; send it alone or with arguments equal to its call's. Resuming rechecks context before commit. Unavailable: submit the original call again."
                 } else {
-                    "Returned call handle; use alone. Unavailable: submit the original call again."
+                    "Returned call handle; send it alone or with arguments equal to its call's. Unavailable: submit the original call again."
                 };
                 let schema = tool["inputSchema"].as_object_mut().expect("input schema");
-                // A handle stands for the whole call. Beside it only an
-                // argument the call already binds (the same value, which the
-                // server checks) and Wake/Ask's page.repeat_core are accepted.
-                let mut alongside = vec!["continuation"];
-                for key in ["about", "actor"] {
-                    if schema["properties"].get(key).is_some() {
-                        alongside.push(key);
-                    }
-                }
-                if recall {
-                    alongside.push("page");
-                }
+                // A handle stands for the whole call. Beside it any declared
+                // argument may be resent, with the value the call already
+                // has: the server compares it with the retained call and
+                // refuses a different one under this rule (read_continuations).
                 schema["properties"]["continuation"] = json!({"type":"string","pattern":"^read_[0-9a-fA-F]{32}$","description":description});
+                let alongside: Vec<String> = schema["properties"]
+                    .as_object()
+                    .map(|properties| properties.keys().cloned().collect())
+                    .unwrap_or_default();
                 // Keep the shared argument object at the root. Hosts that
                 // render a root union from its branches alone otherwise lose
                 // these properties and advertise unconstrained dictionaries.

@@ -355,7 +355,10 @@ async fn a_continuation_accepts_the_value_it_is_bound_to_and_refuses_another() {
     let message = other["structuredContent"]["error"]["message"]
         .as_str()
         .expect("message");
-    assert!(message.contains("bound to about"), "{message}");
+    assert!(
+        message.contains("`about`") && message.contains("bound to \"project:route-reads\""),
+        "{message}"
+    );
     let extra = call(
         &server,
         "kmp_inspect",
