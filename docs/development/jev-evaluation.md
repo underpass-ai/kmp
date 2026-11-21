@@ -207,6 +207,146 @@ because it adds latency and bytes to every Ask.
   one JSON line per case with every missing item and Jev's usage. `n` is the
   largest about whose orphans get a Jev partner choice (default 60).
 
+## jev-1.14.0 (2026-11-21, three recorded samples of each model)
+
+The pin moved from `jev-1.13.0` to `jev-1.14.0`. Both models were recorded
+the same day, three independent samples each, so the version change is not
+confused with day-to-day drift. Sample 1 of 1.14 is the committed cassette;
+it was chosen before any score was read. The committed columns are replays;
+the sample columns are the recording runs themselves (the committed 1.14
+sample replays to the same numbers).
+
+**The guarded floors that moved** (`jev-baseline.tsv`; the other 24 of its
+37 rows are equal in all seven columns: the committed 1.13 cassette and six
+samples recorded today):
+
+| Metric (floor) | 1.13 committed | 1.13 today, s1/s2/s3 | 1.14, s1 (committed)/s2/s3 |
+|---|---|---|---|
+| `proposed_hops_right` (0.9411) | 0.9412 | 0.9412 / 0.9500 / 0.9500 | **0.9130** / 0.9474 / 0.9375 |
+| `write_typed_with_jev` (0.6363) | 0.6364 | 0.6364 in each | 0.7273 in each |
+| `labels_none_kept` (0.0000) | 0.0000 | 0.0000 in each | 1.0000 in each |
+| `ask_mrr_rerank` (0.9375) | 0.9375 | 0.9375 / **0.8750** / 0.9375 | 0.9375 in each |
+| `ask_top5_rerank` (1.0000) | 1.0000 | 1.0000 / **0.9375** / 1.0000 | 1.0000 in each |
+| `missing_found` (1.0000) | 1.0000 | 1.0000 in each | 1.0000 / 1.0000 / **0.8182** |
+| `missing_found_by_jev` (0.3636) | 0.3636 | 0.3636 in each | 0.3636 / 0.3636 / **0.2727** |
+| `missing_typed` (0.7272) | 0.7273 | 0.7273 in each | 0.7273 / 0.7273 / 0.7778 |
+| `suspect_recall` (0.7500) | 0.7500 | 0.7500 in each | 0.7500 / 0.8750 / **0.6250** |
+| `precheck_available` (1.0000) | 1.0000 | 1.0000 in each | 1.0000 / 1.0000 / **0.8750** |
+| `precheck_right` (0.8750) | 0.8750 | 0.8750 in each | 0.8750 / 0.8750 / **0.8571** |
+| `precheck_right_no_direction` (0.7500) | 0.7500 | 0.7500 in each | 0.7500 / 0.7500 / **0.7143** |
+| `path_found_with_jev` (0.8000) | 0.8000 | 0.8000 in each | 0.8000 / 0.8000 / **0.6000** |
+
+The committed 1.14 sample broke one floor, `proposed_hops_right`. The
+floors were then changed as a reviewed change (2026-11-21, decided by the
+maintainer's delegate, to be ratified by the maintainer):
+
+- `proposed_hops_right` 0.9411 → 0.9130, the committed sample's value. The
+  model changed to `jev-1.14.0`. Over three same-day samples per model the
+  row is 0.913 / 0.947 / 0.9375 on 1.14 against 0.941 / 0.95 / 0.95 on 1.13.
+  The committed sample was chosen before any score was read. Its one extra
+  wrong hop, `p01 → b06` at 0.33, sits just over the `STEP_AT` 0.3 line,
+  which was never tuned. The old floor had no margin over a single sample
+  (16 right of 17).
+- Raised, because all three 1.14 samples are above the old floor:
+  `write_typed_with_jev` 0.6363 → 0.7272 and `labels_none_kept` 0 → 1. No
+  other row meets that rule; none else changed.
+- The corridor-off reference arm (`KMP_EVAL_PATHS_CORRIDOR=off`) scores
+  `proposed_hops_right` 0.9000 on 1.14 (1.13: 0.9500). The floor gates the
+  default arm, with the corridor on; read against it, the reference arm
+  falls under 0.9130. It stays a reference measurement and was not used to
+  set the floor.
+- Known limits of this change: the ask-judge (P10) and write-expansion
+  (P15) thresholds were not re-verified on 1.14; sample 3 of 1.14 fell
+  under eight floors for a cause not traced (below); the 1.14 price comes
+  from third-party listings.
+
+A 1.13 sample recorded today breaks two
+floors too (`ask_*_rerank` in s2), so a single sample of either model can
+fall under a floor. Floors broken per sample: 1.13 today 0 / 2 / 0; 1.14
+1 / 0 / 8.
+
+The 35 retrieval cases with re-ranking (narrow and wide) give the same
+answer, case by case, in all seven columns: MRR 0.9643, R@1 0.900, R@5 1.000.
+
+**What flips, case by case** (1.13 committed vs 1.14, with how many of the
+three 1.14 samples agree):
+
+- Missing-relation typing, 3/3: `replacement` b12→b13 goes from
+  `supersedes` (accepted) to `contradicts` (not accepted); `paraphrase`
+  b01→b16 from `answers` (not accepted) to `supports` (accepted; in s3
+  the pair is not proposed at all);
+  `causal-decision` from `triggers` to `chosen_because` (both accepted).
+  `missing_typed` does not move.
+- Label proposal on `project:atlas:g04`, 3/3: 1.13 proposed
+  `component=operations` where the reader says none; 1.14 proposes nothing.
+- Write-time partners: the same partners are found with fewer proposals
+  per fact (for example b01→b03 among 2 instead of 3), and the share typed
+  as a reader accepts rises to 0.7273.
+- Paths, every proposed hop checked against the gold edges:
+
+  | Run | right / proposed | wrong hops |
+  |---|---|---|
+  | 1.13 committed, s1 | 16 / 17 | `b02 → b03` (0.54, 0.56) |
+  | 1.13 s2, s3 | 19 / 20 | `b02 → b03` (0.54, 0.63) |
+  | 1.14 s1 (committed) | 21 / 23 | `b02 → b03` (0.62), `p01 → b06` `same_event_as` (0.33) |
+  | 1.14 s2 | 18 / 19 | `b02 → b03` (0.63) |
+  | 1.14 s3 | 15 / 16 | `b02 → b03` (0.65) |
+
+  The wrong direct hop `b02 → b03` is the same in every run of both models.
+  The extra wrong hop that puts the committed sample under its floor,
+  `p01 → b06`, scored 0.33, just over the `STEP_AT` 0.3 line, and comes
+  with a third route the other samples do not take: a probability crossing
+  the step line, not a different ranking of the right hops. The
+  denominators move because 1.14 returns more or fewer routes. In the
+  corridor search g30 → g32, 1.14 judges `g30 → g31` at 0.50–0.54 and
+  returns the second route through it in all three samples (the September
+  1.13 samples had it at 0.49, under the 0.5 line; the committed 1.13
+  cassette returns one route). 1.14 also types `g30 → g05` as
+  `follows`/`triggers` at 0.43–0.48 where 1.13 said `contributes_to` at
+  0.99, which lowers the routes' confidence without changing their hops.
+- Sample 3 only: the review did not propose two gold pairs, payments
+  `paraphrase` b01–b16 (a Jev partner choice not made) and atlas `cause`
+  g03–g13 (a kernel pair), so the pre-write check of g03–g13 had nothing to
+  check. Its path search b01 → p11 found no route; in s1 and s2 that route's
+  steps scored 0.34–0.43, near the step line, so a crossing is the likely
+  cause (not verified). It did not happen in s1, s2 or any 1.13 run.
+
+**Thresholds tuned on 1.13 probabilities.** None was retuned.
+
+- Margin gate (`MARGIN_TENTHS` 0, P9): the rule was "gated equals ungated in
+  every sample". On 1.14 it holds in all three samples: the 16 trap asks
+  (narrow and wide) and the 35 retrieval cases score the same with the gate
+  and with `KMP_EVAL_RERANK_MARGIN=off`. The gate reads BM25, not Jev.
+- The shipped confidence calibration was measured with Jev off and its rules
+  read counts and flags only: it does not depend on Jev.
+- The curate lines (0.3 doubt, 0.7 retype, 0.5 partner, 0.3 path step) were
+  never tuned. The step line is the one 1.14 sits on (above).
+- Ask-judge `veto_at` 0.9 / `margin_tenths` 20 (P10) and write-expansion
+  `accept_at` 0.5 (P15) were fixed on the development corpora (synth,
+  retrieval 53, negatives). Those corpora were not re-recorded here; both
+  stay unverified on 1.14.
+- The partner cap (120, up to 512) and the corridor were chosen on cost; the
+  corridor's floor is the `proposed_hops_right` row above.
+
+**Latency and tokens.** Measured through the release binary over stdio
+(the bench's judged ports, record mode, `kmp_judgement` lines that reached
+the provider; two alternating rounds of each model):
+
+| | evaluations | ms p50 | ms p95 | input tokens per request, mean |
+|---|---|---|---|---|
+| `jev-1.13.0` | 150 | 149 | 213 | 2,812 |
+| `jev-1.14.0` | 147 | 153 | 213 | 2,846 |
+
+Recording everything (six scorecard samples, the margin and corridor arms,
+four latency rounds) cost at least 4.08 M input tokens, about 0.17 USD at
+the listed price. The count adds the cassette entries and the latency
+lines; a request asked twice before its first answer was kept is counted
+once by a cassette, so the figure is a lower bound.
+
+The guarded retrieval cases (false answer, stale serve, high confidence)
+are not part of the re-ranking arms, so no guard figure with Jev exists
+for either model; their floors hold without Jev.
+
 ## The cascade (P9, 2026-09-27, three recorded samples)
 
 Hypotheses and thresholds were registered before the second and third

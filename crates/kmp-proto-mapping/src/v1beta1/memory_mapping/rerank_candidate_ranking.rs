@@ -112,7 +112,7 @@ mod tests {
     fn resolves_only_admitted_identities_in_ranked_order_and_marks_them() {
         let admitted = vec![evidence("e1", "a:1", "one"), evidence("e2", "a:2", "two")];
         let ranking = RerankCandidateRanking::new(
-            "jev-1.13.0".into(),
+            "jev-1.14.0".into(),
             "q",
             vec![
                 ("a:2".into(), sha("two")),
@@ -125,7 +125,7 @@ mod tests {
         assert_eq!(resolved.len(), 1, "unknown and changed text never resolve");
         assert_eq!(resolved[0].id, "e2");
         assert_eq!(resolved[0].metadata["reached_by"], "rerank");
-        assert_eq!(resolved[0].metadata["rerank_model"], "jev-1.13.0");
+        assert_eq!(resolved[0].metadata["rerank_model"], "jev-1.14.0");
         assert!(ranking.matches_question("q") && !ranking.matches_question("other"));
     }
 
