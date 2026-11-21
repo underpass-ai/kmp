@@ -50,15 +50,18 @@ as a typed, temporal memory the next session asks instead of re-deriving:
 
 ## See it in two minutes
 
-Install KMP in your host (below), then in any project:
+Install KMP in your host (below), then, from a directory outside any project
+(your home directory will do):
 
 ```bash
 kmp-mcp demo
 ```
 
-It writes a worked example into that project's memory — a checkout service,
-an incident, the decision that replaced an earlier one and the measurement
-that verified it — opens ChronoLoom on it and prints the questions to ask:
+It writes a worked example into your user memory — a checkout service, an
+incident, the decision that replaced an earlier one and the measurement that
+verified it — opens ChronoLoom on it and prints the questions to ask an agent
+started there. It never writes a project's memory: run inside a project, it
+writes the same user store and says so.
 
 | You say | You get |
 |:--|:--|

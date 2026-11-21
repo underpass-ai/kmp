@@ -101,7 +101,9 @@ fn read_config(data_dir: &Path) -> Result<Option<TypeSafeConfig>, String> {
     };
     serde_json::from_slice(&bytes)
         .map(Some)
-        .map_err(|_| "invalid TypeSafe configuration".into())
+        // serde names the field that is missing or of the wrong type; the
+        // file holds no secret, so its words are safe to repeat.
+        .map_err(|error| format!("invalid TypeSafe configuration: {error}"))
 }
 
 impl JudgementModel for TypeSafeJudgement {

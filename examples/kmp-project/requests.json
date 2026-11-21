@@ -749,5 +749,91 @@
         }
       ]
     }
+  },
+  {
+    "about": "project:kmp",
+    "idempotency_key": "project:kmp:memory:2026-11-20:v1",
+    "provenance": {
+      "source_agent": "kmp-maintainers",
+      "source_kind": "human",
+      "correlation_id": "project:kmp:memory:v1",
+      "causation_id": "examples/kmp-project",
+      "observed_at": "2026-11-20T18:00:00Z"
+    },
+    "memory": {
+      "dimensions": [
+        {
+          "id": "timeline",
+          "kind": "timeline",
+          "title": "KMP decision history"
+        },
+        {
+          "id": "agent-surface",
+          "kind": "area",
+          "title": "Agent surface"
+        }
+      ],
+      "entries": [
+        {
+          "id": "project:kmp:decision:guide-served-by-engine",
+          "kind": "decision",
+          "text": "A read never writes the store. kmp_guide serves every topic from cards shipped inside the engine and reads no store; a read of a stored guide node the store lacks answers GUIDE_UNAVAILABLE with the repair, and only the explicit kmp-mcp guide sync installs the longer guide.",
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "scope_id": "timeline",
+              "occurred_at": "2026-11-20T12:00:00Z",
+              "observed_at": "2026-11-20T12:00:00Z",
+              "sequence": 18
+            },
+            {
+              "dimension": "area",
+              "scope_id": "agent-surface",
+              "sequence": 18
+            }
+          ],
+          "metadata": {
+            "source": "repository",
+            "document": "CHANGELOG.md, Unreleased, Changed — breaking"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "id": "evidence:project:kmp:decision:guide-served-by-engine",
+          "text": "CHANGELOG Unreleased: \"A read never writes the store. kmp_inspect of a guide node the store lacks answers GUIDE_UNAVAILABLE with the repair instead of seeding the guide\"; \"The cards ship inside the engine. kmp_guide reads no store, never seeds the stored guide\".",
+          "source": "CHANGELOG.md, Unreleased, Changed — breaking",
+          "time": "2026-11-20T12:00:00Z",
+          "supports": [
+            "project:kmp:decision:guide-served-by-engine"
+          ],
+          "metadata": {
+            "source": "repository"
+          }
+        }
+      ],
+      "relations": [
+        {
+          "from": "project:kmp:decision:guide-served-by-engine",
+          "to": "project:kmp:decision:guide-seeded-on-first-read",
+          "rel": "supersedes",
+          "class": "evidential",
+          "confidence": "high",
+          "why": "1.0 stops the first guide read from installing the guide: reads never write, and the topic cards come from the engine itself.",
+          "evidence": "CHANGELOG Unreleased: \"kmp_inspect of a guide node the store lacks answers GUIDE_UNAVAILABLE with the repair instead of seeding the guide\".",
+          "sequence": 1
+        },
+        {
+          "from": "project:kmp:decision:guide-served-by-engine",
+          "to": "project:kmp:constraint:setup-never-writes-memory",
+          "rel": "satisfies_constraint",
+          "class": "constraint",
+          "confidence": "high",
+          "why": "Neither setup nor a read writes the guide; only the explicit sync does, on the store it is asked about.",
+          "evidence": "CHANGELOG Unreleased: \"kmp-mcp guide sync installs the longer guide\".",
+          "sequence": 2
+        }
+      ]
+    }
   }
 ]

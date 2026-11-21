@@ -734,7 +734,14 @@ fn doctor_fails_on_every_layout_that_real_store_open_refuses() {
             report.contains("the selected memory cannot be opened"),
             "{report}"
         );
-        assert!(report.contains("engine on disk: sqlite"), "{report}");
+        if stamp == Some("2\n") {
+            // A retired format is named by the refusal for what it is, not
+            // listed as this engine's sqlite.
+            assert!(report.contains("old label identity"), "{report}");
+            assert!(!report.contains("engine on disk"), "{report}");
+        } else {
+            assert!(report.contains("engine on disk: sqlite"), "{report}");
+        }
         assert!(!report.contains("no store yet"), "{report}");
         assert!(
             report
@@ -1664,6 +1671,13 @@ fn cli_surface_version_export_import_and_errors() {
         import_again.status.code(),
         Some(2),
         "non-empty import exits 2"
+    );
+    let refusal = String::from_utf8_lossy(&import_again.stderr);
+    assert!(
+        refusal.contains("already holds 1 event.")
+            && refusal.contains("kmp-mcp import --from")
+            && !refusal.contains("1 events"),
+        "the refusal names the verb that merges abouts: {refusal}"
     );
 
     let wake = run_binary(

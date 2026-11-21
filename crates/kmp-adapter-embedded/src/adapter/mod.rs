@@ -18,6 +18,7 @@ mod head_stream;
 mod history_relation;
 mod lifecycle_chain_read;
 mod memory_about_index;
+mod memory_proof;
 mod memory_write_facts_read;
 mod migration;
 mod node_body_descriptor;

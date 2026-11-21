@@ -460,6 +460,84 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
 
 ### Fixed
 
+- KMP's own memory (`.kmp/memory.jsonl`, from
+  `examples/kmp-project/requests.json`) records the 1.0 decision that a read
+  never writes and `kmp_guide` serves the guide from the engine, superseding
+  "guide seeded on first read", which it still held as current. It is a new
+  event appended to the committed history: `scripts/examples/bundle.py
+  --base` sends the packets on top of the committed bundle, which
+  `refresh.sh` now uses for this bundle, so existing project stores stay a
+  prefix of it.
+- `kmp-mcp demo` never writes a project's store. Run inside a git project it
+  put `example:kmp-demo` into the project store, so `snapshot create`
+  copied it into `.kmp/snapshots/`, and it created an empty `.kmp/memory.jsonl`.
+  There it now writes the store a directory outside any project would open
+  (the saved selection, else the per-user default), says so (`Not in this
+  project's store …`), and tells which session can ask about it.
+  `KMP_MCP_DATA_DIR` still decides when set, and `--dry-run` names the same
+  destination.
+- Top-level `kmp-mcp --help` indents every description under one column,
+  including those on the line after a long usage (a string continuation had
+  eaten their indent), and `doctor` with `KMP_MCP_BACKEND=grpc` and no
+  endpoint says `set KMP_KERNEL_GRPC_ENDPOINT, or unset …` without a stray
+  space before the comma.
+- A format-1 or format-2 store says what it is and what to do: the refusal
+  names it (a redb store written by KMP 0.3.x or earlier; a SQLite store
+  with the old label identity, written by 0.2.0 to 0.14.x), says no
+  migration exists and that its releases' bundles are refused too, and asks
+  to keep the directory and give this engine another store. It said "This
+  redesign requires a fresh store", and `doctor` listed `engine on disk:
+  sqlite` beneath it.
+- The viewer's refusal of a non-loopback address states the rule it
+  applies: it binds a loopback address, any of 127.0.0.0/8 (such as
+  `127.0.0.1`) or `[::1]`. It said "only binds 127.0.0.1 or [::1]" while
+  `127.0.0.2:7420` was accepted.
+- A missing TypeSafe key names the file that was looked for
+  (`$XDG_CONFIG_HOME/typesafe.env`, else `~/.config/typesafe.env`) instead of
+  always `~/.config/typesafe.env`. An incomplete `typesafe.json` or a
+  `rerank.json` holding `{}` is rejected naming the field it lacks
+  (``invalid TypeSafe configuration: missing field `endpoint` …``).
+  `ask-cross-language.json`, `ask-judge.json`, `wake-focus.json`,
+  `write-expansions.json` and `semantic-retrieval.json` follow the same rule
+  (``invalid ask cross-language configuration: unknown field `vetoo`, expected
+  one of …``).
+- `kmp-mcp import <file>` into a store that holds memory names the way
+  forward: it says the store "already holds 1 event", and that
+  `kmp-mcp import --from <file> --about <about>` brings exact abouts into it
+  while a new `KMP_MCP_DATA_DIR` takes the whole bundle. It used to say
+  "merging bundles is not supported" and "1 events".
+  `import --from <store> --about <missing>` says the source holds no such
+  about instead of "cannot export missing about".
+- `scripts/performance/proof_batch_physical_run.py` and
+  `scripts/performance/sqlite_clients.py` no longer default to inputs under
+  the untracked `artifacts/` folder. The patch directory is a required
+  `PATCH_DIR` argument and `--checkpoint-only` requires `--clients-input`;
+  without them each refuses before creating anything and names the
+  `v0.27.0` path to restore them from.
+- `kmp-mcp doctor` gives one cause one failure. A database lost beside proof
+  of memory is the Memory section's `FAIL` alone: the Database section no
+  longer adds a second one ("injected schema objects") for the same empty
+  file, and Memory no longer ends with `no store yet — it is created on first
+  write` after a refusal. A 0-byte `kernel.sqlite3` with no proof of memory is
+  what the server opens as a new store, and doctor now says so (`ok  the
+  database file is empty, and nothing shows it held memory`) instead of
+  failing it.
+- A store leaves its proof of memory however it was first written. The first
+  commit that appends an event writes `held-memory` beside `FORMAT_VERSION`
+  (and a writable open of a store that already holds events writes it too).
+  A store filled only by `kmp-mcp demo`, `kmp-mcp import` or a project
+  rebuild had no `telemetry-salt`, so deleting its `kernel.sqlite3` made
+  `doctor` say `Usable` and the next session start an empty store over it;
+  that is now refused as `lost its database`.
+- `kmp-mcp doctor` reports a second MCP owner. It reads the same files as
+  the `kmp-mcp uninstall` preview: a hand-written `[mcp_servers.kmp]` in
+  Codex's `config.toml` (or `claude mcp add kmp`) beside an installed plugin
+  is `warn  <host>: a second MCP owner is wired by hand beside the plugin`,
+  and a retired `kernel-memory` registration is reported wherever it is; both
+  name the edit that removes them. Doctor used to read only the host's
+  inventory and the first server named `kmp`. Both verbs now read Codex's
+  configuration from `$CODEX_HOME` (default `~/.codex`); `uninstall` read
+  `$HOME/.codex` whatever `CODEX_HOME` said.
 - A bidirectional `kmp_trace` takes its one destination as a list holding
   that ref (`"to": ["ref"]`), as small models send it, and answers it byte for
   byte as `"to": "ref"`. It was refused under `trace.bidirectional`; two or
@@ -654,9 +732,10 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
   procedure and the remaining Spanish notes are in English.
 - Generated test evidence under `artifacts/` is no longer tracked (957
   files); documents cite it at the `v0.27.0` tag.
-  `scripts/performance/proof_batch_physical_run.py` and
-  `scripts/performance/sqlite_clients.py` need their inputs restored from
-  that tag.
+  `scripts/performance/proof_batch_physical_run.py` (`PATCH_DIR`) and
+  `scripts/performance/sqlite_clients.py --checkpoint-only`
+  (`--clients-input`) take their inputs restored from that tag as an
+  explicit argument.
 - Shipped guide text: the `guide` verb lesson no longer says a read seeds the
   stored guide, the `errors` topic says a refusal ends with a `Help:` line
   instead of offering `structuredContent.help`, and the `repository` topic

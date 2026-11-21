@@ -78,7 +78,7 @@ impl CrossLanguageJudge {
             Err(_) => return Err("cannot read ask cross-language configuration".into()),
         };
         let config: AskCrossLanguageConfig = serde_json::from_slice(&bytes)
-            .map_err(|_| "invalid ask cross-language configuration")?;
+            .map_err(|error| format!("invalid ask cross-language configuration: {error}"))?;
         config.validate()?;
         match judgement {
             Ok(Some(model)) => Ok(Some(Arc::new(Self::new(Arc::clone(model), config)))),

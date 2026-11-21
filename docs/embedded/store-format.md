@@ -11,6 +11,7 @@ it. Inside it:
 |:--|:--|:--|
 | `FORMAT_VERSION` | The format stamp: `4`. | No. |
 | `store/kernel.sqlite3` (and `-wal`, `-shm`) | All memory: the event log and its projections. SQLite in WAL mode. | **No.** This is the memory. |
+| `held-memory` | Written by the first event this store records, however it arrived (a session, `demo`, `import`). With it present, a missing or empty `kernel.sqlite3` is refused as a lost database instead of starting an empty store. | Only together with `store/`, when you mean to start this directory over empty. |
 | `lexical-index.sqlite3` | Search index derived from the store. | Yes. The next ask rebuilds what it needs. |
 | `continuations.sqlite3` | Retained reads behind continuation handles, kept 24 hours. | Yes. Old handles then answer `CONTINUATION_UNAVAILABLE`. |
 | `judgements.sqlite3` | Jev verdict book (only with a Jev opt-in). | Yes. Verdicts are asked again. |
@@ -76,7 +77,8 @@ A bundle is one JSON line of header, then one line per event.
 Every 1.x reads both event formats. A bundle carries the event log of the
 abouts it names: memories, relations, labels, reader cards. It does **not**
 carry the derived index, verdicts, continuations, logs, telemetry or the
-salt, and `kmp-mcp demo`'s example never enters a project's committed bundle.
+salt, and `kmp-mcp demo` never writes a project's store, so its example
+never enters a committed bundle or snapshot.
 
 | Command | Use |
 |:--|:--|

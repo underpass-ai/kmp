@@ -268,6 +268,22 @@ pub(super) async fn run(command: &str, first_argument: Option<&str>, args: &[&st
                     return 2;
                 }
             };
+            // A store that holds memory is refused before reading on, and the
+            // refusal names the verb that does bring abouts into one.
+            if let Ok((held, _)) = store.event_log_stats().await
+                && held > 0
+            {
+                eprintln!(
+                    "kmp-mcp: import refused; nothing was written. `kmp-mcp import <file>` \
+                     restores a bundle whole into an empty store, and this store already holds \
+                     {}. To bring exact abouts into it, run `kmp-mcp import --from {} --about \
+                     <about>`; to restore the whole bundle, point KMP_MCP_DATA_DIR at a new \
+                     directory and import there.",
+                    events(held),
+                    path.display()
+                );
+                return 2;
+            }
             let pulse = kmp_mcp::pulse::Pulse::start("bringing your memory back…");
             let imported = store
                 .import_bundle(
