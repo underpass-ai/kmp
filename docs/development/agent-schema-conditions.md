@@ -1,5 +1,12 @@
 # Preserve argument shapes across conditional call forms
 
+> 1.0: `tools/list` no longer publishes these conditions. Each one stays in
+> the full contract the validator reads, tagged as a cross-field rule
+> (`contract/cross_field_rule.rs`), documented in the `rules` of its guide
+> card and named with its fix in the refusal. The catalogue keeps only the
+> continuation split `if continuation else required`. The acceptance sets
+> below are unchanged; see `docs/development/agent-surface.md`.
+
 Codex metadata captured on 15 September 2026 exposes thirteen KMP inputs as
 `unknown` or unions of generic dictionaries. The native catalogue still
 contains their named properties. Root `oneOf`, `anyOf` and an unnecessary

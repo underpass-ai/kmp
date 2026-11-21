@@ -44,13 +44,24 @@ async fn seed(server: &KernelMcpServer) -> Value {
     })).await["local_refs"].clone()
 }
 
+/// The refs the evidence supports. A detail item (`detail:<ref>`) without
+/// `supports` supports its own ref.
 fn claims(packet: &Value) -> Vec<&str> {
     packet["proof"]["evidence"]
         .as_array()
         .expect("evidence")
         .iter()
-        .flat_map(|e| e["supports"].as_array().expect("supports"))
-        .filter_map(Value::as_str)
+        .flat_map(|e| match e["supports"].as_array() {
+            Some(supports) => supports
+                .iter()
+                .filter_map(Value::as_str)
+                .collect::<Vec<_>>(),
+            None => e["id"]
+                .as_str()
+                .and_then(|id| id.strip_prefix("detail:"))
+                .into_iter()
+                .collect(),
+        })
         .collect()
 }
 

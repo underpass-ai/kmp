@@ -35,7 +35,7 @@
       "budget": {
         "max_bytes": 10000,
         "tokens_advisory": 2400,
-        "used_bytes": 9126
+        "used_bytes": 8988
       },
       "contract": "kmp.recall.projection.v3",
       "core_text_shortened": false,
@@ -101,9 +101,6 @@
         },
         {
           "id": "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:current",
-          "metadata": {
-            "proof_role": "stored_evidence"
-          },
           "source": "kmp_write_memory:parity-test",
           "support_clocks": {
             "ingested_at": "<stamped at call time>",
@@ -117,9 +114,6 @@
         },
         {
           "id": "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:2",
-          "metadata": {
-            "proof_role": "stored_evidence"
-          },
           "source": "kmp_write_memory:parity-test:relation:updates_state",
           "support_clocks": {
             "ingested_at": "<stamped at call time>",
@@ -134,9 +128,6 @@
         },
         {
           "id": "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:current",
-          "metadata": {
-            "proof_role": "stored_evidence"
-          },
           "source": "kmp_write_memory:parity-test",
           "support_clocks": {
             "ingested_at": "<stamped at call time>",
@@ -175,7 +166,7 @@
             "ingested_at": "<stamped at call time>",
             "observed_at": "2026-04-12T17:00:00Z"
           },
-          "confidence": "unknown",
+          "confidence": "high",
           "evidence_refs": [
             "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:current",
             "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:2"
@@ -192,7 +183,7 @@
             "ingested_at": "<stamped at call time>",
             "observed_at": "2026-04-12T17:00:00Z"
           },
-          "confidence": "unknown",
+          "confidence": "high",
           "evidence_refs": [
             "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:current",
             "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:2"

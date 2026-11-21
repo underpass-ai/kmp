@@ -18,7 +18,14 @@ Curate the relations of an about with Jev as a second reader; you write them.
    Jev doubts return unwritten in `curate.doubted`; correct them or resend them
    with `confirm_doubted:true`. `needs_review` resumes through its next action.
 
-Jev is opt-in per store (`typesafe.json` beside it, `TYPESAFE_API_KEY` set).
+5. `mode:"paths"` keeps the facts Jev judges on the way from `from` to `to`
+   (with `to`, at most 22 facts within four hops of either end), asks for each
+   one's direct consequence and joins those steps to declared relations into
+   chains, frozen under `review_token`. `mode:"labels"` proposes values the
+   about already uses for the facts in `focus`; apply them with `kmp_relabel`.
+
+Across abouts only `same_event_as` and `same_entity_as` are suggested, and a
+call writes only items whose `from` belongs to `about`. Jev is opt-in per store (`typesafe.json` beside it, `TYPESAFE_API_KEY` set).
 Without it you get kernel pairs untyped and no audit. The selection's fact
 text is sent to TypeSafe. Embedded store only.
 Complete calls: `guide:kmp-agent:example:curate-review`.

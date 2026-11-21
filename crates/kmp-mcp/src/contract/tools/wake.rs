@@ -1,6 +1,6 @@
 use serde_json::{Value, json};
 
-use crate::contract::schema::definition::tool_definition_with_output;
+use crate::contract::schema::definition::{ToolEffect, tool_definition_with_output};
 #[allow(unused_imports)]
 use crate::contract::schema::primitives::*;
 #[allow(unused_imports)]
@@ -13,8 +13,8 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_wake",
-        false,
-        "Return a compact Kernel Memory Protocol wake packet for continuing work. scope distinguishes selected proof from about context: time bounds apply to the selection, while summary, current_state, semantic next actions and labels can include other times. Requested dimensions apply to both.",
+        ToolEffect::Read { open_world: true },
+        "Resume known work on an about: its current state, causal spine, labels and proof; the first read of a session.",
         json!({
             "type": "object",
             "additionalProperties": false,

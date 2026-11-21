@@ -1,6 +1,6 @@
 use serde_json::{Value, json};
 
-use crate::contract::schema::definition::tool_definition_with_output;
+use crate::contract::schema::definition::{ToolEffect, tool_definition_with_output};
 #[allow(unused_imports)]
 use crate::contract::schema::primitives::*;
 #[allow(unused_imports)]
@@ -13,8 +13,8 @@ use crate::contract::schema::view_family::view_output_with_url_schema;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_view_get_state",
-        false,
-        "Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels.",
+        ToolEffect::Read { open_world: false },
+        "Read an open view's semantic state and who last moved it.",
         json!({
             "type": "object",
             "additionalProperties": false,

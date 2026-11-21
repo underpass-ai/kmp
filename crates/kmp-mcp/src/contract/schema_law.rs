@@ -10,6 +10,7 @@ use std::collections::HashMap;
 
 use serde_json::{Map, Value, json};
 
+use super::cross_field_rule::RULE_KEYWORD;
 use super::schema_violation::SchemaViolation;
 use super::schema_wording::{
     a_kind, condition_wording, listed, not_wording, received, type_allows,
@@ -48,6 +49,9 @@ pub(crate) const KEYWORDS: &[&str] = &[
     "if",
     "then",
     "else",
+    // The rule a conditional enforces (`cross_field_rule`): read by the
+    // check for the refusal's wording, never published.
+    "x-kmp-rule",
     // Annotations.
     "default",
     "description",
@@ -60,7 +64,18 @@ pub(crate) const KEYWORDS: &[&str] = &[
 ];
 
 /// Checks `value` against `schema`; `path` names the value in messages.
+///
+/// A schema tagged with a cross-field rule reports a failure inside it as
+/// that rule, with the rule's wording and fix (`cross_field_rule`).
 pub(crate) fn check(schema: &Value, value: &Value, path: &str) -> Checked {
+    let outcome = check_untagged(schema, value, path);
+    match (outcome, schema.get(RULE_KEYWORD).and_then(Value::as_str)) {
+        (Err(violation), Some(id)) => Err(violation.under_rule(path, id)),
+        (outcome, _) => outcome,
+    }
+}
+
+fn check_untagged(schema: &Value, value: &Value, path: &str) -> Checked {
     let schema = match schema {
         Value::Bool(true) => return Ok(()),
         Value::Bool(false) => {
@@ -291,10 +306,29 @@ fn check_items(schema: &Map<String, Value>, items: &[Value], path: &str) -> Chec
     Ok(())
 }
 
+/// Whether `schema` declares the JSON object type, alone or in a list.
+fn declares_object(schema: &Map<String, Value>) -> bool {
+    match schema.get("type") {
+        Some(Value::String(kind)) => kind == "object",
+        Some(Value::Array(kinds)) => kinds.iter().any(|kind| kind == "object"),
+        _ => false,
+    }
+}
+
+/// Unknown keys are refused: an object schema is closed to the keys its
+/// `properties` declare unless it says `additionalProperties` true or gives
+/// a schema for them. The catalogue states this once, in the server
+/// instructions, instead of on every object; a conditional fragment that
+/// declares no type is not an object schema and is never closed.
 fn check_object(schema: &Map<String, Value>, object: &Map<String, Value>, path: &str) -> Checked {
     let properties = schema.get("properties").and_then(Value::as_object);
     let additional = schema.get("additionalProperties");
-    if additional == Some(&Value::Bool(false)) {
+    let closed = match additional {
+        Some(Value::Bool(false)) => true,
+        None => declares_object(schema),
+        Some(_) => false,
+    };
+    if closed {
         for key in object.keys() {
             if properties.is_some_and(|properties| properties.contains_key(key)) {
                 continue;
@@ -415,6 +449,7 @@ fn check_composition(schema: &Map<String, Value>, value: &Value, path: &str) -> 
             // is given"); the `else` of one that does not is the ordinary
             // case, and an inner condition already said its own.
             if holds
+                && violation.rule.is_none()
                 && !violation.message.starts_with("When ")
                 && let Some(when) = condition_wording(condition, true)
             {
