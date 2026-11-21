@@ -36,16 +36,50 @@ pub(super) struct AnswerCandidateTerms {
     pub(super) searchable: BTreeSet<String>,
 }
 
+/// A candidate's surfaces as counted once already (a lexical sidecar row):
+/// the terms of its text, and its content, direct and expansion counts.
+pub(super) type CountedSurface = (BTreeSet<String>, TermCounts, TermCounts, TermCounts);
+
 impl AnswerCandidateTerms {
     pub(super) fn from_evidence(item: &MemoryEvidence, context: &AnswerRecallContext) -> Self {
+        Self::from_surface(item, context, None)
+    }
+
+    /// The terms of a candidate whose surfaces were counted already, under
+    /// the context's reading: equal to [`Self::from_evidence`] when the
+    /// counts are the ones `surface_counts` and the text's `text_counts`
+    /// give for `item`, without tokenizing it again.
+    pub(super) fn from_counted(
+        item: &MemoryEvidence,
+        context: &AnswerRecallContext,
+        counted: CountedSurface,
+    ) -> Self {
+        Self::from_surface(item, context, Some(counted))
+    }
+
+    fn from_surface(
+        item: &MemoryEvidence,
+        context: &AnswerRecallContext,
+        counted: Option<CountedSurface>,
+    ) -> Self {
         let morphology = &context.morphology;
         let summary_text = search_summary(item);
-        let text = informative_terms(&item.text, morphology);
         let summary = summary_text
             .map(|summary| informative_terms(summary, morphology))
             .unwrap_or_default();
-        let (content_counts, direct_counts, expansion_counts) =
-            surface_counts(item, morphology, context.identifier_aliases);
+        let (text, content_counts, direct_counts, expansion_counts) = match counted {
+            Some(counted) => counted,
+            None => {
+                let (content, direct, expansion) =
+                    surface_counts(item, morphology, context.identifier_aliases);
+                (
+                    informative_terms(&item.text, morphology),
+                    content,
+                    direct,
+                    expansion,
+                )
+            }
+        };
         let content = content_counts.terms().cloned().collect::<BTreeSet<_>>();
         let direct = direct_counts.terms().cloned().collect::<BTreeSet<_>>();
 

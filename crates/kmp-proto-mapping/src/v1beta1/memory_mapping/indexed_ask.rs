@@ -20,6 +20,12 @@ pub struct IndexedAsk {
     /// any form (P14): the store's associations are counted over them, so
     /// leaving a candidate below the floor unread changes no weight.
     pub seed_rows: Option<std::sync::Arc<Vec<super::lexical_row::LexicalRow>>>,
+    /// The row of every candidate the plan may read, by candidate id: the
+    /// counts its surfaces were indexed with, which are the counts the
+    /// ranker reads (both come from `surface_counts`), so the ranker takes
+    /// them from here instead of tokenizing the candidate again.
+    pub rows:
+        Option<std::sync::Arc<std::collections::BTreeMap<String, super::lexical_row::LexicalRow>>>,
 }
 
 impl IndexedAsk {

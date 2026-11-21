@@ -196,6 +196,21 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
 
 ### Changed
 
+- Reads of a large about cost less, with unchanged answers (one about of
+  10,000 memories: first wake 2.1 → 1.0 s, ask 6.3 → 2.0 s, rewind
+  0.63 → 0.49 s; of 100,000: wake 22.6 → 11.1 s, ask 92 → 28 s). A wake
+  renders only the summary tier of its prose (and the flat sections only
+  when fewer than five live memories leave room for them) instead of
+  tokenizing the whole about; the store and the lexical sidecar keep SQLite
+  from re-planning a cached statement on every binding
+  (`SQLITE_DBCONFIG_ENABLE_QPSG`), which an ask spent a quarter of its time
+  on; the top-k rounds of one ask share their point reads and a round that
+  found too few eligible candidates reads enough for its depth at once; the
+  ranker takes an indexed candidate's counts from its sidecar row instead of
+  tokenizing it again; the sidecar indexes relations by type, so an about's
+  lifecycle is not found by scanning all its relations; a node header is
+  read in one statement. The sidecar gains that index on open; its format
+  is unchanged.
 - The viewer address is no longer reachable until the viewer is requested.
   A stdio session starts with no listener; the first `kmp_view_open` binds
   `KMP_VIEWER_ADDR` (or `127.0.0.1:7317`, falling forward to a free loopback

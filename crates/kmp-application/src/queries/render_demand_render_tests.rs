@@ -290,3 +290,36 @@ fn a_structure_render_tokenizes_less_than_a_measured_one() {
         measured.calls()
     );
 }
+
+#[test]
+fn a_summary_render_is_the_first_tier_of_a_structure_render_and_nothing_else() {
+    let bundle = wide_bundle();
+    for options in option_grid() {
+        let structure = render_graph_bundle_on_demand(&bundle, &options, RenderDemand::Structure);
+        let summary = render_graph_bundle_on_demand(&bundle, &options, RenderDemand::Summary);
+        assert_eq!(
+            structure.tiers[0].tier,
+            ResolutionTier::L0Summary,
+            "{options:?}"
+        );
+        assert_eq!(summary.tiers, structure.tiers[..1], "{options:?}");
+        assert_eq!(summary.demand, RenderDemand::Summary);
+        assert_eq!(summary.resolved_mode, structure.resolved_mode);
+        assert!(summary.sections.is_empty() && summary.content.is_empty());
+        assert_eq!(summary.quality, BundleQualityMetrics::unmeasured());
+    }
+}
+
+#[test]
+fn a_summary_render_tokenizes_at_most_its_summary_whatever_the_bundle() {
+    // The cost of a summary is one section, not the bundle: what a wake of
+    // a large about pays for its prose.
+    let bundle = wide_bundle();
+    for options in option_grid() {
+        let estimator = CountingEstimator::new();
+        let summary =
+            render_graph_bundle_for_demand(&bundle, &options, &estimator, RenderDemand::Summary);
+        assert!(estimator.calls() <= 1, "{options:?}: {}", estimator.calls());
+        assert_eq!(summary.tiers.len(), 1);
+    }
+}

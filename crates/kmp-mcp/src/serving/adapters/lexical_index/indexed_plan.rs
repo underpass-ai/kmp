@@ -151,6 +151,7 @@ impl IndexedPlan {
             .into_iter()
             .filter(|(_, row)| !bound.as_ref().is_some_and(|bound| bound.prunes(row)))
             .collect::<BTreeMap<_, _>>();
+        let rows = std::sync::Arc::new(read);
         let indexed = IndexedAsk {
             language: stats.language.clone(),
             plain,
@@ -158,7 +159,9 @@ impl IndexedPlan {
             lifecycle: sidecar.lifecycle(about)?,
             vocabulary,
             seed_rows: Some(seed_rows),
+            rows: Some(std::sync::Arc::clone(&rows)),
         };
+        let read = rows.as_ref();
         // Top-k (P14): each candidate's rank prefix, and what is always read.
         let prefixes = ask.and_then(|(policy, gated)| {
             RankPrefixes::read(asked_text, policy, gated, &indexed, bridge, read.iter())
@@ -180,7 +183,7 @@ impl IndexedPlan {
             BTreeSet::new()
         };
         Ok(Ok(Self {
-            candidates: read.into_keys().collect(),
+            candidates: read.keys().cloned().collect(),
             reached: count,
             prefixes,
             must,

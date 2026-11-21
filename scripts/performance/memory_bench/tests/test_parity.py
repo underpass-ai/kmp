@@ -262,12 +262,24 @@ class ParityTest(Folder):
     def test_the_rules_are_explicit_and_justified(self):
         self.assertEqual([r.name for r in P.VOLATILE_FIELDS],
                          ['continuation', 'next_cursor', 'ingested_at', 'clocks.ingested',
-                          'observed_at=ingested', 'review_token'])
+                          'observed_at=ingested', 'store.path', 'review_token'])
         for rule in P.VOLATILE_FIELDS:
             self.assertGreater(len(rule.reason), 40, rule.name)
         report = self.compare({'q': wake_pairs(HANDLE_A)}, {'q': wake_pairs(HANDLE_A)})
         self.assertEqual([r['name'] for r in report['volatile_fields']],
                          [r.name for r in P.VOLATILE_FIELDS])
+
+    def test_two_replicas_differ_only_in_their_store_path(self):
+        def exchange(path):
+            response = json.dumps({'jsonrpc': '2.0', 'id': 1, 'result': {
+                'structuredContent': {'summary': 's', 'store': {'path': path, 'rule': 'env'}}}})
+            return P.Exchange('t', 0, 'kmp_wake', '{"id":1}', response)
+        same = P.compare_exchange(exchange('/a/replica-1/data'), exchange('/b/replica-2/data'),
+                                  P.Normalizer(), P.Normalizer())
+        self.assertEqual(same.status, 'normalized')
+        moved = P.compare_exchange(exchange('/a/replica-1/data'), exchange('relative'),
+                                   P.Normalizer(), P.Normalizer())
+        self.assertEqual(moved.status, 'different')
 
     def test_unparseable_lines_differ_only_when_their_bytes_do(self):
         left = P.Exchange('t', 0, 'kmp_ask', '{"id":1}', 'not json')
