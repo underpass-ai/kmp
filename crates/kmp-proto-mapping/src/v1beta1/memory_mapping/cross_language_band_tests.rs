@@ -84,7 +84,8 @@ fn answer(context: AskRetrievalContext, question: &str) -> AskResponse {
 }
 
 /// Verdicts on every passage: each judged `states` thousandths likely to
-/// state the answer; veto at 500; a rescue at 900 with `companion`.
+/// state the answer; a translated citation kept at 700; a rescue at 900
+/// with `companion`.
 fn verdicts(band: &DoubtBand, states: u16, companion: Option<u16>) -> DoubtVerdicts {
     let mut verdicts = DoubtVerdicts::new(
         band.entry,
@@ -96,6 +97,9 @@ fn verdicts(band: &DoubtBand, states: u16, companion: Option<u16>) -> DoubtVerdi
     .expect("thresholds");
     if let Some(companion) = companion {
         verdicts = verdicts.with_rescue(900, companion).expect("a rescue");
+    }
+    if band.entry == DoubtEntry::TranslatedAnswer {
+        verdicts = verdicts.with_keep_line(700).expect("a veto");
     }
     for passage in &band.passages {
         verdicts
@@ -149,6 +153,15 @@ fn a_translated_answer_enters_with_its_citation_and_a_veto_takes_it_away() {
     );
     assert_eq!(status(&vetoed), AnswerStatus::Unknown, "{vetoed:?}");
     assert!(cited(&vetoed).is_empty());
+
+    // Unsettled is not a yes: a translation it does not vouch for leaves.
+    let mut context = self::context(PLAZO);
+    let band = self::band(&mut context, TRANSLATED, veto_only()).expect("in the band");
+    let unsettled = answer(
+        context.with_doubt_verdicts(verdicts(&band, 550, None)),
+        TRANSLATED,
+    );
+    assert_eq!(status(&unsettled), AnswerStatus::Unknown, "{unsettled:?}");
 
     let mut context = self::context(PLAZO);
     let band = self::band(&mut context, TRANSLATED, veto_only()).expect("in the band");

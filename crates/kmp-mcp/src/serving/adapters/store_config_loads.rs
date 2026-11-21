@@ -191,7 +191,7 @@ impl StoreConfigLoads {
                 .effective(
                     ASK_CROSS_LANGUAGE_FILE,
                     if judge.veto() {
-                        format!("veto at {}", permille_text(judge.veto_permille()))
+                        format!("veto keeps at {}", permille_text(judge.keep_permille()))
                     } else {
                         "veto off".into()
                     },

@@ -3,6 +3,7 @@ use std::path::Path;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+use kmp_domain::language::LanguageVocabulary;
 use kmp_proto_mapping::v1beta1::{DoubtBand, DoubtEntry, DoubtVerdicts};
 use serde_json::json;
 use sha2::{Digest, Sha256};
@@ -24,18 +25,27 @@ const TARGET: &str = "kmp_mcp::cross_language";
 /// The key of the companion question of a rescue.
 const COMPANION: &str = "any";
 
-/// One question per passage: does it state what was asked? It names the
-/// other language, and its criteria tell a passage on the same topic from
-/// one that states the fact (TypeSafe's noul `criteria`).
-const STATES: &str = "Does `passage` state the answer to the question in the state? It may be written in another language.";
-const STATES_TRUE: &str = "states the fact asked";
-const STATES_FALSE: &str = "same topic, but the asked fact is absent";
+// Every word the judge sends lives here (TypeSafe: keep the wording in one
+// place). One judgement per question, true means yes, no "or"; the `false`
+// criterion names the situation that confuses it; the languages, which code
+// already read, are stated as facts in named fields rather than hedged in
+// the question.
+
+/// The state's field for the reader's question, and for its language.
+const ASKED: &str = "user_question";
+const ASKED_LANGUAGE: &str = "user_question_language";
+/// One question per passage: does it state what was asked?
+const STATES: &str = "Does `passage` state the answer to `user_question`?";
+const STATES_TRUE: &str = "the passage states the fact `user_question` asks for";
+const STATES_FALSE: &str =
+    "the passage is about the same subject but does not state the asked fact";
 /// The companion of a rescue: can the question be answered from these
-/// passages at all? A choice of "which passage" would need a `none` option;
-/// a companion noul is what TypeSafe advises instead.
-const ANSWERABLE: &str = "Can the question in the state be answered from `passages`? They may be written in another language.";
-const ANSWERABLE_TRUE: &str = "one passage states the fact asked";
-const ANSWERABLE_FALSE: &str = "the passages are on the topic but none states the fact asked";
+/// passages at all? Its own Noul, never a `none` option (as of Jev 1.14 the
+/// companion usually works better).
+const ANSWERABLE: &str = "Can `user_question` be answered from `passages`?";
+const ANSWERABLE_TRUE: &str = "one of the passages states the fact `user_question` asks for";
+const ANSWERABLE_FALSE: &str =
+    "the passages are about the same subject but none of them states the asked fact";
 
 /// Jev as the cross-language judge of `kmp_ask`, behind its own opt-in,
 /// `ask-cross-language.json`, on top of `typesafe.json`.
@@ -100,8 +110,8 @@ impl CrossLanguageJudge {
         self.config.rescue()
     }
 
-    pub(super) fn veto_permille(&self) -> u16 {
-        self.config.veto_permille()
+    pub(super) fn keep_permille(&self) -> u16 {
+        self.config.keep_permille()
     }
 
     pub(super) fn rescue_permille(&self) -> u16 {
@@ -167,14 +177,21 @@ impl CrossLanguageJudge {
         rescue: bool,
     ) -> Result<(DoubtVerdicts, Vec<Option<u16>>, Option<u16>), String> {
         let template = JudgementSite::CrossLanguage.template();
+        // The veto reads its own line (`keep_at`, [`DoubtVerdicts::with_keep_line`]);
+        // the band's B1 line is never reached here.
         let mut verdicts = DoubtVerdicts::new(
             band.entry,
             self.model.model().to_string(),
             format!("{}.v{}", template.id, template.version),
-            self.config.veto_permille(),
+            1_000,
             None,
         )
         .map_err(|_| "invalid cross-language thresholds".to_string())?;
+        if band.entry == DoubtEntry::TranslatedAnswer {
+            verdicts = verdicts
+                .with_keep_line(self.config.keep_permille())
+                .map_err(|_| "invalid cross-language veto".to_string())?;
+        }
         let companion = if rescue {
             let companion = response
                 .answers
@@ -217,30 +234,52 @@ impl CrossLanguageJudge {
             .iter()
             .map(|passage| passage.text.chars().take(excerpt).collect::<String>())
             .collect::<Vec<_>>();
+        let languages = LanguageVocabulary::shipped();
+        let written_in = band
+            .passages
+            .iter()
+            .map(|passage| languages.leans_in(&passage.text))
+            .collect::<Vec<_>>();
         let mut questions = excerpts
             .iter()
+            .zip(&written_in)
             .enumerate()
-            .map(|(n, passage)| {
+            .map(|(n, (passage, language))| {
+                let mut instructions = json!({"passage": passage, "question": STATES});
+                if let Some(language) = language {
+                    instructions["passage_language"] = json!(language);
+                }
                 (
                     passage_key(n),
                     JudgementQuestion::CriteriaNoul {
-                        instructions: json!({"passage": passage, "question": STATES}),
+                        instructions,
                         criteria: NoulCriteria::new(STATES_TRUE, STATES_FALSE),
                     },
                 )
             })
             .collect::<BTreeMap<_, _>>();
         if rescue {
+            let mut instructions = json!({"passages": excerpts, "question": ANSWERABLE});
+            if let Some(Some(language)) = written_in.first()
+                && written_in.iter().all(|other| other == &Some(*language))
+            {
+                instructions["passages_language"] = json!(language);
+            }
             questions.insert(
                 COMPANION.to_string(),
                 JudgementQuestion::CriteriaNoul {
-                    instructions: json!({"passages": excerpts, "question": ANSWERABLE}),
+                    instructions,
                     criteria: NoulCriteria::new(ANSWERABLE_TRUE, ANSWERABLE_FALSE),
                 },
             );
         }
+        let mut state = serde_json::Map::new();
+        state.insert(ASKED.to_string(), json!(question));
+        if let Some(language) = languages.leans_in(question) {
+            state.insert(ASKED_LANGUAGE.to_string(), json!(language));
+        }
         JudgementRequest {
-            state: json!({"question": question}),
+            state: serde_json::Value::Object(state),
             questions,
         }
     }

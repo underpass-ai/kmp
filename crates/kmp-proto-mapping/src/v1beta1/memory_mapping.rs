@@ -140,6 +140,7 @@ mod semantic_recall_tests;
 mod semantic_source;
 mod shortlisted_partners;
 mod stated_by;
+mod stated_reading;
 mod subject_concept;
 mod temporal_admission;
 mod temporal_dependencies;

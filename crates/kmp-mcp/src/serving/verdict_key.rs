@@ -215,4 +215,21 @@ mod tests {
         assert_eq!(made.as_bytes().len(), VerdictKey::BYTES);
         assert!(made.as_bytes().starts_with(&RERANK.prefix()));
     }
+
+    #[test]
+    fn a_noul_with_criteria_is_another_question_than_the_plain_one() {
+        let instructions = json!({"passage": "p", "question": "q"});
+        let with = |yes: &str, no: &str| JudgementQuestion::CriteriaNoul {
+            instructions: instructions.clone(),
+            criteria: crate::serving::noul_criteria::NoulCriteria::new(yes, no),
+        };
+        let plain = key("m", &noul(instructions.clone()), json!("s"));
+        let criteria = key("m", &with("states it", "absent"), json!("s"));
+        assert_ne!(plain, criteria);
+        assert_ne!(criteria, key("m", &with("states it", "other"), json!("s")));
+        assert_eq!(
+            criteria,
+            key("m", &with("states  it", "absent"), json!("s"))
+        );
+    }
 }

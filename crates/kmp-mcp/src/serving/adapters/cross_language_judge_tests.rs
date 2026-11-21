@@ -164,16 +164,28 @@ async fn a_rescue_asks_each_passage_and_the_companion_in_one_batch() {
     );
     assert_eq!(
         asked[0].state,
-        json!({"question": "Where did the night shift find a leak?"})
+        json!({"user_question": "Where did the night shift find a leak?",
+               "user_question_language": "english"})
     );
     // The wire body says what each answer means; the companion reads every
     // passage the judge was sent.
     let body = typesafe_request_body("jev-1.14.0", &asked[0].state, &asked[0].questions);
     assert_eq!(
-        body["questions"]["p1"]["criteria"],
-        json!({"true": "states the fact asked", "false": "same topic, but the asked fact is absent"})
+        body["questions"]["p1"]["criteria"]["false"],
+        "the passage is about the same subject but does not state the asked fact"
     );
     assert_eq!(body["questions"]["p1"]["type"], "noul");
+    // The language code read is stated as a fact, not hedged.
+    assert_eq!(
+        body["questions"]["p1"]["instructions"]["passage_language"],
+        "spanish"
+    );
+    assert_eq!(
+        body["questions"]["any"]["instructions"]["passages_language"],
+        "spanish"
+    );
+    let wording = body.to_string();
+    assert!(!wording.contains(" or "), "one judgement per question");
     assert_eq!(
         body["questions"]["any"]["instructions"]["passages"]
             .as_array()
@@ -236,7 +248,7 @@ async fn a_veto_asks_about_the_cited_passages_alone() {
     assert_eq!(verdicts.entry(), DoubtEntry::TranslatedAnswer);
     assert!(
         verdicts.is_vetoed(&item(&band.passages[0])),
-        "not stating it at 0.98 is past the 0.5 line"
+        "a passage judged not to state it leaves"
     );
     let asked = model.asked.lock().expect("asked");
     assert_eq!(
@@ -271,4 +283,38 @@ async fn a_failure_or_a_slow_judge_leaves_today_s_answer_with_a_warning() {
             .expect("warning")
             .contains("did not answer within 10 ms")
     );
+}
+
+#[test]
+fn the_judge_is_off_without_its_file_and_refused_without_typesafe() {
+    let dir = tempfile::tempdir().expect("dir");
+    let model: Arc<dyn JudgementModel> = model(Some(0.95), false, None);
+    assert!(matches!(
+        CrossLanguageJudge::load(dir.path(), &Ok(Some(Arc::clone(&model)))),
+        Ok(None)
+    ));
+    std::fs::write(
+        dir.path().join("ask-cross-language.json"),
+        r#"{"rescue": true}"#,
+    )
+    .expect("file");
+    let Err(error) = CrossLanguageJudge::load(dir.path(), &Ok(None)) else {
+        panic!("a judge without typesafe.json");
+    };
+    assert!(error.contains("needs typesafe.json"), "{error}");
+    assert!(CrossLanguageJudge::load(dir.path(), &Err("no key".into())).is_err());
+    let judge = CrossLanguageJudge::load(dir.path(), &Ok(Some(Arc::clone(&model))))
+        .expect("loads")
+        .expect("a judge");
+    assert!(judge.rescue() && !judge.veto());
+    assert_eq!(judge.rescue_permille(), 900);
+    for text in ["{}", "not json", r#"{"veto": true, "mode": "x"}"#] {
+        std::fs::write(dir.path().join("ask-cross-language.json"), text).expect("file");
+        assert!(
+            CrossLanguageJudge::load(dir.path(), &Ok(Some(Arc::clone(&model)))).is_err(),
+            "{text}"
+        );
+    }
+    std::fs::write(dir.path().join("ask-cross-language.json"), vec![b' '; 9000]).expect("file");
+    assert!(CrossLanguageJudge::load(dir.path(), &Ok(Some(model))).is_err());
 }

@@ -6,6 +6,7 @@ use sha2::{Digest, Sha256};
 use super::doubt_entry::DoubtEntry;
 use super::doubt_judgement::DoubtJudgement;
 use super::scalars::{ProtoMappingResult, invalid_argument};
+use super::stated_reading::StatedReading;
 
 /// A memory the deterministic reading cited and a judge vetoed: it stays in
 /// `proof.evidence`, out of the core, marked with the model that said so.
@@ -49,6 +50,9 @@ pub struct DoubtVerdicts {
     promote_at: Option<u16>,
     /// The rescue line and the companion's judgement, in thousandths.
     rescue: Option<(u16, u16)>,
+    /// The cross-language veto's line: a citation is kept only when judged
+    /// at least this likely to state the answer ([`StatedReading`]).
+    keep_at: Option<u16>,
     judged: BTreeMap<(String, String), DoubtJudgement>,
 }
 
@@ -80,8 +84,23 @@ impl DoubtVerdicts {
             veto_at,
             promote_at,
             rescue: None,
+            keep_at: None,
             judged: BTreeMap::new(),
         })
+    }
+
+    /// The cross-language veto: a translated citation stays only when it
+    /// reads [`StatedReading::States`] at `keep_at` thousandths; one that is
+    /// unsettled or absent leaves. Only on a [`DoubtEntry::TranslatedAnswer`]
+    /// band.
+    pub fn with_keep_line(mut self, keep_at: u16) -> ProtoMappingResult<Self> {
+        if self.entry != DoubtEntry::TranslatedAnswer
+            || !(StatedReading::NO_AT + 1..=1000).contains(&keep_at)
+        {
+            return Err(invalid_argument("invalid cross-language veto"));
+        }
+        self.keep_at = Some(keep_at);
+        Ok(self)
     }
 
     /// The cross-language rescue: `rescue_at` is the line both the best
@@ -91,7 +110,7 @@ impl DoubtVerdicts {
     pub fn with_rescue(mut self, rescue_at: u16, companion: u16) -> ProtoMappingResult<Self> {
         if self.entry != DoubtEntry::CrossLanguageUnknown
             || self.promote_at.is_some()
-            || !(1..=1000).contains(&rescue_at)
+            || !(StatedReading::NO_AT + 1..=1000).contains(&rescue_at)
             || companion > 1000
         {
             return Err(invalid_argument("invalid cross-language rescue"));
@@ -145,6 +164,14 @@ impl DoubtVerdicts {
 
     /// The veto on a cited memory, as the probability it does not answer.
     pub(super) fn vetoes(&self, item: &MemoryEvidence) -> Option<u16> {
+        if let Some(keep_at) = self.keep_at {
+            return self
+                .judgement(item)
+                .filter(|judged| {
+                    StatedReading::of(judged.answers, keep_at) != StatedReading::States
+                })
+                .map(|judged| judged.not_answers);
+        }
         self.judgement(item)
             .map(|judged| judged.not_answers)
             .filter(|not_answers| *not_answers >= self.veto_at)
@@ -181,7 +208,7 @@ impl DoubtVerdicts {
     /// answer (ties to the lowest id and digest), and it and the companion
     /// both reach the line.
     fn rescues(&self, item: &MemoryEvidence, rescue_at: u16, companion: u16) -> Option<u16> {
-        if companion < rescue_at {
+        if StatedReading::of(companion, rescue_at) != StatedReading::States {
             return None;
         }
         let best =
@@ -195,7 +222,10 @@ impl DoubtVerdicts {
                     },
                 )?;
         let digest = format!("{:x}", Sha256::digest(item.text.as_bytes()));
-        (best.0.0 == item.id && best.0.1 == digest && best.1 >= rescue_at).then_some(best.1)
+        (best.0.0 == item.id
+            && best.0.1 == digest
+            && StatedReading::of(best.1, rescue_at) == StatedReading::States)
+            .then_some(best.1)
     }
 
     /// Marks a vetoed citation, which stays in the proof.

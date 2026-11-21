@@ -76,6 +76,12 @@ async fn call(server: &KernelMcpServer, name: &str, arguments: Value) -> Value {
 }
 
 async fn ask(case: &Value) -> Value {
+    ask_with(case, true).await
+}
+
+/// One case on a fresh store with the shipped table, `ask-cross-language.json`
+/// and, when `typesafe` says so, `typesafe.json`.
+async fn ask_with(case: &Value, typesafe: bool) -> Value {
     let dir = tempfile::tempdir().expect("a scratch store");
     #[cfg(unix)]
     std::os::unix::fs::symlink(shipped(), dir.path().join("lexical-bridge.kmpb"))
@@ -83,11 +89,13 @@ async fn ask(case: &Value) -> Value {
     #[cfg(not(unix))]
     std::fs::copy(shipped(), dir.path().join("lexical-bridge.kmpb"))
         .expect("the table beside the store");
-    std::fs::write(
+    if typesafe {
+        std::fs::write(
         dir.path().join("typesafe.json"),
         r#"{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.14.0","timeout_ms":20000}"#,
     )
     .expect("typesafe.json");
+    }
     std::fs::write(
         dir.path().join("ask-cross-language.json"),
         r#"{"veto":true,"rescue":true}"#,
@@ -221,3 +229,67 @@ async fn gate() {
 
 const RESCUED_FLOOR: usize = 6;
 const ANSWERED_FLOOR: usize = 33;
+
+/// Without a working `typesafe.json` the file cannot apply: the answer is the
+/// deterministic one, with a warning that says why.
+#[tokio::test]
+async fn without_typesafe_the_judge_is_disabled_and_the_answer_is_deterministic() {
+    if std::env::var_os(CHILD_ENV).is_some() {
+        return;
+    }
+    let collection: Value = serde_json::from_str(
+        &std::fs::read_to_string(fixture("lexical_bridge_stress/cases.json"))
+            .expect("the stress cases are committed"),
+    )
+    .expect("the stress cases parse");
+    let case = collection["cases"]
+        .as_array()
+        .expect("cases")
+        .iter()
+        .find(|case| case["kind"] == "crosslang")
+        .expect("a cross-language case")
+        .clone();
+    let mut disabled = ask_with(&case, false).await;
+    let warnings = disabled["warnings"].as_array().cloned().unwrap_or_default();
+    assert!(
+        warnings.iter().any(|warning| warning
+            .as_str()
+            .is_some_and(|text| text.starts_with("cross-language judge disabled: ")
+                && text.contains("needs typesafe.json"))),
+        "{disabled}"
+    );
+    // The same case on a store with neither file.
+    let dir = tempfile::tempdir().expect("a scratch store");
+    #[cfg(unix)]
+    std::os::unix::fs::symlink(shipped(), dir.path().join("lexical-bridge.kmpb"))
+        .expect("the table beside the store");
+    #[cfg(not(unix))]
+    std::fs::copy(shipped(), dir.path().join("lexical-bridge.kmpb"))
+        .expect("the table beside the store");
+    let server = KernelMcpServer::embedded(dir.path()).expect("an embedded store");
+    call(
+        &server,
+        "kmp_ingest",
+        json!({"about": case["about"], "memory": case["memory"],
+               "idempotency_key": format!("xl:{}", case["id"].as_str().unwrap_or_default())}),
+    )
+    .await;
+    let mut plain = call(
+        &server,
+        "kmp_ask",
+        json!({"about": case["about"], "question": case["question"],
+               "answer_policy": "evidence_or_unknown"}),
+    )
+    .await;
+    for answer in [&mut disabled, &mut plain] {
+        answer["warnings"] = json!([]);
+        if let Some(arguments) = answer.pointer_mut("/projection/next_action/arguments") {
+            arguments["continuation"] = Value::Null;
+        }
+        // The warning itself is counted in the page's bytes.
+        if let Some(budget) = answer.pointer_mut("/projection/budget") {
+            budget["used_bytes"] = Value::Null;
+        }
+    }
+    assert_eq!(disabled, plain);
+}
