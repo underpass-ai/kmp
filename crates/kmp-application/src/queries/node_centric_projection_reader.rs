@@ -88,6 +88,19 @@ where
             .await
     }
 
+    /// The catalogue with every node read whole, still without bodies: for
+    /// a read that admits every node it reaches, the nodes it would read
+    /// again once admitted (P14).
+    pub(crate) async fn load_whole_catalogue_for(
+        &self,
+        request: &NeighborhoodRequest,
+        role: &str,
+        generator_version: &str,
+    ) -> Result<(Option<KmpBundle>, QueryTimingBreakdown), ApplicationError> {
+        self.load_bundle_parts_with(request, role, generator_version, false, true)
+            .await
+    }
+
     async fn load_bundle_parts_for(
         &self,
         request: &NeighborhoodRequest,
@@ -95,9 +108,23 @@ where
         generator_version: &str,
         include_details: bool,
     ) -> Result<(Option<KmpBundle>, QueryTimingBreakdown), ApplicationError> {
+        self.load_bundle_parts_with(request, role, generator_version, include_details, false)
+            .await
+    }
+
+    /// The bundle of `request`: its nodes whole when it reads their bodies
+    /// or `whole_nodes` asks, otherwise their admission headers.
+    async fn load_bundle_parts_with(
+        &self,
+        request: &NeighborhoodRequest,
+        role: &str,
+        generator_version: &str,
+        include_details: bool,
+        whole_nodes: bool,
+    ) -> Result<(Option<KmpBundle>, QueryTimingBreakdown), ApplicationError> {
         let root_node_id = request.root_node_id();
         let graph_start = Instant::now();
-        let neighborhood = if include_details {
+        let neighborhood = if include_details || whole_nodes {
             self.graph_reader.load_scoped_neighborhood(request).await?
         } else {
             self.graph_reader.load_neighborhood_headers(request).await?

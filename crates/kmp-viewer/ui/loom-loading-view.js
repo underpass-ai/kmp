@@ -8,6 +8,7 @@ KMP_APP.loadingView = (() => {
     detail: ["detail-body", "detail-empty"],
   };
   const frames = new Map();
+  const halted = new Set();
   function apply(region, busy, label) {
     const root = document.getElementById(regions[region]);
     const status = document.getElementById(`${region}-loading`);
@@ -21,8 +22,18 @@ KMP_APP.loadingView = (() => {
     status.setAttribute("aria-hidden", String(!busy));
     if (busy) text.textContent = label;
   }
+  /* A region whose content cannot draw (the scene without WebGL) has no
+     paint to settle after and holds a message a loader would cover: its
+     loader goes now, without waiting for a frame, and stays away. */
+  function halt(region) {
+    halted.add(region);
+    cancelAnimationFrame(frames.get(region));
+    frames.delete(region);
+    apply(region, false, "");
+  }
   function render(state) {
     for (const region of Object.keys(regions)) {
+      if (halted.has(region)) continue;
       cancelAnimationFrame(frames.get(region));
       frames.delete(region);
       const { busy, label } = state[region];
@@ -42,5 +53,5 @@ KMP_APP.loadingView = (() => {
         );
     }
   }
-  return { render };
+  return { render, halt };
 })();

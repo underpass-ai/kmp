@@ -283,6 +283,28 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
   lifecycle is not found by scanning all its relations; a node header is
   read in one statement. The sidecar gains that index on open; its format
   is unchanged.
+- Reads of a large about skip what they cannot return, with unchanged answers
+  (one about of 10,000 memories: ask 2,039 → 357 ms, first wake
+  1,032 → 742 ms, rewind 506 → 153 ms; of 100,000: ask 28.0 → 3.0 s, wake
+  11.0 → 8.0 s).
+  Every candidate in the lexical sidecar now carries its reach: the words the
+  refs it supports, their details and the explanatory relations kept at them
+  can lend a strict focus. Top-k leaves out every candidate that cannot clear
+  the floor or reach two thirds of the question's focus even with them, so a
+  question with few eligible candidates certifies in one round instead of
+  reading all it planned, and fewer asks fall back to reading the whole about.
+  The plan reads the df of the words the ask weighs and of the words a
+  question word pairs with, not of every word the reached candidates hold,
+  counts those pairs once per ask, and reads the prefixes from the rows in
+  place. A node header is decoded from the stored JSON instead of seven
+  `json_extract` calls; a wake or ask with no dimensions of its own reads each
+  node once; the temporal index of an about up to 16,384 nodes is kept between
+  calls; label references are parsed once per thread; the cl100k table loads
+  beside startup. The sidecar index version is `lexical-index-6`: a sidecar
+  written before is emptied and built again on its next ask (4 s at 10,000
+  memories, 51 s at 100,000), and a binary that
+  predates it does the same to one written after. The store format is
+  unchanged.
 - The viewer address is no longer reachable until the viewer is requested.
   A stdio session starts with no listener; the first `kmp_view_open` binds
   `KMP_VIEWER_ADDR` (or `127.0.0.1:7317`, falling forward to a free loopback
@@ -485,6 +507,28 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
   inventory and the first server named `kmp`. Both verbs now read Codex's
   configuration from `$CODEX_HOME` (default `~/.codex`); `uninstall` read
   `$HOME/.codex` whatever `CODEX_HOME` said.
+- A bidirectional `kmp_trace` takes its one destination as a list holding
+  that ref (`"to": ["ref"]`), as small models send it, and answers it byte for
+  byte as `"to": "ref"`. It was refused under `trace.bidirectional`; two or
+  more refs still are. A list of one without `bidirectional` stays the bounded
+  search it asks for. `tools/list` is unchanged.
+- ChronoLoom without WebGL no longer covers its "3D scene cannot start"
+  message with the loading indicator. Every scene read raised the indicator
+  over the message, and it cleared only after two animation frames meant to
+  follow a scene paint. Once the renderer is unavailable the scene loader
+  goes at once, without waiting for a frame, and stays away; the detail
+  loader still works.
+- `kmp-release` guide runs report why an engine failed when it stopped
+  before reading its requests (a store it could not open, for example)
+  instead of "could not write guide requests: Broken pipe". The broken pipe
+  is no longer an error of its own: the engine's exit status, stderr and
+  missing responses say what happened. This was also the cause of a flaky
+  `scratch_store_runs_keep_the_data_home_beside_the_store`, whose fake
+  engine exits without reading.
+- The `guide_engine_path_contract` tests pass with `CARGO_TARGET_DIR` or
+  `CARGO_BUILD_TARGET_DIR` exported, and no longer build their stub
+  `kmp-mcp` into that directory over the developer's engine. The release
+  build already honoured the variable; the fixture builds inherited it.
 - `kmp_ask` no longer answers what is not stored when the lexical-bridge table
   `kmp-mcp setup` installs is present. The table is built from a multilingual
   embedding, so besides translations it pairs neighbours inside one language

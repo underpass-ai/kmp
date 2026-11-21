@@ -52,15 +52,6 @@ impl ReadTx for RecordingRead<'_> {
         self.inner.get(table, key)
     }
 
-    fn project_str_json(
-        &self,
-        table: Table,
-        key: &str,
-        fields: &[&str],
-    ) -> Result<Option<Vec<u8>>, PortError> {
-        self.inner.project_str_json(table, key, fields)
-    }
-
     fn value_len(&self, table: Table, key: Key<'_>) -> Result<Option<u64>, PortError> {
         self.inner.value_len(table, key)
     }

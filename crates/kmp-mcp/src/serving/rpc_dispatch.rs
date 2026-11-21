@@ -238,6 +238,13 @@ impl KernelMcpServer {
             return self.handle_kmp_guide(id, arguments, start, &origin).await;
         }
 
+        // A bidirectional trace's one `to` sent as a list of one is that ref:
+        // everything past here reads the call it means.
+        let single = (name == "kmp_trace")
+            .then(|| crate::contract::tools::trace::single_destination(arguments))
+            .flatten();
+        let arguments = single.as_ref().unwrap_or(arguments);
+
         let resolved = match self.resolve_read_arguments(name, arguments) {
             Ok(resolved) => resolved,
             Err(error) => return jsonrpc_result(id, tool_error_result(name, arguments, &error)),

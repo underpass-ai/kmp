@@ -7,6 +7,7 @@
 
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::sync::Mutex;
 
 use kmp_release::adapters::system_release_workspace::SystemReleaseWorkspace;
@@ -192,6 +193,32 @@ fn guide_sync_receives_the_engine_the_build_produced() {
     );
 }
 
+/// Cargo puts `CARGO_TARGET_DIR` and `CARGO_BUILD_TARGET_DIR` above any
+/// `build.target-dir`, and the fixture builds below inherit them. Exported by
+/// a developer, they would send every fixture build into that developer's
+/// cache, a stub `kmp-mcp` over the real one, and the configured-directory
+/// tests would read that cache instead of the fixture's. A test that drives a
+/// real build runs again, in a child of this binary, without them.
+fn ran_without_ambient_target_dir(test: &str) -> bool {
+    const AMBIENT: [&str; 2] = ["CARGO_TARGET_DIR", "CARGO_BUILD_TARGET_DIR"];
+    if AMBIENT.iter().all(|name| std::env::var_os(name).is_none()) {
+        return false;
+    }
+    let mut command = Command::new(std::env::current_exe().expect("test binary"));
+    command.args(["--exact", test]);
+    for name in AMBIENT {
+        command.env_remove(name);
+    }
+    let output = command.output().expect("rerun");
+    let report = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        output.status.success() && report.contains("1 passed"),
+        "{test} without the ambient target directory: {report}{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    true
+}
+
 /// A standalone checkout that builds an engine of its own, so the real
 /// workspace adapter can be driven end to end without touching this one.
 fn engine_fixture(root: &Path, target_directory: Option<&str>) {
@@ -221,6 +248,9 @@ fn engine_fixture(root: &Path, target_directory: Option<&str>) {
 
 #[test]
 fn the_real_build_answers_with_an_engine_that_exists() {
+    if ran_without_ambient_target_dir("the_real_build_answers_with_an_engine_that_exists") {
+        return;
+    }
     let root = tempfile::tempdir().expect("checkout");
     engine_fixture(root.path(), None);
     let workspace =
@@ -241,6 +271,9 @@ fn the_real_build_answers_with_an_engine_that_exists() {
 
 #[test]
 fn a_configured_target_directory_is_honored() {
+    if ran_without_ambient_target_dir("a_configured_target_directory_is_honored") {
+        return;
+    }
     let root = tempfile::tempdir().expect("checkout");
     engine_fixture(root.path(), Some("build-out"));
     let workspace =
@@ -261,6 +294,9 @@ fn a_configured_target_directory_is_honored() {
 
 #[test]
 fn two_checkouts_sharing_one_cache_each_resolve_their_engine() {
+    if ran_without_ambient_target_dir("two_checkouts_sharing_one_cache_each_resolve_their_engine") {
+        return;
+    }
     let cache = tempfile::tempdir().expect("shared cargo cache");
     let shared = cache.path().to_string_lossy().to_string();
     let first = tempfile::tempdir().expect("first checkout");
@@ -293,6 +329,10 @@ fn two_checkouts_sharing_one_cache_each_resolve_their_engine() {
 
 #[test]
 fn a_build_that_fails_is_reported_instead_of_a_missing_binary() {
+    if ran_without_ambient_target_dir("a_build_that_fails_is_reported_instead_of_a_missing_binary")
+    {
+        return;
+    }
     let root = tempfile::tempdir().expect("checkout");
     engine_fixture(root.path(), None);
     fs::write(root.path().join("src/main.rs"), "fn main() { not_rust }\n").expect("broken source");
