@@ -1,10 +1,13 @@
 mod ask_gate_config;
 mod ask_judge_config;
 mod ask_judge_question;
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 mod cassette_judgement;
 #[cfg(test)]
 mod cassette_judgement_tests;
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 mod cassette_mode;
+mod judgement_key;
 mod curate_config;
 pub(crate) mod curate_doubt_cache;
 pub(crate) mod curate_review_cache;
@@ -15,6 +18,7 @@ mod embedded;
 pub(crate) mod embedded_backend;
 pub(crate) mod embedded_errors;
 pub(crate) mod expansion_judge;
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 pub(crate) mod fixture_backend;
 pub(crate) mod grpc;
 mod judgement_reranker;

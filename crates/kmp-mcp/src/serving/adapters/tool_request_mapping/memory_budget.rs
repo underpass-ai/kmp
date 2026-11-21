@@ -13,13 +13,10 @@ impl MemoryBudgetMapper {
     ) -> Result<MemoryBudget, String> {
         let arguments = JsonFieldReader::object(arguments, "tool arguments")?;
         let budget = JsonFieldReader::optional_object_field(arguments, "budget", "budget")?;
-        let tokens = budget
-            .map(|budget| {
-                JsonFieldReader::optional_positive_u32_field(budget, "tokens", "budget.tokens")
-            })
-            .transpose()?
-            .flatten()
-            .unwrap_or(default_tokens);
+        // `budget.tokens` left the contract at 1.0 (E11): it was echoed and
+        // never filtered anything. The kernel's render still takes the
+        // tool's planning default.
+        let tokens = default_tokens;
         let detail = budget
             .map(Self::detail_level_from_object)
             .transpose()?

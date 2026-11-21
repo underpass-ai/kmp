@@ -26,7 +26,7 @@ variant="scripts/performance/memory_bench/variants/baseline.toml"
 unset TYPESAFE_API_KEY MEMORY_BENCH_PRIVATE_ROOT KMP_TYPESAFE_CASSETTE_MODE
 
 if [[ ! -x "${binary}" ]]; then
-  cargo build --release --locked -p kmp-mcp
+  cargo build --release --locked -p kmp-mcp --features eval-hooks
 fi
 
 mkdir -p "${out}"

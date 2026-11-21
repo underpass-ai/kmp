@@ -9,6 +9,7 @@ use crate::serving::grpc_tls_config::KernelMcpGrpcTlsConfig;
 use crate::serving::ports::kernel_tool_backend::KernelMcpToolBackend;
 
 use crate::serving::GrpcKernelMcpBackend;
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 use crate::serving::adapters::fixture_backend::FixtureKernelMcpBackend;
 
 /// Retained read continuations beside the store. Version 0.27.0 kept them in
@@ -64,6 +65,9 @@ pub struct KernelMcpServer {
     pub(super) guide_seed: std::sync::OnceLock<crate::serving::guide_seed::GuideSeedOutcome>,
 }
 
+/// The canned-answer server the test suite drives. Debug and `eval-hooks`
+/// builds only: a release build has no fixture backend.
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 impl Default for KernelMcpServer {
     fn default() -> Self {
         Self::fixture()
@@ -71,6 +75,9 @@ impl Default for KernelMcpServer {
 }
 
 impl KernelMcpServer {
+    /// Canned answers that look real and store nothing. Debug and
+    /// `eval-hooks` builds only.
+    #[cfg(any(debug_assertions, feature = "eval-hooks"))]
     pub fn fixture() -> Self {
         Self::with_backend(FixtureKernelMcpBackend)
     }
@@ -315,25 +322,35 @@ impl KernelMcpServer {
     /// unconfigured binary serves. The one exception is an endpoint already
     /// sitting in the environment: naming a kernel to talk to *is* asking for
     /// gRPC, and it is how the cluster edition has always been selected.
-    fn default_backend(endpoint: Option<&str>) -> &'static str {
+    fn default_backend(endpoint: Option<&str>) -> crate::serving::backend_name::BackendName {
+        use crate::serving::backend_name::BackendName;
         match endpoint {
-            Some(endpoint) if !endpoint.trim().is_empty() => "grpc",
-            _ => "embedded",
+            Some(endpoint) if !endpoint.trim().is_empty() => BackendName::Grpc,
+            _ => BackendName::Embedded,
         }
     }
 
     pub fn try_from_env() -> Result<Self, String> {
-        let endpoint = std::env::var(GRPC_ENDPOINT_ENV).ok();
-        let backend = std::env::var(MCP_BACKEND_ENV)
-            .ok()
-            .map(|value| value.trim().to_ascii_lowercase())
-            .filter(|value| !value.is_empty())
-            .unwrap_or_else(|| Self::default_backend(endpoint.as_deref()).to_string());
+        use crate::serving::backend_name::BackendName;
+        // Every switch is checked before any is read: a value the engine
+        // does not accept is refused here, naming what it accepts, instead
+        // of being read as the default (E18).
+        crate::environment::check_environment().map_err(|refusal| refusal.to_string())?;
+        let endpoint = crate::serving::environment::optional_env_string(GRPC_ENDPOINT_ENV);
+        let backend = match crate::serving::environment::optional_env_string(MCP_BACKEND_ENV) {
+            Some(value) => BackendName::named(&value).ok_or_else(|| {
+                format!(
+                    "unsupported {MCP_BACKEND_ENV} value `{value}`; it accepts {}",
+                    crate::environment::BACKEND_ACCEPTED
+                )
+            })?,
+            None => Self::default_backend(endpoint.as_deref()),
+        };
         let tls = KernelMcpGrpcTlsConfig::from_env_for_endpoint(endpoint.as_deref());
 
-        match backend.as_str() {
-            "grpc" | "live" => {
-                let Some(endpoint) = endpoint.filter(|endpoint| !endpoint.trim().is_empty()) else {
+        match backend {
+            BackendName::Grpc => {
+                let Some(endpoint) = endpoint else {
                     // Only reachable when someone asked for gRPC by name: with
                     // no endpoint and no variable the default is embedded.
                     return Err(format!(
@@ -344,12 +361,12 @@ impl KernelMcpServer {
                 };
                 Ok(Self::grpc_with_tls(endpoint, tls))
             }
-            "fixture" | "fixtures" => Ok(Self::fixture()),
-            "embedded" => {
+            #[cfg(any(debug_assertions, feature = "eval-hooks"))]
+            BackendName::Fixture => Ok(Self::fixture()),
+            BackendName::Embedded => {
                 let resolved = crate::lifecycle::resolve_memory_for_use()
                     .map_err(|error| error.to_string())?;
-                let engine = kmp_embedded::resolve_engine_for_data_dir_from_env(resolved.path())
-                    .map_err(|error| error.to_string())?;
+                let engine = kmp_embedded::default_engine_for_data_dir(resolved.path());
                 let lease = kmp_embedded::user_data_home()
                     .map(|data_home| {
                         crate::lifecycle::StoreSessionLease::acquire(&data_home, resolved.path())
@@ -387,19 +404,19 @@ impl KernelMcpServer {
                     None => server,
                 })
             }
-            other => Err(format!(
-                "unsupported {MCP_BACKEND_ENV} value `{other}`; use `embedded` (the default), \
-                 `grpc` or `fixture`"
-            )),
         }
         .and_then(Self::with_passage_format_from_env)
         .and_then(Self::with_output_schemas_from_env)
     }
 
+    /// A gRPC server for an endpoint, the fixture without one. Debug and
+    /// `eval-hooks` builds only.
+    #[cfg(any(debug_assertions, feature = "eval-hooks"))]
     pub fn from_optional_endpoint(endpoint: Option<String>) -> Self {
         Self::from_optional_endpoint_and_tls(endpoint, KernelMcpGrpcTlsConfig::disabled())
     }
 
+    #[cfg(any(debug_assertions, feature = "eval-hooks"))]
     pub fn from_optional_endpoint_and_tls(
         endpoint: Option<String>,
         tls: KernelMcpGrpcTlsConfig,

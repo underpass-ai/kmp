@@ -45,7 +45,6 @@ async fn grpc_backend_maps_kernel_memory_service_responses_to_kmp_tools() {
             "intent": "continue the live incident",
             "depth": 3,
             "budget": {
-                "tokens": 1600,
                 "detail": "full",
                 "max_bytes": 4000
             },
@@ -105,7 +104,6 @@ async fn grpc_backend_maps_kernel_memory_service_responses_to_kmp_tools() {
             "question": "What should the next agent trust?",
             "answer_policy": "evidence_or_unknown",
             "budget": {
-                "tokens": 654,
                 "detail": "full",
                 "max_bytes": 4000
             }
@@ -139,10 +137,7 @@ async fn grpc_backend_maps_kernel_memory_service_responses_to_kmp_tools() {
             "to": "node:target",
             "goal": "prove path",
             "as_of": {"time":"2026-09-10T10:00:00.500Z"},
-            "axis":"observed",
-            "budget": {
-                "tokens": 111
-            }
+            "axis":"observed"
         }),
     )
     .await;
@@ -227,8 +222,7 @@ async fn grpc_backend_maps_temporal_tools_to_kernel_memory_service() {
                 "scope_ids": ["conversation:rachel"]
             },
             "limit": {
-                "entries": 5,
-                "tokens": 1000
+                "entries": 5
             },
             "include": {
                 "relations": true,

@@ -1141,7 +1141,6 @@ async fn large_recall_keeps_the_strongest_answer_and_semantic_wake_state() {
     let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
     call(&server, 1, "kmp_ingest", large_recall_ingest_arguments()).await;
     let budget = json!({
-        "tokens": TOKEN_LIMIT,
         "detail": "balanced",
         "max_entries": 12
     });
@@ -1189,7 +1188,6 @@ async fn large_recall_keeps_the_strongest_answer_and_semantic_wake_state() {
             "intent": "continue gate remediation",
             "depth": 3,
             "budget": {
-                "tokens": TOKEN_LIMIT,
                 "detail": "balanced",
                 "max_entries": 12
             }
@@ -1247,7 +1245,6 @@ async fn ask_recalls_supported_constraint_across_morphology_and_clause_reorderin
                     "answer_policy": "evidence_or_unknown",
                     "depth": 3,
                     "budget": {
-                        "tokens": 2_048,
                         "detail": "balanced",
                         "max_entries": 10
                     }
@@ -2066,7 +2063,7 @@ async fn embedded_backend_returns_structured_not_found_errors() {
         error["error"]["message"]
             .as_str()
             .expect("structured error includes a message")
-            .contains("not found")
+            .contains("`question:unknown` is not an about in this store")
     );
 }
 

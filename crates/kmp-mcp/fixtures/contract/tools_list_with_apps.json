@@ -733,6 +733,7 @@
                         "type": "string"
                       },
                       "confidence": {
+                        "default": "unknown",
                         "enum": [
                           "high",
                           "medium",
@@ -914,6 +915,7 @@
                 "type": "integer"
               },
               "strict": {
+                "default": true,
                 "type": "boolean"
               }
             },
@@ -1040,6 +1042,7 @@
                   "type": "string"
                 },
                 "confidence": {
+                  "default": "unknown",
                   "enum": [
                     "high",
                     "medium",
@@ -1163,6 +1166,7 @@
             "type": "array"
           },
           "source_kind": {
+            "default": "agent",
             "enum": [
               "human",
               "agent",
@@ -1262,11 +1266,6 @@
                 "type": "integer"
               },
               "max_entries": {
-                "minimum": 1,
-                "type": "integer"
-              },
-              "tokens": {
-                "default": 1600,
                 "minimum": 1,
                 "type": "integer"
               }
@@ -1434,6 +1433,7 @@
             "type": "string"
           },
           "answer_policy": {
+            "default": "evidence_or_unknown",
             "enum": [
               "evidence_or_unknown",
               "show_conflicts",
@@ -1488,11 +1488,6 @@
                 "type": "integer"
               },
               "max_entries": {
-                "minimum": 1,
-                "type": "integer"
-              },
-              "tokens": {
-                "default": 2400,
                 "minimum": 1,
                 "type": "integer"
               }
@@ -1672,27 +1667,9 @@
                 "minimum": 1,
                 "type": "integer"
               },
-              "detail": {
-                "default": "balanced",
-                "enum": [
-                  "compact",
-                  "balanced",
-                  "full"
-                ],
-                "type": "string"
-              },
               "max_bytes": {
                 "default": 10000,
                 "minimum": 512,
-                "type": "integer"
-              },
-              "max_entries": {
-                "minimum": 1,
-                "type": "integer"
-              },
-              "tokens": {
-                "default": 2400,
-                "minimum": 1,
                 "type": "integer"
               }
             },
@@ -1954,11 +1931,6 @@
               "max_entries": {
                 "minimum": 1,
                 "type": "integer"
-              },
-              "tokens": {
-                "default": 2400,
-                "minimum": 1,
-                "type": "integer"
               }
             },
             "type": "object"
@@ -2114,10 +2086,6 @@
               "entries": {
                 "minimum": 1,
                 "type": "integer"
-              },
-              "tokens": {
-                "minimum": 1,
-                "type": "integer"
               }
             },
             "type": "object"
@@ -2265,32 +2233,9 @@
           "budget": {
             "additionalProperties": false,
             "properties": {
-              "depth": {
-                "default": 1,
-                "minimum": 1,
-                "type": "integer"
-              },
-              "detail": {
-                "default": "balanced",
-                "enum": [
-                  "compact",
-                  "balanced",
-                  "full"
-                ],
-                "type": "string"
-              },
               "max_bytes": {
                 "default": 10000,
                 "minimum": 512,
-                "type": "integer"
-              },
-              "max_entries": {
-                "minimum": 1,
-                "type": "integer"
-              },
-              "tokens": {
-                "default": 1600,
-                "minimum": 1,
                 "type": "integer"
               }
             },
@@ -2330,9 +2275,6 @@
               }
             },
             "type": "object"
-          },
-          "role": {
-            "type": "string"
           },
           "search": {
             "additionalProperties": false,
@@ -3019,6 +2961,7 @@
             "additionalProperties": false,
             "properties": {
               "dry_run": {
+                "default": false,
                 "type": "boolean"
               },
               "labels_new": {
@@ -3028,6 +2971,7 @@
                 "type": "array"
               },
               "strict": {
+                "default": true,
                 "type": "boolean"
               }
             },
@@ -3047,6 +2991,7 @@
             "type": "object"
           },
           "source_kind": {
+            "default": "agent",
             "enum": [
               "human",
               "agent",
@@ -3268,6 +3213,7 @@
               "additionalProperties": false,
               "properties": {
                 "confidence": {
+                  "default": "unknown",
                   "enum": [
                     "high",
                     "medium",
@@ -3317,40 +3263,6 @@
               "validity"
             ],
             "type": "string"
-          },
-          "budget": {
-            "additionalProperties": false,
-            "properties": {
-              "depth": {
-                "default": 2,
-                "minimum": 1,
-                "type": "integer"
-              },
-              "detail": {
-                "default": "balanced",
-                "enum": [
-                  "compact",
-                  "balanced",
-                  "full"
-                ],
-                "type": "string"
-              },
-              "max_bytes": {
-                "default": 10000,
-                "minimum": 512,
-                "type": "integer"
-              },
-              "max_entries": {
-                "minimum": 1,
-                "type": "integer"
-              },
-              "tokens": {
-                "default": 2400,
-                "minimum": 1,
-                "type": "integer"
-              }
-            },
-            "type": "object"
           },
           "dimensions": {
             "additionalProperties": false,

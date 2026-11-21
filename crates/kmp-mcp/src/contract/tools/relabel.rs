@@ -32,7 +32,8 @@ pub(crate) fn relabel_schema() -> Value {
             "observed_at": string_schema("RFC3339 timestamp in UTC for the change's provenance. It is kept on the edge each added label makes and in the event log; it never becomes the memory's time. A stamp more than five minutes ahead of the kernel's clock is refused."),
             "source_kind": {
                 "type": "string",
-                "enum": ["human", "agent", "projection", "derived"]
+                "enum": ["human", "agent", "projection", "derived"],
+                "default": "agent"
             },
             "add": {
                 "type": "object",
@@ -45,13 +46,14 @@ pub(crate) fn relabel_schema() -> Value {
                 "description": "Labels to remove as key-to-array values. Only the named memberships change; a missing membership or removal of the last label is refused."
             },
             "why": string_schema("Why the labels change, in one sentence a later reader can check. Kept with the change and on every edge it adds."),
-            "idempotency_key": string_schema("Optional stable idempotency key. Omit to generate one from the arguments."),
+            "idempotency_key": string_schema("Optional stable idempotency key. Omit to generate one from the arguments. Keys are global to the store, not per about."),
             "options": {
                 "type": "object",
                 "additionalProperties": false,
                 "properties": {
                     "dry_run": {
                         "type": "boolean",
+                        "default": false,
                         "description": "When true, validate the relabel against the store — the memory, its labels, the catalogue — and write nothing. Defaults to false: the call commits."
                     },
                     "labels_new": {
@@ -61,6 +63,7 @@ pub(crate) fn relabel_schema() -> Value {
                     },
                     "strict": {
                         "type": "boolean",
+                        "default": true,
                         "description": "Defaults to true: a new label that resembles one the about holds is refused, naming both. Set false to write it and be told in `labels.resembling`."
                     }
                 }

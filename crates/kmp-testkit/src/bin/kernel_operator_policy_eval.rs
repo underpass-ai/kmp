@@ -550,8 +550,8 @@ fn deterministic_action(trajectory: &Trajectory) -> Value {
                 "around": { "ref": current_ref },
                 "dimensions": { "mode": "all", "scope": "current_about" },
                 "include": { "evidence": true, "raw_refs": false, "relations": true },
-                "limit": { "entries": 12, "tokens": 2400 },
-                "budget": { "depth": 3, "tokens": 2400 },
+                "limit": { "entries": 12 },
+                "budget": { "depth": 3 },
                 "window": { "before_entries": 6, "after_entries": 0 }
             }
         }),
@@ -577,7 +577,7 @@ fn deterministic_action(trajectory: &Trajectory) -> Value {
                 "from": current_ref,
                 "to": trace_target_ref,
                 "goal": "Kernel operator deterministic trace probe",
-                "budget": { "depth": 1, "tokens": 1600 }
+                "budget": { "depth": 1 }
             }
         }),
         Some(_) => {
@@ -934,8 +934,8 @@ mod tests {
                 "around": { "ref": "node:writer" },
                 "dimensions": { "mode": "all", "scope": "current_about" },
                 "include": { "evidence": true, "raw_refs": false, "relations": true },
-                "limit": { "entries": 12, "tokens": 2400 },
-                "budget": { "depth": 3, "tokens": 2400 },
+                "limit": { "entries": 12 },
+                "budget": { "depth": 3 },
                 "window": { "before_entries": 6, "after_entries": 0 }
             }
         });
@@ -946,7 +946,7 @@ mod tests {
                 "about": "about:1",
                 "from": "node:writer",
                 "to": "node:prior",
-                "budget": { "depth": 2, "tokens": 1600 }
+                "budget": { "depth": 2 }
             }
         });
         let trajectories = vec![
@@ -1021,8 +1021,8 @@ mod tests {
                     "around": { "ref": "node:1" },
                     "dimensions": { "mode": "all", "scope": "current_about" },
                     "include": { "evidence": true, "raw_refs": false, "relations": true },
-                    "limit": { "entries": 12, "tokens": 2400 },
-                    "budget": { "depth": 3, "tokens": 2400 },
+                    "limit": { "entries": 12 },
+                    "budget": { "depth": 3 },
                     "window": { "before_entries": 6, "after_entries": 0 }
                 }
             }),
@@ -1039,8 +1039,8 @@ mod tests {
                     "around": { "ref": "node:1" },
                     "dimensions": { "mode": "all", "scope": "current_about" },
                     "include": { "evidence": true, "raw_refs": false, "relations": true },
-                    "limit": { "entries": 1000, "tokens": 2400 },
-                    "budget": { "depth": 3, "tokens": 2400 },
+                    "limit": { "entries": 1000 },
+                    "budget": { "depth": 3 },
                     "window": { "before_entries": 6, "after_entries": 0 }
                 }
             }),
@@ -1138,8 +1138,8 @@ mod tests {
                 "around": { "sequence": 7 },
                 "dimensions": { "mode": "all", "scope": "current_about" },
                 "include": { "evidence": true, "raw_refs": false, "relations": true },
-                "limit": { "entries": 12, "tokens": 2400 },
-                "budget": { "depth": 3, "tokens": 2400 },
+                "limit": { "entries": 12 },
+                "budget": { "depth": 3 },
                 "window": { "before_entries": 6, "after_entries": 0 }
             }
         });
@@ -1150,7 +1150,7 @@ mod tests {
                 "about": "about:1",
                 "from": "node:1",
                 "to": "node:3",
-                "budget": { "depth": 2, "tokens": 2400 },
+                "budget": { "depth": 2 },
                 "page": { "entries": 16, "cursor": "page:next" }
             }
         });
@@ -1215,8 +1215,8 @@ mod tests {
                 "around": { "sequence": 7 },
                 "dimensions": { "mode": "all", "scope": "current_about" },
                 "include": { "evidence": true, "raw_refs": false, "relations": true },
-                "limit": { "entries": 12, "tokens": 2400 },
-                "budget": { "depth": 3, "tokens": 2400 },
+                "limit": { "entries": 12 },
+                "budget": { "depth": 3 },
                 "window": { "before_entries": 6, "after_entries": 0 }
             }
         });
@@ -1229,8 +1229,8 @@ mod tests {
                 "around": { "time": "2026-05-14T00:00:00Z" },
                 "dimensions": { "mode": "all", "scope": "current_about" },
                 "include": { "evidence": true, "raw_refs": false, "relations": true },
-                "limit": { "entries": 24, "tokens": 2400 },
-                "budget": { "depth": 3, "tokens": 2400 },
+                "limit": { "entries": 24 },
+                "budget": { "depth": 3 },
                 "window": { "before_entries": 3, "after_entries": 3 }
             }
         });
@@ -1241,7 +1241,7 @@ mod tests {
                 "about": "about:1",
                 "from": "node:1",
                 "to": "node:3",
-                "budget": { "depth": 2, "tokens": 2400 },
+                "budget": { "depth": 2 },
                 "page": { "entries": 16, "cursor": "page:next" }
             }
         });
@@ -1252,7 +1252,7 @@ mod tests {
                 "about": "about:1",
                 "from": "node:1",
                 "to": "node:3",
-                "budget": { "depth": 2, "tokens": 2400 },
+                "budget": { "depth": 2 },
                 "page": { "entries": 16, "cursor": "page:other" }
             }
         });
@@ -1352,8 +1352,8 @@ mod tests {
                 "about": "about:1",
                 "dimensions": { "mode": "all", "scope": "current_about" },
                 "include": { "evidence": true, "raw_refs": false, "relations": true },
-                "limit": { "entries": 12, "tokens": 2400 },
-                "budget": { "depth": 3, "tokens": 2400 },
+                "limit": { "entries": 12 },
+                "budget": { "depth": 3 },
                 "window": { "before_entries": 6, "after_entries": 0 }
             });
             arguments[cursor_key] = json!({ "ref": "node:1" });

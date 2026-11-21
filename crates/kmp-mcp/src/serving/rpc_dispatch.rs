@@ -83,6 +83,8 @@ impl KernelMcpServer {
                 )
             }),
             Some("notifications/initialized") => None,
+            // MCP's liveness check: an empty result, nothing else (E23).
+            Some("ping") => id.map(|id| jsonrpc_result(id, serde_json::json!({}))),
             Some("tools/list") => id.map(|id| {
                 jsonrpc_result(
                     id,
@@ -341,6 +343,9 @@ impl KernelMcpServer {
                     &seed.searched(),
                 ));
             }
+        }
+        if let Err(error) = outcome {
+            outcome = Err(self.name_unknown_about(name, arguments, error).await);
         }
         match outcome {
             Ok(result) => {

@@ -40,8 +40,9 @@ Codex reads `.codex-plugin/plugin.json` and starts `kmp-mcp` from `PATH`.
 Claude Code reads
 `.claude-plugin/plugin.json` and starts through `.mcp.json` →
 `scripts/run-embedded-mcp.sh`, which can prefer the binary bundled in a
-release package. Put the bundled `bin/` on `PATH` for Codex. On Windows hosts,
-Claude uses `scripts\run-embedded-mcp.cmd`. To build the package from a checkout:
+release package. Put the bundled `bin/` on `PATH` for Codex. `.mcp.json` wires
+only the POSIX launcher; `scripts\run-embedded-mcp.cmd` is its Windows twin, for
+a host configured to start it by hand. To build the package from a checkout:
 `bash scripts/plugin/package-kmp-plugin.sh`.
 
 **Claude Code** — native install from KMP's co-located stable marketplace:

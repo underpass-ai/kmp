@@ -369,7 +369,7 @@ fn calls() -> Vec<(&'static str, Value)> {
         ),
         (
             "kmp_trace",
-            json!({"about": ABOUT, "from": DETAIL, "to": CLAIM, "budget": {"depth": 3}}),
+            json!({"about": ABOUT, "from": DETAIL, "to": CLAIM}),
         ),
         ("kmp_view_open", json!({"about": ABOUT})),
         (
@@ -457,7 +457,7 @@ fn calls() -> Vec<(&'static str, Value)> {
         // parity store, calls nothing remote: kernel pairs, untyped.
         (
             "kmp_curate",
-            json!({"mode": "review", "about": ABOUT, "budget": {"depth": 3}}),
+            json!({"mode": "review", "about": ABOUT}),
         ),
         // The topic index: a pure lookup that reads no store.
         ("kmp_guide", json!({})),

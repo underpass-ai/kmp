@@ -988,7 +988,7 @@ async fn run_case(case: &JudgedCase, scores: &mut Scores) -> Result<(), Box<dyn 
     for (n, ask) in expected.ask.iter().enumerate() {
         let arguments = json!({"about": case.about, "question": ask.question,
             "dimensions": {"scope": "abouts", "abouts": case.abouts},
-            "budget": {"depth": 3, "tokens": 2048, "max_entries": 10}});
+            "budget": {"depth": 3, "max_entries": 10}});
         let mut ranks = [None; 3];
         for (arm, server) in [&plain, &reranked, &wide].into_iter().enumerate() {
             let started = std::time::Instant::now();

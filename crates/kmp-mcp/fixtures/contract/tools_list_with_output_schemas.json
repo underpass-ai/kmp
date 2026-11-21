@@ -1005,6 +1005,7 @@
                         "type": "string"
                       },
                       "confidence": {
+                        "default": "unknown",
                         "enum": [
                           "high",
                           "medium",
@@ -1186,6 +1187,7 @@
                 "type": "integer"
               },
               "strict": {
+                "default": true,
                 "type": "boolean"
               }
             },
@@ -1312,6 +1314,7 @@
                   "type": "string"
                 },
                 "confidence": {
+                  "default": "unknown",
                   "enum": [
                     "high",
                     "medium",
@@ -1435,6 +1438,7 @@
             "type": "array"
           },
           "source_kind": {
+            "default": "agent",
             "enum": [
               "human",
               "agent",
@@ -2073,11 +2077,6 @@
               "max_entries": {
                 "minimum": 1,
                 "type": "integer"
-              },
-              "tokens": {
-                "default": 1600,
-                "minimum": 1,
-                "type": "integer"
               }
             },
             "type": "object"
@@ -2649,6 +2648,7 @@
             "type": "string"
           },
           "answer_policy": {
+            "default": "evidence_or_unknown",
             "enum": [
               "evidence_or_unknown",
               "show_conflicts",
@@ -2703,11 +2703,6 @@
                 "type": "integer"
               },
               "max_entries": {
-                "minimum": 1,
-                "type": "integer"
-              },
-              "tokens": {
-                "default": 2400,
                 "minimum": 1,
                 "type": "integer"
               }
@@ -3128,27 +3123,9 @@
                 "minimum": 1,
                 "type": "integer"
               },
-              "detail": {
-                "default": "balanced",
-                "enum": [
-                  "compact",
-                  "balanced",
-                  "full"
-                ],
-                "type": "string"
-              },
               "max_bytes": {
                 "default": 10000,
                 "minimum": 512,
-                "type": "integer"
-              },
-              "max_entries": {
-                "minimum": 1,
-                "type": "integer"
-              },
-              "tokens": {
-                "default": 2400,
-                "minimum": 1,
                 "type": "integer"
               }
             },
@@ -3284,7 +3261,7 @@
             "type": "array"
           },
           "facts": {
-            "description": "The entries of the selected abouts within the selection: `ref`, `about`, `kind`, `text` verbatim, `coordinates`, and `state` — `current`, `superseded` (with `superseded_by`) or `expired` (with `valid_until`) — as the lifecycle stood at the end of the interval.",
+            "description": "The entries of the selected abouts within the selection: `ref`, `about`, `kind`, `text` verbatim, `coordinates`, and `state` — `current`, `superseded` (with `superseded_by`), `expired` (with `valid_until`) or `not_yet_in_force` (its `valid_from` still ahead) — as the lifecycle stood at the end of the interval.",
             "type": "array"
           },
           "next_actions": {
@@ -3566,11 +3543,6 @@
               "max_entries": {
                 "minimum": 1,
                 "type": "integer"
-              },
-              "tokens": {
-                "default": 2400,
-                "minimum": 1,
-                "type": "integer"
               }
             },
             "type": "object"
@@ -3724,10 +3696,6 @@
             "additionalProperties": false,
             "properties": {
               "entries": {
-                "minimum": 1,
-                "type": "integer"
-              },
-              "tokens": {
                 "minimum": 1,
                 "type": "integer"
               }
@@ -4205,32 +4173,9 @@
           "budget": {
             "additionalProperties": false,
             "properties": {
-              "depth": {
-                "default": 1,
-                "minimum": 1,
-                "type": "integer"
-              },
-              "detail": {
-                "default": "balanced",
-                "enum": [
-                  "compact",
-                  "balanced",
-                  "full"
-                ],
-                "type": "string"
-              },
               "max_bytes": {
                 "default": 10000,
                 "minimum": 512,
-                "type": "integer"
-              },
-              "max_entries": {
-                "minimum": 1,
-                "type": "integer"
-              },
-              "tokens": {
-                "default": 1600,
-                "minimum": 1,
                 "type": "integer"
               }
             },
@@ -4270,9 +4215,6 @@
               }
             },
             "type": "object"
-          },
-          "role": {
-            "type": "string"
           },
           "search": {
             "additionalProperties": false,
@@ -5361,6 +5303,7 @@
             "additionalProperties": false,
             "properties": {
               "dry_run": {
+                "default": false,
                 "type": "boolean"
               },
               "labels_new": {
@@ -5370,6 +5313,7 @@
                 "type": "array"
               },
               "strict": {
+                "default": true,
                 "type": "boolean"
               }
             },
@@ -5389,6 +5333,7 @@
             "type": "object"
           },
           "source_kind": {
+            "default": "agent",
             "enum": [
               "human",
               "agent",
@@ -5977,6 +5922,7 @@
               "additionalProperties": false,
               "properties": {
                 "confidence": {
+                  "default": "unknown",
                   "enum": [
                     "high",
                     "medium",
@@ -6026,40 +5972,6 @@
               "validity"
             ],
             "type": "string"
-          },
-          "budget": {
-            "additionalProperties": false,
-            "properties": {
-              "depth": {
-                "default": 2,
-                "minimum": 1,
-                "type": "integer"
-              },
-              "detail": {
-                "default": "balanced",
-                "enum": [
-                  "compact",
-                  "balanced",
-                  "full"
-                ],
-                "type": "string"
-              },
-              "max_bytes": {
-                "default": 10000,
-                "minimum": 512,
-                "type": "integer"
-              },
-              "max_entries": {
-                "minimum": 1,
-                "type": "integer"
-              },
-              "tokens": {
-                "default": 2400,
-                "minimum": 1,
-                "type": "integer"
-              }
-            },
-            "type": "object"
           },
           "dimensions": {
             "additionalProperties": false,
@@ -6571,7 +6483,10 @@
           },
           "jev": {
             "description": "review: model, requests and input tokens spent; null when Jev was not used.",
-            "type": "object"
+            "type": [
+              "object",
+              "null"
+            ]
           },
           "labels": {
             "additionalProperties": false,

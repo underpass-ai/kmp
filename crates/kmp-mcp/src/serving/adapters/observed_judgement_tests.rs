@@ -3,7 +3,8 @@ use std::sync::Arc;
 
 use serde_json::json;
 
-use super::cassette_judgement::{CassetteJudgement, judgement_key};
+use super::cassette_judgement::CassetteJudgement;
+use super::judgement_key::judgement_key;
 use super::observed_judgement::ObservedJudgement;
 use super::sqlite_verdict_book::SqliteVerdictBook;
 use super::verdict_ledger::VerdictLedger;

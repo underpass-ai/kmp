@@ -232,8 +232,8 @@ measured over every expanded candidate), or the cost bound.
 
 ## MaxScore against the floor (P14)
 
-**On by default** (`KMP_LEXICAL_MAXSCORE=off` reads every candidate the
-postings reach, as P13 did). Implemented without a measurement campaign
+**Always on** since 1.0: the `KMP_LEXICAL_MAXSCORE=off` switch, which read
+every candidate the postings reach as P13 did, was removed. Implemented without a measurement campaign
 (decision of Tirso, 28 Sept 2026): **not measured at scale**. Exactness is
 tested (a randomized parity test, below) and observable in `verify`.
 

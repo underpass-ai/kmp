@@ -25,7 +25,7 @@ pub(crate) fn definition() -> Value {
                 "intent": string_schema("Optional continuation intent. With wake-focus.json and TypeSafe opt-in, Jev keeps only the evidence that matters for it."),
                 "dimensions": dimensions_schema(),
                 "depth": integer_schema("Optional graph traversal depth. Applies in embedded and live gRPC modes; it overrides budget.depth."),
-                "budget": budget_schema(1_600, 2),
+                "budget": budget_schema(&[BudgetField::MaxBytes, BudgetField::Detail, BudgetField::Depth(2), BudgetField::MaxEntries]),
                 "page": recall_page_schema(),
                 "as_of": as_of_schema(),
                 "interval": interval_schema(),

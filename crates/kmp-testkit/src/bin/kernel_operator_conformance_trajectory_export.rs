@@ -182,7 +182,6 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 "requested_wake": requested_wake(
                     "resume_process",
                     json!({ "mode": "all", "scope": "current_about" }),
-                    2400,
                     2
                 ),
                 "operator_state": {
@@ -199,7 +198,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "intent": "resume_process",
                     "dimensions": { "mode": "all", "scope": "current_about" },
                     "depth": 2,
-                    "budget": { "tokens": 2400, "depth": 2 }
+                    "budget": { "depth": 2 }
                 }),
             ),
             json!({ "success": true, "observed_refs": [current_ref, prior_observation_ref] }),
@@ -227,7 +226,6 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 "requested_wake": requested_wake(
                     "recover_after_empty_navigation",
                     json!({ "mode": "all", "scope": "current_about" }),
-                    2400,
                     2
                 ),
                 "operator_state": {
@@ -244,7 +242,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "intent": "recover_after_empty_navigation",
                     "dimensions": { "mode": "all", "scope": "current_about" },
                     "depth": 2,
-                    "budget": { "tokens": 2400, "depth": 2 }
+                    "budget": { "depth": 2 }
                 }),
             ),
             json!({ "success": true, "observed_refs": [current_ref, prior_timeout_ref] }),
@@ -271,7 +269,6 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "What evidence explains the failed mobile login?",
                     "evidence_or_unknown",
                     json!({ "mode": "all", "scope": "current_about" }),
-                    2400,
                     2
                 ),
                 "operator_state": {
@@ -287,7 +284,6 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "answer_policy": "evidence_or_unknown",
                     "dimensions": { "mode": "all", "scope": "current_about" },
                     "question": "What evidence explains the failed mobile login?",
-                    "budget": { "tokens": 2400 },
                     "depth": 2
                 }),
             ),
@@ -319,7 +315,6 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                         "scope": "current_about",
                         "include": ["agent:triage", "agent:solver"]
                     }),
-                    2400,
                     2
                 ),
                 "operator_state": {
@@ -339,7 +334,6 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                         "include": ["agent:triage", "agent:solver"]
                     },
                     "question": "Which hypotheses conflict with the observed refresh race?",
-                    "budget": { "tokens": 2400 },
                     "depth": 2
                 }),
             ),
@@ -367,7 +361,6 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "Did a similar refresh race happen in another incident?",
                     "evidence_or_unknown",
                     json!({ "mode": "all", "scope": "all_abouts" }),
-                    3200,
                     2
                 ),
                 "operator_state": {
@@ -383,7 +376,6 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "answer_policy": "evidence_or_unknown",
                     "dimensions": { "mode": "all", "scope": "all_abouts" },
                     "question": "Did a similar refresh race happen in another incident?",
-                    "budget": { "tokens": 3200 },
                     "depth": 2
                 }),
             ),
@@ -412,7 +404,6 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "Does another incident show the same auth regression pattern?",
                     "evidence_or_unknown",
                     json!({ "mode": "all", "scope": "all_abouts" }),
-                    3200,
                     2
                 ),
                 "operator_state": {
@@ -428,7 +419,6 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "answer_policy": "evidence_or_unknown",
                     "dimensions": { "mode": "all", "scope": "all_abouts" },
                     "question": "Does another incident show the same auth regression pattern?",
-                    "budget": { "tokens": 3200 },
                     "depth": 2
                 }),
             ),
@@ -459,7 +449,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 ),
                 "requested_scope": json!({ "mode": "except", "scope": "current_about", "exclude": ["attempt:discarded"] }),
                 "requested_bounds": requested_bounds(
-                    json!({ "entries": 6, "tokens": 1600 }),
+                    json!({ "entries": 6 }),
                     json!({ "before_entries": 3, "after_entries": 0 })
                 ),
                 "operator_state": {
@@ -473,7 +463,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 "around",
                 json!({ "ref": current_ref }),
                 json!({ "mode": "except", "scope": "current_about", "exclude": ["attempt:discarded"] }),
-                json!({ "entries": 6, "tokens": 1600 }),
+                json!({ "entries": 6 }),
                 json!({ "before_entries": 3, "after_entries": 0 }),
             ),
             json!({ "success": true, "observed_refs": [prior_observation_ref] }),
@@ -507,7 +497,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "abouts": [about, sibling_about]
                 },
                 "requested_bounds": requested_bounds(
-                    json!({ "entries": 24, "tokens": 3200 }),
+                    json!({ "entries": 24 }),
                     json!({ "before_entries": 12, "after_entries": 6 })
                 ),
                 "remaining_budget": budget(4),
@@ -526,7 +516,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "scope": "abouts",
                     "abouts": [about, sibling_about]
                 }),
-                json!({ "entries": 24, "tokens": 3200 }),
+                json!({ "entries": 24 }),
                 json!({ "before_entries": 12, "after_entries": 6 }),
             ),
             json!({ "success": true, "observed_refs": [prior_observation_ref, "incident:payments:observation:token-refresh-race"] }),
@@ -650,7 +640,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 ),
                 "requested_scope": json!({ "mode": "all", "scope": "current_about" }),
                 "requested_bounds": requested_bounds(
-                    json!({ "entries": 32, "tokens": 3600 }),
+                    json!({ "entries": 32 }),
                     json!({ "before_entries": 16, "after_entries": 8 })
                 ),
                 "operator_state": {
@@ -664,7 +654,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 "around",
                 json!({ "ref": current_ref }),
                 json!({ "mode": "all", "scope": "current_about" }),
-                json!({ "entries": 32, "tokens": 3600 }),
+                json!({ "entries": 32 }),
                 json!({ "before_entries": 16, "after_entries": 8 }),
             ),
             json!({ "success": true, "observed_refs": [prior_timeout_ref, prior_observation_ref] }),
@@ -695,7 +685,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 ),
                 "requested_scope": json!({ "mode": "all", "scope": "current_about" }),
                 "requested_bounds": requested_bounds(
-                    json!({ "entries": 4, "tokens": 1200 }),
+                    json!({ "entries": 4 }),
                     json!({ "before_entries": 2, "after_entries": 1 })
                 ),
                 "remaining_budget": budget(2),
@@ -710,7 +700,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 "around",
                 json!({ "sequence": 9 }),
                 json!({ "mode": "all", "scope": "current_about" }),
-                json!({ "entries": 4, "tokens": 1200 }),
+                json!({ "entries": 4 }),
                 json!({ "before_entries": 2, "after_entries": 1 }),
             ),
             json!({ "success": true, "observed_refs": [final_decision_ref] }),
@@ -757,7 +747,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "to": final_decision_ref,
                     "goal": "Trace why the refresh retry decision was chosen.",
                     "role": "operator",
-                    "budget": { "depth": 2, "tokens": 2400 },
+                    "budget": { "depth": 2 },
                     "page": { "entries": 16 }
                 }),
             ),
@@ -808,7 +798,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "to": final_decision_ref,
                     "goal": "Trace why the timeout hypothesis was superseded.",
                     "role": "operator",
-                    "budget": { "depth": 2, "tokens": 2400 },
+                    "budget": { "depth": 2 },
                     "page": { "entries": 16 }
                 }),
             ),
@@ -864,7 +854,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "to": final_decision_ref,
                     "goal": "Continue the partial trace.",
                     "role": "operator",
-                    "budget": { "depth": 2, "tokens": 2400 },
+                    "budget": { "depth": 2 },
                     "page": { "entries": 16, "cursor": "trace:page:2" }
                 }),
             ),
@@ -915,7 +905,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "to": final_decision_ref,
                     "goal": "Continue the longer partial trace.",
                     "role": "operator",
-                    "budget": { "depth": 2, "tokens": 2400 },
+                    "budget": { "depth": 2 },
                     "page": { "entries": 16, "cursor": "trace:page:3" }
                 }),
             ),
@@ -1576,7 +1566,6 @@ fn golden_v3_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 "requested_wake": requested_wake(
                     "recover_after_empty_navigation",
                     json!({ "mode": "all", "scope": "current_about" }),
-                    2400,
                     2
                 ),
                 "operator_state": {
@@ -1593,7 +1582,7 @@ fn golden_v3_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "intent": "recover_after_empty_navigation",
                     "dimensions": { "mode": "all", "scope": "current_about" },
                     "depth": 2,
-                    "budget": { "tokens": 2400, "depth": 2 }
+                    "budget": { "depth": 2 }
                 }),
             ),
             json!({ "success": true, "observed_refs": [prior_observation_ref, prior_timeout_ref] }),
@@ -1645,7 +1634,7 @@ fn golden_v4_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "exclude": ["attempt:discarded", "scratch"]
                 }),
                 "requested_bounds": requested_bounds(
-                    json!({ "entries": 7, "tokens": 1700 }),
+                    json!({ "entries": 7 }),
                     json!({ "before_entries": 2, "after_entries": 1 })
                 ),
                 "operator_state": {
@@ -1663,7 +1652,7 @@ fn golden_v4_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "scope": "current_about",
                     "exclude": ["attempt:discarded", "scratch"]
                 }),
-                json!({ "entries": 7, "tokens": 1700 }),
+                json!({ "entries": 7 }),
                 json!({ "before_entries": 2, "after_entries": 1 }),
             ),
             json!({ "success": true, "observed_refs": [prior_observation_ref, final_decision_ref] }),
@@ -1717,7 +1706,6 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 "requested_wake": requested_wake(
                     "resume_process",
                     json!({ "mode": "all", "scope": "current_about" }),
-                    2200,
                     2
                 )
             }),
@@ -1730,7 +1718,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "intent": "resume_process",
                     "dimensions": { "mode": "all", "scope": "current_about" },
                     "depth": 2,
-                    "budget": { "tokens": 2200, "depth": 2 }
+                    "budget": { "depth": 2 }
                 }),
             ),
             json!({ "success": true, "observed_refs": [current_ref, observation_ref] }),
@@ -1758,7 +1746,6 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 "requested_wake": requested_wake(
                     "recover_after_empty_navigation",
                     json!({ "mode": "all", "scope": "current_about" }),
-                    2200,
                     2
                 )
             }),
@@ -1771,7 +1758,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "intent": "recover_after_empty_navigation",
                     "dimensions": { "mode": "all", "scope": "current_about" },
                     "depth": 2,
-                    "budget": { "tokens": 2200, "depth": 2 }
+                    "budget": { "depth": 2 }
                 }),
             ),
             json!({ "success": true, "observed_refs": [current_ref, stale_hypothesis_ref] }),
@@ -1779,7 +1766,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
         ),
     );
 
-    for (step_id, question, answer_policy, dimensions, tokens) in [
+    for (step_id, question, answer_policy, dimensions, _planned_tokens) in [
         (
             "holdout-ask-current-about",
             "What evidence explains the checkout latency spike?",
@@ -1829,7 +1816,6 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                         question,
                         answer_policy,
                         dimensions.clone(),
-                        tokens,
                         2
                     )
                 }),
@@ -1841,7 +1827,6 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                         "answer_policy": answer_policy,
                         "dimensions": dimensions,
                         "question": question,
-                        "budget": { "tokens": tokens },
                         "depth": 2
                     }),
                 ),
@@ -1856,7 +1841,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             "holdout-near-ref-shrink-except-discarded",
             json!({ "ref": observation_ref }),
             json!({ "mode": "except", "scope": "current_about", "exclude": ["attempt:discarded"] }),
-            json!({ "entries": 5, "tokens": 1400 }),
+            json!({ "entries": 5 }),
             json!({ "before_entries": 2, "after_entries": 1 }),
             "shrink_window",
         ),
@@ -1864,7 +1849,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             "holdout-near-time-expand-about-list",
             json!({ "time": "2026-05-14T09:17:00Z" }),
             json!({ "mode": "all", "scope": "abouts", "abouts": [about, sibling_about] }),
-            json!({ "entries": 26, "tokens": 3300 }),
+            json!({ "entries": 26 }),
             json!({ "before_entries": 13, "after_entries": 7 }),
             "expand_window",
         ),
@@ -1872,7 +1857,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             "holdout-near-sequence-shrink-current",
             json!({ "sequence": 18 }),
             json!({ "mode": "all", "scope": "current_about" }),
-            json!({ "entries": 4, "tokens": 1100 }),
+            json!({ "entries": 4 }),
             json!({ "before_entries": 1, "after_entries": 1 }),
             "shrink_sequence",
         ),
@@ -1912,7 +1897,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             "at",
             json!({ "ref": observation_ref }),
             "holdout-goto-ref",
-            json!({ "entries": 9, "tokens": 1900 }),
+            json!({ "entries": 9 }),
             json!({ "before_entries": 3, "after_entries": 2 }),
         ),
         (
@@ -1920,7 +1905,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             "at",
             json!({ "time": "2026-05-14T09:22:00Z" }),
             "holdout-goto-time",
-            json!({ "entries": 10, "tokens": 2100 }),
+            json!({ "entries": 10 }),
             json!({ "before_entries": 4, "after_entries": 2 }),
         ),
         (
@@ -1928,7 +1913,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             "at",
             json!({ "sequence": 21 }),
             "holdout-goto-sequence",
-            json!({ "entries": 10, "tokens": 2100 }),
+            json!({ "entries": 10 }),
             json!({ "before_entries": 4, "after_entries": 2 }),
         ),
         (
@@ -1936,7 +1921,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             "from",
             json!({ "ref": decision_ref }),
             "holdout-rewind-ref",
-            json!({ "entries": 15, "tokens": 2500 }),
+            json!({ "entries": 15 }),
             json!({ "before_entries": 9, "after_entries": 0 }),
         ),
         (
@@ -1944,7 +1929,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             "from",
             json!({ "time": "2026-05-14T09:27:00Z" }),
             "holdout-rewind-time",
-            json!({ "entries": 15, "tokens": 2500 }),
+            json!({ "entries": 15 }),
             json!({ "before_entries": 9, "after_entries": 0 }),
         ),
         (
@@ -1952,7 +1937,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             "from",
             json!({ "sequence": 24 }),
             "holdout-rewind-sequence",
-            json!({ "entries": 15, "tokens": 2500 }),
+            json!({ "entries": 15 }),
             json!({ "before_entries": 9, "after_entries": 0 }),
         ),
         (
@@ -1960,7 +1945,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             "from",
             json!({ "ref": stale_hypothesis_ref }),
             "holdout-forward-ref",
-            json!({ "entries": 15, "tokens": 2500 }),
+            json!({ "entries": 15 }),
             json!({ "before_entries": 0, "after_entries": 9 }),
         ),
         (
@@ -1968,7 +1953,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             "from",
             json!({ "time": "2026-05-14T09:12:00Z" }),
             "holdout-forward-time",
-            json!({ "entries": 15, "tokens": 2500 }),
+            json!({ "entries": 15 }),
             json!({ "before_entries": 0, "after_entries": 9 }),
         ),
         (
@@ -1976,7 +1961,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             "from",
             json!({ "sequence": 17 }),
             "holdout-forward-sequence",
-            json!({ "entries": 15, "tokens": 2500 }),
+            json!({ "entries": 15 }),
             json!({ "before_entries": 0, "after_entries": 9 }),
         ),
     ] {
@@ -2048,7 +2033,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "to": decision_ref,
                     "goal": "Trace why the gateway connection pool decision was selected.",
                     "role": "operator",
-                    "budget": { "depth": 2, "tokens": 2400 },
+                    "budget": { "depth": 2 },
                     "page": { "entries": 14 }
                 }),
             ),
@@ -2094,7 +2079,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "to": decision_ref,
                     "goal": "Continue the checkout trace.",
                     "role": "operator",
-                    "budget": { "depth": 2, "tokens": 2400 },
+                    "budget": { "depth": 2 },
                     "page": { "entries": 14, "cursor": "checkout-trace:page:2" }
                 }),
             ),
@@ -2257,7 +2242,6 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "requested_wake": requested_wake(
                         "resume_process",
                         json!({ "mode": "all", "scope": "current_about" }),
-                        2200,
                         2
                     ),
                     "operator_state": {
@@ -2274,7 +2258,7 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                         "intent": "resume_process",
                         "dimensions": { "mode": "all", "scope": "current_about" },
                         "depth": 2,
-                        "budget": { "tokens": 2200, "depth": 2 }
+                        "budget": { "depth": 2 }
                     }),
                 ),
                 json!({ "success": true, "observed_refs": [current_ref, observation_ref] }),
@@ -2282,7 +2266,7 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             ),
         );
 
-        for (step_suffix, question, answer_policy, dimensions, tokens) in [
+        for (step_suffix, question, answer_policy, dimensions, _planned_tokens) in [
             (
                 "ask-all-abouts",
                 format!("Does another incident show the same {topic} pattern?"),
@@ -2333,7 +2317,6 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                             &question,
                             answer_policy,
                             dimensions.clone(),
-                            tokens,
                             2
                         ),
                         "operator_state": {
@@ -2349,7 +2332,6 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                             "answer_policy": answer_policy,
                             "dimensions": dimensions,
                             "question": question,
-                            "budget": { "tokens": tokens },
                             "depth": 2
                         }),
                     ),
@@ -2364,7 +2346,7 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 "near-time-about-list-expand",
                 json!({ "time": time }),
                 json!({ "mode": "all", "scope": "abouts", "abouts": [&about, &sibling_about] }),
-                json!({ "entries": 24, "tokens": 3200 }),
+                json!({ "entries": 24 }),
                 json!({ "before_entries": 12, "after_entries": 6 }),
                 "expand_window",
             ),
@@ -2372,7 +2354,7 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 "near-sequence-only-shrink",
                 json!({ "sequence": sequence }),
                 json!({ "mode": "only", "scope": "current_about", "include": [agent_dimension, "decision"] }),
-                json!({ "entries": 5, "tokens": 1300 }),
+                json!({ "entries": 5 }),
                 json!({ "before_entries": 2, "after_entries": 1 }),
                 "shrink_window",
             ),
@@ -2380,7 +2362,7 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 "near-ref-except-shrink",
                 json!({ "ref": observation_ref }),
                 json!({ "mode": "except", "scope": "current_about", "exclude": ["attempt:discarded"] }),
-                json!({ "entries": 6, "tokens": 1500 }),
+                json!({ "entries": 6 }),
                 json!({ "before_entries": 3, "after_entries": 1 }),
                 "shrink_window",
             ),
@@ -2427,7 +2409,7 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 "at",
                 json!({ "sequence": later_sequence }),
                 "goto-sequence",
-                json!({ "entries": 10, "tokens": 2200 }),
+                json!({ "entries": 10 }),
                 json!({ "before_entries": 4, "after_entries": 2 }),
             ),
             (
@@ -2435,7 +2417,7 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 "from",
                 json!({ "time": later_time }),
                 "rewind-time",
-                json!({ "entries": 14, "tokens": 2400 }),
+                json!({ "entries": 14 }),
                 json!({ "before_entries": 8, "after_entries": 0 }),
             ),
             (
@@ -2443,7 +2425,7 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 "from",
                 json!({ "ref": stale_ref }),
                 "forward-ref",
-                json!({ "entries": 14, "tokens": 2400 }),
+                json!({ "entries": 14 }),
                 json!({ "before_entries": 0, "after_entries": 8 }),
             ),
         ] {
@@ -2527,7 +2509,7 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                         "to": decision_ref,
                         "goal": trace_goal,
                         "role": "operator",
-                        "budget": { "depth": 2, "tokens": 2400 },
+                        "budget": { "depth": 2 },
                         "page": { "entries": 14 }
                     }),
                 ),
@@ -2584,7 +2566,7 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                         "to": decision_ref,
                         "goal": trace_continue_goal,
                         "role": "operator",
-                        "budget": { "depth": 2, "tokens": 2400 },
+                        "budget": { "depth": 2 },
                         "page": { "entries": 14, "cursor": trace_cursor }
                     }),
                 ),
@@ -2662,7 +2644,7 @@ fn writer_pre_read_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
         entry_question,
         previous_answer,
         question_candidates.clone(),
-        json!({ "entries": 6, "tokens": 1200 }),
+        json!({ "entries": 6 }),
         json!({ "before_entries": 3, "after_entries": 0 }),
         "Use a tight near read around the previous answer before writing why this question follows it.",
         vec![previous_answer, previous_question],
@@ -2698,7 +2680,7 @@ fn writer_pre_read_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
         entry_question,
         older_answer,
         question_candidates,
-        json!({ "entries": 24, "tokens": 3200 }),
+        json!({ "entries": 24 }),
         json!({ "before_entries": 12, "after_entries": 0 }),
         "Use a wider near read when the relation candidate is older than the immediate prior turn.",
         vec![older_answer, previous_answer, previous_question],
@@ -2713,7 +2695,7 @@ fn writer_pre_read_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
         entry_answer,
         same_question,
         answer_candidates.clone(),
-        json!({ "entries": 6, "tokens": 1200 }),
+        json!({ "entries": 6 }),
         json!({ "before_entries": 3, "after_entries": 0 }),
         "Use a tight near read around the same subtask question before writing an answer relation.",
         vec![same_question, previous_answer],
@@ -2749,7 +2731,7 @@ fn writer_pre_read_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
         entry_answer,
         previous_answer,
         answer_candidates,
-        json!({ "entries": 24, "tokens": 3200 }),
+        json!({ "entries": 24 }),
         json!({ "before_entries": 12, "after_entries": 0 }),
         "Use a wider near read when an answer may reuse a previous answer as relation evidence.",
         vec![previous_answer, previous_question, same_question],
@@ -2963,7 +2945,6 @@ fn push_training_corpus_variants(
                         question,
                         answer_policy,
                         dimensions.clone(),
-                        2600,
                         2
                     ),
                     "operator_state": {
@@ -2979,7 +2960,6 @@ fn push_training_corpus_variants(
                         "answer_policy": answer_policy,
                         "dimensions": dimensions,
                         "question": question,
-                        "budget": { "tokens": 2600 },
                         "depth": 2
                     }),
                 ),
@@ -3062,7 +3042,7 @@ fn push_training_corpus_variants(
             json!({ "ref": race_confirmed_ref }),
             "goto-by-ref-confirmed-observation",
             "goto_known_ref",
-            json!({ "entries": 8, "tokens": 1800 }),
+            json!({ "entries": 8 }),
             json!({ "before_entries": 2, "after_entries": 2 }),
         ),
         (
@@ -3071,7 +3051,7 @@ fn push_training_corpus_variants(
             json!({ "time": "2026-05-06T10:06:00Z" }),
             "goto-by-time-confirmation-snapshot",
             "goto_known_time",
-            json!({ "entries": 10, "tokens": 2200 }),
+            json!({ "entries": 10 }),
             json!({ "before_entries": 4, "after_entries": 2 }),
         ),
         (
@@ -3080,7 +3060,7 @@ fn push_training_corpus_variants(
             json!({ "sequence": 11 }),
             "goto-by-sequence-final-remediation",
             "goto_known_sequence",
-            json!({ "entries": 10, "tokens": 2200 }),
+            json!({ "entries": 10 }),
             json!({ "before_entries": 4, "after_entries": 2 }),
         ),
         (
@@ -3089,7 +3069,7 @@ fn push_training_corpus_variants(
             json!({ "ref": race_confirmed_ref }),
             "rewind-from-confirmed-observation",
             "rewind_find_prior_cause",
-            json!({ "entries": 14, "tokens": 2400 }),
+            json!({ "entries": 14 }),
             json!({ "before_entries": 8, "after_entries": 0 }),
         ),
         (
@@ -3098,7 +3078,7 @@ fn push_training_corpus_variants(
             json!({ "time": "2026-05-06T10:07:00Z" }),
             "rewind-from-time-before-final-decision",
             "rewind_find_previous_state",
-            json!({ "entries": 14, "tokens": 2400 }),
+            json!({ "entries": 14 }),
             json!({ "before_entries": 8, "after_entries": 0 }),
         ),
         (
@@ -3107,7 +3087,7 @@ fn push_training_corpus_variants(
             json!({ "sequence": 11 }),
             "rewind-from-sequence-before-remediation",
             "rewind_find_previous_sequence",
-            json!({ "entries": 14, "tokens": 2400 }),
+            json!({ "entries": 14 }),
             json!({ "before_entries": 8, "after_entries": 0 }),
         ),
         (
@@ -3116,7 +3096,7 @@ fn push_training_corpus_variants(
             json!({ "ref": stale_decision_ref }),
             "forward-from-stale-decision",
             "forward_find_replacement",
-            json!({ "entries": 14, "tokens": 2400 }),
+            json!({ "entries": 14 }),
             json!({ "before_entries": 0, "after_entries": 8 }),
         ),
         (
@@ -3125,7 +3105,7 @@ fn push_training_corpus_variants(
             json!({ "time": "2026-05-06T10:03:00Z" }),
             "forward-from-time-find-confirmation",
             "forward_find_later_update",
-            json!({ "entries": 14, "tokens": 2400 }),
+            json!({ "entries": 14 }),
             json!({ "before_entries": 0, "after_entries": 8 }),
         ),
         (
@@ -3134,7 +3114,7 @@ fn push_training_corpus_variants(
             json!({ "sequence": 7 }),
             "forward-from-sequence-find-decision",
             "forward_find_next_decision",
-            json!({ "entries": 14, "tokens": 2400 }),
+            json!({ "entries": 14 }),
             json!({ "before_entries": 0, "after_entries": 8 }),
         ),
     ] {
@@ -3190,7 +3170,7 @@ fn push_training_corpus_variants(
             json!({ "ref": prior_observation_ref }),
             6,
             true,
-            json!({ "entries": 28, "tokens": 3400 }),
+            json!({ "entries": 28 }),
             json!({ "before_entries": 14, "after_entries": 8 }),
             "expand_window",
         ),
@@ -3199,7 +3179,7 @@ fn push_training_corpus_variants(
             json!({ "time": "2026-05-06T10:06:00Z" }),
             1,
             false,
-            json!({ "entries": 4, "tokens": 1000 }),
+            json!({ "entries": 4 }),
             json!({ "before_entries": 1, "after_entries": 1 }),
             "shrink_window",
         ),
@@ -3208,7 +3188,7 @@ fn push_training_corpus_variants(
             json!({ "sequence": 10 }),
             2,
             false,
-            json!({ "entries": 16, "tokens": 2600 }),
+            json!({ "entries": 16 }),
             json!({ "before_entries": 6, "after_entries": 4 }),
             "expand_scope",
         ),
@@ -3664,7 +3644,7 @@ fn push_writer_pre_read_trace(
                     "to": target_ref,
                     "goal": "Prove the writer pre-read relation target before writing memory.",
                     "role": "operator",
-                    "budget": { "depth": 2, "tokens": 1600 },
+                    "budget": { "depth": 2 },
                     "page": { "entries": 16 }
                 }),
             ),
@@ -3847,7 +3827,7 @@ fn push_writer_pre_read_trace_continue(
                     "to": target_ref,
                     "goal": "Continue the writer pre-read trace page before writing memory.",
                     "role": "operator",
-                    "budget": { "depth": 2, "tokens": 1600 },
+                    "budget": { "depth": 2 },
                     "page": { "entries": 16, "cursor": page_cursor }
                 }),
             ),
@@ -3968,7 +3948,7 @@ fn push_temporal_tool(
                 "requested_move": requested_move(movement, cursor_key, cursor.clone()),
                 "requested_scope": json!({ "mode": "all", "scope": "current_about" }),
                 "requested_bounds": requested_bounds(
-                    json!({ "entries": 12, "tokens": 2400 }),
+                    json!({ "entries": 12 }),
                     json!({ "before_entries": 6, "after_entries": 0 })
                 ),
                 "remaining_budget": budget(3),
@@ -3983,7 +3963,7 @@ fn push_temporal_tool(
                 cursor_key,
                 cursor,
                 json!({ "mode": "all", "scope": "current_about" }),
-                json!({ "entries": 12, "tokens": 2400 }),
+                json!({ "entries": 12 }),
                 json!({ "before_entries": 6, "after_entries": 0 }),
             ),
             json!({
@@ -4092,7 +4072,7 @@ fn temporal_call_for_about(
         json!({ "evidence": true, "raw_refs": false, "relations": true }),
     );
     arguments.insert("limit".to_string(), limit);
-    arguments.insert("budget".to_string(), json!({ "depth": 3, "tokens": 2400 }));
+    arguments.insert("budget".to_string(), json!({ "depth": 3 }));
     arguments.insert("window".to_string(), window);
     tool_call(KERNEL_OPERATOR_TIME_TOOL, Value::Object(arguments))
 }
@@ -4106,12 +4086,12 @@ fn requested_move(movement: &str, cursor_key: &str, cursor: Value) -> Value {
     })
 }
 
-fn requested_wake(intent: &str, dimensions: Value, tokens: usize, depth: usize) -> Value {
+fn requested_wake(intent: &str, dimensions: Value, depth: usize) -> Value {
     json!({
         "role": "operator",
         "intent": intent,
         "dimensions": dimensions,
-        "budget": { "tokens": tokens, "depth": depth },
+        "budget": { "depth": depth },
         "depth": depth
     })
 }
@@ -4120,14 +4100,12 @@ fn requested_ask(
     question: &str,
     answer_policy: &str,
     dimensions: Value,
-    tokens: usize,
     depth: usize,
 ) -> Value {
     json!({
         "question": question,
         "answer_policy": answer_policy,
         "dimensions": dimensions,
-        "budget": { "tokens": tokens },
         "depth": depth
     })
 }
@@ -4136,7 +4114,7 @@ fn requested_bounds(limit: Value, window: Value) -> Value {
     json!({
         "limit": limit,
         "window": window,
-        "budget": { "depth": 3, "tokens": 2400 },
+        "budget": { "depth": 3 },
         "include": { "evidence": true, "raw_refs": false, "relations": true }
     })
 }
@@ -4147,7 +4125,7 @@ fn requested_trace(from: &str, to: &str, goal: &str, page: Value) -> Value {
         "to": to,
         "goal": goal,
         "role": "operator",
-        "budget": { "depth": 2, "tokens": 2400 },
+        "budget": { "depth": 2 },
         "page": page
     })
 }

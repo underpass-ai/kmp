@@ -73,10 +73,6 @@ pub(crate) fn time_tool_definition(description: &str) -> Value {
                     "entries": {
                         "type": "integer",
                         "minimum": 1
-                    },
-                    "tokens": {
-                        "type": "integer",
-                        "minimum": 1
                     }
                 }
             },
@@ -102,7 +98,7 @@ pub(crate) fn time_tool_definition(description: &str) -> Value {
                     "entries":{"type":"integer","minimum":1,"description":"Maximum complete expansion items on this response page, including entries and proof."}
                 }
             },
-            "budget": budget_schema(2_400, 3)
+            "budget": budget_schema(&[BudgetField::MaxBytes, BudgetField::Detail, BudgetField::Depth(3), BudgetField::MaxEntries])
         }
     });
     let mut interval = interval_schema();

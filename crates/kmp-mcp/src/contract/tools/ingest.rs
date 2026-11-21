@@ -155,7 +155,7 @@ pub(crate) fn definition() -> Value {
                         "causation_id": string_schema("Optional causation id.")
                     }
                 },
-                "idempotency_key": string_schema("Required stable idempotency key for replay-safe ingest."),
+                "idempotency_key": string_schema("Required stable idempotency key for replay-safe ingest. Keys are global to the store, not per about."),
                 "dry_run": {
                     "type": "boolean",
                     "description": "Validate against the selected store without committing. References, labels and coordinates are checked by the kernel; the backend must be reachable. This reserves no future write."

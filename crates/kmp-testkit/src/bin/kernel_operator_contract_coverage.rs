@@ -474,8 +474,8 @@ fn bounded_temporal_cursor(id: &str) -> bool {
         "around": cursor,
         "dimensions": { "mode": "all", "scope": "current_about" },
         "include": { "evidence": true, "raw_refs": false, "relations": true },
-        "limit": { "entries": 12, "tokens": 2400 },
-        "budget": { "depth": 3, "tokens": 2400 },
+        "limit": { "entries": 12 },
+        "budget": { "depth": 3 },
         "window": { "before_entries": 6, "after_entries": 0 }
     });
     kernel_operator_is_bounded_tool_call(KERNEL_OPERATOR_TIME_TOOL, &arguments)
@@ -519,8 +519,7 @@ fn action_contract_accepts_dimensions(dimensions: Value) -> bool {
             "about": "about:1",
             "answer_policy": "evidence_or_unknown",
             "dimensions": dimensions,
-            "question": "What changed?",
-            "budget": { "tokens": 2400 }
+            "question": "What changed?"
         }
     });
     kmp_testkit::kernel_operator_action_contract_error(&action).is_none()
@@ -536,7 +535,7 @@ fn bounded_trace_page(id: &str) -> bool {
         "about": "about:1",
         "from": "node:1",
         "to": "node:2",
-        "budget": { "depth": 2, "tokens": 2400 },
+        "budget": { "depth": 2 },
         "page": page
     });
     kernel_operator_is_bounded_tool_call("kmp_trace", &arguments)

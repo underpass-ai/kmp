@@ -46,7 +46,7 @@ pub(crate) fn write_memory_schema() -> Value {
             "class":writer_class_schema(),
             "why":string_schema("Why this specific semantic connection holds and what a later reader should understand. Required for non-structural links."),
             "evidence":string_schema("The concrete observation or source supporting the relation rationale. Required for non-structural links."),
-            "confidence":{"type":"string","enum":["high","medium","low","unknown"]}
+            "confidence":{"type":"string","enum":["high","medium","low","unknown"],"default":"unknown"}
         }
     });
     let search_expansions = json!({
@@ -93,7 +93,7 @@ pub(crate) fn write_memory_schema() -> Value {
             "class":writer_class_schema(),
             "why":string_schema("Why this specific semantic connection holds and what a later reader should understand. Always required here: a relation-only write declares no structural link."),
             "evidence":string_schema("The concrete observation or source supporting the rationale. Stored as its own evidence node beside both memories; it never replaces the evidence they already carry."),
-            "confidence":{"type":"string","enum":["high","medium","low","unknown"]},
+            "confidence":{"type":"string","enum":["high","medium","low","unknown"],"default":"unknown"},
             "observed_at":{"type":["string","null"],"description":"When this link was asserted, with its true RFC3339 UTC offset. Omit for the packet observation; null for the exact ingestion time. The endpoints' own clocks never date the link, so an old source linked today is linked today."}
         }
     });
@@ -113,7 +113,7 @@ pub(crate) fn write_memory_schema() -> Value {
             "valid_from":valid_from,
             "valid_until":valid_until,
             "rank":rank,
-            "source_kind":{"type":"string","enum":["human","agent","projection","derived"]},
+            "source_kind":{"type":"string","enum":["human","agent","projection","derived"],"default":"agent"},
             "labels":labels,
             "memories":memories,
             "relations":relations,
@@ -130,12 +130,12 @@ pub(crate) fn write_memory_schema() -> Value {
             },
             "read_context":read_context_schema(),
             "review_token":string_schema("Returned neighborhood token, bound to this exact packet and context. Prefer the returned continuation. Omit on a new or corrected proposal; stale tokens refresh context without writing."),
-            "idempotency_key":string_schema("One stable key per logical packet. Exact retries keep refs; a different payload must not reuse an accepted key. Omit to derive the key from the payload."),
+            "idempotency_key":string_schema("One stable key per logical packet. Exact retries keep refs; a different payload must not reuse an accepted key. Keys are global to the store, not per about. Omit to derive the key from the payload."),
             "options":{
                 "type":"object","additionalProperties":false,
                 "properties":{
                     "dry_run":{"type":"boolean","description":"Explicit preview against the selected store, without commit or reservation. Defaults to false: rich links still receive neighborhood review before a later commit. Requires an available backend."},
-                    "strict":{"type":"boolean","description":"Defaults to true. Requires evidence, justified supported relations, and valid search renderings; never bypasses neighborhood review; refuses resembling new labels unless confirmed."},
+                    "strict":{"type":"boolean","default":true,"description":"Defaults to true. Requires evidence, justified supported relations, and valid search renderings; never bypasses neighborhood review; refuses resembling new labels unless confirmed."},
                     "labels_new":{"type":"array","items":{"type":"string"},"description":"Keys whose new values are intentional after consulting the catalogue. Every named key must occur in the packet; the kernel neither renames nor merges a label silently."},
                     "sequence":{"type":"integer","minimum":1,"description":"Optional first sequence, advanced per record. Omit for the next free sequence in each coordinate. Not used for search_summaries, which preserve stored coordinates."}
                 }

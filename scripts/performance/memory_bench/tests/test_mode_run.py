@@ -230,6 +230,15 @@ class FakeRunner:
 
 
 class GitBuildTest(unittest.TestCase):
+    def test_a_ref_that_declares_the_hooks_feature_is_built_with_it(self):
+        with tempfile.TemporaryDirectory() as folder:
+            self.assertEqual(git_build.build_command(folder), git_build.BUILD_COMMAND)
+            manifest = Path(folder) / git_build.HOOKS_MANIFEST
+            manifest.parent.mkdir(parents=True)
+            manifest.write_text('[features]\neval-hooks = []\n', encoding='utf-8')
+            self.assertEqual(git_build.build_command(folder),
+                             git_build.BUILD_COMMAND + ('--features', 'eval-hooks'))
+
     def test_a_git_ref_is_built_once_in_a_removed_worktree_with_provenance(self):
         with tempfile.TemporaryDirectory() as folder:
             layout = public_layout(Path(folder) / 'cache')

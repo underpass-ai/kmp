@@ -26,11 +26,12 @@ pub(crate) fn definition() -> Value {
                 "answer_policy": {
                     "type": "string",
                     "description": "Deterministic evidence policy. Explicit `contradicts` relations on the proof path are surfaced in proof.conflicts under every policy unless an endpoint was superseded at the selected time; the historical edge remains auditable. evidence_or_unknown and show_conflicts return UNKNOWN when the best retained evidence barely shares a term with the question or, for a question naming an identifier, no retained memory names it beside what was asked; show_conflicts selects no additional conflict detection today. best_effort keeps that low-overlap neighbourhood and never generates fallback text.",
-                    "enum": ["evidence_or_unknown", "show_conflicts", "best_effort"]
+                    "enum": ["evidence_or_unknown", "show_conflicts", "best_effort"],
+                    "default": "evidence_or_unknown"
                 },
                 "dimensions": dimensions_schema(),
                 "depth": integer_schema("Optional graph traversal depth. Applies in embedded and live gRPC modes; it overrides budget.depth."),
-                "budget": budget_schema(2_400, 2),
+                "budget": budget_schema(&[BudgetField::MaxBytes, BudgetField::Detail, BudgetField::Depth(2), BudgetField::MaxEntries]),
                 "page": recall_page_schema(),
                 "as_of": as_of_schema(),
                 "interval": interval_schema(),

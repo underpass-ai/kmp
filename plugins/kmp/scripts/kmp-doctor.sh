@@ -7,7 +7,7 @@ if [ ! -x "$binary" ]; then
   binary=$(command -v kmp-mcp 2>/dev/null || true)
 fi
 if [ -z "$binary" ] || [ ! -x "$binary" ]; then
-  echo "KMP doctor needs kmp-mcp; install it with 'cargo install kmp-mcp'." >&2
+  echo "KMP doctor needs kmp-mcp; run /kmp:setup, or $plugin_root/scripts/kmp-install-binary.sh setup, to install the engine this plugin expects." >&2
   exit 127
 fi
 exec "$binary" doctor "$@"

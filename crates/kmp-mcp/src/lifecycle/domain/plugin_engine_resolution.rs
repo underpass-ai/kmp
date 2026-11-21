@@ -26,7 +26,7 @@ impl PluginEngineResolution {
         Self {
             selected,
             warning: Some(format!(
-                "KMP plugin: cache engine {stale} does not match plugin {plugin}; using matching PATH engine. Run kmp setup to repair the plugin-owned engine."
+                "KMP plugin: cache engine {stale} does not match plugin {plugin}; using matching PATH engine. Run /kmp:setup or kmp-mcp setup to repair the plugin-owned engine."
             )),
             version,
         }

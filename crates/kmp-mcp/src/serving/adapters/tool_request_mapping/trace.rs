@@ -20,9 +20,9 @@ impl TraceRequestMapper {
             about: required_string(arguments, "about")?,
             from: required_string(arguments, "from")?,
             to,
-            goal: optional_string(arguments, "goal")
-                .or_else(|| optional_string(arguments, "role"))
-                .unwrap_or_default(),
+            // `role`, an alias that lost silently to `goal` when both were
+            // sent, left the contract at 1.0 (E11).
+            goal: optional_string(arguments, "goal").unwrap_or_default(),
             budget: Some(MemoryBudgetMapper::from_arguments(arguments, 1600, 1)?),
             page: {
                 let mut page = TemporalOptionsMapper::page_from_arguments(arguments)?;

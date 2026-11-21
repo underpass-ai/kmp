@@ -195,7 +195,7 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
     let first_page_arguments = json!({
         "about":"project:parity-live",
         "depth":5,
-        "budget":{"tokens":30000,"detail":"full","max_bytes":100000},
+        "budget":{"detail":"full","max_bytes":100000},
         "page":{"entries":4}
     });
     let mut unpaged_arguments = first_page_arguments.clone();
@@ -866,7 +866,6 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
                 "intent": "read back the memory written through MCP",
                 "depth": 2,
                 "budget": {
-                    "tokens": 30000,
                     "max_bytes": 100000,
                     "detail": "full"
                 }
@@ -944,10 +943,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
                     "mode": "only",
                     "include": ["conversation"]
                 },
-                "depth": 3,
-                "budget": {
-                    "tokens": 2048
-                }
+                "depth": 3
             }),
         )
         .await;
@@ -980,10 +976,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
                 "about": ROOT_NODE_ID,
                 "role": DEVELOPER_ROLE,
                 "intent": "continue from the seeded kernel memory",
-                "depth": 2,
-                "budget": {
-                    "tokens": 2048
-                }
+                "depth": 2
             }),
         )
         .await;
@@ -1000,10 +993,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
             json!({
                 "about": ROOT_NODE_ID,
                 "question": "Which seeded decision should the next agent inspect?",
-                "depth": 2,
-                "budget": {
-                    "tokens": 2048
-                }
+                "depth": 2
             }),
         )
         .await;
@@ -1029,10 +1019,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
                 "about": ROOT_NODE_ID,
                 "from": ROOT_NODE_ID,
                 "to": TASK_ID,
-                "role": DEVELOPER_ROLE,
-                "budget": {
-                    "tokens": 1024
-                }
+                "goal": DEVELOPER_ROLE
             }),
         )
         .await;

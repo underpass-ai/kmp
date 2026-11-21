@@ -84,11 +84,10 @@ pub(super) fn unreadable_clocks(
     use super::validation_error::WriteValidationError;
     let mut refused = Vec::new();
     for field in ["occurred_at", "valid_from", "valid_until"] {
-        if arguments
-            .get(field)
-            .and_then(Value::as_str)
-            .is_some_and(|value| value.trim().is_empty())
-        {
+        let Some(value) = arguments.get(field).and_then(Value::as_str) else {
+            continue;
+        };
+        if value.trim().is_empty() {
             refused.push(
                 WriteValidationError::new(format!(
                     "`{field}` must be an RFC3339 timestamp with a zone, or left out; received \
@@ -96,6 +95,15 @@ pub(super) fn unreadable_clocks(
                 ))
                 .at(field)
                 .code("INVALID_TYPE"),
+            );
+        } else if let Err(reason) = crate::clock::require_rfc3339(value, field) {
+            // Refused here, in the writer's own words: left to the compiled
+            // ingest, the refusal named `memory.entries[].coordinates[]`, a
+            // path the caller never wrote (E7).
+            refused.push(
+                WriteValidationError::new(reason)
+                    .at(field)
+                    .code("INVALID_TIMESTAMP"),
             );
         }
     }

@@ -24,7 +24,6 @@ use crate::curate::domain::lifecycle_mode::LifecycleMode;
 use crate::curate::domain::partner_cap::PartnerCap;
 use crate::curate::domain::partner_filter::PartnerFilter;
 use crate::curate::domain::paths_corridor::PathsCorridor;
-use crate::serving::environment::{EVAL_PARTNER_FACTS_ENV, optional_env_string};
 use crate::serving::judgement_site::JudgementSite;
 use crate::serving::lexical_index_mode::LexicalIndexMode;
 use crate::serving::ports::judgement_model::JudgementModel;
@@ -176,7 +175,8 @@ impl EmbeddedKernelMcpBackend {
             write_relations: write_relations.is_some(),
             write_expansions,
             lifecycle,
-            partner_cap: optional_env_string(EVAL_PARTNER_FACTS_ENV)
+            // An evaluation hook; a release build reads only curate.json.
+            partner_cap: crate::environment::eval_hooks::partner_facts()
                 .as_deref()
                 .and_then(PartnerCap::named)
                 .unwrap_or(partner_cap),

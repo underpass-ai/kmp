@@ -111,13 +111,7 @@ pub(super) async fn run(command: &str, first_argument: Option<&str>, args: &[&st
         );
         return 2;
     }
-    let engine = match kmp_embedded::resolve_engine_for_data_dir_from_env(resolved.path()) {
-        Ok(engine) => engine,
-        Err(error) => {
-            eprintln!("kmp-mcp: {error}");
-            return 2;
-        }
-    };
+    let engine = kmp_embedded::default_engine_for_data_dir(resolved.path());
     let kernel = match kmp_embedded::EmbeddedKernel::open_with_engine(resolved.path(), engine) {
         Ok(kernel) => kernel,
         Err(error) => {

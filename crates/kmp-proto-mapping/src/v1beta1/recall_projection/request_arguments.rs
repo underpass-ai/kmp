@@ -30,7 +30,7 @@ pub(super) fn wake_arguments(request: &WakeRequest) -> Value {
     insert_non_empty(&mut arguments, "intent", &request.intent);
     arguments.insert(
         "budget".to_string(),
-        budget_value(request.budget.as_ref(), 1_600, 2),
+        budget_value(request.budget.as_ref(), 2),
     );
     if let Some(dimensions) = request.dimensions.as_ref() {
         arguments.insert(
@@ -67,7 +67,7 @@ pub(super) fn ask_arguments(request: &AskRequest) -> Value {
     );
     arguments.insert(
         "budget".to_string(),
-        budget_value(request.budget.as_ref(), 2_400, 2),
+        budget_value(request.budget.as_ref(), 2),
     );
     if let Some(dimensions) = request.dimensions.as_ref() {
         arguments.insert(
@@ -87,14 +87,11 @@ pub(super) fn ask_arguments(request: &AskRequest) -> Value {
     Value::Object(arguments)
 }
 
-fn budget_value(
-    budget: Option<&kmp_proto::v1beta1::MemoryBudget>,
-    default_tokens: u32,
-    default_depth: u32,
-) -> Value {
+/// The `budget` a returned action repeats. `tokens` is not echoed: it left
+/// the MCP contract at 1.0, and an action must be a call the server accepts.
+fn budget_value(budget: Option<&kmp_proto::v1beta1::MemoryBudget>, default_depth: u32) -> Value {
     let budget = budget.cloned().unwrap_or_default();
     let mut value = json!({
-        "tokens": if budget.tokens == 0 { default_tokens } else { budget.tokens },
         "depth": if budget.depth == 0 { default_depth } else { budget.depth },
         "max_entries": budget.max_entries,
         "max_bytes": if budget.max_bytes == 0 {

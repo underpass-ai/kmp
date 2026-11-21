@@ -334,8 +334,8 @@ mod tests {
         assert_eq!(
             memory_keys("kmp_trace"),
             expected(&[
-                "about", "as_of", "axis", "budget", "from", "goal", "interval", "page", "role",
-                "search", "to",
+                "about", "as_of", "axis", "budget", "from", "goal", "interval", "page", "search",
+                "to",
             ])
         );
         assert_eq!(
@@ -347,14 +347,15 @@ mod tests {
 
         // These shared shapes are one-to-one with MemoryBudget,
         // DimensionSelection and PageRequest. `depth` at the tool root is an
-        // explicit compatibility alias for MemoryBudget.depth; Trace.role is
-        // an alias for TraceRequest.goal. Inspect.budget and Inspect.page are
+        // explicit compatibility alias for MemoryBudget.depth. Trace.role, an
+        // alias for TraceRequest.goal, and budget.tokens left at 1.0 (E11).
+        // Inspect.budget and Inspect.page are
         // transport-only result projection and never cross the gRPC request;
         // its budget may only carry max_bytes.
         let wake_properties = &schema("kmp_wake")["properties"];
         assert_eq!(
             keys(&wake_properties["budget"]),
-            expected(&["depth", "detail", "max_bytes", "max_entries", "tokens"])
+            expected(&["depth", "detail", "max_bytes", "max_entries"])
         );
         assert_eq!(
             keys(&wake_properties["dimensions"]),

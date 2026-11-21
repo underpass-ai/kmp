@@ -68,16 +68,13 @@ pub fn kernel_operator_is_bounded_tool_call(tool: &str, arguments: &Value) -> bo
     match tool {
         "kmp_wake" => {
             path_non_empty_string(arguments, &["about"])
-                && optional_limit(arguments, &["budget", "tokens"], 16_000)
                 && optional_limit(arguments, &["budget", "depth"], 8)
                 && optional_limit(arguments, &["depth"], 8)
         }
         KERNEL_OPERATOR_TIME_TOOL => match kernel_operator_time_move(tool, arguments) {
             Some("near") => {
                 positive_limit(arguments, &["limit", "entries"], 64)
-                    && positive_limit(arguments, &["limit", "tokens"], 16_000)
-                    && optional_limit(arguments, &["budget", "tokens"], 16_000)
-                    && optional_limit(arguments, &["budget", "depth"], 8)
+                        && optional_limit(arguments, &["budget", "depth"], 8)
                     && optional_limit(arguments, &["window", "before_entries"], 64)
                     && optional_limit(arguments, &["window", "after_entries"], 64)
                     && path_cursor(arguments, &["around"]).is_some()
@@ -86,14 +83,11 @@ pub fn kernel_operator_is_bounded_tool_call(tool: &str, arguments: &Value) -> bo
                 kernel_operator_time_cursor_key(movement)
                     .is_some_and(|cursor_key| path_cursor(arguments, &[cursor_key]).is_some())
                     && optional_limit(arguments, &["limit", "entries"], 64)
-                    && optional_limit(arguments, &["limit", "tokens"], 16_000)
-                    && optional_limit(arguments, &["budget", "tokens"], 16_000)
-            }
+                }
             None => false,
         },
         "kmp_relate" => {
             path_non_empty_string(arguments, &["about"])
-                && optional_limit(arguments, &["budget", "tokens"], 16_000)
                 && optional_limit(arguments, &["budget", "depth"], 8)
                 && optional_limit(arguments, &["page", "entries"], 256)
         }
@@ -101,8 +95,6 @@ pub fn kernel_operator_is_bounded_tool_call(tool: &str, arguments: &Value) -> bo
             path_non_empty_string(arguments, &["about"])
                 && path_string(arguments, &["from"]).is_some()
                 && path_string(arguments, &["to"]).is_some()
-                && positive_limit(arguments, &["budget", "tokens"], 16_000)
-                && optional_limit(arguments, &["budget", "depth"], 8)
                 && optional_limit(arguments, &["page", "entries"], 256)
         }
         "kmp_inspect" => {
@@ -113,7 +105,7 @@ pub fn kernel_operator_is_bounded_tool_call(tool: &str, arguments: &Value) -> bo
                     .and_then(Value::as_bool)
                     .is_some_and(|raw| !raw)
         }
-        "kmp_ask" => optional_limit(arguments, &["budget", "tokens"], 16_000),
+        "kmp_ask" => optional_limit(arguments, &["budget", "depth"], 8),
         "kmp_write_memory" => bounded_write_memory(arguments),
         "kmp_ingest" => bounded_ingest(arguments),
         _ => false,
@@ -689,19 +681,17 @@ fn validate_inspect_include(value: &Value, context: &str) -> Result<(), String> 
 }
 
 fn validate_limit(value: &Value, context: &str) -> Result<(), String> {
-    exact_keys(value, context, &["entries", "tokens"], &[])?;
+    exact_keys(value, context, &["entries"], &[])?;
     required_positive_integer(value, "entries", context)?;
-    required_positive_integer(value, "tokens", context)?;
     Ok(())
 }
 
 fn validate_budget(value: &Value, context: &str) -> Result<(), String> {
-    exact_keys(value, context, &[], &["tokens", "depth", "detail"])?;
+    exact_keys(value, context, &[], &["depth", "detail"])?;
     let object = object(value, context)?;
     if object.is_empty() {
         return Err(format!("{context} must not be empty"));
     }
-    validate_optional_positive_integer(value, "tokens", context)?;
     validate_optional_positive_integer(value, "depth", context)?;
     if let Some(detail) = value.get("detail") {
         let Some(detail) = detail.as_str() else {
@@ -1370,8 +1360,8 @@ mod tests {
             &json!({
                 "move": "near",
                 "around": { "time": "2026-05-14T00:00:00Z" },
-                "limit": { "entries": 12, "tokens": 2400 },
-                "budget": { "depth": 3, "tokens": 2400 },
+                "limit": { "entries": 12 },
+                "budget": { "depth": 3 },
                 "window": { "before_entries": 6, "after_entries": 0 }
             })
         ));
@@ -1380,8 +1370,7 @@ mod tests {
             &json!({
                 "about": "about:1",
                 "from": "node:2",
-                "to": "node:1",
-                "budget": { "depth": 1, "tokens": 1600 }
+                "to": "node:1"
             })
         ));
         assert!(kernel_operator_is_bounded_tool_call(
@@ -1401,7 +1390,7 @@ mod tests {
             &json!({
                 "move": "near",
                 "around": { "ref": "node:1" },
-                "limit": { "entries": 500, "tokens": 2400 }
+                "limit": { "entries": 500 }
             })
         ));
         assert!(!kernel_operator_is_bounded_tool_call(
@@ -1465,7 +1454,7 @@ mod tests {
                     "about": "about:1",
                     "intent": "continue investigation",
                     "dimensions": { "mode": "only", "include": ["agent"], "scope": "abouts", "abouts": ["about:2"] },
-                    "budget": { "depth": 2, "tokens": 2400 }
+                    "budget": { "depth": 2 }
                 }
             }),
             json!({
@@ -1477,8 +1466,8 @@ mod tests {
                     "around": { "sequence": 7 },
                     "dimensions": { "mode": "except", "exclude": ["discarded"], "scope": "all_abouts" },
                     "include": { "evidence": true, "raw_refs": false, "relations": true },
-                    "limit": { "entries": 12, "tokens": 2400 },
-                    "budget": { "depth": 3, "tokens": 2400 },
+                    "limit": { "entries": 12 },
+                    "budget": { "depth": 3 },
                     "window": { "before_entries": 6, "after_entries": 0 }
                 }
             }),
@@ -1582,8 +1571,8 @@ mod tests {
                 "around": { "ref": "node:1", "sequence": 1 },
                 "dimensions": { "mode": "all", "scope": "current_about" },
                 "include": { "evidence": true, "raw_refs": false, "relations": true },
-                "limit": { "entries": 12, "tokens": 2400 },
-                "budget": { "depth": 3, "tokens": 2400 },
+                "limit": { "entries": 12 },
+                "budget": { "depth": 3 },
                 "window": { "before_entries": 6, "after_entries": 0 }
             }
         });
@@ -1613,8 +1602,8 @@ mod tests {
                     "around": cursor,
                     "dimensions": { "mode": "all", "scope": "current_about" },
                     "include": { "evidence": true, "raw_refs": false, "relations": true },
-                    "limit": { "entries": 12, "tokens": 2400 },
-                    "budget": { "depth": 3, "tokens": 2400 },
+                    "limit": { "entries": 12 },
+                    "budget": { "depth": 3 },
                     "window": { "before_entries": 6, "after_entries": 0 }
                 }
             });
@@ -1679,8 +1668,8 @@ mod tests {
                 "about": "about:1",
                 "dimensions": { "mode": "all", "scope": "current_about" },
                 "include": { "evidence": true, "raw_refs": false, "relations": true },
-                "limit": { "entries": 12, "tokens": 2400 },
-                "budget": { "depth": 3, "tokens": 2400 },
+                "limit": { "entries": 12 },
+                "budget": { "depth": 3 },
                 "window": { "before_entries": 6, "after_entries": 0 }
             });
             arguments[cursor_key] = json!({ "ref": "node:1" });
@@ -1706,8 +1695,8 @@ mod tests {
             "around": { "ref": "node:1" },
             "dimensions": { "mode": "all", "scope": "current_about" },
             "include": { "evidence": true, "raw_refs": false, "relations": true },
-            "limit": { "entries": 12, "tokens": 2400 },
-            "budget": { "depth": 3, "tokens": 2400 },
+            "limit": { "entries": 12 },
+            "budget": { "depth": 3 },
             "window": { "before_entries": 6, "after_entries": 0 }
         });
         let action = |arguments: serde_json::Value| json!({ "type": "tool_call", "tool": "kmp_time", "arguments": arguments });
@@ -1753,8 +1742,8 @@ mod tests {
                 "around": { "ref": "node:1" },
                 "dimensions": { "mode": "all", "scope": "current_about" },
                 "include": { "evidence": true, "raw_refs": false, "relations": true },
-                "limit": { "entries": 1000, "tokens": 2400 },
-                "budget": { "depth": 3, "tokens": 2400 },
+                "limit": { "entries": 1000 },
+                "budget": { "depth": 3 },
                 "window": { "before_entries": 6, "after_entries": 0 }
             }
         });

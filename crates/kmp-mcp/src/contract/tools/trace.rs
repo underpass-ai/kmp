@@ -30,10 +30,9 @@ pub(crate) fn definition() -> Value {
                 "as_of": as_of_schema(),
                 "interval": interval_schema(),
                 "axis": recall_axis_schema(),
-                "role": string_schema("Optional caller role."),
                 "goal": string_schema("Optional trace goal."),
                 "page": page_schema("Whole items: trace, candidates/groups in seek, then proof objects/supports/gaps when requested."),
-                "budget": budget_schema(1_600, 1)
+                "budget": budget_schema(&[BudgetField::MaxBytes])
             }
         }),
         trace_output_schema(),

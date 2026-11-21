@@ -361,11 +361,11 @@ Do not explain. Do not include markdown. Do not invent refs, scopes, or hidden m
 
 Allowed action shapes:
 
-{{"action":{{"type":"tool_call","tool":"kmp_time","arguments":{{"move":"near","about":"...","around":{{"ref":"..."}},"dimensions":{{"mode":"all","scope":"current_about"}},"include":{{"evidence":true,"raw_refs":false,"relations":true}},"limit":{{"entries":12,"tokens":2400}},"budget":{{"depth":3,"tokens":2400}},"window":{{"before_entries":6,"after_entries":0}}}}}}}}
+{{"action":{{"type":"tool_call","tool":"kmp_time","arguments":{{"move":"near","about":"...","around":{{"ref":"..."}},"dimensions":{{"mode":"all","scope":"current_about"}},"include":{{"evidence":true,"raw_refs":false,"relations":true}},"limit":{{"entries":12}},"budget":{{"depth":3}},"window":{{"before_entries":6,"after_entries":0}}}}}}}}
 
 {{"action":{{"type":"tool_call","tool":"kmp_inspect","arguments":{{"about":"...","ref":"...","include":{{"details":true,"incoming":true,"outgoing":true,"raw":false}}}}}}}}
 
-{{"action":{{"type":"tool_call","tool":"kmp_trace","arguments":{{"about":"...","from":"...","to":"...","goal":"Kernel operator trace probe","budget":{{"depth":1,"tokens":1600}}}}}}}}
+{{"action":{{"type":"tool_call","tool":"kmp_trace","arguments":{{"about":"...","from":"...","to":"...","goal":"Kernel operator trace probe","budget":{{"depth":1}}}}}}}}
 
 {{"action":{{"type":"stop","answer_policy":"evidence_or_unknown","final_refs":["..."],"reason":"sufficient_evidence"}}}}
 
@@ -715,8 +715,7 @@ mod tests {
                     "about": "about:1",
                     "answer_policy": "evidence_or_unknown",
                     "dimensions": { "mode": "all", "scope": "current_about" },
-                    "question": "what now?",
-                    "budget": { "tokens": 800 }
+                    "question": "what now?"
                 }
             }),
             &trajectory,

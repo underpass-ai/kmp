@@ -37,6 +37,26 @@ pub(crate) async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
         print_subcommand_help(command);
         return 0;
     }
+    // The diagnostics report a bad switch instead of refusing to run, and
+    // help and version need nothing from the environment.
+    if !matches!(
+        command,
+        "info" | "doctor" | "--help" | "-h" | "help" | "--version" | "-V" | "version"
+    ) && let Err(refusal) = kmp_mcp::environment::check_environment()
+    {
+        eprintln!("kmp-mcp: {refusal}");
+        return 2;
+    }
+    if reads_the_local_store(command) && !kmp_mcp::environment::local_backend_selected() {
+        eprintln!(
+            "kmp-mcp {command}: this command works on the local store, and the environment \
+             selects a remote gRPC kernel ({} or {}), where it does not apply. It did not run, so \
+             it says nothing about that kernel. Unset both to run it on this machine's store.",
+            kmp_mcp::MCP_BACKEND_ENV,
+            kmp_mcp::GRPC_ENDPOINT_ENV
+        );
+        return 2;
+    }
     let first_argument = args.first().copied();
     match command {
         "import" if import_from::requested(args) => return import_from::run(args).await,
@@ -126,6 +146,24 @@ fn is_cli_subcommand(command: &str) -> bool {
             | "summaries"
             | "consolidation"
             | "memories"
+    )
+}
+
+/// The verbs that open this machine's store. Under a remote backend they
+/// would read a store the session never uses.
+fn reads_the_local_store(command: &str) -> bool {
+    matches!(
+        command,
+        "export"
+            | "import"
+            | "document"
+            | "consolidation"
+            | "snapshot"
+            | "summaries"
+            | "demo"
+            | "memories"
+            | "guide"
+            | "viewer"
     )
 }
 
@@ -268,20 +306,22 @@ kmp-mcp config                  Show the agent policy and the user memory select
 kmp-mcp config memory-routing <on-request|always>\n  \
 kmp-mcp config memory-store <absolute-path>|--clear\n  \
                                 Select the user memory persistently, or stop selecting one\n  \
-kmp-mcp demo [--no-viewer]      Write a worked example into this store and open ChronoLoom on it\n  \
+kmp-mcp demo [--no-viewer] [--dry-run]\n  \
+                                Write a worked example into this store and open ChronoLoom on it\n  \
 kmp-mcp memories [--json]       Every store on this machine, its reach and its abouts\n  \
 kmp-mcp memories register <absolute-path>\n  \
                                 Remember an existing store no command has opened here\n  \
 kmp-mcp guide sync --plugin-root DIR\n  \
                                 Converge the two immutable shipped guides\n  \
 kmp-mcp plugin resolve-engine  Select the engine matching both host manifests\n  \
-kmp-mcp plugin notice          Report version drift without changing the machine\n  \
+kmp-mcp plugin notice          Report version drift; asks GitHub at most once a day and caches\n  \
+                                the answer, unless KMP_VERSION_CHECK=off\n  \
 kmp-mcp document <about>        Render one about as a Markdown document\n  \
 kmp-mcp context project|expand  Compose captured memory packets or expand their text\n  \
 kmp-mcp snapshot <verb>         Create, verify, read or merge named snapshots\n  \
 kmp-mcp consolidation          Capture, write, audit or project versioned views\n  \
 kmp-mcp summaries pending       List the memories that owe an English search summary\n  \
-kmp-mcp uninstall [--store|--engine <absolute-path>] [--apply]\n  \
+kmp-mcp uninstall [--store|--engine <absolute-path>] [--apply] [--purge] [--keep-memory]\n  \
                                 Remove one store or one engine, or preview it all\n  \
 kmp-mcp export [file] [--about <about>]...  Export exact abouts or the full log\n  \
 kmp-mcp export --repair-pending Acknowledge recovery after stopping writers\n  \
@@ -290,7 +330,10 @@ kmp-mcp import --from <store|bundle> --about <about>...\n  \
                                 Bring exact abouts of another memory into this one\n  \
 kmp-mcp viewer [addr]           Serve the local memory viewer\n  \
 kmp-mcp --version               Print binary and store formats\n  \
-kmp-mcp --help                  Print this help",
+kmp-mcp --help                  Print this help\n\n\
+Environment: the KMP_* switches are listed with their accepted values in\n\
+docs/embedded/configuration.md; `kmp-mcp doctor` shows the ones set and refuses a\n\
+value kmp-mcp does not accept.",
         kmp_mcp::banner::large(kmp_mcp::style::Style::for_stdout())
     );
 }

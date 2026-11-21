@@ -127,6 +127,22 @@ pub(crate) fn describe_data_dir(resolved: &ResolvedDataDir) -> LifecycleFinding 
 }
 
 pub(crate) fn data_dir_finding() -> (LifecycleFinding, Option<ResolvedDataDir>) {
+    // Under a remote kernel the local store is not this session's memory.
+    // Reporting it "ok" beside a gRPC backend read as all clear (E14).
+    if !crate::environment::local_backend_selected() {
+        return (
+            LifecycleFinding::new(
+                DiagnosticSeverity::Ok,
+                "not on this machine: the remote gRPC kernel holds this session's memory",
+            )
+            .with_detail(
+                "the commands that read the local store (export, import, document, snapshot, \
+                 summaries, memories, demo, viewer, guide, consolidation) refuse to run; unset \
+                 KMP_MCP_BACKEND and KMP_KERNEL_GRPC_ENDPOINT to use this machine's store",
+            ),
+            None,
+        );
+    }
     // Locate, never prepare: a report on where memory lives must not create
     // it. `info` and `doctor` are run from wherever the user is standing.
     match kmp_embedded::locate_data_dir_from_env() {

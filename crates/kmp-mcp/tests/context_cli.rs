@@ -10,7 +10,9 @@ fn run(directory: &std::path::Path, args: &[&str], input: &Value) -> std::proces
     let mut child = isolated_home::command(env!("CARGO_BIN_EXE_kmp-mcp"))
         .args(args)
         .current_dir(directory)
-        .env("KMP_MCP_BACKEND", "must-not-open")
+        // A remote backend with no endpoint: any verb that tried to open a
+        // backend would fail; `context` must never try.
+        .env("KMP_MCP_BACKEND", "grpc")
         .env("KMP_MCP_DATA_DIR", directory.join("forbidden-store"))
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())

@@ -51,6 +51,88 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
   handles it retained are reported as `CONTINUATION_UNAVAILABLE`.
 - The call log drops `context_fingerprint`.
 
+### Changed — breaking (a call does what it says, a switch means what it says)
+
+- **Environment switches are strict.** A value kmp-mcp does not accept is
+  refused at startup, naming the accepted values: the server does not start
+  and every CLI verb but `info`, `doctor`, `--help` and `--version` exits 2.
+  `KMP_KERNEL_GRPC_TLS_MODE=mutal` no longer runs plaintext,
+  `KMP_LEXICAL_INDEX=0` turns the index off instead of leaving it on, and
+  `KMP_VERSION_CHECK=OFF` no longer calls GitHub. On/off switches accept one
+  spelling set (`on/off/true/false/1/0/yes/no`) in any case; a blank value
+  means unset everywhere but `KMP_VIEWER_ADDR`. `KMP_MCP_OUTPUT_SCHEMAS`
+  accepts the on/off set instead of only `0`/`1`; `KMP_MCP_PASSAGES` is
+  case-insensitive and blank means unset. `KMP_KERNEL_GRPC_TLS_MODE` accepts
+  the words the kernel's `KMP_GRPC_TLS_MODE` accepts (`disabled`/`plaintext`,
+  `server`/`tls`, `mutual`/`mtls`); `disable`, `off`, `false`, `none` and
+  `m-tls` are refused. A relative `KMP_MCP_DATA_DIR` is refused.
+- `doctor` and `info` list the switches in effect; `doctor` fails on a
+  refused value and warns about a `KMP_*` name this build reads nowhere. The
+  reference table is in `docs/embedded/configuration.md`.
+- **Removed switches:** `KMP_MCP_ENGINE` (it could only say `sqlite`; the
+  `kmp-embedded` items `ENGINE_ENV`, `parse_engine`,
+  `resolve_engine_from_env` and `resolve_engine_for_data_dir_from_env` go
+  with it, use `default_engine_for_data_dir`), `KMP_LEXICAL_MAXSCORE`
+  (MaxScore is always on) and the `KMP_MCP_BACKEND` aliases `live` and
+  `fixtures`.
+- **Test and evaluation hooks leave the release binary.** The `fixture`
+  backend (with `KernelMcpServer::fixture`, `Default`,
+  `from_optional_endpoint*`, `FixtureKernelMcpBackend` and
+  `KernelMcpBackend::Fixture`), `KMP_LEXICAL_INDEX=shadow|verify`,
+  `KMP_TYPESAFE_CASSETTE`, `KMP_TYPESAFE_CASSETTE_MODE`,
+  `KMP_EVAL_PARTNER_FACTS`, `KMP_JUDGEMENT_DEADLINES` and
+  `KMP_LATEST_VERSION` exist only in debug builds and with the new
+  `eval-hooks` cargo feature, which the memory bench builds. The crash-test
+  driver `embedded_crash_writer` is no longer packaged in
+  `kmp-adapter-embedded`.
+- **Local commands refuse a remote kernel.** With `KMP_KERNEL_GRPC_ENDPOINT`
+  set (or `KMP_MCP_BACKEND=grpc`), `export`, `import`, `document`,
+  `snapshot`, `summaries`, `memories`, `demo`, `viewer`, `guide` and
+  `consolidation` exit 2 saying they work on the local store, instead of
+  answering from a store the session never uses; `info` and `doctor` say the
+  memory is not on this machine.
+- **Budgets declare only what each read honours.** `budget.tokens` (echoed,
+  never filtering) is gone from every tool, and `limit.tokens` from
+  `kmp_time`. `kmp_trace.budget` keeps only `max_bytes`; `kmp_relate.budget`
+  keeps `max_bytes` and `depth`; `kmp_curate` has no `budget`. The
+  `kmp_trace.role` alias of `goal` is gone. Each is refused as an unknown
+  argument.
+- **An omitted relation confidence is recorded as `unknown`**, not `high`,
+  on `kmp_write_memory` (`memories[].connect_to[]`, `relations[]`) and
+  `kmp_curate` apply; the schema declares `default: "unknown"`. Under
+  `strict: false` a rich relation of unknown confidence is graded `suspect`.
+- An idempotency-key conflict says the key was accepted with different
+  content, possibly in another about: keys are global to the store, as the
+  key's description now states.
+
+### Changed — surface honesty
+
+- An about the store does not hold is refused the same way by every read
+  rooted at it (`kmp_ask`, `kmp_relate`, `kmp_time`, `kmp_trace`,
+  `kmp_inspect`, `kmp_curate`, `kmp_view_open`): `not_found`, "`x` is not an
+  about in this store", with the next steps. It used to say "node 'x' not
+  found", or that a ref did not belong to it.
+- A writer clock that is not RFC 3339 is refused at the path the caller
+  wrote (`memories[0].valid_until`), not at the compiled ingest's
+  `memory.entries[].coordinates[]`.
+- A startup failure names the variable at fault; the "unset
+  KMP_MCP_BACKEND" hint appears only when a remote backend was asked for.
+- The "run kmp setup" texts name `/kmp:setup` or `kmp-mcp setup`;
+  `kmp-doctor.sh` names the plugin's installer instead of `cargo install`.
+- Schemas declare the defaults the code applies: `kmp_ask.answer_policy`
+  (`evidence_or_unknown`), `source_kind` (`agent`), `options.strict`
+  (`true`) and `kmp_relabel`'s `dry_run` (`false`).
+- `kmp_wake` labels a memory whose `valid_from` is still ahead "not yet in
+  force", and `kmp_relate` gives it the state `not_yet_in_force`
+  (`FACT_STATE_NOT_YET_IN_FORCE` on the wire) instead of `current`.
+- `kmp_view_open` with a stale `expected_revision` on the about the view
+  already shows says in `unhonored` that the guard was not checked.
+- The stdio server answers `ping`. `kmp_curate`'s output schema declares
+  `jev` nullable.
+- `--help` names `demo --dry-run`, `uninstall --purge|--keep-memory` and
+  where the switches are documented, and no longer says `plugin notice`
+  leaves the machine unchanged.
+
 ### Changed
 
 - The viewer address is no longer reachable until the viewer is requested.

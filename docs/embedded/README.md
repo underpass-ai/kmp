@@ -69,7 +69,9 @@ durability state and viewer. `doctor` diagnoses the process-local setup. The
 plugin's `kmp-doctor` workflow also checks host wiring and duplicate ownership.
 
 `KMP_MCP_BACKEND=fixture` is only for deterministic protocol tests. It stores
-nothing and must never be mistaken for a real memory.
+nothing and must never be mistaken for a real memory, so it exists only in
+debug builds and builds with the `eval-hooks` cargo feature; a release binary
+refuses it ([environment switches](configuration.md#environment-switches)).
 
 ## Where memory lives
 
@@ -148,11 +150,12 @@ whole about as the index describes it; the response is the one reading the
 whole about gives, byte for byte. When those memories are more than a third of
 the about, the about has fewer than 2,250 entries (never indexed), or the ask is
 any other kind, it reads the about as before; `lexical-index.json` beside the
-store tunes both limits. It is on by default; `KMP_LEXICAL_INDEX=off` closes it, `shadow` only compares it with
-every ask, and `verify` answers both ways and logs whether they agree. Among
+store tunes both limits. It is on by default; `KMP_LEXICAL_INDEX=off` closes it. The measurement modes
+`shadow` (only compares it with every ask) and `verify` (answers both ways and
+logs whether they agree) exist only in debug and `eval-hooks` builds. Among
 the memories the postings reach, those that cannot clear the ranker's floor
-under any reading of the question are not read at all (MaxScore, P14; on by
-default, `KMP_LEXICAL_MAXSCORE=off` reads them all). It can be
+under any reading of the question are not read at all (MaxScore, P14; always
+on since 1.0, when its `KMP_LEXICAL_MAXSCORE` switch was removed). It can be
 deleted at any time: the next ask builds what it needs again. It is not part of
 a bundle.
 

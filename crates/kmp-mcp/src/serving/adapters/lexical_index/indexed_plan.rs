@@ -37,7 +37,7 @@ impl IndexedPlan {
     /// many for the index to save anything ([`IndexLimits::too_many`]);
     /// unbounded (the `verify` mode) every ask the index can hold is planned,
     /// to measure it. `prune` leaves unread the candidates the floor bound
-    /// refuses (P14, on unless `KMP_LEXICAL_MAXSCORE=off`); the bound applies
+    /// refuses (P14, always on for a sidecar that opened); the bound applies
     /// to what is left to read.
     /// `ask` is the policy and whether the anchored gate reads the
     /// question, for top-k (P14); `None` plans no top-k.

@@ -63,7 +63,8 @@ impl GuideRepair {
             matching plugin directory containing guide/guide.requests.json and guide/memory.jsonl. \
             Sync writes both guide abouts and may update the maintained memory bundle. Then \
             restart this connection with the same store selection and retry the original call. \
-            Repeating that sync is idempotent; a runtime guide read does not install assets.";
+            Repeating that sync is idempotent. A runtime guide read seeds the installed assets \
+            once per session; this one found none it could seed.";
         let looked = if searched.is_empty() {
             String::new()
         } else {

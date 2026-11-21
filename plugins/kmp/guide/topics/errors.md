@@ -66,7 +66,8 @@ to make the call pass. A `RELATION_PROOF_REQUIRED` refusal links to decision
 history, where the relation has its own why and evidence. If the source does not
 justify that relation, the lesson cannot supply its proof.
 
-No automatic guide read, sync or retry occurs. Backend/unavailable errors and
+No automatic sync or retry occurs (the first read of a guide node in a session
+seeds the installed guide into the store, once). Backend/unavailable errors and
 failed reads of the agent guide do not suggest reading the guide again. An Ask
 UNKNOWN is a successful semantic result, not an input error or a trigger for
 this help. First-use discovery is an instruction to the agent; the server does
