@@ -51,7 +51,7 @@ pub struct DoubtVerdicts {
     /// The rescue line and the companion's judgement, in thousandths.
     rescue: Option<(u16, u16)>,
     /// The cross-language veto's line: a citation is kept only when judged
-    /// at least this likely to state the answer ([`StatedReading`]).
+    /// at least this likely to state the answer (`StatedReading`).
     keep_at: Option<u16>,
     judged: BTreeMap<(String, String), DoubtJudgement>,
 }
@@ -90,7 +90,7 @@ impl DoubtVerdicts {
     }
 
     /// The cross-language veto: a translated citation stays only when it
-    /// reads [`StatedReading::States`] at `keep_at` thousandths; one that is
+    /// reads yes (`StatedReading`) at `keep_at` thousandths; one that is
     /// unsettled or absent leaves. Only on a [`DoubtEntry::TranslatedAnswer`]
     /// band.
     pub fn with_keep_line(mut self, keep_at: u16) -> ProtoMappingResult<Self> {
