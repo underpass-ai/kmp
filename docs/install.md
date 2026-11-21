@@ -59,9 +59,10 @@ kmp-mcp doctor
 
 or `/kmp:doctor` (Claude Code), `kmp-doctor` (Codex). Success ends with
 `Usable.` or `Usable, with a warning above.`; the Hosts section names your
-host's plugin with `ok`. On a fresh machine expect two warnings: the memory
-`has never been started here`, and no quality journal yet. Both go away after
-the first session.
+host's plugin with `ok`. Some warnings are expected: on a fresh machine, `this
+memory has never been started here` and no quality journal yet, until the
+first session; and `MCP registration installed and enabled, live connection
+unverified`, because doctor cannot open a host session itself.
 
 Then see something:
 

@@ -97,7 +97,8 @@ ends with `Help: kmp_guide {"topic":"…"}`.
 | `doctor` could re-stamp `FORMAT_VERSION` and create a missing database | `doctor` opens the store read-only and runs SQLite's `quick_check`. |
 | Call log field `context_fingerprint` | Gone. |
 | `kmp-server` (experimental) fell back to Valkey and compact logs on an unknown `KMP_EVENT_STORE_BACKEND` or `KMP_LOG_FORMAT` | Refused at startup. |
-| Rust API: `kmp-embedded` `ENGINE_ENV`, `parse_engine`, `resolve_engine_from_env`, `resolve_engine_for_data_dir_from_env`; `kmp-viewer` `views::{graph_view, GraphView, timeline_view, TimelineView}`; the `fixture` items of `kmp-mcp` | Removed. Use `default_engine_for_data_dir`. |
+| Rust API: `kmp-embedded` `ENGINE_ENV`, `parse_engine`, `resolve_engine_from_env`, `resolve_engine_for_data_dir_from_env`; `kmp-viewer` `views::{graph_view, GraphView, timeline_view, TimelineView}` | Removed. Use `default_engine_for_data_dir`. |
+| Rust API: the `fixture` items of `kmp-mcp` (`KernelMcpServer::fixture`, `FixtureKernelMcpBackend`, …) | Only in debug builds and with the `eval-hooks` feature. |
 
 Every switch with its accepted values: [configuration reference](embedded/configuration.md#environment-switches).
 

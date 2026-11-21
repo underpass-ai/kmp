@@ -74,9 +74,11 @@ For two branches, `kmp-mcp snapshot merge <left> <right> <new-name>` only
 fast-forwards an exact prefix. A divergence is a semantic conflict: never
 hand-interleave the JSONL lines.
 
-Two limits to state rather than discover. **Import requires an empty store**:
-it is restore, not merge, because replaying a bundle over existing memory
-could duplicate history or interleave two timelines and neither has an answer
-the kernel could pick. And **a bundle carries the payloads as written** — a
+Two limits to state rather than discover. **`kmp-mcp import <file>` requires
+an empty store**: it is restore, not merge, because replaying a bundle over
+existing memory could duplicate history or interleave two timelines and
+neither has an answer the kernel could pick. `import --from … --about …`
+brings exact abouts into a store that holds memory only when they are absent
+there or this store holds an exact prefix of them. And **a bundle carries the payloads as written** — a
 secret in memory is a secret in the committed file, so the hygiene of the
 bundle is the hygiene of the store.

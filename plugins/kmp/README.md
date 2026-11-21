@@ -322,9 +322,10 @@ there. It separates them:
   inventory is not a conversation that can call a tool.
 
 It reads each host's own inventory (for Codex, `codex plugin list` and
-`codex mcp list`). A hand-written `[mcp_servers.kmp]` table in
-`~/.codex/config.toml` beside the plugin may not show there; the
-`kmp-mcp uninstall` preview names it. Do not add one.
+`codex mcp list`) and looks for one server named `kmp`; it does not report a
+second owner. A hand-written `[mcp_servers.kmp]` table in
+`~/.codex/config.toml` beside the plugin is named by the `kmp-mcp uninstall`
+preview. Do not add one.
 
 Two failures it names rather than leaving you to guess: an unsupported store
 format, which current KMP detects but deliberately does not open, leaving the

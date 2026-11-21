@@ -140,6 +140,18 @@
         "destructive_justification": "Does not delete or replace canonical memories, their events or authored cards."
       }
     },
+    "kmp_curate": {
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Its review, paths and labels modes read memory without changing it; its apply mode declares, in the configured store, the relations the agent confirms.",
+        "open_world_justification": "Judges with TypeSafe Jev only on a store whose owner opted in (typesafe.json beside the store and TYPESAFE_API_KEY); such a session declares openWorldHint true for this tool in tools/list. Otherwise nothing it reads leaves the machine.",
+        "destructive_justification": "Adds relations with their why and evidence; it does not delete or replace memories, their events or authored cards."
+      }
+    },
     "kmp_view_open": {
       "annotations": {
         "destructiveHint": false,

@@ -3,7 +3,8 @@
 This section is for contributors to KMP itself. Users installing local memory
 start with [Embedded KMP](../embedded/README.md).
 
-Everything listed here describes how KMP works and is checked today. Dated
+Everything listed here describes how KMP works today; what the 1.0 pass did
+not re-check is listed in its verification notes, not here. Dated
 records of finished work (increment notes, acceptance matrices, issue
 evidence) are in the [archive](../archive/README.md).
 

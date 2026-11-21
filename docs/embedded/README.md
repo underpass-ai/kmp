@@ -65,8 +65,8 @@ kmp-mcp doctor
 
 `doctor` identifies the binary, backend, switches in effect, data directory,
 store format and optional files, then checks the host plugins and the engines
-on `PATH`, and ends with one verdict. `kmp-mcp info` prints the same facts
-without judging them. [Troubleshooting](../troubleshooting.md) explains every
+on `PATH`, and ends with one verdict. `kmp-mcp info` states the installation
+without judging it, and also lists every store on this machine. [Troubleshooting](../troubleshooting.md) explains every
 `FAIL` and `warn`.
 
 `KMP_MCP_BACKEND=fixture` is only for deterministic protocol tests. It stores

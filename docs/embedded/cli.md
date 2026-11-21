@@ -18,7 +18,7 @@ listed by the server's `tools/list` and explained by `kmp_guide`.
 | Command | What it does |
 |:--|:--|
 | `kmp-mcp info` | What this binary is and which memory it opens: backend, switches in effect, the data directory and the rule that chose it, store config, tools, viewer, telemetry and every store on this machine. |
-| `kmp-mcp doctor` | Everything `info` shows, plus host plugins, engines on `PATH` and history, ending with one verdict. Read-only. See [Troubleshooting](../troubleshooting.md). |
+| `kmp-mcp doctor` | The binary, backend, switches, memory, store config, database, tools, agent policy, viewer and telemetry, plus host plugins, engines on `PATH` and history, ending with one verdict. Read-only. See [Troubleshooting](../troubleshooting.md). |
 | `kmp-mcp --version` | Binary version and store format, as `kmp-mcp <version> (store format 4 (sqlite))`. |
 
 ## Install and update
@@ -65,14 +65,12 @@ listed by the server's `tools/list` and explained by `kmp_guide`.
 
 Bundles and formats: [Store format](store-format.md).
 
-## Experimental
+## Composed contexts and consolidated views
 
 | Command | What it does |
 |:--|:--|
 | `kmp-mcp context project\|expand [FILE\|-]` | Composes captured memory packets into context JSON, or expands them. Reads no store. |
 | `kmp-mcp consolidation sources\|write\|read\|project [FILE\|-]` | Captures, writes, audits or projects versioned consolidated views. |
-
-These are outside the 1.0 promise ([Stability](../stability.md)).
 
 ## Remote kernel
 

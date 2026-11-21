@@ -104,6 +104,7 @@ process would:
 | `warn  codex: MCP registration installed and enabled, live connection unverified` | `doctor` cannot open a host session itself. | Nothing to fix; ask the agent to call a `kmp_*` tool to confirm. |
 
 One plugin owns the MCP registration. Do not also add `[mcp_servers.kmp]`
-to `~/.codex/config.toml` or `claude mcp add kmp` by hand. `doctor` reads the
-host's own inventory and may not name such a second owner; the
-`kmp-mcp uninstall` preview lists hand-written Codex wiring.
+to `~/.codex/config.toml` or `claude mcp add kmp` by hand. `doctor` does not
+report such a second owner: it reads the host's inventory and looks only for
+one server named `kmp`. The `kmp-mcp uninstall` preview lists hand-written
+Codex wiring (`delete the [mcp_servers.kmp] block`).

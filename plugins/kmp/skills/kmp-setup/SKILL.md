@@ -11,7 +11,7 @@ first with `<plugin-root>/scripts/kmp-doctor.sh`; it is a thin adapter into
 proof, effective wiring and plugin-tree parity.
 
 When a session notice or version comparison says a newer release exists, run
-`<plugin-root>/scripts/kmp-update.sh`. That inventories both native hosts,
+`<plugin-root>/scripts/kmp-update.sh`. That inventories every installed host,
 updates every installed KMP plugin, and installs the checksummed engine from
 the same release. An ordinary update resolves the latest public release in
 the native lifecycle; `--version <release>` selects an explicit target.

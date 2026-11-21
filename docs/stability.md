@@ -27,7 +27,7 @@ with an embedded SQLite store on your machine.
 |:--|:--|
 | A new tool, a new optional argument, a new enum value in a result, a new result field | Yes. |
 | A new CLI verb or flag, a new optional file, a new environment switch | Yes. |
-| Better ranking, so a question cites a different memory or answers where it said `UNKNOWN` | Yes. CI holds every change to the memory-bench and baseline floors. |
+| Better ranking, so a question cites a different memory or answers where it said `UNKNOWN` | Yes. Ranking changes are measured against the judged baselines and the memory bench; a workspace test asks the lexical-bridge stress negatives on every CI run. |
 | Wording of messages, summaries, card text and `--help` prose | Yes. Act on codes, rule ids and fields, not on text. |
 | Faster reads, smaller results within the same fields | Yes. |
 | A derived file beside the store rebuilt once (the lexical index) | Yes, with a changelog line. |
@@ -48,9 +48,9 @@ These ship in the repository and may change or go away in any release:
 | The gRPC API `underpass.rehydration.kernel.v1beta1` and the gRPC backend of `kmp-mcp` (`KMP_KERNEL_GRPC_ENDPOINT`) | Versioned `v1beta1`; `kmp_curate` and `kmp_summaries_audit` do not answer there. |
 | `kmp-server` and the non-embedded adapters (Valkey, NATS, Neo4j), the container image and the Helm chart | The [enterprise topology](enterprise/README.md). |
 | Semantic retrieval (`semantic-retrieval.json`) | A local encoder you operate. |
-| `kmp-mcp context` and `kmp-mcp consolidation` | Development tools for composed packets and consolidated views. |
-| The viewer's HTTP routes (`/api/*`) | They serve the page that ships with the binary, not other clients. |
-| The Rust API of the published crates | Published so the binary can be built from crates.io. Each crate's README says how stable its API is. |
+
+The Rust API of the published crates is not covered by this page: each
+crate's README says how stable its API is.
 
 ## Optional and opt-in
 
@@ -65,7 +65,7 @@ each opt-in sends is in [Security and privacy](security-privacy.md).
 |:--|:--|
 | Viewer size | ChronoLoom is promised to stay fluid up to **10,000 memories per about**. Above that it works but slows: each change of the time window reads the whole about. Windowed reading is planned for 1.1. |
 | Read latency on a large about | Measured on one about, release build, p50 of 7 calls (PR #939, merged at `5e1a105e`, 21 Nov 2026): at 10,000 memories a first wake takes about 1.0 s and an ask about 2.0 s; at 100,000, about 11 s and 28 s. This is being improved. |
-| False answers | Measured, not proved. On the memory bench, Jev off, the false-answer rate is 0.000 with and without the shipped lexical-bridge table, on a real store (124 questions, 64 of them about something not stored) and on a synthetic store of 1,000 memories (integration branch at `c517577b`, 21 Nov 2026). On 360 synthetic questions about attributes that are not stored, the shipped table answers none (PR #942). Limits that remain: a wrong translation between Spanish and English can still answer, at `medium` at most (6 of 264 cross-language stress cases); one stray Spanish function word can make an English question read as Spanish (12 of 360, all `medium`); only Spanish and English are read as languages. |
+| False answers | Measured, not proved. On the memory bench, Jev off, the false-answer rate is 0.000 with and without the shipped lexical-bridge table, on a real store (124 questions, 64 of them about something not stored) and on a synthetic store of 1,000 memories (integration branch at `c517577b`, 21 Nov 2026). As reported with PR #942 (not re-measured here): on 360 synthetic questions about attributes that are not stored, the shipped table answers none; a wrong translation between Spanish and English can still answer, at `medium` at most (6 of 264 cross-language stress cases); one stray Spanish function word can make an English question read as Spanish (12 of 360, all `medium`). Only Spanish and English are read as languages. |
 | Languages | Questions in Chinese, Japanese or Thai are not segmented into words. See [Languages](embedded/languages.md). |
 | Windows | Release builds exist for Windows x86_64, but `kmp-mcp setup` and `update` do not install an engine there. See [Install](install.md#platforms). |
 
