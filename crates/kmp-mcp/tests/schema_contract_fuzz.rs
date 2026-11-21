@@ -412,13 +412,16 @@ fn rule_cases(tools: &[Value]) -> Vec<(&'static str, String, Value)> {
         (
             "write.labels",
             with("kmp_write_memory", &|c| {
-                c.as_object_mut().unwrap().remove("labels");
+                c.as_object_mut().expect("object").remove("labels");
             }),
         ),
         (
             "write.evidence",
             with("kmp_write_memory", &|c| {
-                c["memories"][0].as_object_mut().unwrap().remove("evidence");
+                c["memories"][0]
+                    .as_object_mut()
+                    .expect("memory")
+                    .remove("evidence");
             }),
         ),
         (
@@ -457,7 +460,7 @@ fn rule_cases(tools: &[Value]) -> Vec<(&'static str, String, Value)> {
             "time.cursor",
             with("kmp_time", &|c| {
                 c["move"] = json!("goto");
-                c.as_object_mut().unwrap().remove("from");
+                c.as_object_mut().expect("object").remove("from");
             }),
         ),
         (
@@ -477,7 +480,7 @@ fn rule_cases(tools: &[Value]) -> Vec<(&'static str, String, Value)> {
             with("kmp_ingest", &|c| {
                 c["provenance"]
                     .as_object_mut()
-                    .unwrap()
+                    .expect("object")
                     .remove("observed_at");
             }),
         ),

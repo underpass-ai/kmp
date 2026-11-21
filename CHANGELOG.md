@@ -11,6 +11,56 @@ Detailed notes from the early release cycle remain available in the
 
 ### Changed — breaking
 
+The catalogue states the law of a call once (second token reduction, on the
+way to 1.0). `tools/list` drops from 11,856 to about 7,400 tokens
+(o200k_base).
+
+- `tools/list` publishes types, enums and `required` (the first-call
+  `required` under `if continuation … else`), and the `pattern` of
+  `memories[].id`. It no longer publishes `additionalProperties: false`,
+  `if`/`then`/`else`/`allOf`/`not`/`propertyNames`, conditional
+  `anyOf`/`oneOf`, `default`, `title`, or the bounds and patterns
+  (`minLength`, `maxLength`, `minItems`, `maxItems`, `uniqueItems`,
+  `minimum`, `maximum`, `minProperties`, `maxProperties`). A union of
+  distinct JSON types is published as `type: [..]`. Every one of them is still
+  refused exactly as before.
+- Unknown keys are refused in every input object by default: an object
+  schema without `additionalProperties` is closed. The server instructions
+  say so once.
+- Cross-field rules have ids (`write.labels`, `write.evidence`,
+  `write.one-form`, `write.link-class`, `write.relations-form`,
+  `write.summaries-form`, `write.summary-content`, `time.cursor`,
+  `trace.mode`, `trace.search-mode`, `ingest.observed`, `ingest.links-only`,
+  `condense.expect`, `continuation-alone`). A refusal names the rule and its
+  fix (`Rule \`id\`: … Fix: …`) and carries `feedback[].rule`; a writer
+  refusal keeps the planner's code and message and adds `rule`. Each
+  `kmp_guide` card lists its topic's rules under `rules`.
+- Tool descriptions are one sentence. What they said beyond it moved to the
+  guide cards; a description points at its topic (`Guide topic: …`) only when
+  the topic is not named after the verb. Argument defaults appear in the
+  card's `parameters` lines.
+- New guide topic `review` (resume a write that answered `needs_review`): the
+  `continuation`, `read_context` and `review_token` prose of
+  `kmp_write_memory` moved there from `write`.
+- `tools/list` no longer carries `_meta."kmp/errorCodes"`; the closed set of
+  error codes, with what to do about each, is `error_codes` in
+  `kmp_guide {"topic":"guide"}`.
+- Annotations are true: `kmp_wake`, `kmp_ask`, `kmp_time`, `kmp_trace`,
+  `kmp_relate`, `kmp_summaries_audit`, `kmp_view_get_state` and `kmp_guide`
+  declare `readOnlyHint: true`; `openWorldHint` is true on `kmp_wake`,
+  `kmp_ask`, `kmp_write_memory`, `kmp_curate` and `kmp_summaries_audit`
+  (TypeSafe Jev, when the store opted in); `idempotentHint: true` on
+  `kmp_ingest`, `kmp_write_memory`, `kmp_relabel`, `kmp_inspect` and
+  `kmp_view_apply_intent`; `destructiveHint` and `idempotentHint` are omitted
+  where they equal the MCP default. `kmp_inspect` stays `readOnlyHint: false`:
+  a read of a node of the installed guide on a store without it seeds the
+  guide.
+- Wake and Ask proofs state each ref fewer times: a hop's `evidence_refs`
+  no longer repeat its endpoints' detail evidence (`detail:<from>`,
+  `detail:<to>`), a detail evidence item that supports only its own ref has no
+  `supports`, and `metadata` that only says `proof_role: stored_evidence` is
+  omitted. Ids are unchanged.
+
 The guide is a stateless topic lookup (slim guide, on the way to 1.0).
 
 - `kmp_guide` takes only `{ "topic": <enum> }`; without a topic it returns the
@@ -23,7 +73,8 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
   the stored guide and answers the same way on every install, with or without
   a plugin tree or `KMP_PLUGIN_ROOT`.
 - The topics are `wake`, `write`, `relations`, `ingest`, `relabel`, `ask`,
-  `time`, `audit`, `trace`, `condense`, `relate`, `curate`, `view` and `guide`.
+  `time`, `audit`, `trace`, `condense`, `relate`, `curate`, `view` and `guide`
+  (and `review`, added above).
   The old `write` card is split into `write`, `relations`, `ingest` and
   `relabel`, and `audit` into `audit` and `trace`; each card serves only the
   arguments it owns, so every argument is explained by exactly one topic and

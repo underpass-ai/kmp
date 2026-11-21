@@ -4,6 +4,7 @@
 //! are pinned against the running binary by `tool_surface_parity`.
 
 pub(crate) mod cross_field_rule;
+mod cross_field_rule_audit;
 pub(crate) mod handshake;
 pub(crate) mod parameter_guide;
 mod parameter_guide_audit;

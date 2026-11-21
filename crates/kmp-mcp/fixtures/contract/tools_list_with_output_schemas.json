@@ -1962,7 +1962,7 @@
                 "type": "array"
               },
               "evidence": {
-                "description": "Verbatim stored text; metadata.proof_role distinguishes claim from evidence. Retrieval metadata never changes that text. reached_by items are indirect proof, never answers or citations in because; reached_from, reached_via and reached_hops identify their route. On citations, bridged_terms names cross-language word pairs; restated_from and restated_via identify a writer-declared restatement; matched_via: summary and summary_terms identify words matched through the writer's English summary_en, not the canonical text.",
+                "description": "Verbatim stored text; metadata.proof_role distinguishes claim from evidence, and absent metadata means proof_role stored_evidence. A detail item (id detail:<ref>) without supports supports that ref. Retrieval metadata never changes that text. reached_by items are indirect proof, never answers or citations in because; reached_from, reached_via and reached_hops identify their route. On citations, bridged_terms names cross-language word pairs; restated_from and restated_via identify a writer-declared restatement; matched_via: summary and summary_terms identify words matched through the writer's English summary_en, not the canonical text.",
                 "type": "array"
               },
               "expired": {
@@ -2000,7 +2000,7 @@
                 ]
               },
               "path": {
-                "description": "Traversal connecting cited evidence.",
+                "description": "Traversal connecting cited evidence. A hop's evidence_refs name the relation's own evidence; the endpoints' detail evidence (detail:<from>, detail:<to>) also supports it when evidence carries it.",
                 "type": "array"
               },
               "superseded": {
@@ -2583,7 +2583,7 @@
                 "type": "array"
               },
               "evidence": {
-                "description": "Verbatim stored text; metadata.proof_role distinguishes claim from evidence. Retrieval metadata never changes that text. reached_by items are indirect proof, never answers or citations in because; reached_from, reached_via and reached_hops identify their route. On citations, bridged_terms names cross-language word pairs; restated_from and restated_via identify a writer-declared restatement; matched_via: summary and summary_terms identify words matched through the writer's English summary_en, not the canonical text.",
+                "description": "Verbatim stored text; metadata.proof_role distinguishes claim from evidence, and absent metadata means proof_role stored_evidence. A detail item (id detail:<ref>) without supports supports that ref. Retrieval metadata never changes that text. reached_by items are indirect proof, never answers or citations in because; reached_from, reached_via and reached_hops identify their route. On citations, bridged_terms names cross-language word pairs; restated_from and restated_via identify a writer-declared restatement; matched_via: summary and summary_terms identify words matched through the writer's English summary_en, not the canonical text.",
                 "type": "array"
               },
               "expired": {
@@ -2621,7 +2621,7 @@
                 ]
               },
               "path": {
-                "description": "Traversal connecting cited evidence.",
+                "description": "Traversal connecting cited evidence. A hop's evidence_refs name the relation's own evidence; the endpoints' detail evidence (detail:<from>, detail:<to>) also supports it when evidence carries it.",
                 "type": "array"
               },
               "superseded": {
@@ -2905,7 +2905,7 @@
                 "type": "array"
               },
               "evidence": {
-                "description": "Verbatim stored text; metadata.proof_role distinguishes claim from evidence. Retrieval metadata never changes that text. reached_by items are indirect proof, never answers or citations in because; reached_from, reached_via and reached_hops identify their route. On citations, bridged_terms names cross-language word pairs; restated_from and restated_via identify a writer-declared restatement; matched_via: summary and summary_terms identify words matched through the writer's English summary_en, not the canonical text.",
+                "description": "Verbatim stored text; metadata.proof_role distinguishes claim from evidence, and absent metadata means proof_role stored_evidence. A detail item (id detail:<ref>) without supports supports that ref. Retrieval metadata never changes that text. reached_by items are indirect proof, never answers or citations in because; reached_from, reached_via and reached_hops identify their route. On citations, bridged_terms names cross-language word pairs; restated_from and restated_via identify a writer-declared restatement; matched_via: summary and summary_terms identify words matched through the writer's English summary_en, not the canonical text.",
                 "type": "array"
               },
               "expired": {
@@ -2943,7 +2943,7 @@
                 ]
               },
               "path": {
-                "description": "Traversal connecting cited evidence.",
+                "description": "Traversal connecting cited evidence. A hop's evidence_refs name the relation's own evidence; the endpoints' detail evidence (detail:<from>, detail:<to>) also supports it when evidence carries it.",
                 "type": "array"
               },
               "superseded": {
@@ -3382,7 +3382,7 @@
                 "type": "array"
               },
               "evidence": {
-                "description": "Verbatim stored text; metadata.proof_role distinguishes claim from evidence. Retrieval metadata never changes that text. reached_by items are indirect proof, never answers or citations in because; reached_from, reached_via and reached_hops identify their route. On citations, bridged_terms names cross-language word pairs; restated_from and restated_via identify a writer-declared restatement; matched_via: summary and summary_terms identify words matched through the writer's English summary_en, not the canonical text.",
+                "description": "Verbatim stored text; metadata.proof_role distinguishes claim from evidence, and absent metadata means proof_role stored_evidence. A detail item (id detail:<ref>) without supports supports that ref. Retrieval metadata never changes that text. reached_by items are indirect proof, never answers or citations in because; reached_from, reached_via and reached_hops identify their route. On citations, bridged_terms names cross-language word pairs; restated_from and restated_via identify a writer-declared restatement; matched_via: summary and summary_terms identify words matched through the writer's English summary_en, not the canonical text.",
                 "type": "array"
               },
               "expired": {
@@ -3457,7 +3457,7 @@
                 ]
               },
               "path": {
-                "description": "Traversal connecting cited evidence.",
+                "description": "Traversal connecting cited evidence. A hop's evidence_refs name the relation's own evidence; the endpoints' detail evidence (detail:<from>, detail:<to>) also supports it when evidence carries it.",
                 "type": "array"
               },
               "superseded": {

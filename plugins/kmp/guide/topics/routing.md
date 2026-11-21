@@ -110,13 +110,17 @@ Route again after every response:
 
 ## Tool effect annotations
 
-Native tools declare `openWorldHint: false`: they operate on the configured
-memory and viewer rather than arbitrary public entities. They declare
-`readOnlyHint: false` because calls can persist operational usage or diagnostics,
-even when the requested operation only retrieves canonical memory.
+The reads (`wake`, `ask`, `time`, `trace`, `relate`, `summaries_audit`,
+`view_get_state`, `guide`) declare `readOnlyHint: true`: they change no memory.
+What one may leave behind is the server log, a bounded quality-telemetry row, a
+continuation handle when the answer has more pages and, on a store whose owner
+opted into TypeSafe Jev, cached verdicts. `inspect` is not read-only: reading a
+node of the installed guide on a store without it seeds the guide first.
 
-`ingest`, `write_memory`, `relabel` and `condense` declare `destructiveHint: true`
-for modes that replace current content, memberships or cards. This conservative
-review annotation does not mean they erase canonical events: accepted memory
-and card changes retain their event history. The other native tools declare
-`destructiveHint: false`. Reading history does not undo stored events.
+`openWorldHint` is true on `wake`, `ask`, `write_memory`, `curate` and
+`summaries_audit`, which send the text they read to TypeSafe when the store
+opted into Jev, and false elsewhere. `ingest`, `write_memory`, `relabel` and
+`condense` keep the default `destructiveHint` (true) for modes that replace
+current content, memberships or cards; accepted changes keep their event
+history. `idempotentHint: true` marks `ingest`, `write_memory`, `relabel`,
+`inspect` and `view_apply_intent`, whose repeat adds nothing.

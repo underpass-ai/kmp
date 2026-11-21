@@ -19,6 +19,9 @@ Las rutas son relativas a la raíz del repositorio.
 | Comportamiento del núcleo | Dominio, casos de uso y adaptadores que implementan la operación | Prueba de comportamiento y contrato MCP correspondiente |
 | Argumentos, resultados y descripción de una herramienta | [contract/tools](../../crates/kmp-mcp/src/contract/tools/) y [contract/schema](../../crates/kmp-mcp/src/contract/schema/); registro en [registry.rs](../../crates/kmp-mcp/src/contract/registry.rs) | Fixture de superficie, guía del verbo y ejemplo afectado |
 | Explicación de un argumento | La `description` del esquema en [contract/tools](../../crates/kmp-mcp/src/contract/tools/); `tools/list` la elimina (salvo las líneas cortas de `ADVERTISED_LINES`) y `kmp_guide` la sirve en `parameters` del tema dueño de esa ruta, según `serves` en [guide_topic.rs](../../crates/kmp-mcp/src/guide/guide_topic.rs) y la proyección de [parameter_guide.rs](../../crates/kmp-mcp/src/contract/parameter_guide.rs) | Todo tool nuevo debe pertenecer a un tema; `parameter_guide_audit` comprueba que cada argumento lo sirve exactamente un tema y `tests/guide_topics.rs` que ninguna ficha pasa de 2.000 tokens |
+| Qué publica `tools/list` de cada esquema | [published_law.rs](../../crates/kmp-mcp/src/contract/published_law.rs): tipos, enums y `required`; lo demás vive en el contrato completo que lee el validador | `published_law_audit` construye, para cada restricción no publicada, una llamada que sólo rompe esa y comprueba el rechazo; `tests/schema_contract_fuzz.rs` fuzzea esquema publicado + objetos cerrados + reglas documentadas |
+| Regla entre argumentos (`if`/`anyOf`/`oneOf`…) | El condicional va etiquetado con `cross_field_rule::tagged(id, …)` en la definición; su redacción y su arreglo, en [cross_field_rule.rs](../../crates/kmp-mcp/src/contract/cross_field_rule.rs) | La ficha del tema dueño del argumento la sirve en `rules`; el rechazo la nombra (`Rule \`id\`` y `feedback[].rule`); un condicional sin etiqueta no pasa `published_law_audit` |
+| Anotaciones MCP de una herramienta | `ToolEffect` en [definition.rs](../../crates/kmp-mcp/src/contract/schema/definition.rs) | `tests/read_only_tools.rs`: una lectura deja el store y sus sidecars idénticos byte a byte; un escritor idempotente no escribe en la repetición; `chatgpt-app-submission.json` con los mismos valores |
 | Reglas comunes al conectar un agente | [agent_policy/instructions.rs](../../crates/kmp-mcp/src/agent_policy/instructions.rs), servido por [handshake.rs](../../crates/kmp-mcp/src/contract/handshake.rs) | Casos de routing y captura de initialize y del catálogo que expone el host |
 | Vocabulario de relaciones | `KnownMemoryRelationType` y su especificación en [relation_type.rs](../../crates/kmp-domain/src/value_objects/relation_type.rs) | Proyección [relation_vocabulary.rs](../../crates/kmp-mcp/src/contract/schema/relation_vocabulary.rs), casos positivos/negativos y enseñanza de why/evidence |
 | Entrada breve del agente | [guide/agent-entry.md](../../plugins/kmp/guide/agent-entry.md) | Regenerar el índice y comprobar su tamaño; no insertar el manual completo |
@@ -402,6 +405,31 @@ recarga la guía completa. Comparar la revisión del archivo con la del store an
 conserva la decisión sobre las fuentes y ejecuta las propuestas autorizadas.
 Verificar el flujo con consultas reales de un subagente y contabilizar ambos
 participantes. Esta evaluación es informativa, sin gates editoriales nuevos.
+
+### Ley publicada, reglas cruzadas y anotaciones
+
+`tools/list` publica lo que un agente necesita para una primera llamada
+válida: tipos, enums, `required` (con el único `if`/`else` que dice que una
+continuación no necesita nada más) y el `pattern` de `memories[].id`, que el
+agente inventa. El resto de la ley se dice una vez: las instrucciones del
+servidor declaran que todo objeto rechaza las claves que su esquema no lista
+(el validador cierra por defecto todo nodo `type: object` sin
+`additionalProperties`); cada regla entre argumentos se documenta en la ficha
+de su tema y se nombra con su arreglo en el rechazo; los límites que sólo
+repiten una comprobación quedan en el contrato completo. No usar `$ref` ni
+`$defs`. Al añadir un condicional, etiquetarlo y redactar la regla; al añadir
+un límite que evita una primera llamada errónea, añadirlo a
+`PUBLISHED_BOUNDS`.
+
+La descripción de una herramienta es una frase: para qué sirve y cuándo
+elegirla frente a sus vecinas. Lo demás va a su ficha (≤ 2.000 tokens; partir
+el tema si no cabe). Las anotaciones son verdaderas: `readOnlyHint: true` sólo
+si la llamada no cambia memoria (lo que puede dejar es el log, telemetría de
+calidad, un handle de continuación si hay más páginas y, con Jev, veredictos
+en caché); `openWorldHint: true` donde un store con Jev envía texto a
+TypeSafe; `destructiveHint` e `idempotentHint` se omiten cuando valen su
+valor por defecto de MCP. `kmp_inspect` no es de sólo lectura porque leer un
+nodo de la guía en un store sin ella la siembra.
 
 ### Temas de guía y errores
 
