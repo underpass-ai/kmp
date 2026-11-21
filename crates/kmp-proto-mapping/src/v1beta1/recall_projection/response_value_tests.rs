@@ -47,9 +47,19 @@ fn an_ask_path_does_not_change_with_the_tail_a_reading_carries() {
     let deep_value = ask_value(&deep);
 
     assert_eq!(shallow_value["proof"]["path"], deep_value["proof"]["path"]);
-    assert_eq!(deep_value["proof"]["path"][0]["evidence"], "The order names the pump.");
-    assert!(deep_value["proof"]["path"][0].get("evidence_refs").is_none());
+    assert_eq!(
+        deep_value["proof"]["path"][0]["evidence"],
+        "The order names the pump."
+    );
+    assert!(
+        deep_value["proof"]["path"][0]
+            .get("evidence_refs")
+            .is_none()
+    );
     // Read back, the typed path is the one rendered.
     let applied = apply_ask_value(deep.clone(), &deep_value);
-    assert_eq!(applied.proof.expect("proof").path, deep.proof.expect("proof").path);
+    assert_eq!(
+        applied.proof.expect("proof").path,
+        deep.proof.expect("proof").path
+    );
 }

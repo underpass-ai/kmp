@@ -4,8 +4,9 @@
 use std::collections::{BTreeSet, HashMap, VecDeque};
 
 use kmp_proto::v1beta1::{
-    AskResponse, MemoryEvidence, MemoryLabel, MemoryRelation, RecallProjection, RecallProjectionBudget,
-    RecallProjectionPage, RecallProjectionSection, SupersededMemory, WakeClaim, WakeResponse,
+    AskResponse, MemoryEvidence, MemoryLabel, MemoryRelation, RecallProjection,
+    RecallProjectionBudget, RecallProjectionPage, RecallProjectionSection, SupersededMemory,
+    WakeClaim, WakeResponse,
 };
 use prost_types::Timestamp;
 use serde_json::Value;

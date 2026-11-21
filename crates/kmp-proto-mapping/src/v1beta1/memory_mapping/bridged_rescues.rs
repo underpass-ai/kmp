@@ -65,9 +65,15 @@ mod tests {
         assert!(!rescues.rank_above(0), "nothing ranked: nothing is known");
         rescues.record(&[90, 70, 50], 3);
         assert!(rescues.rank_above(49));
-        assert!(!rescues.rank_above(50), "a tie is decided by a key rows lack");
+        assert!(
+            !rescues.rank_above(50),
+            "a tie is decided by a key rows lack"
+        );
         rescues.record(&[80, 60], 3);
-        assert!(!rescues.rank_above(10), "a short rescue may take any carrier");
+        assert!(
+            !rescues.rank_above(10),
+            "a short rescue may take any carrier"
+        );
     }
 
     #[test]

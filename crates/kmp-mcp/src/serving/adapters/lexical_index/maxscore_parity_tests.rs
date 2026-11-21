@@ -315,7 +315,10 @@ async fn maxscore_and_top_k_answer_as_the_whole_about_on_randomized_stores() {
     let (bp, bl) = assert_pruned_asks_equal_the_about(19, 260, 2, bridge).await;
     assert!(pruned + p + bp > 0, "the floor left nothing unread");
     assert!(lazy + l > 0, "top-k never read fewer than the floor left");
-    assert!(bl > 0, "with many bridged carriers top-k read every candidate");
+    assert!(
+        bl > 0,
+        "with many bridged carriers top-k read every candidate"
+    );
 }
 
 /// The MCP bytes after the continuation handle, which names a read.

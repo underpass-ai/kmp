@@ -278,9 +278,7 @@ impl LexicalSidecar {
             let candidates = selection.candidates;
             let read = candidates.len();
             // The round that reads every candidate left is the last one.
-            if last
-                && let Ok(mut kept) = memo.lock()
-            {
+            if last && let Ok(mut kept) = memo.lock() {
                 kept.read_through = true;
             }
             let parts = {
@@ -307,9 +305,7 @@ impl LexicalSidecar {
             };
             // A round that read every candidate is the last: what earlier
             // rounds kept is let go before the answer is ranked.
-            if last
-                && let Ok(mut kept) = memo.lock()
-            {
+            if last && let Ok(mut kept) = memo.lock() {
                 *kept = PartsMemo::default();
             }
             parts.read_revision = store

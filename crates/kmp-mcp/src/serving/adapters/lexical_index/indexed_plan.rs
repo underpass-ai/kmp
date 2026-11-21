@@ -270,9 +270,15 @@ impl IndexedPlan {
                 let mut carriers = self
                     .bridged
                     .iter()
-                    .map(|doc| (prefixes.prefix(doc).map_or(i64::MAX, |prefix| prefix.2), doc))
+                    .map(|doc| {
+                        (
+                            prefixes.prefix(doc).map_or(i64::MAX, |prefix| prefix.2),
+                            doc,
+                        )
+                    })
                     .collect::<Vec<_>>();
-                carriers.sort_by(|left, right| right.0.cmp(&left.0).then_with(|| left.1.cmp(right.1)));
+                carriers
+                    .sort_by(|left, right| right.0.cmp(&left.0).then_with(|| left.1.cmp(right.1)));
                 // Read at least `bridged_limit` of them, and on to the
                 // `BRIDGED_SURE`-th that no reading can find eligible: the
                 // rescue takes its few from the rejected, best first.
