@@ -275,10 +275,41 @@ TABLE
 
 GOLD
 
-**Profile after (10^4).** PROFILE_AFTER
+**Profile after (10^4, profiling build, other builds running).** The
+measured question: plan 0.30–0.36 s (its rows 0.06 s; seed df, counting the
+pairs and reading the partners' df 0.19 s; prefixes and the reaches of 3,153
+candidates 0.09 s), then one round reading the 55 candidates it must
+(0.05 s of parts, 0.03 s of ranking). A gold anchored question: plan 0.2 s,
+one round 0.4 s, most of it the gate reading its 224 candidates. The plan is
+now bounded by the rows the postings reach (4,931 here; 49,219 at 10^5,
+where it takes 2.2 s). A first wake: the catalogue and the bodies 0.3 s,
+`wake_response_rendering` 0.12 s, the JSON of the whole packet
+(`wake_value`) 0.16 s and its page 0.11 s. A rewind served from the kept
+index: the dimension filter over the index's whole bundle and its
+validation, the proof labels of every entry, and the traversal (together
+about 70 % of the call). Raw: `read-perf-2/profile-final/`.
 
 **Parity.** PARITY
 
 **Sidecar upgrade.** UPGRADE
 
-**What remains.** REMAINS
+**What remains.**
+
+- **First wake at 10^4** (target 500 ms). It still reads the whole about
+  and renders the whole packet to JSON before its page is cut; what is left
+  is spread over the read, the response, `wake_value` and the projection.
+  Following the page needs that order kept per about and the page
+  materialized from it, as the first pass said.
+- **Rewind at 10^4** (target 100 ms). The index is kept, but every call
+  filters the index's whole bundle by dimension, validates the bundle it
+  builds and reads the proof labels of every entry. For a read with no
+  boundary these are the same on every call of one index and could be kept
+  with it.
+- **10^5.** The plan reads every row the postings reach (tens of thousands
+  for a common word); an anchored question reads every candidate that names
+  an anchor; wake and time read the whole about; the temporal index is not
+  kept past 16,384 nodes.
+- **Peak RSS of a long session.** On the gold replay at 10^4 the peak grows
+  ask by ask on the heavy anchored questions (the index now answers them
+  instead of the whole about). The single-process latency run peaks lower
+  than before.
