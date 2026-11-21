@@ -53,7 +53,7 @@ impl WriteExpansionsConfig {
             Err(_) => return Err("cannot read write expansions configuration".into()),
         };
         let config: Self = serde_json::from_slice(&bytes)
-            .map_err(|_| "invalid write expansions configuration".to_string())?;
+            .map_err(|error| format!("invalid write expansions configuration: {error}"))?;
         if !(config.accept_at.is_finite() && config.accept_at > 0.0 && config.accept_at <= 1.0) {
             return Err("write-expansions accept_at must be in (0, 1]".into());
         }

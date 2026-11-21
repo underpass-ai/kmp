@@ -97,6 +97,7 @@ process would:
 | `warn  typesafe.json: rejected: TypeSafe model must be a pinned version such as jev-1.14.0` | An alias such as `jev-latest`. | Name a pinned release. |
 | `warn  ask-judge.json: rejected: ask-judge.json needs typesafe.json beside the store` | A Jev feature without its parent opt-in. | Add `typesafe.json`, or remove the file. |
 | ``warn  rerank.json: rejected: invalid rerank configuration: missing field `pool_size` at line 1 column 2`` | `rerank.json` holds `{}` or lacks a field; the line names it. | Add the field it names, or remove the file. |
+| ``warn  ask-cross-language.json: rejected: invalid ask cross-language configuration: unknown field `vetoo`, expected one of `veto`, `rescue`, `keep_at`, `rescue_at`, `excerpt_chars` at line 1 column 8`` | A misspelt or unknown key; the line names it and the keys the file accepts. The same holds for `ask-judge.json`, `wake-focus.json`, `write-expansions.json` and `semantic-retrieval.json`. | Fix the key it names, or remove the file. |
 
 ## Hosts and engines
 

@@ -497,6 +497,10 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
   always `~/.config/typesafe.env`. An incomplete `typesafe.json` or a
   `rerank.json` holding `{}` is rejected naming the field it lacks
   (``invalid TypeSafe configuration: missing field `endpoint` …``).
+  `ask-cross-language.json`, `ask-judge.json`, `wake-focus.json`,
+  `write-expansions.json` and `semantic-retrieval.json` follow the same rule
+  (``invalid ask cross-language configuration: unknown field `vetoo`, expected
+  one of …``).
 - `kmp-mcp import <file>` into a store that holds memory names the way
   forward: it says the store "already holds 1 event", and that
   `kmp-mcp import --from <file> --about <about>` brings exact abouts into it

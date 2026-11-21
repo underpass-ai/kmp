@@ -284,6 +284,11 @@ fn an_incomplete_file_is_rejected_naming_the_missing_field() {
         r#"{"model":"jev-1.14.0"}"#,
     )
     .expect("typesafe");
+    std::fs::write(
+        dir.path().join("ask-cross-language.json"),
+        r#"{"vetoo":true}"#,
+    )
+    .expect("cross-language");
 
     let entries = super::inspect_store_config(dir.path());
     let reason = |name: &str| match &entries
@@ -299,6 +304,11 @@ fn an_incomplete_file_is_rejected_naming_the_missing_field() {
     assert!(
         typesafe.starts_with("invalid TypeSafe configuration: missing field `endpoint`"),
         "{typesafe}"
+    );
+    let cross = reason("ask-cross-language.json");
+    assert!(
+        cross.starts_with("invalid ask cross-language configuration: unknown field `vetoo`"),
+        "{cross}"
     );
     let rerank = reason("rerank.json");
     assert!(
