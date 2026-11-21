@@ -125,6 +125,15 @@ def applicable(verdict):
     return False
 
 
+def unscored_journeys(report):
+    """{arm: journeys of its runs that ended in an error and were not scored}, only the non-zero."""
+    counts = {}
+    for row in report['headlines']:
+        if row.get('errors'):
+            counts[row['arm']] = counts.get(row['arm'], 0) + row['errors']
+    return counts
+
+
 def _headline(report):
     rows = {}
     for row in report['headlines']:
@@ -161,6 +170,20 @@ def report_section(name, results, questions, specs, mode, layout, extras=(), lev
     report = reports.build_report(baseline, candidate, questions, counters, options, reason)
     directory = reports.write_report(report, layout, markdown.render(report))[0].parent
     verdict = report['verdict']
+    unscored = unscored_journeys(report)
+    if unscored:
+        # A journey that ended in a tool, RPC or transport error is not scored,
+        # and a score over the rest reads like a result. The section fails
+        # instead, with no headline; its report stays on disk to say why.
+        reason = 'journeys not scored: ' + ', '.join(f'{arm} {count}' for arm, count in unscored.items())
+        return SectionResult(
+            name, FAILED, reason, layout='private' if layout.private else 'public',
+            report_key=report['report_key'], report_dir=directory,
+            runs={arm: {'run_id': r.run_id, 'cached': r.cached}
+                  for arm, r in zip(('baseline', 'candidate'), results)},
+            questions=report['provenance']['questions']['by_corpus'], verdict='captura_fallida',
+            reasons=[reason] + list(verdict['reasons']), applicable=True,
+            limitations=list(report['limitations']), freeze=freeze)
     return SectionResult(
         name, RAN, layout='private' if layout.private else 'public', report_key=report['report_key'],
         report_dir=directory,

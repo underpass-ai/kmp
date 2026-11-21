@@ -85,10 +85,13 @@ def ordered_digest(pairs):
 
 
 def result_key(*, binary_sha256, config_digest, store_key, questions_digest, mode,
-               bench_version=BENCH_VERSION, nonce=None):
+               bench_version=BENCH_VERSION, nonce=None, calls_digest=None):
     """Section 8: (binary sha, config digest, store key, questions digest, mode, bench version).
 
-    `nonce` is only for runs that must never be reused (jev='record').
+    `nonce` is only for runs that must never be reused (jev='record'). `calls_digest`
+    is the first call each question becomes (`question.calls_digest`): a change in
+    how a stored question is turned into a call is a different run, never a cache
+    hit. A run sealed before it existed has none and keeps its key.
     """
     if not isinstance(mode, str) or not MODE.fullmatch(mode):
         raise CacheKeyInvalid(f'mode {mode!r} is not a mode name')
@@ -99,6 +102,8 @@ def result_key(*, binary_sha256, config_digest, store_key, questions_digest, mod
                 'mode': mode}
     if nonce is not None:
         material['nonce'] = str(nonce)
+    if calls_digest is not None:
+        material['calls_digest'] = require_hex64(calls_digest, 'calls_digest')
     return _key('result', material, bench_version)
 
 
