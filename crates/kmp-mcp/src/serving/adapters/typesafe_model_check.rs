@@ -8,6 +8,7 @@ use reqwest::header::AUTHORIZATION;
 use serde_json::Value;
 
 use super::typesafe_api_key::TypeSafeApiKey;
+use super::typesafe_config::names_a_pinned_version;
 use super::typesafe_judgement::read_config;
 use crate::serving::environment::TYPESAFE_API_KEY_ENV;
 use crate::serving::model_check::ModelCheck;
@@ -43,6 +44,17 @@ pub(super) fn check_models(url: reqwest::Url, key: TypeSafeApiKey, model: String
         .unwrap_or_else(|_| Err("the check failed".to_string()));
     match listed {
         Ok(served) if served.contains(&asked) => ModelCheck::Served { model },
+        // A list of aliases only (`jev-latest`, `jev-preview`, as TypeSafe
+        // answered on 2026-11-21) says nothing about a pinned release.
+        Ok(served) if !served.iter().any(|name| names_a_pinned_version(name)) => {
+            ModelCheck::NotChecked {
+                model,
+                reason: format!(
+                    "TypeSafe lists aliases only ({}), not pinned releases",
+                    served.join(", ")
+                ),
+            }
+        }
         Ok(served) => ModelCheck::NotServed { model, served },
         Err(reason) => ModelCheck::NotChecked { model, reason },
     }
@@ -143,6 +155,18 @@ mod tests {
                 model: "jev-1.14.0".into(),
                 served: vec!["jev-1.15.0".into()]
             }
+        );
+    }
+
+    #[test]
+    fn a_list_of_aliases_only_is_not_checked_never_a_warning() {
+        let (checked, _) = check(vec![reply(
+            200,
+            r#"{"models":[{"name":"jev-latest"},{"name":"jev-preview"}]}"#,
+        )]);
+        assert!(
+            matches!(&checked, ModelCheck::NotChecked { reason, .. } if reason.contains("aliases only")),
+            "{checked:?}"
         );
     }
 

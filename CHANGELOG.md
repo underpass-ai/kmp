@@ -291,16 +291,20 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
   them (`missing_typed` 0.8181, `suspect_recall` 0.8750,
   `proposed_hops_right` 0.9473, `write_typed_with_jev` 0.8181). A judged
   sample costs about 76 % more Jev input tokens.
-- Writes that ask Jev for relation proposals or for search expansions wait
-  at most 3 s, like the first pages of reads (a store with
-  `timeout_ms: 60000` could hold a committed write for a minute). A late
-  judgement is reported as not judged, and still lands in the verdict book.
+- Each judgement a committed write asks (the partner round, the typing and
+  the lifecycle reading of its relation proposals; its search expansions)
+  waits at most 3 s, like the first pages of reads; a store with
+  `timeout_ms: 60000` could hold a committed write for minutes. A write that
+  asks all four waits at most about 12 s. A late judgement is reported as
+  not judged, and still lands in the verdict book.
 - TypeSafe's 529 (overloaded) is retried like a 429: twice, after
   `Retry-After` or 0.5 s then 1 s, within the caller's deadline.
 - `kmp-mcp doctor` asks TypeSafe whether the model a store pins is still
-  served (`GET /v1/models`, the key and no store text), and warns before a
-  deprecated pin makes every judgement fail. Unreachable reads "not
-  checked".
+  served (`GET /v1/models`, the key and no store text), and warns when the
+  list names pinned releases and not this one. Unreachable reads "not
+  checked", and so does a list of aliases only, which is what TypeSafe
+  answers today (`jev-latest`, `jev-preview`): until it lists releases, the
+  check cannot see a deprecation.
 
 - TypeSafe Jev is pinned at `jev-1.14.0` (was `jev-1.13.0`) in the judged
   scorecards, the memory bench, the guide's `typesafe.json` example and the

@@ -71,7 +71,7 @@ page.
 | When | `kmp-mcp doctor`, only when the selected store has a valid `typesafe.json` and a key is found. `info` never calls. |
 | Request | `GET https://api.typesafe.ai/v1/models` with the key as the `Authorization` header; 3 s timeout. |
 | Carries | No body: no memory, no question, no store path. Reads the model names only. |
-| Result | The pinned model served (ok), not listed any more (a warning, before judgements fail), or "not checked" when the service cannot be reached. |
+| Result | The pinned model served (ok), not listed among the releases TypeSafe lists (a warning, before judgements fail), or "not checked" when the service cannot be reached or lists aliases only (as it did on 2026-11-21: `jev-latest`, `jev-preview`). |
 
 Source: `crates/kmp-mcp/src/serving/adapters/typesafe_model_check.rs`.
 

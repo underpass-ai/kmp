@@ -72,14 +72,7 @@ impl KernelMcpServer {
                 proposal
             })
             .collect::<Vec<_>>();
-        if let Some(warnings) = result["warnings"].as_array_mut() {
-            for warning in answer["warnings"].as_array().into_iter().flatten() {
-                warnings.push(json!(format!(
-                    "relation proposals: {}",
-                    warning.as_str().unwrap_or_default()
-                )));
-            }
-        }
+        copy_warnings(result, &answer);
         if items.is_empty() {
             return;
         }
@@ -97,9 +90,60 @@ impl KernelMcpServer {
     }
 }
 
+/// The review's warnings on the write's result, named as the proposals'.
+/// A write whose result carried none gains the list: a judgement that was
+/// not answered in time must say so, never read as "no proposals".
+fn copy_warnings(result: &mut Value, answer: &Value) {
+    let copied = answer["warnings"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .map(|warning| {
+            json!(format!(
+                "relation proposals: {}",
+                warning.as_str().unwrap_or_default()
+            ))
+        })
+        .collect::<Vec<_>>();
+    if copied.is_empty() {
+        return;
+    }
+    match result["warnings"].as_array_mut() {
+        Some(warnings) => warnings.extend(copied),
+        None => result["warnings"] = Value::Array(copied),
+    }
+}
+
 fn excerpt(text: &str) -> String {
     match text.char_indices().nth(EXCERPT_CHARS) {
         Some((cut, _)) => format!("{}…", &text[..cut]),
         None => text.to_string(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_judgement_not_answered_in_time_is_said_on_the_write_even_without_warnings() {
+        let answer = json!({"warnings": ["Jev could not type the pairs: not judged: Jev did not answer within 3000 ms"]});
+        let mut bare = json!({"status": "committed"});
+        copy_warnings(&mut bare, &answer);
+        assert!(
+            bare["warnings"][0]
+                .as_str()
+                .expect("warning")
+                .contains("relation proposals: Jev could not type the pairs: not judged")
+        );
+        let mut warned = json!({"status": "committed", "warnings": ["earlier"]});
+        copy_warnings(&mut warned, &answer);
+        assert_eq!(warned["warnings"].as_array().map(Vec::len), Some(2));
+        let mut quiet = json!({"status": "committed"});
+        copy_warnings(&mut quiet, &json!({}));
+        assert!(
+            quiet.get("warnings").is_none(),
+            "nothing to say, nothing added"
+        );
     }
 }
