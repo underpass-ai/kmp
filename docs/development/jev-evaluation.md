@@ -383,7 +383,7 @@ in Python and proven against recorded cassette keys.
 | support noul: `order`, `relation_means`, state `{}` | right 75 → 74 of 105 (p = 1.0); false doubts 0 → 0 | new |
 | best type / retype: no `none`, no why, gate on probability | right 60 → 71 of 105 (p = 0.007); false retypes 0 → 2 of 60 (p = 0.5) | new |
 | pre-write direction: named options, companion, `order` | right 136 → 148 of 150 (p = 0.004) | new |
-| lifecycle: described options, same-thing companion, `order` | right 145 → 133 of 210 (p = 0.31); false proposals 50 → 2 of 120 | new, see below |
+| lifecycle: described options, same-thing companion, `order` | right 145 → 133 of 210 (p = 0.31); false proposals 50 → 2 of 120 at the 0.7 line | new form; companion line 0.5 (the owner's choice, below) |
 | partner round: content keys, companion, gate on probability (seed 53) | right 75 → 78 of 95 (p = 0.68); false 11 → 10 | new |
 | focus / write partner noul: criteria, 0.7 line (seed 53) | facts right 12 → 13 of 13; non-gold pairs over the line 18 → 9 of 645 | new (n small) |
 | paths on-the-way: criteria, kept unless no | right 212 → 210 of 216 (p = 0.73); non-chain kept 2 → 0 | new |
@@ -406,11 +406,29 @@ round on 4 of 204 (probability right on 3). Previous probe F2: 7–17 %.
 
 **Two results the owner should weigh.**
 - Lifecycle passes the rule because its false proposals collapse (50 → 2
-  of 120), but it finds only 15 of 90 real held-out supersessions, against
-  75. The same-thing companion reads unsettled (median 0.53) on "same
-  setting, new value" pairs, so the 0.7 line withdraws them. Re-read of the
-  same answers, exploratory: a 0.5 line finds 52/90 with 15/120 false.
-  Lifecycle is off by default.
+  of 120), but at the guide's 0.7 line it finds only 15 of 90 real held-out
+  supersessions, against 75. The same-thing companion reads unsettled
+  (median 0.53) on "same setting, new value" pairs, so the 0.7 line
+  withdraws them. A re-read of the same answers after the fact found 52/90
+  with 15/120 false at a 0.5 line. **The line was chosen by the owner on
+  21 Nov 2026 between three measured options** (the old form, the new form
+  at 0.7, the new form at 0.5): the companion's line is 0.5. Between the
+  guide's lines, an unsettled pair at 0.5 or above is proposed and one below
+  0.5 is withdrawn (`lifecycle_plan.rs`, `SAME_AT`). Because 0.5 came from
+  looking at the held-out set, it was confirmed on fresh synth-v1 seeds 67,
+  71 and 73, used for nothing else (210 pairs: 90 real supersessions, 120
+  novel; same item builder and gold; three samples; the strict and middle
+  rows read the same new-form answers):
+
+  | Form | Supersessions found (of 90) | False proposals (of 120) | Right (of 210) | McNemar vs old |
+  |---|---|---|---|---|
+  | old (choice with `novel`) | 68 (75.6 %) | 47 (39.2 %) | 141 | — |
+  | new, companion ≥ 0.7 | 18 (20.0 %) | 3 (2.5 %) | 135 | p = 0.62 |
+  | **new, companion ≥ 0.5 (shipped)** | **50 (55.6 %)** | **14 (11.7 %)** | **156** | p = 0.11 |
+
+  Per sample, the 0.5 line found 51 / 48 / 50 with 13 / 13 / 16 false. The
+  question is unchanged, so recorded verdicts stay valid; only the reading
+  moved. Lifecycle is off by default.
 - Wake keeps its old form only on the pre-registered guard alpha: the new
   form kept 25 more of 226 required passages and 5 more of 1,790 planted
   non-required ones.

@@ -448,7 +448,13 @@ mod tests {
         assert_eq!(calls, 2, "the partner round and the lifecycle reading");
         let (different, _) = run(0.1).await;
         assert!(different.is_empty(), "not the same thing: withdrawn");
-        let (unsettled, _) = run(0.5).await;
-        assert!(unsettled.is_empty(), "unsettled: withdrawn");
+        let (upper, _) = run(0.6).await;
+        assert_eq!(
+            upper,
+            [("old".to_string(), Some("updates_state".to_string()))],
+            "unsettled at or above the owner's 0.5 line: proposed"
+        );
+        let (lower, _) = run(0.4).await;
+        assert!(lower.is_empty(), "unsettled below 0.5: withdrawn");
     }
 }

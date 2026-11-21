@@ -11,7 +11,7 @@ use serde_json::json;
 
 use crate::curate::application::curate_material::CurateMaterial;
 use crate::curate::application::judgement_plan::{criteria_noul, excerpt, order_of, text_of};
-use crate::curate::application::pair_reading::{reading_of, verdict_of};
+use crate::curate::application::pair_reading::{verdict_of, yes_of};
 use crate::curate::application::relation_wording::{
     LIFECYCLE_OPTIONS, LIFECYCLE_Q, SAME_FALSE, SAME_Q, SAME_TRUE,
 };
@@ -22,7 +22,6 @@ use crate::serving::judgement_answer::JudgementAnswer;
 use crate::serving::judgement_question::JudgementQuestion;
 use crate::serving::judgement_request::JudgementRequest;
 use crate::serving::judgement_response::JudgementResponse;
-use crate::serving::noul_reading::NoulReading;
 
 /// Most lifecycle proposals for one new fact: the latest current facts that
 /// share its anchor and kind.
@@ -122,15 +121,32 @@ pub(crate) fn lifecycle_request(
     }
 }
 
+/// The line the companion of a lifecycle pair (are `new` and `old` the same
+/// specific thing?) must reach for the pair to be proposed. The site's truth
+/// table, on the companion's probability `p`:
+///
+/// | `p` | reading | outcome |
+/// |---|---|---|
+/// | p >= 0.7 | yes | proposed, with the relation its choice maps to |
+/// | 0.5 <= p < 0.7 | unsettled, upper half | proposed, the same way |
+/// | 0.3 < p < 0.5 | unsettled, lower half | withdrawn |
+/// | p <= 0.3 | no | withdrawn |
+/// | no answer | not judged | withdrawn (the pair was asked; it is never typed unread) |
+///
+/// The owner chose 0.5 on 21 Nov 2026 between three measured options
+/// (`docs/development/jev-evaluation.md`): at the guide's 0.7 the companion,
+/// unsettled on "same setting, new value" pairs, withdrew most real
+/// supersessions; 0.5 keeps about half of them with few false proposals.
+pub(crate) const SAME_AT: f64 = 0.5;
+
 /// The relation lifecycle pair `n` proposes and its reading, when its
-/// companion reads yes (the same specific thing). Unsettled, no or
-/// unanswered withdraws it.
+/// companion reaches [`SAME_AT`]; below it, or unanswered, it is withdrawn.
 pub(crate) fn lifecycle_reading(
     response: &JudgementResponse,
     n: usize,
     answer: &JudgementAnswer,
 ) -> Option<(&'static str, JevVerdict)> {
-    if reading_of(response, &format!("s{n}")) != Some(NoulReading::Yes) {
+    if !yes_of(response, &format!("s{n}")).is_some_and(|same| same >= SAME_AT) {
         return None;
     }
     let verdict = verdict_of(answer)?;
@@ -246,7 +262,14 @@ mod tests {
             confidence: 0.7,
         };
         let mut response = JudgementResponse::empty("jev");
-        for (yes, expected) in [(0.9, Some("supersedes")), (0.5, None), (0.1, None)] {
+        for (yes, expected) in [
+            (0.9, Some("supersedes")),
+            (0.6, Some("supersedes")),
+            (0.5, Some("supersedes")),
+            (0.49, None),
+            (0.31, None),
+            (0.1, None),
+        ] {
             response
                 .answers
                 .insert("s0".into(), JudgementAnswer::Noul { yes });

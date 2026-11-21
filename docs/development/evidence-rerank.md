@@ -166,9 +166,11 @@ name the new fact's principal anchor (its rarest hard anchor), as
 `{"lifecycle": "jev"}` has Jev read each such pair first (restates,
 later_state, replaces or conflicts, each described, with which was recorded
 first stated) beside a companion yes/no (are they about the same specific
-thing?), and withdraws a pair unless the companion reads yes. Measured on
-2026-11-21 this withdraws nearly every false pair and most real
-supersessions too (`jev-evaluation.md`).
+thing?), and proposes a pair when the companion reads 0.5 or above
+(an unsettled pair below 0.5 is withdrawn). The line was chosen by the
+owner on 21 Nov 2026: on fresh synthetic seeds it finds 50 of 90 real
+supersessions with 14 false proposals of 120, where TypeSafe's 0.7 found 18
+with 3 and the earlier form 68 with 47 (`jev-evaluation.md`).
 Both are off by default: sharing an anchor is not a replacement
 (MemStrata, 2606.26511), and on the judged corpora none of the 68 pairs the
 rule proposed was one. A review of an about of more than 60 facts without
