@@ -10,9 +10,13 @@ readme = "README.md"
 keywords = ["kmp", "mcp", "memory", "context", "agents"]
 categories = ["command-line-utilities", "development-tools"]
 publish = true
-# The shipped-bridge stress cases (~1 MB) gate this repository's table; they
-# mean nothing without distribution/, which the package does not carry.
-exclude = ["tests/fixtures/lexical_bridge_stress/"]
+# The shipped-bridge stress cases (~1 MB) gate this repository's table, and
+# the cross-language judge's recorded verdicts are judgements of those cases;
+# they mean nothing without distribution/, which the package does not carry.
+exclude = [
+  "tests/fixtures/lexical_bridge_stress/",
+  "tests/fixtures/cross_language_judge/",
+]
 
 [features]
 # Compatibility feature name retained for downstream manifests. SQLite is

@@ -1,3 +1,4 @@
+use super::super::cross_language_judge::CrossLanguageJudge;
 use super::super::doubt_band_judge::DoubtBandJudge;
 use super::super::embedded_errors::{kernel_error, mapping_error};
 use super::super::judgement_reranker::JudgementReranker;
@@ -20,8 +21,8 @@ use kmp_proto_mapping::v1beta1::recall_projection::{
     RANK_DEPTH_CHUNK, RANK_HEAD_WINDOW, ask_rank_depth, project_rendered_ask, render_ask,
 };
 use kmp_proto_mapping::v1beta1::{
-    AskGate, AskRetrievalContext, LexicalBridge, LexicalShadowWitness, ask_query_from_proto,
-    ask_response_from_result,
+    AskGate, AskRetrievalContext, DoubtBandEntries, LexicalBridge, LexicalShadowWitness,
+    ask_query_from_proto, ask_response_from_result,
 };
 use serde_json::Value;
 use std::sync::Arc;
@@ -37,6 +38,7 @@ pub(crate) struct EmbeddedAskTool<'a> {
     frozen: FrozenRecallReads<'a>,
     gate: Option<AskGate>,
     doubt_band: Option<&'a Result<Option<Arc<DoubtBandJudge>>, String>>,
+    cross_language: Option<&'a Result<Option<Arc<CrossLanguageJudge>>, String>>,
     lexical: Option<(&'a LexicalSidecar, &'a kmp_embedded::EmbeddedKernelStore)>,
 }
 
@@ -60,6 +62,7 @@ impl<'a> EmbeddedAskTool<'a> {
             frozen,
             gate: None,
             doubt_band: None,
+            cross_language: None,
             lexical: None,
         }
     }
@@ -81,6 +84,16 @@ impl<'a> EmbeddedAskTool<'a> {
         doubt_band: &'a Result<Option<Arc<DoubtBandJudge>>, String>,
     ) -> Self {
         self.doubt_band = Some(doubt_band);
+        self
+    }
+
+    /// Ask the store's cross-language judge (`ask-cross-language.json`), if
+    /// it opted in.
+    pub(crate) fn with_cross_language(
+        mut self,
+        cross_language: &'a Result<Option<Arc<CrossLanguageJudge>>, String>,
+    ) -> Self {
+        self.cross_language = Some(cross_language);
         self
     }
 
@@ -176,7 +189,8 @@ impl<'a> EmbeddedAskTool<'a> {
                     && matches!(read, ShadowScope::Indexed { .. })
                     && matches!(self.semantic, Ok(None))
                     && matches!(self.rerank, Ok(None))
-                    && !matches!(self.doubt_band, Some(Ok(Some(_)) | Err(_))) =>
+                    && !matches!(self.doubt_band, Some(Ok(Some(_)) | Err(_)))
+                    && !matches!(self.cross_language, Some(Ok(Some(_)) | Err(_))) =>
             {
                 let started = std::time::Instant::now();
                 let gate = self.gate;
@@ -356,28 +370,50 @@ impl<'a> EmbeddedAskTool<'a> {
         }
         // The doubt band asks a judge only on a first page, and only when
         // the deterministic reading settled in doubt; its verdicts act on
-        // the core, never on anything the selection did not admit.
-        match self.doubt_band {
-            Some(Ok(Some(judge))) if !continuation => {
-                let band = retrieval
-                    .doubt_band(
-                        &question,
-                        policy,
-                        &temporal,
-                        self.bridge,
-                        judge.margin_tenths(),
-                    )
-                    .map_err(|status| mapping_error(&status))?;
-                if let Some(band) = band {
-                    let outcome = judge.judge(&question, &band).await;
-                    if let Some(verdicts) = outcome.verdicts {
-                        retrieval = retrieval.with_doubt_verdicts(verdicts);
-                    }
-                    warnings.extend(outcome.warning);
-                }
+        // the core, never on anything the selection did not admit. The
+        // cross-language judge's entries are read first; one judge is asked
+        // per ask.
+        let band_judge = match self.doubt_band {
+            Some(Ok(Some(judge))) => Some(judge),
+            Some(Err(error)) => {
+                warnings.push(format!("doubt band disabled: {error}"));
+                None
             }
-            Some(Err(error)) => warnings.push(format!("doubt band disabled: {error}")),
-            _ => {}
+            _ => None,
+        };
+        let cross_judge = match self.cross_language {
+            Some(Ok(Some(judge))) => Some(judge),
+            Some(Err(error)) => {
+                warnings.push(format!("cross-language judge disabled: {error}"));
+                None
+            }
+            _ => None,
+        };
+        let entries = band_judge
+            .map_or_else(DoubtBandEntries::default, |judge| {
+                DoubtBandEntries::band(judge.margin_tenths())
+            })
+            .with_cross_language(
+                cross_judge.is_some_and(|judge| judge.veto()),
+                cross_judge.is_some_and(|judge| judge.rescue()),
+            );
+        if entries.is_open() && !continuation {
+            let band = retrieval
+                .doubt_band(&question, policy, &temporal, self.bridge, entries)
+                .map_err(|status| mapping_error(&status))?;
+            let outcome = match (band, band_judge, cross_judge) {
+                (Some(band), _, Some(judge)) if band.entry.is_cross_language() => {
+                    Some(judge.judge(&question, &band).await)
+                }
+                (Some(band), Some(judge), _) => Some(judge.judge(&question, &band).await),
+                _ => None,
+            };
+            if let Some(outcome) = outcome {
+                if let Some(verdicts) = outcome.verdicts {
+                    retrieval = retrieval.with_doubt_verdicts(verdicts);
+                }
+                warnings.extend(outcome.warning);
+            }
         }
         let mut response = ask_response_from_result(
             &question,

@@ -9,7 +9,9 @@ use std::sync::Arc;
 
 use kmp_proto_mapping::v1beta1::{AskGate, LexicalBridge};
 
+use super::ask_cross_language_config::ASK_CROSS_LANGUAGE_FILE;
 use super::ask_gate_config::{ASK_GATE_FILE, AskGateConfig};
+use super::cross_language_judge::CrossLanguageJudge;
 use super::curate_config::{CURATE_FILE, CurateConfig};
 use super::doubt_band_judge::DoubtBandJudge;
 use super::judgement_reranker::JudgementReranker;
@@ -43,6 +45,7 @@ pub(super) struct StoreConfigLoads {
     pub(super) rerank: Result<Option<Arc<JudgementReranker>>, String>,
     pub(super) wake_focus: Result<Option<Arc<WakeFocusJudge>>, String>,
     pub(super) doubt_band: Result<Option<Arc<DoubtBandJudge>>, String>,
+    pub(super) cross_language: Result<Option<Arc<CrossLanguageJudge>>, String>,
     pub(super) write_relations: Option<WriteRelationsConfig>,
     pub(super) write_expansions: Result<Option<WriteExpansionsConfig>, String>,
     pub(super) lexical_bridge: LexicalBridge,
@@ -75,10 +78,13 @@ impl StoreConfigLoads {
         let rerank = JudgementReranker::load(data_dir, &observed(JudgementSite::Rerank));
         let wake_focus = WakeFocusJudge::load(data_dir, &observed(JudgementSite::WakeFocus));
         let doubt_band = DoubtBandJudge::load(data_dir, &observed(JudgementSite::DoubtBand));
+        let cross_language =
+            CrossLanguageJudge::load(data_dir, &observed(JudgementSite::CrossLanguage));
         Self {
             rerank,
             wake_focus,
             doubt_band,
+            cross_language,
             write_relations: WriteRelationsConfig::load(data_dir),
             write_expansions: WriteExpansionsConfig::load(data_dir),
             lexical_bridge: load_lexical_bridge(data_dir),
@@ -139,6 +145,7 @@ impl StoreConfigLoads {
                 },
             )
             .beside_store("ask-judge.json", verdict(&self.doubt_band))
+            .beside_store(ASK_CROSS_LANGUAGE_FILE, verdict(&self.cross_language))
             .at(
                 "lexical-bridge.kmpb",
                 lexical_bridge_path(data_dir),
@@ -176,6 +183,25 @@ impl StoreConfigLoads {
                     match judge.promote_permille() {
                         Some(permille) => format!("promote at {}", permille_text(permille)),
                         None => "promote off".into(),
+                    },
+                );
+        }
+        if let Ok(Some(judge)) = &self.cross_language {
+            report = report
+                .effective(
+                    ASK_CROSS_LANGUAGE_FILE,
+                    if judge.veto() {
+                        format!("veto keeps at {}", permille_text(judge.keep_permille()))
+                    } else {
+                        "veto off".into()
+                    },
+                )
+                .effective(
+                    ASK_CROSS_LANGUAGE_FILE,
+                    if judge.rescue() {
+                        format!("rescue at {}", permille_text(judge.rescue_permille()))
+                    } else {
+                        "rescue off".into()
                     },
                 );
         }

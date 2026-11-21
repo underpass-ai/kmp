@@ -31,6 +31,7 @@ pub(crate) mod kernel_mcp_server;
 pub(crate) mod lexical_index_mode;
 pub(crate) mod lexical_totals;
 pub(crate) mod mcp_session;
+pub(crate) mod noul_criteria;
 mod output_schema_projection;
 mod panic_guard;
 pub(crate) mod passage_projection;

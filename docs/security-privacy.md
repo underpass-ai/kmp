@@ -11,7 +11,7 @@ vulnerability, see [SECURITY.md](../SECURITY.md).
 | What | Leaves the machine? | When |
 |:--|:--|:--|
 | Your memory (stored text, evidence, relations) | **No**, by default. | Only if you opt a store into TypeSafe Jev (below), or commit and push a project bundle yourself. |
-| The question an agent asks | No, by default. | Only with a Jev opt-in that judges asks (`rerank.json`, `ask-judge.json`). |
+| The question an agent asks | No, by default. | Only with a Jev opt-in that judges asks (`rerank.json`, `ask-judge.json`, `ask-cross-language.json`). |
 | A release check | **Yes**, on by default with the Claude Code plugin. | At most once a day, from the plugin's session hook. It sends no memory. `KMP_VERSION_CHECK=off` stops it. |
 | Downloads | Yes. | Only when you run `kmp-mcp setup`, `kmp-mcp update` or `/kmp:setup`. |
 | The viewer | Nothing listens. | Until ChronoLoom is requested; then on loopback only. |
@@ -35,6 +35,7 @@ must be a pinned release such as `jev-1.14.0`.
 | `kmp_summaries_audit` | `typesafe.json` alone | For each memory on the page whose summary stands: its text (up to 1,500 characters) and its `summary_en`. |
 | `kmp_ask` | `rerank.json` | The question, and each candidate memory's text cut to `excerpt_chars` (up to 2,000). |
 | `kmp_ask` | `ask-judge.json` | The question, and at most 8 candidate texts (up to 2,000 characters each), only for asks the gate settled in doubt. |
+| `kmp_ask` | `ask-cross-language.json` | The question and the language it is written in, and at most 8 candidate texts (up to 2,000 characters each, 1,200 by default) with their languages, only for an answer that stands on the lexical bridge's translation or an unanchored UNKNOWN the bridge reached memories in another language for. |
 | `kmp_wake` | `wake-focus.json` | The wake's `intent`, and evidence texts cut to `excerpt_chars`. Only when `intent` is set. |
 | `kmp_write_memory` | `write-relations.json` | The memories just written (up to 1,000 characters each) and candidate memories of the same about (up to 300). |
 | `kmp_write_memory` | `write-expansions.json` | Each proposed search expansion, with its memory's text (up to 4,000). |

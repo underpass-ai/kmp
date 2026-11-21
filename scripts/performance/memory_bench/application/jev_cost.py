@@ -37,7 +37,8 @@ def pinned_price(path=PRICES):
 PRICE_USD_PER_MTOK = pinned_price()
 SITE_LETTERS = {'rerank': 'p', 'wake_focus': 'p', 'curate_review': 'r', 'curate_focus': 'r',
                 'write_relations': 'r', 'precheck': 't', 'paths': 'w/n/c', 'labels': 't',
-                'summaries': 's/b', 'doubt_band': 'p', 'expansions': 'r'}
+                'summaries': 's/b', 'doubt_band': 'p', 'expansions': 'r',
+                'cross_language': 'p'}
 NO_REMOTE = 'latency is measured only in real (remote) mode'
 NOUL_ABSENT = 'kmp_judgement telemetry carries no per-answer probabilities'
 

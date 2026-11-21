@@ -58,7 +58,7 @@ fn probability(value: Option<&Value>) -> Result<f64, String> {
 
 fn typed_answer(raw: &Value, question: &JudgementQuestion) -> Result<JudgementAnswer, String> {
     match question {
-        JudgementQuestion::Noul { .. } => {
+        JudgementQuestion::Noul { .. } | JudgementQuestion::CriteriaNoul { .. } => {
             if raw.get("type").and_then(Value::as_str) != Some("noul") {
                 return Err("TypeSafe answered a noul with another type".into());
             }
