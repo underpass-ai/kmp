@@ -63,7 +63,7 @@ requires that exact pair, then compares all persisted and semantic fields
 without normalization.
 
 The measured fixture and frozen-binary provenance are in
-`artifacts/proof-batch-acceptance-20260915`. Each path has 20 warm samples,
+[artifacts/proof-batch-acceptance-20260915 at v0.27.0](https://github.com/underpass-ai/kmp/tree/v0.27.0/artifacts/proof-batch-acceptance-20260915). Each path has 20 warm samples,
 three untimed warmups and one first read in a fresh process over its own copy of
 the same quiescent store. The 64-entry joint results intentionally span seven
 or eight MCP pages. Every slow sample from the successful run remains in the
@@ -147,7 +147,7 @@ scope and the enabled real-SQLite control command. None of this instrumentation
 is present in the product source tree or compiled default binary delivered by
 this PR.
 
-`artifacts/proof-batch-physical-20260915` repeats the four exact-equivalence
+[artifacts/proof-batch-physical-20260915 at v0.27.0](https://github.com/underpass-ai/kmp/tree/v0.27.0/artifacts/proof-batch-physical-20260915) repeats the four exact-equivalence
 fixtures with ten measured operations, three warmups and one process-first
 operation per path. The runner reports preparation, process startup plus
 initialize, summed RPC wait and complete client wall time separately. Both

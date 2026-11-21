@@ -9,7 +9,7 @@ reuse against the current code, `kmp-mcp --help` and the live `tools/list`.
 Historical numbers and model names stay as they were measured (for example
 `jev-1.13.0` in a dated record).
 
-Evidence under `artifacts/` that these records cite was removed from the
+Generated evidence these records cite (the `artifacts` folder) was removed from the
 repository before 1.0. It is still in the Git history: read it at the
 [`v0.27.0` tag](https://github.com/underpass-ai/kmp/tree/v0.27.0/artifacts).
 
@@ -20,6 +20,7 @@ Older material (the tree before 2026-08-26) is in the
 
 | File | What it was |
 |:--|:--|
+| [agent-surface-increments.md](development/agent-surface-increments.md) | Per-increment maintenance notes for the Trace and read surface (Sept 2026, #538/#544), split out of the agent surface procedure at 1.0. |
 | [agent-token-optimization.md](development/agent-token-optimization.md) | #544 integration track log (opened 2026-09-24): token meter, Wake evidence identity, paired measurement. |
 | [agent-token-optimization-report.md](development/agent-token-optimization-report.md) | Generated report of that track, main against the integration branch. |
 | [ask-weighted-focus.md](development/ask-weighted-focus.md) | Weighing Ask's focus rule by IDF: measured, not adopted. |

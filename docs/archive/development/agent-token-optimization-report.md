@@ -193,4 +193,4 @@ Earlier paired runs, each against the integration head before the increment (det
 | C2 one time-navigation verb | #843 | — (fixture) | default `tools/list` 29,506 → 24,899 tokens | | unchanged |
 | C3 minimal continuation actions, lean progress | #845 | dcb8b5d8 | −1.3 % | −0.85 % | 11/11 both |
 
-The I3 run of 2026-09-24 remains in `artifacts/544-wake-oracle-20260924/`.
+The I3 run of 2026-09-24 remains in [artifacts/544-wake-oracle-20260924 at v0.27.0](https://github.com/underpass-ai/kmp/tree/v0.27.0/artifacts/544-wake-oracle-20260924).

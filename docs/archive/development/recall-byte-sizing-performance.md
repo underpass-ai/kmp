@@ -121,6 +121,6 @@ item and a pointer vector for eligible and selected items. The controls do not
 measure peak RSS or live heap, so they do not establish a retained-memory
 improvement.
 
-`artifacts/performance-769` contains the exact baseline source, the complete
+[artifacts/performance-769 at v0.27.0](https://github.com/underpass-ai/kmp/tree/v0.27.0/artifacts/performance-769) contains the exact baseline source, the complete
 measured patch, binary/source/tool hashes, validation record, full page parity,
 allocation counts, latency summaries and losslessly compressed raw samples.

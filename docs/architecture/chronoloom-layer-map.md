@@ -1,5 +1,10 @@
 # ChronoLoom layer map — the target before fixing #463
 
+> Status: done. The refactor this map planned landed, #463 is closed, and
+> `crates/kmp-viewer/src/view/` now has the `domain`, `ports`, `application`
+> and `adapters` layers it describes. The map is kept because the code links
+> to it; read the per-file rows as the plan the code followed.
+
 This is the checked-in architecture map the ChronoLoom refactor requires
 before any code moves, in the tradition of
 [kmp-mcp-layer-map.md](../archive/architecture/kmp-mcp-layer-map.md) for

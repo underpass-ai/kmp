@@ -10,7 +10,7 @@ checks below are concrete acceptance work, not inferred successes.
 All work started from freshly fetched main
 `fc352d7d37ac0480cc79120a6288bfd446fa4c86`. The original `verify/claims`
 checkout was preserved. Captures, failures, lossless compressed RPC traces and
-hashes are in [the evidence directory](../../../artifacts/acceptance-544-736-20260915/).
+hashes are in [the evidence directory](https://github.com/underpass-ai/kmp/tree/v0.27.0/artifacts/acceptance-544-736-20260915).
 
 ## #544: surface and complete authored journeys
 

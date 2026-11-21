@@ -58,8 +58,8 @@ per journey. Native tools/list grows from 244994 to 247172 response bytes
 The new field increases this scripted journey's cost; it provides targeting and
 copyable identity, not a demonstrated reduction in calls or context.
 
-Raw phase counts and binary/source hashes are in the local generated
-`artifacts/condense-candidates-784/replay-main.json` (not tracked in Git).
+Raw phase counts and binary/source hashes are in
+[artifacts/condense-candidates-784/replay-main.json at v0.27.0](https://github.com/underpass-ai/kmp/blob/v0.27.0/artifacts/condense-candidates-784/replay-main.json).
 Reproduce with binaries built from the baseline and candidate, keeping scratch
 inside the workspace:
 

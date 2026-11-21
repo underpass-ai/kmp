@@ -141,7 +141,7 @@ transport / selected packet / requested scope / task obligations). Comparator
 emits the annex conclusion states; A/A on identical artifacts must be equal.
 
 Baseline = `main` binary, candidate = integration binary, same profile and
-machine. Report in `docs/development/agent-token-optimization-report.md`,
+machine. Report in `docs/archive/development/agent-token-optimization-report.md`,
 generated from `report.json`.
 
 Delivered on `feat/544-wake-oracle` (same package as I0):
@@ -179,7 +179,7 @@ $H capture --binary <copy of candidate kmp-mcp> --variant candidate --wake-contr
 $TT measure --run $A/baseline --encoding o200k_base --out $A/baseline-metrics.json   # same for candidate
 $H oracle --run $A/baseline --out $A/baseline-oracle.json                             # same for candidate
 $H compare --baseline-run $A/baseline --baseline-metrics ... --candidate-run $A/candidate ... --out $A/report.json
-$H render --report $A/report.json --control $A/aa-baseline.json.gz --out docs/development/agent-token-optimization-report.md
+$H render --report $A/report.json --control $A/aa-baseline.json.gz --out docs/archive/development/agent-token-optimization-report.md
 ```
 
 W04 follows the wake scope contract (`crates/kmp-mcp/tests/wake_scope.rs`):

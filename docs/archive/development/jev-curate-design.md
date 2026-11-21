@@ -200,7 +200,7 @@ a relation, not on the relation.
 ## Shared TypeSafe client (PR 1)
 
 This generalises the client from `feat/jev-rerank`
-(`docs/development/jev-rerank-design.md` there).
+(`docs/archive/development/jev-rerank-design.md` there).
 
 - **Port** `JudgementModel`: batched `noul` and `choice` questions over one
   `state`, returning probabilities, confidence, model and usage. Boxed `Send`

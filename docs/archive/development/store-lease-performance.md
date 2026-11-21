@@ -29,7 +29,7 @@ The reproducible control in
 with 0, 1,000, and 10,000 unrelated empty lock files under `tmp/`, then
 measures one first-use claim separately from 23 repeated claims for one
 canonical store. It records directory metadata size, file count, source and
-runner hashes, host, and toolchain in `artifacts/performance-774`.
+runner hashes, host, and toolchain in [artifacts/performance-774 at v0.27.0](https://github.com/underpass-ai/kmp/tree/v0.27.0/artifacts/performance-774).
 
 The safety regression in `crates/kmp-mcp/tests/store_lease_safety.rs` verifies:
 

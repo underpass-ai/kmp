@@ -80,7 +80,7 @@ The first read uses a freshly seeded process without evicting the OS page
 cache. Whole-process peak RSS includes fixture construction and writes, so it
 is only a coarse ceiling. The benchmark does not measure physical I/O or live
 heap allocations. Source revision, toolchain, host, executable and runner
-hashes are recorded with the raw samples under `artifacts/performance-767`.
+hashes are recorded with the raw samples under [artifacts/performance-767 at v0.27.0](https://github.com/underpass-ai/kmp/tree/v0.27.0/artifacts/performance-767).
 
 The serialized quiet run used two fresh processes per revision and shape, for
 two first-read observations and 60 warm observations per side. The complete

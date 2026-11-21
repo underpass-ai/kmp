@@ -1,75 +1,81 @@
-# Hacer visible una lectura pendiente
+# Making a pending read visible
 
-En Cala, Sol recibió dos entradas temporales y dejó siete relaciones por leer.
-La respuesta contenía `page.has_more:true` y una continuación; el mensaje principal
-solo decía «Returned 2 temporal entries». `selection.has_more:false` describía
-la selección de entradas, no la proyección de su prueba. Terra también terminó
-tras un Wake parcial. F-134 y [#544](https://github.com/underpass-ai/kmp/issues/544)
-conservan esas reproducciones y entrevistas.
+In an earlier reader evaluation, one reader received two temporal entries and
+left seven relations unread. The response carried `page.has_more:true` and a
+continuation; the main message only said "Returned 2 temporal entries".
+`selection.has_more:false` described the selection of entries, not the
+projection of their proof. Another reader also stopped after a partial Wake.
+Finding F-134 and [#544](https://github.com/underpass-ai/kmp/issues/544) keep
+those reproductions and interviews.
 
-## Decisión
+## Decision
 
-Una lectura exitosa pero parcial empieza su primer texto MCP con
-`READ_INCOMPLETE`. El aviso explica que faltan partes del paquete seleccionado y
-que se debe seguir la acción devuelta o conservar explícitamente el resultado
-parcial. Después aparece el resumen original. Se sirve sin exigir identidad,
-contexto, consumo de guía ni persistencia adicional.
+A successful but partial read starts its first MCP text with
+`READ_INCOMPLETE`. The notice says that parts of the selected packet are
+missing and that the reader must follow the returned action or explicitly keep
+the partial result. The original summary follows. It is served without
+requiring identity, context, guide consumption or extra persistence.
 
-La señal deriva de los campos nativos, sin interpretar la prosa:
+The signal is derived from the native fields, without interpreting prose:
 
 - `page.has_more:true`;
 - `projection.page.has_more:true`;
-- `projection.core_text_shortened:true`, aunque ya no queden elementos de expansión.
+- `projection.core_text_shortened:true`, even when no expansion items remain.
 
-Las ayudas opcionales y este aviso usan la misma detección. La señal particular
-de vecindad del escritor conserva su ámbito; no se confunde con una lectura.
-Una selección temporal que ofrece más historia pero ya entregó toda su prueba
-no recibe el aviso. Tampoco se usa el mero hecho de tener `next_actions`: una
-acción puede iniciar otra selección. UNKNOWN completo conserva su significado.
-El fin de página nunca certifica suficiencia semántica ni búsqueda exhaustiva.
+The optional help and this notice use the same detection. The writer's own
+neighbourhood signal keeps its scope; it is not confused with a read. A
+temporal selection that offers more history but has already delivered all its
+proof does not get the notice. Having `next_actions` is not used on its own
+either: an action may start another selection. A complete UNKNOWN keeps its
+meaning. The end of the pages never certifies semantic sufficiency or an
+exhaustive search.
 
-## Límite de la modificación
+## Limit of the change
 
-Se cambia el texto del sobre MCP, no el objeto canónico. `structuredContent`,
-sus bytes, fuentes, relojes, omisiones, índices, cursores y presupuestos permanecen
-iguales. El texto principal añade un aviso breve, sin duplicar pruebas, acciones
-completas ni lecciones. Los clientes que usan exclusivamente structuredContent
-siguen comprobando sus campos nativos. No se añade otro estado persistido, otro
-campo redundante de finalización o una barrera que controle la respuesta del LLM.
+The text of the MCP envelope changes, not the canonical object.
+`structuredContent`, its bytes, sources, clocks, omissions, indexes, cursors
+and budgets stay the same. The main text adds a short notice, without
+duplicating proof, complete actions or lessons. Clients that use only
+`structuredContent` keep checking their native fields. No other persisted
+state, no redundant completion field and no barrier controlling the LLM's
+answer is added.
 
-Esto pretende que la señal existente llegue antes al lector. No demuestra que
-un agente la siga; se comprobará en una tarea nueva después de la entrega. Los
-intentos Cala cerrados permanecen parciales y no se reparan retrospectivamente.
+This aims to bring the existing signal to the reader sooner. It does not show
+that an agent follows it; that is to be checked in a new task after delivery.
+The closed evaluation attempts stay partial and are not repaired after the
+fact.
 
-## Aceptación
+## Acceptance
 
-Congelar y reproducir Wake y Goto reales en copias de la escritura Cala aprobada,
-sin los contextos del ensayo, y completar únicamente sus paquetes. Añadir Inspect,
-Trace, UNKNOWN completo y selección terminada con más historia. Comparar todas
-las páginas estructuradas exactamente antes/después y medir el sobre completo.
-Probar además núcleo abreviado sin más páginas, error, llamada sin registro y
-coherencia del indicador opcional. Conservar el texto del resumen y el contenido
-canónico byte por byte.
+Freeze and replay real Wake and Goto calls on copies of the approved
+evaluation write, without the trial's contexts, and complete only their
+packets. Add Inspect, Trace, a complete UNKNOWN and a finished selection with
+more history. Compare every structured page exactly before and after, and
+measure the whole envelope. Also test a shortened core with no more pages, an
+error, a call without registration and the consistency of the optional
+indicator. Keep the summary text and the canonical content byte for byte.
 
-Actualizar entrada breve, tarjeta temporal, guía ampliada, ejemplo de presupuesto
-y guía humana desde sus fuentes. Revisar las superficies nativas reducidas y
-los fixtures de respuesta que cambien; no añadir checks editoriales de CI. La
-compresión y los demás requisitos del objetivo siguen su seguimiento separado.
+Update the short entry, the temporal card, the extended guide, the budget
+example and the human guide from their sources. Review the reduced native
+surfaces and the response fixtures that change; do not add editorial CI
+checks. Compression and the other requirements of the goal follow their own
+separate tracking.
 
-## Resultado de la comprobación
+## Check result
 
-V2 conserva exactamente 22 páginas y añade 16 avisos; V3 verifica otra página
-completa con más historia disponible y sin aviso. Son 54 RPC entre los dos
-controles emparejados, sin errores ni modelos. V1 se conserva con 10 RPC y un
-rechazo correcto porque el investigador pidió `page.entries` en Inspect; V2
-retira ese argumento. El control V2 llamado `goto-more-history` no produjo esa
-condición y no se usa para probarla; V3 añade el `limit.entries` documentado sin
-cambiar código ni fuentes.
+V2 keeps exactly 22 pages and adds 16 notices; V3 checks another complete page
+with more history available and no notice. That is 54 RPCs across the two
+paired controls, with no errors and no models. V1 is kept with 10 RPCs and one
+correct refusal, because the investigator asked for `page.entries` on Inspect;
+V2 removes that argument. The V2 control named `goto-more-history` did not
+produce that condition and is not used to prove it; V3 adds the documented
+`limit.entries` without changing code or sources.
 
-El aviso añade 26 tokens o200k por página parcial: 416 tokens y 2176 bytes en V2,
-sin cambiar structuredContent. Catálogo e inicialización nativos iguales.
-Entrada del agente: 359 → 389 tokens; tarjeta temporal: 328 → 433. No se afirma
-ahorro ni comprensión nueva. Pasan 613 tests MCP; uno manual previo permanece
-omitido. Clippy y generación de guía pasan. El control adicional shared_passages
-comprueba las nueve lecturas, expansión exacta y coherencia del primer texto con
-la ayuda opcional. No se añaden barreras editoriales de CI.
+The notice adds 26 o200k tokens per partial page: 416 tokens and 2176 bytes in
+V2, without changing `structuredContent`. The native catalogue and
+initialization are unchanged. Agent entry: 359 → 389 tokens; temporal card:
+328 → 433. No saving or new understanding is claimed. 613 MCP tests pass; one
+earlier manual test stays skipped. Clippy and guide generation pass. The extra
+shared_passages control checks the nine reads, exact expansion and the
+consistency of the first text with the optional help. No editorial CI barriers
+are added.
