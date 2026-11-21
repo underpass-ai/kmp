@@ -1,9 +1,14 @@
 //! The published input schema is the law of every call (E1 of the 1.0
-//! review, #921). For every tool this server lists — the four app tools
-//! included — one accepted baseline call is mutated once per keyword the
-//! schema declares, and every mutation that breaks the schema must come back
-//! as a boundary `invalid_argument` naming the field, with the server still
-//! answering afterwards.
+//! review, #921). The law an agent can read is three things: the schema
+//! `tools/list` publishes, the closed-objects rule the server instructions
+//! state once (an object refuses every key its schema does not list, unless
+//! it declares `additionalProperties`), and the cross-field rules each
+//! `kmp_guide` card documents under `rules`. For every tool this server
+//! lists — the four app tools included — one accepted baseline call is
+//! mutated once per keyword the schema declares and once per object for an
+//! unknown key, and every documented rule is broken once; every mutation
+//! must come back as a boundary `invalid_argument` naming the field (the rule,
+//! for a rule), with the server still answering afterwards.
 //!
 //! The mutations are read from the live `tools/list`, never from a copy, so
 //! a schema change is covered the day it lands. Whether a mutation breaks the
@@ -205,9 +210,11 @@ fn mutations(schema: &Value, value: Option<&Value>, path: Vec<Step>, out: &mut V
     }
     if let Some(properties) = schema["properties"].as_object() {
         let object = value.and_then(Value::as_object);
-        if schema["additionalProperties"] == Value::Bool(false)
-            && (object.is_some() || path.is_empty())
-        {
+        // Closed unless the object says otherwise: the instructions' rule.
+        let closed = schema["additionalProperties"] == Value::Bool(false)
+            || (schema.get("additionalProperties").is_none()
+                && kinds_of(schema).iter().any(|kind| kind == "object"));
+        if closed && (object.is_some() || path.is_empty()) {
             let mut unknown = path.clone();
             unknown.push(Step::Key("zz_unknown".into()));
             out.push(Mutation {
@@ -227,7 +234,17 @@ fn mutations(schema: &Value, value: Option<&Value>, path: Vec<Step>, out: &mut V
                     out,
                 );
             }
-            for required in schema["required"].as_array().into_iter().flatten() {
+            // A continuation tool publishes its first call's `required` under
+            // `else` of `if continuation`; the baselines send no continuation.
+            let first_call = (schema["if"] == json!({"required": ["continuation"]}))
+                .then(|| schema["else"]["required"].as_array())
+                .flatten();
+            for required in schema["required"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .chain(first_call.into_iter().flatten())
+            {
                 let Some(key) = required.as_str() else {
                     continue;
                 };
@@ -374,6 +391,172 @@ fn names_the_field(tool: &str, path: &[Step], reply: &Value) -> bool {
             })
 }
 
+/// One call per documented rule that breaks only that rule, built from the
+/// baselines. `continuation-alone` is broken on every tool whose published
+/// schema takes a continuation, with the first argument a handle may not
+/// carry beside it.
+fn rule_cases(tools: &[Value]) -> Vec<(&'static str, String, Value)> {
+    let handle = format!("read_{}", "0".repeat(32));
+    let link = json!({"from": "proj:w:a", "to": "proj:w:b", "rel": "supports",
+        "why": "w", "evidence": "e"});
+    let with = |tool: &str, change: &dyn Fn(&mut Value)| {
+        let mut call = baseline(tool, 900).expect("baseline");
+        change(&mut call);
+        (tool.to_string(), call)
+    };
+    let mut cases = vec![
+        (
+            "write.one-form",
+            with("kmp_write_memory", &|c| c["relations"] = json!([link])),
+        ),
+        (
+            "write.labels",
+            with("kmp_write_memory", &|c| {
+                c.as_object_mut().unwrap().remove("labels");
+            }),
+        ),
+        (
+            "write.evidence",
+            with("kmp_write_memory", &|c| {
+                c["memories"][0].as_object_mut().unwrap().remove("evidence");
+            }),
+        ),
+        (
+            "write.link-class",
+            with("kmp_write_memory", &|c| {
+                c["memories"][0]["connect_to"] = json!([{"ref": "proj:w:entry:other", "rel": "chosen_because",
+                "why": "w", "evidence": "e"}]);
+            }),
+        ),
+        (
+            "write.relations-form",
+            (
+                "kmp_write_memory".to_string(),
+                json!({"about": "proj:w",
+            "actor": "audit", "labels": {"task": ["t1"]}, "relations": [link]}),
+            ),
+        ),
+        (
+            "write.summaries-form",
+            (
+                "kmp_write_memory".to_string(),
+                json!({"about": "proj:w",
+            "actor": "audit", "labels": {"task": ["t1"]},
+            "search_summaries": [{"ref": "proj:w:a", "summary_en": "x"}]}),
+            ),
+        ),
+        (
+            "write.summary-content",
+            (
+                "kmp_write_memory".to_string(),
+                json!({"about": "proj:w",
+            "actor": "audit", "search_summaries": [{"ref": "proj:w:a"}]}),
+            ),
+        ),
+        (
+            "time.cursor",
+            with("kmp_time", &|c| {
+                c["move"] = json!("goto");
+                c.as_object_mut().unwrap().remove("from");
+            }),
+        ),
+        (
+            "trace.mode",
+            with("kmp_trace", &|c| {
+                c["search"] = json!({"seek": ["verified_by"]})
+            }),
+        ),
+        (
+            "trace.search-mode",
+            with("kmp_trace", &|c| {
+                c["search"] = json!({"direction": "incoming", "same_labels": ["x"]});
+            }),
+        ),
+        (
+            "ingest.observed",
+            with("kmp_ingest", &|c| {
+                c["provenance"]
+                    .as_object_mut()
+                    .unwrap()
+                    .remove("observed_at");
+            }),
+        ),
+        (
+            "ingest.links-only",
+            with("kmp_ingest", &|c| c["memory"]["entries"] = json!([])),
+        ),
+        (
+            "condense.expect",
+            with("kmp_condense", &|c| {
+                c["expect"] = json!({"absent": true, "card_revision": 1});
+            }),
+        ),
+    ];
+    for tool in tools {
+        let schema = &tool["inputSchema"];
+        if schema["if"] != json!({"required": ["continuation"]}) {
+            continue;
+        }
+        let name = tool["name"].as_str().expect("name");
+        // A valid value for an argument the handle cannot carry, so only the
+        // rule can refuse the call: the baseline's own, else the first enum
+        // value, else an empty object.
+        let base = baseline(name, 901).unwrap_or(json!({}));
+        let (extra, value) = schema["properties"]
+            .as_object()
+            .expect("properties")
+            .iter()
+            .filter(|(key, _)| !["continuation", "about", "actor", "page"].contains(&key.as_str()))
+            .find_map(|(key, property)| {
+                base.get(key)
+                    .cloned()
+                    .or_else(|| property["enum"].get(0).cloned())
+                    .or_else(|| {
+                        kinds_of(property)
+                            .contains(&"object".to_string())
+                            .then(|| json!({}))
+                    })
+                    .map(|value| (key.clone(), value))
+            })
+            .expect("an argument a handle cannot carry");
+        let mut call = json!({"continuation": handle});
+        call[extra.as_str()] = value;
+        cases.push(("continuation-alone", (name.to_string(), call)));
+    }
+    cases
+        .into_iter()
+        .map(|(id, (tool, call))| (id, tool, call))
+        .collect()
+}
+
+/// Every rule id the guide cards document, read live from `kmp_guide`.
+async fn documented_rules(server: &KernelMcpServer, guide: &Value) -> Vec<String> {
+    let mut ids = Vec::new();
+    for (n, topic) in guide["inputSchema"]["properties"]["topic"]["enum"]
+        .as_array()
+        .expect("topics")
+        .iter()
+        .enumerate()
+    {
+        let card = send(
+            server,
+            call(5000 + n as u64, "kmp_guide", &json!({"topic": topic})),
+        )
+        .await;
+        for id in card["result"]["structuredContent"]["rules"]
+            .as_object()
+            .into_iter()
+            .flatten()
+            .map(|(id, _)| id.clone())
+        {
+            if !ids.contains(&id) {
+                ids.push(id);
+            }
+        }
+    }
+    ids
+}
+
 #[tokio::test]
 async fn every_call_the_published_schema_refuses_is_refused_at_the_boundary() {
     let dir = tempfile::tempdir().expect("isolated store");
@@ -416,6 +599,54 @@ async fn every_call_the_published_schema_refuses_is_refused_at_the_boundary() {
     assert!(
         tools.len() >= 20,
         "the negotiated surface lists the app tools too"
+    );
+
+    let guide = tools
+        .iter()
+        .find(|tool| tool["name"] == "kmp_guide")
+        .expect("kmp_guide is listed");
+    let documented = documented_rules(&server, guide).await;
+    let cases = rule_cases(&tools);
+    let mut covered = cases
+        .iter()
+        .map(|(id, _, _)| id.to_string())
+        .collect::<Vec<_>>();
+    covered.sort();
+    covered.dedup();
+    let mut expected = documented.clone();
+    expected.sort();
+    assert_eq!(
+        covered, expected,
+        "every rule a guide card documents is broken here once, and nothing else"
+    );
+    let mut rules_accepted = Vec::new();
+    for (n, (rule, tool, arguments)) in cases.iter().enumerate() {
+        let reply = send(&server, call(6000 + n as u64, tool, arguments)).await;
+        let message = reply["result"]["structuredContent"]["error"]["message"]
+            .as_str()
+            .unwrap_or_default();
+        let named = message.contains(&format!("Rule `{rule}`"))
+            || reply["result"]["structuredContent"]["feedback"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .any(|item| item["rule"] == *rule);
+        if !refused_by_the_schema(tool, &reply) || !named {
+            rules_accepted.push(format!(
+                "{rule} on {tool} <- {arguments} :: {}",
+                reply["result"]["structuredContent"]
+                    .to_string()
+                    .chars()
+                    .take(300)
+                    .collect::<String>()
+            ));
+        }
+    }
+    assert!(
+        rules_accepted.is_empty(),
+        "{} documented rules were not refused by name:\n{}",
+        rules_accepted.len(),
+        rules_accepted.join("\n")
     );
 
     let mut id = 10;

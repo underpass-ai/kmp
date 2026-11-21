@@ -9,6 +9,8 @@ pub(crate) struct SchemaViolation {
     pub(crate) field: String,
     pub(crate) unknown: bool,
     pub(crate) allowed: Vec<serde_json::Value>,
+    /// The cross-field rule the call broke, when it broke one.
+    pub(crate) rule: Option<String>,
 }
 
 impl SchemaViolation {
@@ -18,7 +20,19 @@ impl SchemaViolation {
             field: field_of(path),
             unknown: false,
             allowed: Vec::new(),
+            rule: None,
         }
+    }
+
+    /// This violation, reported as the cross-field rule `id` of the tool
+    /// `path` starts with: the rule's wording, what this call did, the fix.
+    pub(crate) fn under_rule(mut self, path: &str, id: &str) -> Self {
+        if self.rule.is_none() {
+            let tool = path.split(['.', '[']).next().unwrap_or_default();
+            self.message = super::cross_field_rule::refusal_wording(tool, id, &self.message);
+            self.rule = Some(id.to_string());
+        }
+        self
     }
 
     pub(crate) fn allowing(mut self, allowed: &[serde_json::Value]) -> Self {
@@ -32,6 +46,7 @@ impl SchemaViolation {
             field: field_of(&format!("{path}.{key}")),
             unknown: true,
             allowed: Vec::new(),
+            rule: None,
         }
     }
 }

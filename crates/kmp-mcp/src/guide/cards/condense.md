@@ -24,6 +24,15 @@ what is still owed.
 4. Reuse: start the same Trace with `proof:true,compact:{language:"en"}`.
    **Omit `proof_refs`, `expect_selection` and the old page cursor.**
 
+A card stands only for the body version you declare: a later write makes it
+stale, not wrong, and a body that moved under you is refused with both
+versions named. Accepted revisions survive export/import and rebuild.
+`kmp_summaries_audit` reads the event log and writes nothing: each memory is
+`missing`, `refused` (with the lint's faults), `stands` (with weakness signals)
+or `not_required`; render the text again and attach it unchanged. It judges
+form, not meaning, unless the store opted into Jev, which flags `unfaithful`.
+Page with `page.cursor` and the same arguments; totals cover the whole selection.
+
 Card = derived orientation, never proof. Absent/stale/post-cut/wrong-language
 cards return no prose; expand canonical bodies explicitly. Keep selected and
 fetched refs under one manifest; finishing pages alone is not proof completion.

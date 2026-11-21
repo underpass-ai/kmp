@@ -129,11 +129,20 @@ fn documented(input_schema: &Value) -> Vec<(String, String)> {
     let mut schema = input_schema.clone();
     let mut pairs: Vec<(String, String)> = Vec::new();
     visit(&mut schema, "", &mut |path, object| {
-        if let Some(description) = object.get("description").and_then(Value::as_str) {
-            let pair = (path.to_string(), description.to_string());
-            if !pairs.contains(&pair) {
-                pairs.push(pair);
-            }
+        // `tools/list` leaves defaults out (`published_law`); the argument's
+        // line says it instead.
+        let default = object
+            .get("default")
+            .map(|default| format!("Default: {default}."));
+        let description = match (object.get("description").and_then(Value::as_str), default) {
+            (Some(text), Some(default)) => format!("{text} {default}"),
+            (Some(text), None) => text.to_string(),
+            (None, Some(default)) => default,
+            (None, None) => return,
+        };
+        let pair = (path.to_string(), description);
+        if !pairs.contains(&pair) {
+            pairs.push(pair);
         }
     });
     pairs
@@ -223,10 +232,11 @@ pub(crate) fn without_parameter_descriptions(mut result: Value) -> Value {
         if let Some(topic) = GuideTopic::of_tool(&name)
             && let Some(description) = tool["description"].as_str()
         {
-            tool["description"] = json!(format!(
-                "{description} Arguments explained: kmp_guide topic {}.",
-                topic.name
-            ));
+            // A verb named like its topic needs no pointer: the index and
+            // the `topic` enum already name it.
+            if format!("kmp_{}", topic.name) != name {
+                tool["description"] = json!(format!("{description} Guide topic: {}.", topic.name));
+            }
         }
     }
     result

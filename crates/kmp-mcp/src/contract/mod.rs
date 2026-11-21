@@ -3,9 +3,12 @@
 //! minimal registry, and the argument validator. The advertised bytes
 //! are pinned against the running binary by `tool_surface_parity`.
 
+pub(crate) mod cross_field_rule;
 pub(crate) mod handshake;
 pub(crate) mod parameter_guide;
 mod parameter_guide_audit;
+pub(crate) mod published_law;
+mod published_law_audit;
 pub(crate) mod registry;
 pub(crate) mod schema;
 pub(crate) mod schema_law;

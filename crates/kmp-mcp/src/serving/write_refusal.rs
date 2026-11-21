@@ -59,6 +59,16 @@ impl KernelMcpServer {
                 .into(),
             ),
         };
-        planner.unwrap_or(refused)
+        // The planner words the refusal in the writer's own codes; the
+        // cross-field rule the schema found broken stays named beside them.
+        let rule = refused
+            .feedback
+            .iter()
+            .find_map(|item| item.get("rule").cloned());
+        let mut error = planner.unwrap_or(refused);
+        if let (Some(rule), Some(first)) = (rule, error.feedback.first_mut()) {
+            first["rule"] = rule;
+        }
+        error
     }
 }
