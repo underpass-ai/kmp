@@ -411,6 +411,13 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
 
 ### Fixed
 
+- `kmp-mcp import <file>` into a store that holds memory names the way
+  forward: it says the store "already holds 1 event", and that
+  `kmp-mcp import --from <file> --about <about>` brings exact abouts into it
+  while a new `KMP_MCP_DATA_DIR` takes the whole bundle. It used to say
+  "merging bundles is not supported" and "1 events".
+  `import --from <store> --about <missing>` says the source holds no such
+  about instead of "cannot export missing about".
 - `scripts/performance/proof_batch_physical_run.py` and
   `scripts/performance/sqlite_clients.py` no longer default to inputs under
   the untracked `artifacts/` folder. The patch directory is a required

@@ -58,7 +58,8 @@ The host shows no `kmp_*` tools. Follow the
 
 | You see | Cause | Fix |
 |:--|:--|:--|
-| `import requires an empty store; this store already holds 1 events` | `import <file>` restores into an empty store only. | To add exact abouts to a store that holds memory: `kmp-mcp import --from <bundle\|store-dir> --about <about>`. |
+| ``import refused; nothing was written. `kmp-mcp import <file>` restores a bundle whole into an empty store, and this store already holds 1 event`` | `import <file>` restores into an empty store only. | The refusal names both ways: to add exact abouts to a store that holds memory, `kmp-mcp import --from <bundle\|store-dir> --about <about>`; to restore the whole bundle, point `KMP_MCP_DATA_DIR` at a new directory. |
+| ``import refused; nothing was written. The source `<dir>` holds no about `project:nope` `` (or `the source holds no about` for a bundle) | `import --from` asked for an about the source does not have. | Check the about with `kmp-mcp memories` or the bundle header. |
 | `named snapshots belong to a project, but this store resolved to <dir> by the user rule` | Snapshots exist only for project stores. | `kmp-mcp export <file>`. |
 | `export needs a bundle file path here` | Outside a project there is no committed bundle to write. | `kmp-mcp export <file>`. |
 

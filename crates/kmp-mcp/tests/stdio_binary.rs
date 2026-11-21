@@ -1665,6 +1665,13 @@ fn cli_surface_version_export_import_and_errors() {
         Some(2),
         "non-empty import exits 2"
     );
+    let refusal = String::from_utf8_lossy(&import_again.stderr);
+    assert!(
+        refusal.contains("already holds 1 event.")
+            && refusal.contains("kmp-mcp import --from")
+            && !refusal.contains("1 events"),
+        "the refusal names the verb that merges abouts: {refusal}"
+    );
 
     let wake = run_binary(
         &[

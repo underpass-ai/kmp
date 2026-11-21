@@ -183,5 +183,13 @@ async fn read_source(from: &Path, abouts: &[String]) -> Result<String, String> {
     store
         .export_bundle_for_abouts(abouts)
         .await
-        .map_err(|error| error.to_string())
+        .map_err(|error| {
+            // The store's own refusal speaks of "this store"; here that store
+            // is the source, so name it.
+            let error = error.to_string();
+            match error.strip_prefix("this store ") {
+                Some(rest) => format!("The source `{}` {rest}", data_dir.display()),
+                None => error,
+            }
+        })
 }

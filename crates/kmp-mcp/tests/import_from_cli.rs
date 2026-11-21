@@ -176,6 +176,21 @@ async fn import_from_a_store_is_exact_idempotent_and_leaves_the_source_alone() {
     assert_eq!(second["events_imported"], 0, "{second}");
     assert_eq!(second["aggregates"][ABOUT], "unchanged", "{second}");
 
+    // A store source that lacks the about says so as an import, not as
+    // the export it runs underneath.
+    let absent = machine.run(
+        destination.path(),
+        &["import", "--from", from, "--about", "project:absent"],
+    );
+    assert_eq!(absent.status.code(), Some(2));
+    let absent = String::from_utf8_lossy(&absent.stderr);
+    assert!(
+        absent.contains("import refused; nothing was written")
+            && absent.contains("holds no about `project:absent`")
+            && !absent.contains("export"),
+        "{absent}"
+    );
+
     let document = machine.run(destination.path(), &["document", ABOUT]);
     assert!(document.status.success(), "{document:?}");
     assert!(String::from_utf8_lossy(&document.stdout).contains("Carry this decision across."));
