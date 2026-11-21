@@ -330,18 +330,34 @@ impl ProjectionItem {
     }
 }
 
+/// The relation types a page places after the evidence, with structural
+/// relations.
+const AFTER_EVIDENCE_RELS: [&str; 4] = ["supports", "has_evidence", "records", "contains_entry"];
+
 fn relation_priority(relation: &Value) -> (Detail, u8) {
     if relation.get("class").and_then(Value::as_str) == Some("structural") {
         return (Detail::Full, 80);
     }
-    match relation
+    let rel = relation
         .get("rel")
         .and_then(Value::as_str)
-        .unwrap_or_default()
-    {
-        "supports" | "has_evidence" | "records" | "contains_entry" => (Detail::Balanced, 40),
-        _ => (Detail::Compact, 10),
+        .unwrap_or_default();
+    if AFTER_EVIDENCE_RELS.contains(&rel) {
+        (Detail::Balanced, 40)
+    } else {
+        (Detail::Compact, 10)
     }
+}
+
+/// Whether a page places this hop after the evidence
+/// ([`relation_priority`]): a reading that does not carry its whole ranking
+/// withholds it (P14), so it is only ever paged by a reading that carries
+/// every evidence item, at any depth, and may be joined to all of them. A
+/// hop placed ahead of the evidence is paged at every depth, so it stays
+/// joined to the head's evidence alone.
+pub(super) fn sorts_after_evidence(relation: &kmp_proto::v1beta1::MemoryRelation) -> bool {
+    relation.semantic_class == kmp_proto::v1beta1::MemorySemanticClass::Structural as i32
+        || AFTER_EVIDENCE_RELS.contains(&relation.rel.as_str())
 }
 
 pub(super) fn section_lengths(value: &Value) -> BTreeMap<Section, usize> {

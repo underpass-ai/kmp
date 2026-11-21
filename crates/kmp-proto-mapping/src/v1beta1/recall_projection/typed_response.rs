@@ -15,6 +15,7 @@ use super::super::proof_evidence_index::ProofEvidenceIndex;
 use super::actions;
 use super::canonical_json_key::canonical_json_key;
 use super::normalization::{normalized_answer_reason, normalized_proof_relation};
+use super::plan::sorts_after_evidence;
 use super::proof_value::{expired_value, memory_evidence_value, memory_relation_value};
 use super::response_value::raw_answer_reason_value;
 use super::scalars::{
@@ -46,7 +47,7 @@ pub(super) fn apply_wake_value(mut response: WakeResponse, value: &Value) -> Wak
     if let Some(proof) = response.proof.as_mut()
         && let Some(projected) = value.get("proof")
     {
-        apply_proof_value(proof, projected, true);
+        apply_proof_value(proof, projected, &|_| true);
     }
     response.labels = value
         .get("labels")
@@ -63,7 +64,7 @@ pub(super) fn apply_wake_value(mut response: WakeResponse, value: &Value) -> Wak
         response.resume_cursor = None;
         response.dimension_selection = None;
         if let Some(proof) = response.proof.as_mut() {
-            clear_proof_core(proof, value, true);
+            clear_proof_core(proof, value, &|_| true);
         }
     }
     response
@@ -115,7 +116,7 @@ pub(super) fn apply_ask_value(mut response: AskResponse, value: &Value) -> AskRe
     if let Some(proof) = response.proof.as_mut()
         && let Some(projected) = value.get("proof")
     {
-        apply_proof_value(proof, projected, false);
+        apply_proof_value(proof, projected, &sorts_after_evidence);
     }
     response.warnings = strings_at(value, "/warnings");
     response.projection = value.get("projection").and_then(projection_from_value);
@@ -123,22 +124,31 @@ pub(super) fn apply_ask_value(mut response: AskResponse, value: &Value) -> AskRe
         // A continuation carries no core: nothing of it survives from the
         // fresh read this page was cut from.
         if let Some(proof) = response.proof.as_mut() {
-            clear_proof_core(proof, value, false);
+            clear_proof_core(proof, value, &sorts_after_evidence);
         }
     }
     response
 }
 
-/// `rejoin`: whether the JSON joined the path to the proof's evidence
-/// (a wake's); an ask's path is joined by the mapping (`ask_value`).
-fn apply_proof_value(proof: &mut kmp_proto::v1beta1::Proof, value: &Value, rejoin: bool) {
-    let index = rejoin.then(|| ProofEvidenceIndex::new(&proof.evidence));
+/// `joins`: the hops the JSON joined to the proof's evidence (all of a
+/// wake's; of an ask's, those a page places after the evidence: the rest
+/// stay as the mapping joined them, `ask_value`).
+fn apply_proof_value(
+    proof: &mut kmp_proto::v1beta1::Proof,
+    value: &Value,
+    joins: &dyn Fn(&MemoryRelation) -> bool,
+) {
+    let index = proof
+        .path
+        .iter()
+        .any(joins)
+        .then(|| ProofEvidenceIndex::new(&proof.evidence));
     let path = value
         .get("path")
         .and_then(Value::as_array)
         .map(Vec::as_slice)
         .unwrap_or_default();
-    proof.path = select_projected_relations(&proof.path, index.as_ref(), path);
+    proof.path = select_projected_relations(&proof.path, index.as_ref(), joins, path);
     let evidence = value
         .get("evidence")
         .and_then(Value::as_array)
@@ -237,6 +247,7 @@ fn select_projected<T: Clone>(
 fn select_projected_relations(
     originals: &[MemoryRelation],
     index: Option<&ProofEvidenceIndex<'_>>,
+    joins: &dyn Fn(&MemoryRelation) -> bool,
     projected: &[Value],
 ) -> Vec<MemoryRelation> {
     let mut by_identity: HashMap<(&str, &str, &str), Vec<usize>> = HashMap::new();
@@ -266,9 +277,12 @@ fn select_projected_relations(
                     continue;
                 }
                 let (relation, rendered) = read.entry(*position).or_insert_with(|| {
+                    let original = &originals[*position];
                     let relation = match index {
-                        Some(index) => normalized_proof_relation(&originals[*position], index),
-                        None => originals[*position].clone(),
+                        Some(index) if joins(original) => {
+                            normalized_proof_relation(original, index)
+                        }
+                        _ => original.clone(),
                     };
                     let rendered = canonical_json_key(&memory_relation_value(&relation));
                     (relation, rendered)
@@ -380,9 +394,13 @@ fn core_reused(projection: &Option<RecallProjection>) -> bool {
 }
 
 /// Keep only the proof items this continuation carries.
-fn clear_proof_core(proof: &mut kmp_proto::v1beta1::Proof, value: &Value, rejoin: bool) {
+fn clear_proof_core(
+    proof: &mut kmp_proto::v1beta1::Proof,
+    value: &Value,
+    joins: &dyn Fn(&MemoryRelation) -> bool,
+) {
     let empty = Value::Object(Default::default());
-    apply_proof_value(proof, value.get("proof").unwrap_or(&empty), rejoin);
+    apply_proof_value(proof, value.get("proof").unwrap_or(&empty), joins);
     proof.interval = None;
     proof.axis = 0;
     proof.as_of = None;

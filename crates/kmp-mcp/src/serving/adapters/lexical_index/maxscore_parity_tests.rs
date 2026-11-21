@@ -217,7 +217,17 @@ async fn assert_pruned_asks_equal_the_about(
     let (mut asks, mut pruned, mut lazy) = (0, 0, 0);
     for round in 0..8 {
         let question = question(&mut draw);
-        // Every other question names an anchor the gate requires.
+        // Every other question names an anchor the gate requires, and one
+        // in four leans in no language (no function word: the table then
+        // vouches for no focus concept).
+        let question = if round % 4 == 2 {
+            question
+                .trim_start_matches("what about the ")
+                .trim_end_matches('?')
+                .to_string()
+        } else {
+            question
+        };
         let question = if round % 2 == 1 {
             format!(
                 "{} in {}?",

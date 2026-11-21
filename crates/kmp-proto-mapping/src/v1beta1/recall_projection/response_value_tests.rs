@@ -63,3 +63,39 @@ fn an_ask_path_does_not_change_with_the_tail_a_reading_carries() {
         deep.proof.expect("proof").path
     );
 }
+
+/// A hop a page places after the evidence (`supports`) is paged only by a
+/// reading that carries every evidence item, so it is joined to all of
+/// them, as it always was.
+#[test]
+fn an_ask_hop_paged_after_the_evidence_is_joined_to_all_of_it() {
+    let mut response = typed_ask_fixture(3);
+    let proof = response.proof.as_mut().expect("proof");
+    assert_eq!(proof.path[1].rel, "supports");
+    let hop = proof.path[1].clone();
+    proof.path[1].evidence = "The sheet shows a diluted batch.".to_string();
+    let mut tail = proof.evidence[0].clone();
+    tail.id = format!("detail:evidence:{}:relation:1", hop.source_ref);
+    tail.supports = vec![hop.source_ref.clone()];
+    tail.text = "The sheet shows a diluted batch.".to_string();
+    proof.evidence.push(tail.clone());
+
+    let value = ask_value(&response);
+
+    let rendered = &value["proof"]["path"][1];
+    assert!(rendered.get("evidence").is_none(), "{rendered}");
+    assert!(
+        rendered["evidence_refs"]
+            .as_array()
+            .expect("refs")
+            .iter()
+            .any(|id| id == tail.id.as_str()),
+        "{rendered}"
+    );
+    let applied = apply_ask_value(response, &value);
+    assert!(
+        applied.proof.expect("proof").path[1]
+            .evidence_refs
+            .contains(&tail.id)
+    );
+}
