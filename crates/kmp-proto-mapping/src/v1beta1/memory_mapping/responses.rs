@@ -947,6 +947,17 @@ pub fn ask_response_from_result(
             ranking.len()
         ));
     }
+    // The path is joined to the head's evidence (P14), whatever depth of the
+    // tail a reading carries, so a lazy page renders every hop as every
+    // deeper page does. A reading that carries its whole ranking (the
+    // entries cap, semantic retrieval, re-ranking) has no deeper page: it
+    // joins its path to all of it, as its JSON always rendered it.
+    if whole && selection_projection.is_none() {
+        answer_proof.path = super::bundle_views::normalize_proof_path(
+            std::mem::take(&mut answer_proof.path),
+            &answer_proof.evidence,
+        );
+    }
     Ok(AskResponse {
         projection: selection_projection,
         summary: if answer == UNANSWERED {

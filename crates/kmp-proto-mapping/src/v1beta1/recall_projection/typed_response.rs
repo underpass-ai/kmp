@@ -4,8 +4,9 @@
 use std::collections::{BTreeSet, HashMap, VecDeque};
 
 use kmp_proto::v1beta1::{
-    AskResponse, MemoryEvidence, MemoryLabel, RecallProjection, RecallProjectionBudget,
-    RecallProjectionPage, RecallProjectionSection, SupersededMemory, WakeClaim, WakeResponse,
+    AskResponse, MemoryEvidence, MemoryLabel, MemoryRelation, RecallProjection,
+    RecallProjectionBudget, RecallProjectionPage, RecallProjectionSection, SupersededMemory,
+    WakeClaim, WakeResponse,
 };
 use prost_types::Timestamp;
 use serde_json::Value;
@@ -45,7 +46,7 @@ pub(super) fn apply_wake_value(mut response: WakeResponse, value: &Value) -> Wak
     if let Some(proof) = response.proof.as_mut()
         && let Some(projected) = value.get("proof")
     {
-        apply_proof_value(proof, projected);
+        apply_proof_value(proof, projected, true);
     }
     response.labels = value
         .get("labels")
@@ -62,7 +63,7 @@ pub(super) fn apply_wake_value(mut response: WakeResponse, value: &Value) -> Wak
         response.resume_cursor = None;
         response.dimension_selection = None;
         if let Some(proof) = response.proof.as_mut() {
-            clear_proof_core(proof, value);
+            clear_proof_core(proof, value, true);
         }
     }
     response
@@ -114,7 +115,7 @@ pub(super) fn apply_ask_value(mut response: AskResponse, value: &Value) -> AskRe
     if let Some(proof) = response.proof.as_mut()
         && let Some(projected) = value.get("proof")
     {
-        apply_proof_value(proof, projected);
+        apply_proof_value(proof, projected, false);
     }
     response.warnings = strings_at(value, "/warnings");
     response.projection = value.get("projection").and_then(projection_from_value);
@@ -122,25 +123,22 @@ pub(super) fn apply_ask_value(mut response: AskResponse, value: &Value) -> AskRe
         // A continuation carries no core: nothing of it survives from the
         // fresh read this page was cut from.
         if let Some(proof) = response.proof.as_mut() {
-            clear_proof_core(proof, value);
+            clear_proof_core(proof, value, false);
         }
     }
     response
 }
 
-fn apply_proof_value(proof: &mut kmp_proto::v1beta1::Proof, value: &Value) {
-    let index = ProofEvidenceIndex::new(&proof.evidence);
-    let normalized_relations = proof
-        .path
-        .iter()
-        .map(|relation| normalized_proof_relation(relation, &index))
-        .collect::<Vec<_>>();
+/// `rejoin`: whether the JSON joined the path to the proof's evidence
+/// (a wake's); an ask's path is joined by the mapping (`ask_value`).
+fn apply_proof_value(proof: &mut kmp_proto::v1beta1::Proof, value: &Value, rejoin: bool) {
+    let index = rejoin.then(|| ProofEvidenceIndex::new(&proof.evidence));
     let path = value
         .get("path")
         .and_then(Value::as_array)
-        .cloned()
+        .map(Vec::as_slice)
         .unwrap_or_default();
-    proof.path = select_projected(&normalized_relations, &path, memory_relation_value);
+    proof.path = select_projected_relations(&proof.path, index.as_ref(), path);
     let evidence = value
         .get("evidence")
         .and_then(Value::as_array)
@@ -225,6 +223,62 @@ fn select_projected<T: Clone>(
         .filter_map(|wanted| {
             let index = unused.get_mut(&canonical_json_key(wanted))?.pop_front()?;
             Some(originals[index].clone())
+        })
+        .collect()
+}
+
+/// [`select_projected`] over the path, each original joined to `index`
+/// when given, without rendering every original: a relation renders its
+/// endpoints and type verbatim (`from`, `to`, `rel`), and joining never
+/// changes them, so only the originals sharing those with a wanted item can
+/// render equal to it. Each wanted item takes the first unused original
+/// that does, as the full scan did; a page of a wake with tens of thousands
+/// of hops renders and joins a handful.
+fn select_projected_relations(
+    originals: &[MemoryRelation],
+    index: Option<&ProofEvidenceIndex<'_>>,
+    projected: &[Value],
+) -> Vec<MemoryRelation> {
+    let mut by_identity: HashMap<(&str, &str, &str), Vec<usize>> = HashMap::new();
+    for (position, relation) in originals.iter().enumerate() {
+        by_identity
+            .entry((
+                relation.source_ref.as_str(),
+                relation.target_ref.as_str(),
+                relation.rel.as_str(),
+            ))
+            .or_default()
+            .push(position);
+    }
+    let mut read: HashMap<usize, (MemoryRelation, String)> = HashMap::new();
+    let mut used = BTreeSet::new();
+    projected
+        .iter()
+        .filter_map(|wanted| {
+            let identity = (
+                wanted.get("from")?.as_str()?,
+                wanted.get("to")?.as_str()?,
+                wanted.get("rel")?.as_str()?,
+            );
+            let key = canonical_json_key(wanted);
+            for position in by_identity.get(&identity)? {
+                if used.contains(position) {
+                    continue;
+                }
+                let (relation, rendered) = read.entry(*position).or_insert_with(|| {
+                    let relation = match index {
+                        Some(index) => normalized_proof_relation(&originals[*position], index),
+                        None => originals[*position].clone(),
+                    };
+                    let rendered = canonical_json_key(&memory_relation_value(&relation));
+                    (relation, rendered)
+                });
+                if *rendered == key {
+                    used.insert(*position);
+                    return Some(relation.clone());
+                }
+            }
+            None
         })
         .collect()
 }
@@ -326,9 +380,9 @@ fn core_reused(projection: &Option<RecallProjection>) -> bool {
 }
 
 /// Keep only the proof items this continuation carries.
-fn clear_proof_core(proof: &mut kmp_proto::v1beta1::Proof, value: &Value) {
+fn clear_proof_core(proof: &mut kmp_proto::v1beta1::Proof, value: &Value, rejoin: bool) {
     let empty = Value::Object(Default::default());
-    apply_proof_value(proof, value.get("proof").unwrap_or(&empty));
+    apply_proof_value(proof, value.get("proof").unwrap_or(&empty), rejoin);
     proof.interval = None;
     proof.axis = 0;
     proof.as_of = None;

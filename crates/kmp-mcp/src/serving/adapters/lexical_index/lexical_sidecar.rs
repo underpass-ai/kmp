@@ -3,7 +3,9 @@ use std::sync::Arc;
 
 use kmp_domain::{GraphNeighborhoodReader, PortError};
 use kmp_embedded::EmbeddedKernelStore;
-use kmp_proto_mapping::v1beta1::{LexicalObservation, LexicalShadowWitness, RankPrefixes};
+use kmp_proto_mapping::v1beta1::{
+    BridgedRescues, LexicalObservation, LexicalShadowWitness, RankPrefixes,
+};
 
 use super::catch_up_report::CatchUpReport;
 use super::index_limits::IndexLimits;
@@ -21,6 +23,10 @@ use crate::serving::lexical_index_mode::LexicalIndexMode;
 /// Candidates beyond the head window and the tail depth top-k reads at
 /// first, for those the ranking will find ineligible (P14).
 const TOP_K_SLACK: usize = 16;
+
+/// Carriers of a bridged word top-k reads at first for the bridged rescue,
+/// which takes at most three of those a ranking rejects (P14).
+const BRIDGED_FIRST_READ: usize = 16;
 
 /// How many candidates past those top-k must read the next round reads,
 /// after a round that did not certify its answer: four times as many, or,
@@ -259,19 +265,20 @@ impl LexicalSidecar {
             })
             .flatten();
         let mut limit = self.limits.head_window + depth + TOP_K_SLACK;
+        let mut bridged_limit = BRIDGED_FIRST_READ;
         // Every round reads at the same position: what one read, the next
         // need not read again.
         let memo = Arc::new(std::sync::Mutex::new(PartsMemo::default()));
         loop {
-            let (candidates, unread) = match plan.select(limit) {
+            let selection = match plan.select(limit, bridged_limit) {
                 Ok(selected) => selected,
                 Err(why) => return Ok(Err(why)),
             };
+            let last = selection.reads_everything();
+            let candidates = selection.candidates;
             let read = candidates.len();
             // The round that reads every candidate left is the last one.
-            if unread.is_none()
-                && let Ok(mut kept) = memo.lock()
-            {
+            if last && let Ok(mut kept) = memo.lock() {
                 kept.read_through = true;
             }
             let parts = {
@@ -298,9 +305,7 @@ impl LexicalSidecar {
             };
             // A round that read every candidate is the last: what earlier
             // rounds kept is let go before the answer is ranked.
-            if unread.is_none()
-                && let Ok(mut kept) = memo.lock()
-            {
+            if last && let Ok(mut kept) = memo.lock() {
                 *kept = PartsMemo::default();
             }
             parts.read_revision = store
@@ -311,9 +316,13 @@ impl LexicalSidecar {
                 .ask_from_parts(query, parts, kmp_application::RenderDemand::Skip)
                 .await
                 .map_err(|error| error.to_string())?;
+            // What this round's rankings took through the bridge.
+            let rescues = BridgedRescues::default();
+            let mut indexed = plan.indexed.clone();
+            indexed.rescues = rescues.clone();
             let indexed_read = IndexedRead {
                 result,
-                indexed: plan.indexed.clone(),
+                indexed,
                 reached: plan.reached,
                 candidates: read,
                 planned: plan.candidates.len(),
@@ -323,19 +332,29 @@ impl LexicalSidecar {
                 unanswerable: unanswerable.clone(),
             };
             let response = answer(&indexed_read)?;
-            let certified = plan
+            let ranked = plan
                 .prefixes
                 .as_ref()
-                .is_none_or(|prefixes| prefixes.certifies(&response, unread));
-            if certified {
+                .is_none_or(|prefixes| prefixes.certifies(&response, selection.unread));
+            // A carrier left unread could have been rescued only if some
+            // ranking took fewer than it may, or one scoring no more.
+            let rescued = selection
+                .unread_bridged
+                .is_none_or(|unread| rescues.rank_above(unread));
+            if ranked && rescued {
                 return Ok(Ok((indexed_read, response)));
             }
-            limit = next_limit(
-                limit,
-                self.limits.head_window + depth,
-                response.more_ranked,
-                RankPrefixes::carried(&response),
-            );
+            if !ranked {
+                limit = next_limit(
+                    limit,
+                    self.limits.head_window + depth,
+                    response.more_ranked,
+                    RankPrefixes::carried(&response),
+                );
+            }
+            if !rescued {
+                bridged_limit = bridged_limit.max(selection.bridged_read).saturating_mul(4);
+            }
         }
     }
 

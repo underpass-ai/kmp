@@ -102,6 +102,8 @@ pub(super) struct AnswerEvidenceRanker<'a> {
     /// The index rows of the candidates an indexed ask reads, by id.
     indexed_rows:
         Option<std::sync::Arc<std::collections::BTreeMap<String, super::lexical_row::LexicalRow>>>,
+    /// Where an indexed ask's top-k learns what the bridged rescue took.
+    bridged_rescues: Option<super::bridged_rescues::BridgedRescues>,
     /// Whether an expansion rescue must answer the strict focus (P15; the
     /// store's `expansion_rescue_focus`, on by default).
     expansion_focus: bool,
@@ -126,6 +128,7 @@ impl Default for AnswerEvidenceRanker<'_> {
             indexed_vocabulary: None,
             indexed_seed_documents: None,
             indexed_rows: None,
+            bridged_rescues: None,
             expansion_focus: true,
             prepared_cache: None,
             head_window: HEAD_WINDOW,
@@ -246,6 +249,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
             indexed_vocabulary: None,
             indexed_seed_documents: None,
             indexed_rows: None,
+            bridged_rescues: None,
             expansion_focus: true,
             prepared_cache: None,
             head_window: HEAD_WINDOW,
@@ -481,6 +485,15 @@ impl<'a> AnswerEvidenceRanker<'a> {
 
     /// The rows of the candidates an ask answered from the lexical index
     /// reads ([`super::indexed_ask::IndexedAsk::rows`]).
+    /// Records what every bridged rescue this ranker runs takes (P14).
+    pub(super) fn with_bridged_rescues(
+        mut self,
+        rescues: super::bridged_rescues::BridgedRescues,
+    ) -> Self {
+        self.bridged_rescues = Some(rescues);
+        self
+    }
+
     pub(super) fn with_indexed_rows(
         mut self,
         rows: std::sync::Arc<std::collections::BTreeMap<String, super::lexical_row::LexicalRow>>,
@@ -1002,6 +1015,14 @@ impl<'a> AnswerEvidenceRanker<'a> {
                 .cmp(left_score)
                 .then_with(|| stable_evidence_key(left).cmp(&stable_evidence_key(right)))
         });
+        if let Some(rescues) = &self.bridged_rescues {
+            let taken = bridged
+                .iter()
+                .take(MAX_BRIDGED_CANDIDATES)
+                .map(|(score, _, _)| *score)
+                .collect::<Vec<_>>();
+            rescues.record(&taken, MAX_BRIDGED_CANDIDATES);
+        }
         (
             bridged
                 .into_iter()
@@ -1326,6 +1347,7 @@ mod tests {
             indexed_vocabulary: None,
             indexed_seed_documents: None,
             indexed_rows: None,
+            bridged_rescues: None,
             expansion_focus: true,
             prepared_cache: None,
             head_window: HEAD_WINDOW,
@@ -2048,6 +2070,7 @@ mod tests {
             indexed_vocabulary: None,
             indexed_seed_documents: None,
             indexed_rows: None,
+            bridged_rescues: None,
             expansion_focus: true,
             prepared_cache: None,
             head_window: HEAD_WINDOW,
@@ -2485,6 +2508,7 @@ mod tests {
             indexed_vocabulary: None,
             indexed_seed_documents: None,
             indexed_rows: None,
+            bridged_rescues: None,
             expansion_focus: true,
             prepared_cache: None,
             head_window: HEAD_WINDOW,

@@ -196,6 +196,18 @@ mod tests {
                 }
             })
             .collect::<Vec<_>>();
+        // The mapping joins an ask's path to its evidence (to the head's, P14)
+        // before the JSON is written: a hop whose body repeats an evidence
+        // item names it instead.
+        let joined_path = path
+            .iter()
+            .enumerate()
+            .map(|(index, relation)| MemoryRelation {
+                evidence: String::new(),
+                evidence_refs: vec![format!("detail:evidence:{}", index % 3)],
+                ..relation.clone()
+            })
+            .collect::<Vec<_>>();
         let legacy_answer = bodies
             .iter()
             .map(|body| format!("- {body}"))
@@ -206,7 +218,7 @@ mod tests {
             answer: legacy_answer.clone(),
             because: reasons.clone(),
             proof: Some(Proof {
-                path: path.clone(),
+                path: joined_path,
                 evidence: evidence.clone(),
                 conflicts: Vec::new(),
                 superseded: Vec::new(),
