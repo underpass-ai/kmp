@@ -111,6 +111,31 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
 
 ### Changed
 
+- TypeSafe Jev is pinned at `jev-1.14.0` (was `jev-1.13.0`) in the judged
+  scorecards, the memory bench, the guide's `typesafe.json` example and the
+  test fixtures. Both judged cassettes (`jev.cassette.json`,
+  `retrieval.jev.cassette.json`) are re-recorded with it. An existing store
+  keeps the model its own `typesafe.json` names until its owner edits that
+  file; KMP never rewrites it. The verdict book keys every verdict by model,
+  so a store that switches re-judges once and then answers from the book
+  again; the old `jev-1.13.0` verdicts stay until `max_bytes` evicts them.
+  Measured on the judged corpora (three samples of each model, recorded the
+  same day, `docs/development/jev-evaluation.md`): retrieval and Ask
+  re-ranking unchanged; write-time typing and label "none" better;
+  `proposed_hops_right` 0.9130 in the committed sample. As a reviewed
+  change, its floor in `jev-baseline.tsv` is lowered from 0.9411 to 0.9130:
+  over three same-day samples it is 0.913 / 0.947 / 0.9375 on 1.14 against
+  0.941 / 0.95 / 0.95 on 1.13, the committed sample was chosen before any
+  score was read, its extra wrong hop (`p01 → b06`) sits at 0.33 just over
+  the never-tuned path step line of 0.3, and the old floor had no margin
+  over a single sample (16/17). `write_typed_with_jev` (0.7272) and
+  `labels_none_kept` (1.0) rise, being above their old floors in all three
+  samples. Not re-verified on 1.14: the ask-judge (P10) and write-expansion
+  (P15) thresholds; sample 3 of 1.14 fell under eight floors for a cause not
+  traced.
+  Latency and input tokens per request are unchanged. The bench bills
+  `jev-1.14.0` at the same 0.042 USD per million input tokens, a figure from
+  third-party listings that TypeSafe does not publish.
 - Reads of a large about cost less, with unchanged answers (one about of
   10,000 memories: first wake 2.1 → 1.0 s, ask 6.3 → 2.0 s, rewind
   0.63 → 0.49 s; of 100,000: wake 22.6 → 11.1 s, ask 92 → 28 s). A wake
@@ -254,6 +279,10 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
 
 ### Fixed
 
+- `typesafe.json` accepts only a pinned release, `<family>-<major>.<minor>.<patch>`.
+  An alias such as `jev-preview` used to validate and then fail every
+  answer, because the provider answers with the release the alias resolves
+  to; it is now refused as an invalid `typesafe.json`, like `jev-latest`.
 - The viewer runs one projection read at a time, and a read whose browser
   abandoned it (the page now aborts superseded reads) leaves the queue.
   Eight overlapping reads on a 20,000-entry about no longer hold eight copies

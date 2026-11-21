@@ -13,7 +13,7 @@ path = "target/release/kmp-mcp"
 
 [store_files]
 "rerank.json" = "scripts/performance/memory_bench/tests/fixtures/rerank-narrow.json"
-"typesafe.json" = { json = { endpoint = "https://api.typesafe.ai/v1/systemone", model = "jev-1.13.0", timeout_ms = 20000 } }
+"typesafe.json" = { json = { endpoint = "https://api.typesafe.ai/v1/systemone", model = "jev-1.14.0", timeout_ms = 20000 } }
 
 [env]
 KMP_TYPESAFE_CASSETTE = "crates/kmp-testkit/judged/retrieval.jev.cassette.json"

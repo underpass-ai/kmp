@@ -53,7 +53,7 @@ from ..runtime.layout import public_layout
 SCHEMA = 'kmp.bench.jev_tail.v1'
 KEY_VARIABLE_NAME = 'TYPESAFE_API_KEY'  # the variable's name, shown in reports; never its value
 PROVIDER_URL = f'https://{PROVIDER_HOST}/v1/systemone'
-MODEL = 'jev-1.13.0'
+MODEL = 'jev-1.14.0'
 # Mirrors crates/kmp-mcp/src/serving/adapters/typesafe_{judgement,transport}.rs (checked by test_jev_tail).
 MAX_RETRIES = 2
 MAX_RETRY_WAIT_SECS = 5

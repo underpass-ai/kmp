@@ -425,7 +425,7 @@ fn a_store_opted_into_jev_marks_the_tools_that_send_text_open_world() {
     let store = root.join("store");
     std::fs::write(
         store.join("typesafe.json"),
-        r#"{"endpoint":"https://api.typesafe.ai/v1/judge","model":"jev-1.13.0","timeout_ms":5000}"#,
+        r#"{"endpoint":"https://api.typesafe.ai/v1/judge","model":"jev-1.14.0","timeout_ms":5000}"#,
     )
     .expect("typesafe.json");
     for file in ["wake-focus.json", "rerank.json"] {
