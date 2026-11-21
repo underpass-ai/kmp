@@ -26,12 +26,12 @@ impl PluginNoticeHarness {
         assert!(quiet.status.success());
         assert!(quiet.stdout.is_empty());
 
-        let available = self.notice(&plugin, "0.99.0");
+        let available = self.notice(&plugin, "99.0.0");
         assert!(available.status.success());
-        assert!(String::from_utf8_lossy(&available.stdout).contains("0.99.0 is available"));
+        assert!(String::from_utf8_lossy(&available.stdout).contains("99.0.0 is available"));
 
         let stale = self.plugin("0.4.2");
-        let mismatch = self.notice(&stale, "0.99.0");
+        let mismatch = self.notice(&stale, "99.0.0");
         assert!(mismatch.status.success());
         let mismatch = String::from_utf8_lossy(&mismatch.stdout);
         assert!(mismatch.contains(&format!("engine {current}, plugin 0.4.2")));

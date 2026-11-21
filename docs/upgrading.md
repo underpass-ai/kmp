@@ -19,7 +19,7 @@ list is the [changelog](../CHANGELOG.md).
 | Item | What 1.0 does | Once or always |
 |:--|:--|:--|
 | Store format | Stays **4**. Nothing is migrated. | — |
-| Lexical index | Its version moves to `lexical-index-5`: rebuilt on the next ask of each about, and gains one index on open. | Once |
+| Lexical index | Its version moves from `lexical-index-4` to `lexical-index-6`: rebuilt on the next ask of each about, and gains one index on open. | Once |
 | Continuations | Kept in `continuations.sqlite3` beside the store. 0.27 handles (in `agent-users.sqlite3`) answer `CONTINUATION_UNAVAILABLE`; 1.0 no longer opens the old file and leaves it untouched. | Once |
 | Guide | No longer seeded by a read. `kmp_guide` serves every topic from the engine. To install the longer stored guide: `kmp-mcp guide sync --plugin-root <plugin dir>` or `/kmp:guide`. | — |
 | Jev verdicts | A store keeps the model its own `typesafe.json` names (KMP never edits it). If you change it to `jev-1.14.0`, each question is judged again once, then answered from the verdict book. Old verdicts stay until `max_bytes` evicts them. | Once, if you switch |
@@ -45,8 +45,8 @@ ends with `Help: kmp_guide {"topic":"…"}`.
 | `1.0` where an integer is declared; `null` where the schema does not allow it; `budget.max_bytes: 0` | An integer; omit the field; at least `512`. |
 | A timestamp without a zone (`2026-11-10T09:30:00`, `2026-11-10`) or with `+0100` | RFC 3339 with a zone: `2026-11-10T09:30:00+01:00` or `…Z`. Timestamp arguments carry `"format": "date-time"` in `tools/list`. |
 | An empty `occurred_at`, `valid_from` or `valid_until` on `kmp_write_memory`; `rank` above 4294967295 | Omit the field; a smaller rank. |
-| A continuation sent with a different value of an argument of its call | Send the handle alone, or with the same values. A different value is `CONTINUATION_ARGUMENT_DIFFERS`; start a new read with the original arguments and `page.cursor`. |
-| A bidirectional trace with `search.paths_per_target`, a `to` array, `as_of` or another search option | Refused under the rule `trace.bidirectional`; drop the option. |
+| A continuation sent with other arguments (0.27 refused every one) | 1.0 accepts an argument whose value equals the call the handle retains, and ignores it. A different value is still refused, now as `CONTINUATION_ARGUMENT_DIFFERS`, naming the argument; start a new read with the original arguments and `page.cursor`. |
+| A bidirectional trace with `search.paths_per_target` above 1, a `to` list of two or more refs, `as_of` or another search option | Refused under the rule `trace.bidirectional`; drop the option. A `to` list holding one ref is that ref. |
 | `kmp_curate` modes `write_proposals`, `judge_expansions`, `prepare_apply` | Only the four published modes. |
 | Former names `kernel_ingest`, `kernel_write_memory`, `kernel_wake`, `kernel_ask`, `kernel_trace`, `kernel_inspect`, `kernel_remember`, `kernel_ingest_context` | `unknown_tool`. Use the `kmp_*` names. |
 | `kmp_inspect` of a guide node on a store without the guide (used to install it) | `GUIDE_UNAVAILABLE` with the repair; or read the topic with `kmp_guide`. |
