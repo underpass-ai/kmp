@@ -91,6 +91,10 @@ VOLATILE_FIELDS = (
                   'named none; linked: fires only on a value already seen as an ingestion '
                   'stamp of the same item, never on an observed_at the writer gave',
                   linked=True),
+    VolatileField('store.path', 'store_path', r'\.structuredContent\.store\.path$', r'/.+',
+                  'absolute path of the data directory the server resolved; two replicas of '
+                  'one store answer from two directories, and every call of one process names '
+                  'the same one, so the path keeps one label per process'),
     VolatileField('review_token', 'review_token', r'\.(neighborhood\.token|review_token)$',
                   r'[0-9a-f]{64}',
                   'digest the server binds to the neighbourhood packet it showed a writer; the '

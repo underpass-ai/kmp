@@ -29,6 +29,15 @@ pub(crate) fn classify_into_tiers(
     }
 }
 
+/// The L0 tier every classification opens with, and its only section: the
+/// compact summary. A summary render tiers this alone.
+pub(crate) fn classify_summary(bundle: &KmpBundle) -> Vec<TieredSection> {
+    vec![TieredSection {
+        tier: ResolutionTier::L0Summary,
+        content: render_l0_summary(bundle),
+    }]
+}
+
 /// Default classification: L0 summary, L1 causal spine, L2 evidence pack.
 fn classify_default(
     bundle: &KmpBundle,
@@ -36,13 +45,8 @@ fn classify_default(
     options: &ContextRenderOptions,
 ) -> Vec<TieredSection> {
     let max_tier = options.max_tier.unwrap_or(ResolutionTier::L2EvidencePack);
-    let mut sections = Vec::new();
-
     // ── L0 Summary ──────────────────────────────────────────────────
-    sections.push(TieredSection {
-        tier: ResolutionTier::L0Summary,
-        content: render_l0_summary(bundle),
-    });
+    let mut sections = classify_summary(bundle);
 
     if max_tier < ResolutionTier::L1CausalSpine {
         return sections;
@@ -167,13 +171,8 @@ fn classify_resume_focused(
     options: &ContextRenderOptions,
 ) -> Vec<TieredSection> {
     let max_tier = options.max_tier.unwrap_or(ResolutionTier::L2EvidencePack);
-    let mut sections = Vec::new();
-
     // L0: compact summary (same as default)
-    sections.push(TieredSection {
-        tier: ResolutionTier::L0Summary,
-        content: render_l0_summary(bundle),
-    });
+    let mut sections = classify_summary(bundle);
 
     if max_tier < ResolutionTier::L1CausalSpine {
         return sections;

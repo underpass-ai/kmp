@@ -20,6 +20,12 @@ pub enum RenderDemand {
     /// them; counts no decision needed read `0`, and the quality metrics are
     /// [`BundleQualityMetrics::unmeasured`](kmp_domain::BundleQualityMetrics::unmeasured).
     Structure,
+    /// The L0 summary tier alone, exactly as a [`Self::Structure`] render
+    /// tiers it: no flat sections, no other tier, no measurement. What a
+    /// wake reads of the prose while its live memories fill its state; a
+    /// caller that finds it needs the sections renders [`Self::Structure`]
+    /// from the same bundle. It costs the summary, not the whole bundle.
+    Summary,
     /// Nothing reads the render: no text, no tokens, no metrics.
     Skip,
 }
@@ -53,5 +59,11 @@ mod tests {
         assert!(RenderDemand::Structure.renders_text());
         assert!(!RenderDemand::Skip.is_measured());
         assert!(!RenderDemand::Skip.renders_text());
+    }
+
+    #[test]
+    fn summary_renders_text_without_measuring() {
+        assert!(!RenderDemand::Summary.is_measured());
+        assert!(RenderDemand::Summary.renders_text());
     }
 }
