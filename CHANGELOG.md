@@ -417,10 +417,11 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
   more refs still are. A list of one without `bidirectional` stays the bounded
   search it asks for. `tools/list` is unchanged.
 - ChronoLoom without WebGL no longer covers its "3D scene cannot start"
-  message with the loading indicator. The scene loader settled only after
-  the next scene paint, and a scene that cannot draw has none: once the
-  renderer is unavailable the scene loader goes at once and stays away,
-  while the detail loader still works.
+  message with the loading indicator. Every scene read raised the indicator
+  over the message, and it cleared only after two animation frames meant to
+  follow a scene paint. Once the renderer is unavailable the scene loader
+  goes at once, without waiting for a frame, and stays away; the detail
+  loader still works.
 - `kmp-release` guide runs report why an engine failed when it stopped
   before reading its requests (a store it could not open, for example)
   instead of "could not write guide requests: Broken pipe". The broken pipe
