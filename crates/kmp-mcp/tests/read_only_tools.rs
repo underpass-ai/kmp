@@ -11,7 +11,8 @@
 //!
 //! A writer marked `idempotentHint: true` changes nothing more the second
 //! time it receives the same call, by the same measure. Inspect is not
-//! marked read-only, and the last test shows why.
+//! marked read-only, and a test shows why. `openWorldHint` is true only on
+//! the tools a store's TypeSafe Jev opt-in actually sends text from.
 #[path = "support/isolated_home.rs"]
 mod isolated_home;
 
@@ -41,7 +42,16 @@ fn command(scratch: &Path) -> Command {
 /// server exits. Returns the `tools/call` replies in order, and `tools/list`
 /// first when `list` is set.
 fn session(scratch: &Path, calls: &[(&str, Value)]) -> Vec<Value> {
-    let mut child = command(scratch)
+    session_with(scratch, &[], calls)
+}
+
+/// `session` with extra environment variables.
+fn session_with(scratch: &Path, env: &[(&str, &str)], calls: &[(&str, Value)]) -> Vec<Value> {
+    let mut command = command(scratch);
+    for (name, value) in env {
+        command.env(name, value);
+    }
+    let mut child = command
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -374,4 +384,77 @@ fn inspect_is_not_read_only_because_a_guide_node_read_seeds_the_guide() {
         .find(|tool| tool["name"] == "kmp_inspect")
         .expect("inspect");
     assert_eq!(inspect["annotations"]["readOnlyHint"], false);
+}
+
+/// The five tools a store's TypeSafe Jev opt-in can send text from.
+const JEV_TOOLS: [&str; 5] = [
+    "kmp_wake",
+    "kmp_ask",
+    "kmp_write_memory",
+    "kmp_curate",
+    "kmp_summaries_audit",
+];
+
+fn open_world(listed: &Value) -> BTreeMap<String, bool> {
+    listed["result"]["tools"]
+        .as_array()
+        .expect("tools")
+        .iter()
+        .map(|tool| {
+            (
+                tool["name"].as_str().expect("name").to_string(),
+                tool["annotations"]["openWorldHint"] == true,
+            )
+        })
+        .collect()
+}
+
+#[test]
+fn without_a_jev_opt_in_no_tool_is_open_world() {
+    let (_dir, root) = scratch();
+    seeded(&root);
+    let hints = open_world(&session(&root, &[("tools/list", Value::Null)])[0]);
+    assert!(hints.len() >= 16, "{hints:?}");
+    assert!(hints.values().all(|open| !open), "{hints:?}");
+}
+
+#[test]
+fn a_store_opted_into_jev_marks_the_tools_that_send_text_open_world() {
+    let (_dir, root) = scratch();
+    seeded(&root);
+    let store = root.join("store");
+    std::fs::write(
+        store.join("typesafe.json"),
+        r#"{"endpoint":"https://api.typesafe.ai/v1/judge","model":"jev-1.13.0","timeout_ms":5000}"#,
+    )
+    .expect("typesafe.json");
+    for file in ["wake-focus.json", "rerank.json"] {
+        std::fs::write(store.join(file), r#"{"pool_size": 8}"#).expect(file);
+    }
+    std::fs::write(store.join("write-relations.json"), "{}").expect("write-relations.json");
+    let listed = &session_with(
+        &root,
+        &[("TYPESAFE_API_KEY", "test-key-not-used")],
+        &[("tools/list", Value::Null)],
+    )[0];
+    for (tool, open) in open_world(listed) {
+        assert_eq!(open, JEV_TOOLS.contains(&tool.as_str()), "{tool}");
+    }
+    // typesafe.json alone: only the tools that read through Jev without a
+    // file of their own.
+    for file in ["wake-focus.json", "rerank.json", "write-relations.json"] {
+        std::fs::remove_file(store.join(file)).expect(file);
+    }
+    let listed = &session_with(
+        &root,
+        &[("TYPESAFE_API_KEY", "test-key-not-used")],
+        &[("tools/list", Value::Null)],
+    )[0];
+    for (tool, open) in open_world(listed) {
+        assert_eq!(
+            open,
+            matches!(tool.as_str(), "kmp_curate" | "kmp_summaries_audit"),
+            "{tool}"
+        );
+    }
 }

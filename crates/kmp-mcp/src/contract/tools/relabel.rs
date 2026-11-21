@@ -16,7 +16,6 @@ pub(crate) fn definition() -> Value {
         ToolEffect::Write {
             destructive: true,
             idempotent: true,
-            open_world: false,
         },
         "Add or take off the labels of one stored memory without rewriting its text.",
         relabel_schema(),

@@ -47,9 +47,16 @@ way to 1.0). `tools/list` drops from 11,856 to 7,468 tokens
   `kmp_guide {"topic":"guide"}`.
 - Annotations are true: `kmp_wake`, `kmp_ask`, `kmp_time`, `kmp_trace`,
   `kmp_relate`, `kmp_summaries_audit`, `kmp_view_get_state` and `kmp_guide`
-  declare `readOnlyHint: true`; `openWorldHint` is true on `kmp_wake`,
-  `kmp_ask`, `kmp_write_memory`, `kmp_curate` and `kmp_summaries_audit`
-  (TypeSafe Jev, when the store opted in); `idempotentHint: true` on
+  declare `readOnlyHint: true`; `openWorldHint` is false on every tool
+  unless the session's store opted into TypeSafe Jev (`typesafe.json` and a
+  key), and then true on exactly the tools that send text to TypeSafe:
+  `kmp_curate` and `kmp_summaries_audit`, plus `kmp_wake` with
+  `wake-focus.json`, `kmp_ask` with `rerank.json` or `ask-judge.json`, and
+  `kmp_write_memory` with `write-relations.json` or `write-expansions.json`.
+  The hint is computed from the configuration the session opened its store
+  with; a session never changes store, and a change to those files takes
+  effect, hint included, from the next session (no
+  `notifications/tools/list_changed` is sent). `idempotentHint: true` on
   `kmp_ingest`, `kmp_write_memory`, `kmp_relabel`, `kmp_inspect` and
   `kmp_view_apply_intent`; `destructiveHint` and `idempotentHint` are omitted
   where they equal the MCP default. `kmp_inspect` stays `readOnlyHint: false`:

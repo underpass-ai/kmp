@@ -19,7 +19,6 @@ pub(crate) fn definition() -> Value {
         ToolEffect::Write {
             destructive: false,
             idempotent: true,
-            open_world: false,
         },
         "Read one stored memory or write receipt in full, with its evidence and links, before relying on it.",
         json!({

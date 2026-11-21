@@ -47,6 +47,24 @@ pub(crate) fn advertised_input_schemas(result: Value) -> Value {
     )
 }
 
+/// `openWorldHint: true` on `tools`, the ones this session's store opted
+/// into TypeSafe Jev for (`KernelMcpToolBackend::open_world_tools`). The
+/// contract declares every tool closed to the outside world; only a store's
+/// opt-in changes that, and the store a session serves is fixed when it
+/// starts, as is the configuration it read, so the list cannot change under
+/// a running session.
+pub(crate) fn with_open_world(mut result: Value, tools: &[&str]) -> Value {
+    for tool in result["tools"].as_array_mut().into_iter().flatten() {
+        if tool["name"]
+            .as_str()
+            .is_some_and(|name| tools.contains(&name))
+        {
+            tool["annotations"]["openWorldHint"] = Value::Bool(true);
+        }
+    }
+    result
+}
+
 /// Drops every tool's `outputSchema`, leaving the rest byte-for-byte intact.
 pub(crate) fn without_output_schemas(mut result: Value) -> Value {
     for tool in result["tools"].as_array_mut().into_iter().flatten() {

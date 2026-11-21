@@ -15,7 +15,6 @@ pub(crate) fn definition() -> Value {
         ToolEffect::Write {
             destructive: false,
             idempotent: false,
-            open_world: true,
         },
         "Find missing and doubtful relations with TypeSafe Jev as second reader (`review`, `paths`, `labels`), then declare those you confirm (`apply`).",
         curate_schema(),

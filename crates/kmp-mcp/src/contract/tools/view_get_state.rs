@@ -13,7 +13,7 @@ use crate::contract::schema::view_family::view_output_with_url_schema;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_view_get_state",
-        ToolEffect::Read { open_world: false },
+        ToolEffect::Read,
         "Read an open view's semantic state and who last moved it.",
         json!({
             "type": "object",

@@ -426,8 +426,10 @@ elegirla frente a sus vecinas. Lo demás va a su ficha (≤ 2.000 tokens; partir
 el tema si no cabe). Las anotaciones son verdaderas: `readOnlyHint: true` sólo
 si la llamada no cambia memoria (lo que puede dejar es el log, telemetría de
 calidad, un handle de continuación si hay más páginas y, con Jev, veredictos
-en caché); `openWorldHint: true` donde un store con Jev envía texto a
-TypeSafe; `destructiveHint` e `idempotentHint` se omiten cuando valen su
+en caché); `openWorldHint` es false salvo en las herramientas que el opt-in
+de Jev del store de la sesión hace enviar texto a TypeSafe
+(`KernelMcpToolBackend::open_world_tools`, aplicado en `tools/list`);
+`destructiveHint` e `idempotentHint` se omiten cuando valen su
 valor por defecto de MCP. `kmp_inspect` no es de sólo lectura porque leer un
 nodo de la guía en un store sin ella la siembra.
 

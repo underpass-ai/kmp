@@ -6,37 +6,33 @@ use serde_json::{Value, json};
 /// what such a call may leave behind is the server log, a bounded quality
 /// telemetry row, a continuation handle when the answer has more pages and,
 /// on a store whose owner opted into TypeSafe Jev, the cached verdicts —
-/// none of which any tool reads back as memory. `open_world` is true where a
-/// store that opted into Jev sends the text it reads to TypeSafe.
+/// none of which any tool reads back as memory. Every tool is declared
+/// closed to the outside world (`openWorldHint: false`); a session whose
+/// store opted into Jev turns the hint on for the tools that then send text
+/// to TypeSafe (`registry::with_open_world`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum ToolEffect {
-    Read {
-        open_world: bool,
-    },
+    Read,
     Write {
         /// It may replace current state: an entry, a card, a label set.
         destructive: bool,
         /// Repeating the same call adds nothing more.
         idempotent: bool,
-        open_world: bool,
     },
 }
 
 impl ToolEffect {
     pub(crate) fn annotations(self) -> Value {
         match self {
-            Self::Read { open_world } => {
-                json!({"readOnlyHint": true, "openWorldHint": open_world})
-            }
+            Self::Read => json!({"readOnlyHint": true, "openWorldHint": false}),
             // A hint equal to its MCP default (destructive true, idempotent
             // false) says the same thing unwritten; readOnlyHint and
             // openWorldHint are always stated.
             Self::Write {
                 destructive,
                 idempotent,
-                open_world,
             } => {
-                let mut hints = json!({"readOnlyHint": false, "openWorldHint": open_world});
+                let mut hints = json!({"readOnlyHint": false, "openWorldHint": false});
                 if !destructive {
                     hints["destructiveHint"] = json!(false);
                 }

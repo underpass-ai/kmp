@@ -14,7 +14,7 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_relate",
-        ToolEffect::Read { open_world: false },
+        ToolEffect::Read,
         "Compare explicitly selected abouts: shared scopes, declared relations, tensions and proposed cross-about equivalences.",
         json!({
             "type": "object",

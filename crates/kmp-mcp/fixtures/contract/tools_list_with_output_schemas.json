@@ -638,7 +638,7 @@
       },
       "annotations": {
         "idempotentHint": true,
-        "openWorldHint": true,
+        "openWorldHint": false,
         "readOnlyHint": false
       },
       "description": "Record facts with evidence and labels (`memories`), link stored memories (`relations`) or attach search renderings (`search_summaries`): the usual writer. Guide topic: write.",
@@ -1633,7 +1633,7 @@
         "anthropic/maxResultSizeChars": 10000
       },
       "annotations": {
-        "openWorldHint": true,
+        "openWorldHint": false,
         "readOnlyHint": true
       },
       "description": "Resume known work on an about: its current state, causal spine, labels and proof; the first read of a session.",
@@ -2226,7 +2226,7 @@
         "anthropic/maxResultSizeChars": 10000
       },
       "annotations": {
-        "openWorldHint": true,
+        "openWorldHint": false,
         "readOnlyHint": true
       },
       "description": "Answer a semantic question from cited stored text and evidence, or say UNKNOWN; for history, change or current state use kmp_time.",
@@ -4860,7 +4860,7 @@
         "anthropic/maxResultSizeChars": 10000
       },
       "annotations": {
-        "openWorldHint": true,
+        "openWorldHint": false,
         "readOnlyHint": true
       },
       "description": "List memories whose English search summary is missing, refused or weak, to repair with kmp_write_memory `search_summaries`. Guide topic: condense.",
@@ -5166,7 +5166,7 @@
       },
       "annotations": {
         "destructiveHint": false,
-        "openWorldHint": true,
+        "openWorldHint": false,
         "readOnlyHint": false
       },
       "description": "Find missing and doubtful relations with TypeSafe Jev as second reader (`review`, `paths`, `labels`), then declare those you confirm (`apply`).",

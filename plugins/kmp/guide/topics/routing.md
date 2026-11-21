@@ -117,9 +117,12 @@ continuation handle when the answer has more pages and, on a store whose owner
 opted into TypeSafe Jev, cached verdicts. `inspect` is not read-only: reading a
 node of the installed guide on a store without it seeds the guide first.
 
-`openWorldHint` is true on `wake`, `ask`, `write_memory`, `curate` and
-`summaries_audit`, which send the text they read to TypeSafe when the store
-opted into Jev, and false elsewhere. `ingest`, `write_memory`, `relabel` and
+`openWorldHint` is false everywhere, as KMP ships. On a store whose owner
+opted into TypeSafe Jev it turns true on the tools that then send text to
+TypeSafe: `curate` and `summaries_audit`, `wake` with `wake-focus.json`, `ask`
+with `rerank.json` or `ask-judge.json`, `write_memory` with
+`write-relations.json` or `write-expansions.json`; a new session picks up a
+changed opt-in. `ingest`, `write_memory`, `relabel` and
 `condense` keep the default `destructiveHint` (true) for modes that replace
 current content, memberships or cards; accepted changes keep their event
 history. `idempotentHint: true` marks `ingest`, `write_memory`, `relabel`,

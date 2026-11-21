@@ -6,7 +6,7 @@ pub(crate) fn definition() -> Value {
     let topics: Vec<&str> = GuideTopic::all().iter().map(|topic| topic.name).collect();
     tool_definition_with_output(
         "kmp_guide",
-        ToolEffect::Read { open_world: false },
+        ToolEffect::Read,
         "Explain one topic before its first use: a worked card, its rules and its arguments; without a topic, list the topics.",
         json!({"type":"object","additionalProperties":false,"properties":{
             "topic":{"type":"string","enum":topics,"description":"The topic to explain. Omit to list the topics."}

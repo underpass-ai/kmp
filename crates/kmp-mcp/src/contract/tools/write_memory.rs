@@ -18,7 +18,6 @@ pub(crate) fn definition() -> Value {
         ToolEffect::Write {
             destructive: true,
             idempotent: true,
-            open_world: true,
         },
         "Record facts with evidence and labels (`memories`), link stored memories (`relations`) or attach search renderings (`search_summaries`): the usual writer.",
         write_memory_schema(),

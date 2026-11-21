@@ -13,7 +13,7 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_summaries_audit",
-        ToolEffect::Read { open_world: true },
+        ToolEffect::Read,
         "List memories whose English search summary is missing, refused or weak, to repair with kmp_write_memory `search_summaries`.",
         json!({
             "type": "object",

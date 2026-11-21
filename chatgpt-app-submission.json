@@ -23,36 +23,36 @@
     "kmp_write_memory": {
       "annotations": {
         "destructiveHint": true,
-        "openWorldHint": true,
+        "openWorldHint": false,
         "readOnlyHint": false
       },
       "justifications": {
         "read_only_justification": "Records memories, relationships or summaries and may persist write-review state in the configured store.",
-        "open_world_justification": "Sends the text it reads to TypeSafe only on a store whose owner opted into TypeSafe Jev (typesafe.json beside the store and TYPESAFE_API_KEY); otherwise it stays within the configured local store.",
+        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities. Only a store whose owner opted into TypeSafe Jev (typesafe.json beside the store and TYPESAFE_API_KEY) sends text it reads to TypeSafe; such a session declares openWorldHint true for this tool in tools/list.",
         "destructive_justification": "An explicit existing reference can replace current memory content while prior canonical events remain available for replay."
       }
     },
     "kmp_wake": {
       "annotations": {
         "destructiveHint": false,
-        "openWorldHint": true,
+        "openWorldHint": false,
         "readOnlyHint": true
       },
       "justifications": {
         "read_only_justification": "Reads the configured store and leaves its memory byte for byte unchanged; what it may leave behind is a log line, a bounded quality-telemetry row, a continuation handle when the answer has more pages and, on a store opted into TypeSafe Jev, cached verdicts.",
-        "open_world_justification": "Sends the text it reads to TypeSafe only on a store whose owner opted into TypeSafe Jev (typesafe.json beside the store and TYPESAFE_API_KEY); otherwise it stays within the configured local store.",
+        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities. Only a store whose owner opted into TypeSafe Jev (typesafe.json beside the store and TYPESAFE_API_KEY) sends text it reads to TypeSafe; such a session declares openWorldHint true for this tool in tools/list.",
         "destructive_justification": "Does not delete or replace canonical memories, their events or authored cards."
       }
     },
     "kmp_ask": {
       "annotations": {
         "destructiveHint": false,
-        "openWorldHint": true,
+        "openWorldHint": false,
         "readOnlyHint": true
       },
       "justifications": {
         "read_only_justification": "Reads the configured store and leaves its memory byte for byte unchanged; what it may leave behind is a log line, a bounded quality-telemetry row, a continuation handle when the answer has more pages and, on a store opted into TypeSafe Jev, cached verdicts.",
-        "open_world_justification": "Sends the text it reads to TypeSafe only on a store whose owner opted into TypeSafe Jev (typesafe.json beside the store and TYPESAFE_API_KEY); otherwise it stays within the configured local store.",
+        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities. Only a store whose owner opted into TypeSafe Jev (typesafe.json beside the store and TYPESAFE_API_KEY) sends text it reads to TypeSafe; such a session declares openWorldHint true for this tool in tools/list.",
         "destructive_justification": "Does not delete or replace canonical memories, their events or authored cards."
       }
     },
@@ -131,12 +131,12 @@
     "kmp_summaries_audit": {
       "annotations": {
         "destructiveHint": false,
-        "openWorldHint": true,
+        "openWorldHint": false,
         "readOnlyHint": true
       },
       "justifications": {
         "read_only_justification": "Reads the configured store and leaves its memory byte for byte unchanged; what it may leave behind is a log line, a bounded quality-telemetry row, a continuation handle when the answer has more pages and, on a store opted into TypeSafe Jev, cached verdicts.",
-        "open_world_justification": "Sends the text it reads to TypeSafe only on a store whose owner opted into TypeSafe Jev (typesafe.json beside the store and TYPESAFE_API_KEY); otherwise it stays within the configured local store.",
+        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities. Only a store whose owner opted into TypeSafe Jev (typesafe.json beside the store and TYPESAFE_API_KEY) sends text it reads to TypeSafe; such a session declares openWorldHint true for this tool in tools/list.",
         "destructive_justification": "Does not delete or replace canonical memories, their events or authored cards."
       }
     },

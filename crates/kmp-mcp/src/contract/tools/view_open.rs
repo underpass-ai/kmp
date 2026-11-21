@@ -16,7 +16,6 @@ pub(crate) fn definition() -> Value {
         ToolEffect::Write {
             destructive: false,
             idempotent: false,
-            open_world: false,
         },
         "Open a ChronoLoom view over an about so a human sees the memory you work on, with its link when the viewer is mounted.",
         json!({
