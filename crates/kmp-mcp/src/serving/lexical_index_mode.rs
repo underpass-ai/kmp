@@ -17,19 +17,13 @@ pub(crate) enum LexicalIndexMode {
     Off,
     /// Maintained beside the store and compared with every ask. A
     /// measurement mode: only debug and `eval-hooks` builds can select it.
-    #[cfg_attr(
-        not(any(debug_assertions, feature = "eval-hooks")),
-        allow(dead_code)
-    )]
+    #[cfg_attr(not(any(debug_assertions, feature = "eval-hooks")), allow(dead_code))]
     Shadow,
     /// Answers the asks it holds from the postings (P13).
     On,
     /// Answers as before, also answers from the postings, and logs whether
     /// the two agree. A measurement mode, like [`Self::Shadow`].
-    #[cfg_attr(
-        not(any(debug_assertions, feature = "eval-hooks")),
-        allow(dead_code)
-    )]
+    #[cfg_attr(not(any(debug_assertions, feature = "eval-hooks")), allow(dead_code))]
     Verify,
 }
 
@@ -98,7 +92,10 @@ mod tests {
         assert!(LexicalIndexMode::Shadow.is_open());
         assert_eq!(LexicalIndexMode::named("off"), Some(LexicalIndexMode::Off));
         assert_eq!(LexicalIndexMode::named("0"), Some(LexicalIndexMode::Off));
-        assert_eq!(LexicalIndexMode::named("FALSE"), Some(LexicalIndexMode::Off));
+        assert_eq!(
+            LexicalIndexMode::named("FALSE"),
+            Some(LexicalIndexMode::Off)
+        );
         assert_eq!(LexicalIndexMode::named("on"), Some(LexicalIndexMode::On));
         assert_eq!(LexicalIndexMode::named("1"), Some(LexicalIndexMode::On));
         assert!(LexicalIndexMode::On.reads_postings() && !LexicalIndexMode::On.shadows());

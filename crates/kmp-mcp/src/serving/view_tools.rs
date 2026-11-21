@@ -129,7 +129,9 @@ pub(crate) fn open(
         "clocks": Clock::NAMES,
         "semantic_zoom_ladder": SemanticZoom::NAMES,
     });
-    let unrendered = viewer_url.is_none().then(|| unrendered_view_notice(viewer.err()));
+    let unrendered = viewer_url
+        .is_none()
+        .then(|| unrendered_view_notice(viewer.err()));
     let unhonored = unrendered.into_iter().chain(guard).collect::<Vec<_>>();
     if !unhonored.is_empty() {
         extra["unhonored"] = json!(unhonored);

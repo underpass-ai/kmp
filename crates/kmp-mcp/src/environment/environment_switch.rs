@@ -51,6 +51,7 @@ impl EnvironmentSwitch {
     }
 
     /// A test or evaluation hook (only debug and `eval-hooks` builds).
+    #[cfg(any(debug_assertions, feature = "eval-hooks"))]
     pub(crate) const fn hook(
         name: &'static str,
         default: &'static str,

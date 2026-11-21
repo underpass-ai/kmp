@@ -49,13 +49,13 @@ fn ingest(about: &str, key: &str) -> Value {
 
 fn packet(key: &str, link: Value) -> Value {
     json!({"about":"proj:honest","actor":"tester","idempotency_key":key,
-        "labels":{"task":["t1"]},"observed_at":"2026-11-20T11:00:00Z",
-        "memories":[
-            {"id":"one","kind":"observation","summary":"The cache failed.",
-             "evidence":"R1 reports the cache failure."},
-            {"id":"two","kind":"observation","summary":"The retry succeeded.",
-             "evidence":"R2 reports a successful retry after R1.","connect_to":[link]}
-        ]})
+    "labels":{"task":["t1"]},"observed_at":"2026-11-20T11:00:00Z",
+    "memories":[
+        {"id":"one","kind":"observation","summary":"The cache failed.",
+         "evidence":"R1 reports the cache failure."},
+        {"id":"two","kind":"observation","summary":"The retry succeeded.",
+         "evidence":"R2 reports a successful retry after R1.","connect_to":[link]}
+    ]})
 }
 
 async fn receipt(server: &KernelMcpServer, written: &Value) -> Value {
@@ -80,13 +80,19 @@ async fn an_unknown_about_is_named_as_an_about_with_one_code_on_every_read() {
         false
     );
     let reads = [
-        ("kmp_ask", json!({"about":"proj:nope","question":"what failed?"})),
+        (
+            "kmp_ask",
+            json!({"about":"proj:nope","question":"what failed?"}),
+        ),
         ("kmp_relate", json!({"about":"proj:nope"})),
         (
             "kmp_time",
             json!({"about":"proj:nope","move":"rewind","from":{"time":"2026-12-01T00:00:00Z"}}),
         ),
-        ("kmp_trace", json!({"about":"proj:nope","from":"x","to":"y"})),
+        (
+            "kmp_trace",
+            json!({"about":"proj:nope","from":"x","to":"y"}),
+        ),
         ("kmp_inspect", json!({"about":"proj:nope","ref":"x"})),
         ("kmp_curate", json!({"about":"proj:nope","mode":"review"})),
         ("kmp_view_open", json!({"about":"proj:nope"})),
@@ -202,12 +208,18 @@ async fn declared_and_ignored_budget_fields_are_refused() {
     let server = KernelMcpServer::embedded(dir.path()).expect("server");
     call(&server, "kmp_ingest", ingest("proj:b", "b0")).await;
     for (tool, arguments) in [
-        ("kmp_wake", json!({"about":"proj:b","budget":{"tokens":100}})),
+        (
+            "kmp_wake",
+            json!({"about":"proj:b","budget":{"tokens":100}}),
+        ),
         (
             "kmp_relate",
             json!({"about":"proj:b","budget":{"max_entries":3}}),
         ),
-        ("kmp_relate", json!({"about":"proj:b","budget":{"detail":"full"}})),
+        (
+            "kmp_relate",
+            json!({"about":"proj:b","budget":{"detail":"full"}}),
+        ),
         (
             "kmp_trace",
             json!({"about":"proj:b","from":"a","to":"b","budget":{"depth":2}}),
@@ -237,7 +249,12 @@ async fn a_refused_intent_changes_nothing_and_keeps_its_key() {
     let server = KernelMcpServer::embedded(dir.path()).expect("server");
     call(&server, "kmp_ingest", ingest("proj:v", "v0")).await;
     assert_eq!(
-        call(&server, "kmp_view_open", json!({"about":"proj:v","view_id":"e4"})).await["isError"],
+        call(
+            &server,
+            "kmp_view_open",
+            json!({"about":"proj:v","view_id":"e4"})
+        )
+        .await["isError"],
         false
     );
     let refused = call(
@@ -267,7 +284,12 @@ async fn a_stale_open_on_the_same_about_says_its_guard_was_not_checked() {
     let dir = scratch();
     let server = KernelMcpServer::embedded(dir.path()).expect("server");
     call(&server, "kmp_ingest", ingest("proj:o", "o0")).await;
-    call(&server, "kmp_view_open", json!({"about":"proj:o","view_id":"e26"})).await;
+    call(
+        &server,
+        "kmp_view_open",
+        json!({"about":"proj:o","view_id":"e26"}),
+    )
+    .await;
     call(
         &server,
         "kmp_view_apply_intent",

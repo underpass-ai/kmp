@@ -16,4 +16,3 @@ pub(super) fn judgement_key(model: &str, request: &JudgementRequest) -> String {
     let body = typesafe_request_body(model, &state, &request.questions);
     format!("{:x}", Sha256::digest(body.to_string().as_bytes()))
 }
-

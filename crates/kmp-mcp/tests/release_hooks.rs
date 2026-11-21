@@ -131,9 +131,21 @@ fn info_does_not_react_to_a_hook_a_release_build_does_not_carry() {
         let (store, cassette) = opted_in_store();
         let env = env
             .iter()
-            .map(|(name, value)| (*name, if *value == "CASSETTE" { cassette.clone() } else { (*value).to_string() }))
+            .map(|(name, value)| {
+                (
+                    *name,
+                    if *value == "CASSETTE" {
+                        cassette.clone()
+                    } else {
+                        (*value).to_string()
+                    },
+                )
+            })
             .collect::<Vec<_>>();
-        let env = env.iter().map(|(name, value)| (*name, value.as_str())).collect::<Vec<_>>();
+        let env = env
+            .iter()
+            .map(|(name, value)| (*name, value.as_str()))
+            .collect::<Vec<_>>();
         // A first report may settle files (the store index); compare the
         // second and the third.
         run(store.path(), &[], &["info"], "");
@@ -191,7 +203,10 @@ fn an_injected_latest_release_needs_the_hooks() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../plugins/kmp");
     let output = run(
         store.path(),
-        &[("KMP_VERSION_CHECK", "off"), ("KMP_LATEST_VERSION", "9.9.9")],
+        &[
+            ("KMP_VERSION_CHECK", "off"),
+            ("KMP_LATEST_VERSION", "9.9.9"),
+        ],
         &[
             "plugin",
             "notice",
@@ -204,14 +219,21 @@ fn an_injected_latest_release_needs_the_hooks() {
     if hooks_expected() {
         assert!(stdout.contains("9.9.9"), "{stdout}");
     } else {
-        assert!(!stdout.contains("9.9.9"), "a release binary injected: {stdout}");
+        assert!(
+            !stdout.contains("9.9.9"),
+            "a release binary injected: {stdout}"
+        );
     }
 }
 
 #[test]
 fn a_release_binary_carries_none_of_the_hook_names() {
     let bytes = std::fs::read(binary()).expect("read the binary");
-    let carries = |name: &str| bytes.windows(name.len()).any(|window| window == name.as_bytes());
+    let carries = |name: &str| {
+        bytes
+            .windows(name.len())
+            .any(|window| window == name.as_bytes())
+    };
     for (name, _) in HOOKS {
         assert_eq!(carries(name), hooks_expected(), "{name} in the executable");
     }

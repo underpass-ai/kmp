@@ -30,9 +30,7 @@ use super::write_relations_config::WriteRelationsConfig;
 use crate::curate::domain::partner_cap::PartnerCap;
 use crate::curate::domain::partner_filter::PartnerFilter;
 use crate::curate::domain::paths_corridor::PathsCorridor;
-use crate::serving::environment::{
-    TYPESAFE_API_KEY_ENV, optional_env_string,
-};
+use crate::serving::environment::{TYPESAFE_API_KEY_ENV, optional_env_string};
 use crate::serving::judgement_site::JudgementSite;
 use crate::serving::ports::judgement_model::JudgementModel;
 use crate::serving::ports::semantic_candidate_provider::SemanticCandidateProvider;

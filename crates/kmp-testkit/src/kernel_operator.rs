@@ -74,7 +74,7 @@ pub fn kernel_operator_is_bounded_tool_call(tool: &str, arguments: &Value) -> bo
         KERNEL_OPERATOR_TIME_TOOL => match kernel_operator_time_move(tool, arguments) {
             Some("near") => {
                 positive_limit(arguments, &["limit", "entries"], 64)
-                        && optional_limit(arguments, &["budget", "depth"], 8)
+                    && optional_limit(arguments, &["budget", "depth"], 8)
                     && optional_limit(arguments, &["window", "before_entries"], 64)
                     && optional_limit(arguments, &["window", "after_entries"], 64)
                     && path_cursor(arguments, &["around"]).is_some()
@@ -83,7 +83,7 @@ pub fn kernel_operator_is_bounded_tool_call(tool: &str, arguments: &Value) -> bo
                 kernel_operator_time_cursor_key(movement)
                     .is_some_and(|cursor_key| path_cursor(arguments, &[cursor_key]).is_some())
                     && optional_limit(arguments, &["limit", "entries"], 64)
-                }
+            }
             None => false,
         },
         "kmp_relate" => {

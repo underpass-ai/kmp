@@ -455,10 +455,7 @@ fn calls() -> Vec<(&'static str, Value)> {
         ),
         // A review writes nothing and, without a TypeSafe opt-in beside the
         // parity store, calls nothing remote: kernel pairs, untyped.
-        (
-            "kmp_curate",
-            json!({"mode": "review", "about": ABOUT}),
-        ),
+        ("kmp_curate", json!({"mode": "review", "about": ABOUT})),
         // The topic index: a pure lookup that reads no store.
         ("kmp_guide", json!({})),
     ]

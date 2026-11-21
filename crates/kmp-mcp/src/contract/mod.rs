@@ -32,4 +32,6 @@ pub(crate) use registry::{
     tools_list_result_with_apps, without_output_schemas,
 };
 pub(crate) use time_move::{TIME_TOOL, TimeMove};
-pub(crate) use validator::{reject_invalid_arguments, validate_required_arguments};
+pub(crate) use validator::reject_invalid_arguments;
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
+pub(crate) use validator::validate_required_arguments;

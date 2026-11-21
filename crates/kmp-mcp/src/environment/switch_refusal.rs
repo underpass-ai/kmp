@@ -51,7 +51,11 @@ impl fmt::Display for SwitchRefusal {
         if let Some(why) = &self.why {
             write!(formatter, " {why}.")?;
         }
-        write!(formatter, " Fix it, or unset {} for its default.", self.name)
+        write!(
+            formatter,
+            " Fix it, or unset {} for its default.",
+            self.name
+        )
     }
 }
 

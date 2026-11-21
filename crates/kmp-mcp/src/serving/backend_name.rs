@@ -29,7 +29,10 @@ mod tests {
 
     #[test]
     fn one_name_per_backend_and_the_aliases_are_gone() {
-        assert_eq!(BackendName::named(" Embedded "), Some(BackendName::Embedded));
+        assert_eq!(
+            BackendName::named(" Embedded "),
+            Some(BackendName::Embedded)
+        );
         assert_eq!(BackendName::named("GRPC"), Some(BackendName::Grpc));
         assert_eq!(BackendName::named("fixture"), Some(BackendName::Fixture));
         for retired in ["live", "fixtures", "embeded", ""] {

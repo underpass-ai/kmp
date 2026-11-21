@@ -66,6 +66,10 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
   the words the kernel's `KMP_GRPC_TLS_MODE` accepts (`disabled`/`plaintext`,
   `server`/`tls`, `mutual`/`mtls`); `disable`, `off`, `false`, `none` and
   `m-tls` are refused. A relative `KMP_MCP_DATA_DIR` is refused.
+- `kmp-server` (experimental) refuses an unknown `KMP_EVENT_STORE_BACKEND`
+  (`valkey`, `nats`) or `KMP_LOG_FORMAT` (`compact`, `json`, `pretty`)
+  instead of falling back to Valkey or compact logs, and prints a startup
+  failure on stderr.
 - `doctor` and `info` list the switches in effect; `doctor` fails on a
   refused value and warns about a `KMP_*` name this build reads nowhere. The
   reference table is in `docs/embedded/configuration.md`.

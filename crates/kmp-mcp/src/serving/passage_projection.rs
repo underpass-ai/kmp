@@ -30,7 +30,9 @@ impl KernelMcpServer {
         let enabled = match crate::serving::environment::optional_env_string(PASSAGES_ENV) {
             None => false,
             Some(value) => passages_named(&value).ok_or_else(|| {
-                format!("{PASSAGES_ENV}=`{value}` is not a value kmp-mcp accepts; use inline or shared")
+                format!(
+                    "{PASSAGES_ENV}=`{value}` is not a value kmp-mcp accepts; use inline or shared"
+                )
             })?,
         };
         Ok(self.with_shared_passages(enabled))

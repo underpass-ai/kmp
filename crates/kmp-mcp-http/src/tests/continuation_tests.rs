@@ -73,7 +73,7 @@ async fn check_retained_grants(shared: bool) {
     );
 
     // A wake cursor also keeps scope/all-abouts requirements hidden by the handle.
-    let wake = native(&server, "kmp_wake", json!({"about":"project:kmp","dimensions":{"scope":"all_abouts","scope_ids":["route"]},"budget":{"max_bytes":8000}})).await;
+    let wake = native(&server, "kmp_wake", json!({"about":"project:kmp","dimensions":{"scope":"all_abouts","scope_ids":["route"]},"budget":{"max_bytes":7100}})).await;
     let action = wake["structuredContent"]["projection"]["next_action"].clone();
     assert!(action["arguments"]["continuation"].is_string(), "{wake}");
     assert_eq!(

@@ -7,7 +7,6 @@ mod cassette_judgement;
 mod cassette_judgement_tests;
 #[cfg(any(debug_assertions, feature = "eval-hooks"))]
 mod cassette_mode;
-mod judgement_key;
 mod curate_config;
 pub(crate) mod curate_doubt_cache;
 pub(crate) mod curate_review_cache;
@@ -21,6 +20,7 @@ pub(crate) mod expansion_judge;
 #[cfg(any(debug_assertions, feature = "eval-hooks"))]
 pub(crate) mod fixture_backend;
 pub(crate) mod grpc;
+mod judgement_key;
 mod judgement_reranker;
 #[cfg(test)]
 mod judgement_reranker_tests;

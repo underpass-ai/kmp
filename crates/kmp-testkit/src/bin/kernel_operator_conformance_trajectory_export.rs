@@ -4096,12 +4096,7 @@ fn requested_wake(intent: &str, dimensions: Value, depth: usize) -> Value {
     })
 }
 
-fn requested_ask(
-    question: &str,
-    answer_policy: &str,
-    dimensions: Value,
-    depth: usize,
-) -> Value {
+fn requested_ask(question: &str, answer_policy: &str, dimensions: Value, depth: usize) -> Value {
     json!({
         "question": question,
         "answer_policy": answer_policy,

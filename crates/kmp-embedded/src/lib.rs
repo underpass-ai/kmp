@@ -31,9 +31,9 @@ pub use commit_bundle::{
     pending_bundle_exports, write_bundle_atomically, write_bundle_if_absent,
 };
 pub use data_dir::{
-    DATA_DIR_ENV, OrphanedProjectBundle, data_dir_override_refusal, PROJECT_BUNDLE_PATH, ResolvedDataDir,
-    ensure_data_dir_skeleton, locate_data_dir_from_env, project_bundle_path, resolve_data_dir,
-    resolve_data_dir_from_env, user_data_home,
+    DATA_DIR_ENV, OrphanedProjectBundle, PROJECT_BUNDLE_PATH, ResolvedDataDir,
+    data_dir_override_refusal, ensure_data_dir_skeleton, locate_data_dir_from_env,
+    project_bundle_path, resolve_data_dir, resolve_data_dir_from_env, user_data_home,
 };
 pub use engine::default_engine_for_data_dir;
 pub use history_advice::{OVERWRITE_COMMITTED_FLAG, diverged_advice, store_ahead_advice};

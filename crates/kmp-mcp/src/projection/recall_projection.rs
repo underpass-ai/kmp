@@ -2,12 +2,16 @@ use serde_json::Value;
 
 use kmp_proto::v1beta1::{AskResponse, WakeResponse};
 
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 use kmp_application::queries::cl100k_estimator::Cl100kEstimator;
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 use kmp_domain::TokenEstimator;
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 use kmp_proto_mapping::v1beta1::recall_projection::{
     ProjectionOutcome, project_recall_output_typed,
 };
 
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 use crate::serving::tool_error::ToolError;
 
 pub(crate) fn wake_from_response(response: WakeResponse) -> Value {
@@ -44,6 +48,7 @@ fn enforce_recall_output_budget_with_estimator(
         .expect("test recall cursor should be valid")
 }
 
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 pub(crate) fn try_enforce_recall_output_budget(
     value: Value,
     arguments: &Value,
@@ -53,6 +58,7 @@ pub(crate) fn try_enforce_recall_output_budget(
     try_enforce_recall_output_budget_with_estimator(value, arguments, default_tokens, estimator)
 }
 
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 fn try_enforce_recall_output_budget_with_estimator(
     value: Value,
     arguments: &Value,

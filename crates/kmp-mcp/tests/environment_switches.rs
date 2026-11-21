@@ -68,31 +68,37 @@ fn text(bytes: &[u8]) -> String {
     String::from_utf8_lossy(bytes).into_owned()
 }
 
-/// A misspelt value of each switch, and the word its refusal must name.
-fn misspelt() -> Vec<(&'static str, String, &'static str, Vec<(&'static str, String)>)> {
-    vec![
-        ("KMP_MCP_BACKEND", "embeded".into(), "embedded, grpc", vec![]),
-        (
-            "KMP_KERNEL_GRPC_TLS_MODE",
-            "mutal".into(),
-            "mutual",
-            vec![("KMP_KERNEL_GRPC_ENDPOINT", "http://127.0.0.1:9".into())],
-        ),
-        ("KMP_MCP_PASSAGES", "sharde".into(), "inline, shared", vec![]),
-        ("KMP_MCP_OUTPUT_SCHEMAS", "banana".into(), "on, off", vec![]),
-        ("KMP_LEXICAL_INDEX", "offf".into(), "on, off", vec![]),
-        ("KMP_VERSION_CHECK", "nope".into(), "on, off", vec![]),
-        ("KMP_VIEWER_ADDR", "banana".into(), "loopback", vec![]),
-        ("KMP_MCP_DATA_DIR", "relative/store".into(), "absolute path", vec![]),
-    ]
-}
+/// A misspelt value of each switch, the words its refusal must name, and
+/// what else the environment needs for the switch to be read.
+type Misspelt = (
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static [(&'static str, &'static str)],
+);
+
+const MISSPELT: &[Misspelt] = &[
+    ("KMP_MCP_BACKEND", "embeded", "embedded, grpc", &[]),
+    (
+        "KMP_KERNEL_GRPC_TLS_MODE",
+        "mutal",
+        "mutual",
+        &[("KMP_KERNEL_GRPC_ENDPOINT", "http://127.0.0.1:9")],
+    ),
+    ("KMP_MCP_PASSAGES", "sharde", "inline, shared", &[]),
+    ("KMP_MCP_OUTPUT_SCHEMAS", "banana", "on, off", &[]),
+    ("KMP_LEXICAL_INDEX", "offf", "on, off", &[]),
+    ("KMP_VERSION_CHECK", "nope", "on, off", &[]),
+    ("KMP_VIEWER_ADDR", "banana", "loopback", &[]),
+    ("KMP_MCP_DATA_DIR", "relative/store", "absolute path", &[]),
+];
 
 #[test]
 fn each_strict_switch_refuses_a_misspelt_value_at_startup_naming_what_it_accepts() {
-    for (name, value, accepted, extra) in misspelt() {
+    for &(name, value, accepted, extra) in MISSPELT {
         let dir = store();
-        let mut env = vec![(name, value.as_str())];
-        env.extend(extra.iter().map(|(name, value)| (*name, value.as_str())));
+        let mut env = vec![(name, value)];
+        env.extend_from_slice(extra);
         let output = serve(dir.path(), &env, &format!("{INITIALIZE}\n"));
         let stderr = text(&output.stderr);
         assert_eq!(output.status.code(), Some(2), "{name}={value}: {stderr}");
@@ -204,7 +210,12 @@ fn plugin_notice_refuses_a_misspelt_version_check() {
     let output = verb(
         dir.path(),
         &[("KMP_VERSION_CHECK", "of")],
-        &["plugin", "notice", "--plugin-root", root.to_str().expect("utf-8")],
+        &[
+            "plugin",
+            "notice",
+            "--plugin-root",
+            root.to_str().expect("utf-8"),
+        ],
     );
     assert_eq!(output.status.code(), Some(2), "{}", text(&output.stderr));
     assert!(text(&output.stderr).contains("KMP_VERSION_CHECK"));

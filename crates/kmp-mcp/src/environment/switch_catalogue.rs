@@ -20,8 +20,7 @@ pub(crate) const BACKEND_ACCEPTED: &str = "embedded, grpc (case does not matter)
 
 /// Words of `KMP_LEXICAL_INDEX`, as a refusal names them.
 #[cfg(any(debug_assertions, feature = "eval-hooks"))]
-pub(crate) const LEXICAL_INDEX_ACCEPTED: &str =
-    "on, off, true, false, 1, 0, yes, no, and shadow or verify in test builds (case does not matter)";
+pub(crate) const LEXICAL_INDEX_ACCEPTED: &str = "on, off, true, false, 1, 0, yes, no, and shadow or verify in test builds (case does not matter)";
 #[cfg(not(any(debug_assertions, feature = "eval-hooks")))]
 pub(crate) const LEXICAL_INDEX_ACCEPTED: &str = ON_OFF_ACCEPTED;
 

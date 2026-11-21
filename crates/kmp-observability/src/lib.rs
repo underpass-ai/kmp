@@ -58,7 +58,10 @@ pub struct ObservabilityGuard {
 #[cfg(feature = "otel")]
 pub fn init_observability(service_name: &str) -> ObservabilityGuard {
     let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
-    let log_format = std::env::var("KMP_LOG_FORMAT").unwrap_or_default();
+    let log_format = std::env::var("KMP_LOG_FORMAT")
+        .unwrap_or_default()
+        .trim()
+        .to_ascii_lowercase();
 
     let env = |key: &str| std::env::var(key).ok();
     let trace_provider = init_otel_tracer(service_name, &env);
