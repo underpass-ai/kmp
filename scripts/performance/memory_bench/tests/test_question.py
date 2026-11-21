@@ -217,6 +217,22 @@ class ToolTest(unittest.TestCase):
                                      'as_of': {'time': '2026-09-01T10:03:00Z'},
                                      'budget': {'max_bytes': 4096}})
 
+    def test_curate_first_call_sends_no_budget(self):
+        # kmp_curate's input schema takes no budget since 1.0; one would be refused.
+        record = {'schema': q.SCHEMA, 'id': 'c-1', 'corpus': 'synth-v1', 'type': 'path_between',
+                  'about': 'service:billing', 'tool': 'kmp_curate',
+                  'arguments': {'mode': 'paths', 'from': 'service:billing:b02',
+                                'to': 'service:billing:b03', 'max_hops': 6},
+                  'gold': {'answerable': 'KNOWN',
+                           'path': {'from': 'service:billing:b02', 'to': 'service:billing:b03',
+                                    'steps': ['service:billing:b02', 'service:billing:b03']}}}
+        tool, arguments = q.Question.from_dict(record).first_call(
+            max_bytes=4096, default_budget={'max_entries': 5})
+        self.assertEqual(tool, 'kmp_curate')
+        self.assertEqual(arguments, {'about': 'service:billing', 'mode': 'paths',
+                                     'from': 'service:billing:b02', 'to': 'service:billing:b03',
+                                     'max_hops': 6})
+
     def test_ask_first_call_budget_rules(self):
         pinned = q.Question.from_dict(ask(asked_as='¿Qué válvula falló?', dimensions={'scope': 'current_about'},
                                           arguments={'depth': 3, 'budget': {'tokens': 2048, 'max_bytes': 512}}))

@@ -325,12 +325,9 @@ async fn every_ask_gives_the_same_bytes_with_the_index_on() {
         .iter()
         .map(|question| json!({"about":ABOUT,"question":question}))
         .collect::<Vec<_>>();
-    // A deeper ask (held while nothing lies past the indexed depth), and
-    // asks the index does not hold: a shallower one, a clock, a dimension,
-    // a question that reaches most of the about.
+    // Asks the index does not hold: a clock, a dimension, a question that
+    // reaches most of the about. (`depth` left kmp_ask at 1.0.)
     asks.extend([
-        json!({"about":ABOUT,"question":QUESTIONS[0],"depth":1}),
-        json!({"about":ABOUT,"question":QUESTIONS[2],"depth":3}),
         json!({"about":ABOUT,"question":QUESTIONS[0],"as_of":{"time":EARLY}}),
         json!({"about":ABOUT,"question":QUESTIONS[1],
             "dimensions":{"scope":"current_about","selectors":[{"key":"component","op":"in","values":["plant"]}]}}),

@@ -3,6 +3,9 @@
 //! relation quality is judged, never guessed; and the plan says what to
 //! read back.
 
+pub(crate) mod about_boundary;
+// The fixture backend's own ingest planner: test builds only.
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 pub(crate) mod accepted_counts;
 pub(crate) mod arguments;
 pub(crate) mod attachment_view;
@@ -17,10 +20,15 @@ pub(crate) mod existing_entry;
 pub(crate) mod expansion_planner;
 pub(crate) mod expansion_selection;
 pub(crate) mod generated_ref;
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 pub(crate) mod ingest_arguments;
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 pub(crate) mod ingest_change;
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 pub(crate) mod ingest_plan;
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 pub(crate) mod ingest_planner;
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 pub(crate) mod ingest_validation;
 mod json_value_type;
 pub(crate) mod operation;
@@ -55,9 +63,10 @@ mod write_options_audit;
 mod writer_identity_audit;
 pub(crate) mod writer_label;
 
+pub(crate) use about_boundary::reject_refs_outside_about;
 pub(crate) use batch_planner::build_batch_plan;
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 pub(crate) use ingest_planner::build_ingest_plan;
-pub(crate) use ingest_validation::reject_refs_outside_about;
 pub(crate) use relabel_planner::build_relabel_plan;
 pub(crate) use relabel_results::relabel_result;
 pub(crate) use relation_planner::build_relation_plan;

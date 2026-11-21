@@ -25,9 +25,9 @@ variant="scripts/performance/memory_bench/variants/baseline.toml"
 
 unset TYPESAFE_API_KEY MEMORY_BENCH_PRIVATE_ROOT KMP_TYPESAFE_CASSETTE_MODE
 
-if [[ ! -x "${binary}" ]]; then
-  cargo build --release --locked -p kmp-mcp
-fi
+# Always (re)build with the hooks: a plain release binary left by another
+# gate carries no judgement cassette and would answer the bench silently.
+cargo build --release --locked -p kmp-mcp --features eval-hooks
 
 mkdir -p "${out}"
 status=0

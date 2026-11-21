@@ -25,7 +25,7 @@ pub(crate) fn definition() -> Value {
                 "dimensions": dimensions_schema(),
                 "interval": interval_schema(),
                 "axis": recall_axis_schema(),
-                "budget": budget_schema(2_400, 2),
+                "budget": budget_schema(&[BudgetField::MaxBytes]),
                 "page": page_schema("Maximum number of items from facts, declared, coordinate, tensions and proposed, in that order, to return in this page.")
             }
         }),
@@ -36,7 +36,7 @@ pub(crate) fn definition() -> Value {
 fn relate_output_schema() -> Value {
     output_object(json!({
         "summary": described("string", "How many facts of how many abouts were related on which clock, and how many relations of each kind; or that nothing fell within the selection, naming the nearest fact outside it."),
-        "facts": described("array", "The entries of the selected abouts within the selection: `ref`, `about`, `kind`, `text` verbatim, `coordinates`, and `state` — `current`, `superseded` (with `superseded_by`) or `expired` (with `valid_until`) — as the lifecycle stood at the end of the interval."),
+        "facts": described("array", "The entries of the selected abouts within the selection: `ref`, `about`, `kind`, `text` verbatim, `coordinates`, and `state` — `current`, `superseded` (with `superseded_by`), `expired` (with `valid_until`) or `not_yet_in_force` (its `valid_from` still ahead) — as the lifecycle stood at the end of the interval."),
         "declared": described("array", "Stored relations cut to the selection, with class, why, evidence and confidence. Includes writer-declared same_event_as and same_entity_as across abouts; other relations remain within their owning about."),
         "coordinate": described("array", "Relations between facts of different abouts read off their coordinates inside a label they share — the same `dimension` kind and the same bare `scope_id`: `from`, `to`, `kind` (`shares_scope`, `before`, `after`, `during`, `concurrent`, `same_sequence`, `same_rank`), `dimension`, `scope_id`, the `axis` read, and `why` in one checkable sentence. The same scope under two kinds is two labels and relates nothing. Declared by nobody."),
         "tensions": described("array", "Facts that both still stand and that a declared `contradicts` joins: `ref`, `other`, the label they share when they share one as `dimension` and `scope_id`, and the `why` and `evidence` of the declaration. Shown, never resolved."),

@@ -11,6 +11,7 @@ use super::backend_probe::backend_finding;
 use super::diagnosis_render::section;
 use super::durability_probe::committed_bundle_finding;
 use super::embedded_memory_probe::{compiled_formats, data_dir_finding};
+use super::environment_probe::environment_findings;
 use super::machine_memories_probe::memories_finding;
 use super::startup_log_probe::startup_history;
 use super::store_config_probe::store_config_findings;
@@ -31,6 +32,7 @@ pub(crate) fn observe_info() -> Vec<ReportSection> {
     let mut sections = Vec::new();
 
     sections.push(ReportSection::single("Backend", backend_finding()));
+    sections.push(ReportSection::new("Environment", environment_findings()));
     let (data_dir, resolved) = data_dir_finding();
     sections.push(ReportSection::single("Memory", data_dir));
     if let Some(durability) = resolved.as_ref().and_then(committed_bundle_finding) {

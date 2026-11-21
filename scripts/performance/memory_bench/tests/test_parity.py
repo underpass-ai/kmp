@@ -470,9 +470,9 @@ class DeterminismTest(Folder):
         self.assertEqual(item.id, 'retrieval.plain')
         self.assertTrue(item.fresh_store)
         self.assertEqual([tool for tool, _ in item.setup], ['kmp_ingest', 'kmp_ingest', 'kmp_write_memory'])
-        self.assertEqual(item.arguments['budget'], {'tokens': 2048, 'detail': 'balanced', 'max_entries': 10})
+        self.assertEqual(item.arguments['budget'], {'detail': 'balanced', 'max_entries': 10})
         self.assertEqual(item.arguments['as_of'], {'time': '2026-01-01T00:00:00Z'})
-        self.assertEqual(item.arguments['depth'], 3)
+        self.assertNotIn('depth', item.arguments)
         self.assertEqual(len(D.retrieval_items(path, subset='all')), 2)
 
     def test_the_cli_runs_wakes_on_a_template(self):

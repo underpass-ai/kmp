@@ -15,6 +15,8 @@ pub enum FactState {
     Current,
     Superseded,
     Expired,
+    /// Recorded, but its `valid_from` is still ahead of the read.
+    NotYetInForce,
 }
 
 impl FactState {
@@ -23,6 +25,7 @@ impl FactState {
             Self::Current => "current",
             Self::Superseded => "superseded",
             Self::Expired => "expired",
+            Self::NotYetInForce => "not_yet_in_force",
         }
     }
 }

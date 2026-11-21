@@ -7,7 +7,7 @@ pub(super) enum CassetteMode {
 
 impl CassetteMode {
     pub(super) fn read(value: Option<&str>) -> Result<Self, String> {
-        match value.unwrap_or("replay") {
+        match value.unwrap_or("replay").to_ascii_lowercase().as_str() {
             "replay" => Ok(Self::Replay),
             "record" => Ok(Self::Record),
             _ => Err("KMP_TYPESAFE_CASSETTE_MODE must be replay or record".into()),

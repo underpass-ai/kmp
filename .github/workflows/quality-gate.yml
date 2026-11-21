@@ -457,8 +457,10 @@ jobs:
           cache-on-failure: true
           shared-key: memory-bench
 
+      # The bench replays judgement cassettes, a test hook a shipped
+      # release binary does not carry: it builds with the eval-hooks feature.
       - name: Build the release binary
-        run: cargo build --release --locked -p kmp-mcp
+        run: cargo build --release --locked -p kmp-mcp --features eval-hooks
 
       - name: Memory bench, public quick run (informative)
         run: bash scripts/ci/memory-bench-quick.sh dist/memory-bench

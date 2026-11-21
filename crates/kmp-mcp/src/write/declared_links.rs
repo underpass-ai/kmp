@@ -20,7 +20,10 @@ use super::validated_arguments::{
 };
 use super::validation_error::WriteValidationError;
 
-const DEFAULT_CONFIDENCE: &str = "high";
+/// An omitted confidence is recorded as `unknown`: the writer did not say
+/// how sure it is, and storing `high` claimed a certainty nobody stated
+/// (E12). The schema declares the same default.
+const DEFAULT_CONFIDENCE: &str = "unknown";
 
 /// The record every link of a `connect_to` starts from, and what judging a
 /// link needs to know about it.

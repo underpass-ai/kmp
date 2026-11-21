@@ -32,13 +32,10 @@ pub use commit_bundle::{
 };
 pub use data_dir::{
     DATA_DIR_ENV, OrphanedProjectBundle, PROJECT_BUNDLE_PATH, ResolvedDataDir,
-    ensure_data_dir_skeleton, locate_data_dir_from_env, project_bundle_path, resolve_data_dir,
-    resolve_data_dir_from_env, user_data_home,
+    data_dir_override_refusal, ensure_data_dir_skeleton, locate_data_dir_from_env,
+    project_bundle_path, resolve_data_dir, resolve_data_dir_from_env, user_data_home,
 };
-pub use engine::{
-    ENGINE_ENV, default_engine_for_data_dir, parse_engine, resolve_engine_for_data_dir_from_env,
-    resolve_engine_from_env,
-};
+pub use engine::default_engine_for_data_dir;
 pub use history_advice::{OVERWRITE_COMMITTED_FLAG, diverged_advice, store_ahead_advice};
 pub use kernel::{EmbeddedKernel, EmbeddedMemoryService};
 pub use kmp_adapter_embedded::{

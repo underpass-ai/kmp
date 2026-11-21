@@ -31,10 +31,8 @@
           "about": "string",
           "answer_policy": "string",
           "budget": {
-            "depth": "integer",
             "detail": "string",
-            "max_bytes": "string",
-            "tokens": "integer"
+            "max_bytes": "string"
           },
           "question": "string"
         },

@@ -28,16 +28,56 @@ async fn main() -> ExitCode {
     match run().await {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {
+            // On stderr too: a failure before observability is initialized
+            // has no subscriber to log it.
+            eprintln!("kmp-server: {error}");
             tracing::error!(%error, "kmp-server failed");
             ExitCode::FAILURE
         }
     }
 }
 
+/// The value of a word switch, lowercased; `default` when unset or blank;
+/// an error naming the accepted words otherwise.
+fn one_of(
+    name: &str,
+    value: Option<String>,
+    accepted: &[&str],
+    default: &str,
+) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    let value = value.unwrap_or_default().trim().to_ascii_lowercase();
+    if value.is_empty() {
+        return Ok(default.to_string());
+    }
+    if accepted.contains(&value.as_str()) {
+        return Ok(value);
+    }
+    Err(format!(
+        "{name}=`{value}` is not a value kmp-server accepts; it accepts {}",
+        accepted.join(", ")
+    )
+    .into())
+}
+
 async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     install_rustls_crypto_provider();
     let config = AppConfig::try_from_env()?;
     let projection_runtime_config = ProjectionRuntimeConfig::try_from_env()?;
+    // Strict like every KMP switch: an unknown value is refused, never read
+    // as the default (a typo used to select Valkey, or compact logs).
+    let switch = |name: &str| std::env::var(name).ok();
+    let event_store_backend = one_of(
+        "KMP_EVENT_STORE_BACKEND",
+        switch("KMP_EVENT_STORE_BACKEND"),
+        &["valkey", "nats"],
+        "valkey",
+    )?;
+    one_of(
+        "KMP_LOG_FORMAT",
+        switch("KMP_LOG_FORMAT"),
+        &["compact", "json", "pretty"],
+        "compact",
+    )?;
     let otel_guard = init_observability(&config.service_name);
 
     let meter = opentelemetry::global::meter("kmp");
@@ -50,9 +90,6 @@ async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let graph_reader = Neo4jProjectionReader::new(config.graph_uri.clone())?;
     let detail_reader = ValkeyNodeDetailStore::new(config.detail_uri.clone())?;
     let snapshot_store = ValkeySnapshotStore::new(config.snapshot_uri.clone())?;
-
-    let event_store_backend =
-        std::env::var("KMP_EVENT_STORE_BACKEND").unwrap_or_else(|_| "valkey".to_string());
 
     match event_store_backend.as_str() {
         "nats" => {
@@ -173,4 +210,33 @@ fn install_rustls_crypto_provider() {
     INIT.call_once(|| {
         let _ = tokio_rustls::rustls::crypto::aws_lc_rs::default_provider().install_default();
     });
+}
+
+#[cfg(test)]
+mod switch_tests {
+    use super::one_of;
+
+    #[test]
+    fn a_word_switch_reads_its_words_in_any_case_and_refuses_the_rest() {
+        let accepted = &["valkey", "nats"];
+        let read = |value: Option<&str>| {
+            one_of(
+                "KMP_EVENT_STORE_BACKEND",
+                value.map(str::to_string),
+                accepted,
+                "valkey",
+            )
+        };
+        assert_eq!(read(None).expect("unset"), "valkey");
+        assert_eq!(read(Some("  ")).expect("blank"), "valkey");
+        assert_eq!(read(Some("NATS")).expect("any case"), "nats");
+        let refused = read(Some("natz"))
+            .expect_err("a typo is refused")
+            .to_string();
+        assert!(
+            refused.contains("KMP_EVENT_STORE_BACKEND=`natz`"),
+            "{refused}"
+        );
+        assert!(refused.contains("valkey, nats"), "{refused}");
+    }
 }

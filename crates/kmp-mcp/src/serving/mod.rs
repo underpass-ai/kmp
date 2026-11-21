@@ -5,6 +5,7 @@
 mod about_label_keys;
 pub(crate) mod adapters;
 pub(crate) mod backend_choice;
+pub(crate) mod backend_name;
 mod curate_dispatch;
 mod default_actor;
 pub(crate) mod doubt_outcome;
@@ -18,7 +19,6 @@ mod guide_dispatch;
 #[cfg(test)]
 pub(crate) use guide_dispatch::guide_error_codes;
 mod guide_repair;
-pub(crate) mod guide_seed;
 pub(crate) mod json_rpc;
 pub(crate) mod judgement_answer;
 pub(crate) mod judgement_failure;
@@ -33,7 +33,7 @@ pub(crate) mod lexical_totals;
 pub(crate) mod mcp_session;
 mod output_schema_projection;
 mod panic_guard;
-mod passage_projection;
+pub(crate) mod passage_projection;
 pub(crate) mod ports;
 pub(crate) mod projection_names;
 mod read_continuations;
@@ -51,11 +51,13 @@ mod tool_error_help;
 pub(crate) mod tool_result;
 pub(crate) mod unhonored_projection;
 pub(crate) mod unhonored_refs;
+mod unknown_about;
 pub(crate) mod verdict;
 pub(crate) mod verdict_key;
 pub(crate) mod verdict_state_digest;
 pub(crate) mod verdict_template;
 mod view_dispatch;
+mod view_open_guard;
 mod view_path_search;
 pub(crate) mod view_paths_request;
 pub(crate) mod view_tools;
@@ -70,8 +72,10 @@ mod write_retry;
 mod write_review_result;
 
 pub use adapters::embedded_backend::EmbeddedKernelMcpBackend;
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 pub use adapters::fixture_backend::FixtureKernelMcpBackend;
 pub use adapters::grpc::GrpcKernelMcpBackend;
+pub(crate) use adapters::lexical_bridge_file::LEXICAL_BRIDGE_ENV;
 pub use adapters::retrying_embedded_backend::RetryingEmbeddedKernelMcpBackend;
 pub use backend_choice::KernelMcpBackend;
 pub use environment::{

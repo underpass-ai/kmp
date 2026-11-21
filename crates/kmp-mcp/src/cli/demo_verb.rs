@@ -129,8 +129,7 @@ async fn open_viewer(data_dir: &std::path::Path) -> Result<String, String> {
             kmp_viewer::VIEWER_ADDR_ENV
         ));
     };
-    let engine = kmp_embedded::resolve_engine_for_data_dir_from_env(data_dir)
-        .map_err(|error| error.to_string())?;
+    let engine = kmp_embedded::default_engine_for_data_dir(data_dir);
     let kernel = kmp_embedded::EmbeddedKernel::open_with_engine(data_dir, engine)
         .map_err(|error| error.to_string())?;
     match spawn_viewer(&kernel, addr).await {

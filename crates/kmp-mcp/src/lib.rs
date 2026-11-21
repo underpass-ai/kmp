@@ -3,6 +3,7 @@ pub mod banner;
 pub mod clock;
 pub mod demo;
 pub mod document;
+pub mod environment;
 pub mod guide;
 pub mod lifecycle;
 mod local_abouts;
@@ -44,6 +45,7 @@ pub fn tool_names() -> Vec<String> {
         .unwrap_or_default()
 }
 
+#[cfg(any(debug_assertions, feature = "eval-hooks"))]
 pub use serving::FixtureKernelMcpBackend;
 pub use serving::GrpcKernelMcpBackend;
 pub use serving::KernelMcpServer;

@@ -476,6 +476,12 @@ fn rule_cases(tools: &[Value]) -> Vec<(&'static str, String, Value)> {
             }),
         ),
         (
+            "trace.bidirectional",
+            with("kmp_trace", &|c| {
+                c["search"] = json!({"direction": "bidirectional", "paths_per_target": 2});
+            }),
+        ),
+        (
             "ingest.observed",
             with("kmp_ingest", &|c| {
                 c["provenance"]

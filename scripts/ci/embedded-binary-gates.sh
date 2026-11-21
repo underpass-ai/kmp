@@ -44,6 +44,11 @@ done
 
 echo "embedded-gates: building release binary"
 cargo build --release -p kmp-mcp --locked
+# The shipping configuration carries no test or evaluation hook: the test
+# that proves it against a debug build proves it here against this binary.
+echo "embedded-gates: the release binary carries no test or evaluation hook"
+KMP_MCP_RELEASE_BINARY="${PWD}/target/release/kmp-mcp" \
+  cargo test --locked -p kmp-mcp --test release_hooks
 strip -o target/release/kmp-mcp.gates-stripped target/release/kmp-mcp
 SIZE="$(stat -c%s target/release/kmp-mcp.gates-stripped)"
 # Product dependencies and bundled guide/viewer assets change this measurement.

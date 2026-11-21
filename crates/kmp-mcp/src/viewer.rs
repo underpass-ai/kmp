@@ -59,6 +59,24 @@ pub fn classify_viewer_addr(raw: Option<&str>) -> ViewerAddr {
     ViewerAddr::Explicit(value.to_string())
 }
 
+/// Whether a value of `KMP_VIEWER_ADDR` is one the viewer can honour: a way
+/// to decline it, or a loopback `host:port`. Checked at startup with every
+/// other switch, so `banana` is refused before a session starts rather than
+/// when the bind fails.
+pub fn viewer_addr_accepted(value: &str) -> bool {
+    viewer_addr_refusal(value).is_none()
+}
+
+/// Why a value of `KMP_VIEWER_ADDR` cannot be served, or `None`.
+pub fn viewer_addr_refusal(value: &str) -> Option<String> {
+    match classify_viewer_addr(Some(value)) {
+        ViewerAddr::Off | ViewerAddr::Default(_) => None,
+        ViewerAddr::Explicit(addr) => kmp_viewer::loopback_socket_addr(&addr)
+            .err()
+            .map(|error| error.to_string()),
+    }
+}
+
 /// Reads `KMP_VIEWER_ADDR` from the process environment.
 pub fn viewer_addr_from_env() -> ViewerAddr {
     classify_viewer_addr(std::env::var(VIEWER_ADDR_ENV).ok().as_deref())

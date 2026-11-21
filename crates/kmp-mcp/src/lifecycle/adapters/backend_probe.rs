@@ -16,12 +16,12 @@ pub(crate) fn backend_finding() -> LifecycleFinding {
             DiagnosticSeverity::Ok,
             "embedded — the kernel is right here",
         ),
-        Some("fixture" | "fixtures") => LifecycleFinding::new(
+        Some("fixture") if crate::environment::eval_hooks::ENABLED => LifecycleFinding::new(
             DiagnosticSeverity::Warn,
-            "fixture — canned answers that look real",
+            "fixture — canned answers that look real (a test build's hook)",
         )
         .with_detail("nothing you write is stored; unset the variable for the real kernel"),
-        Some("grpc" | "live") => match endpoint {
+        Some("grpc") => match endpoint {
             Some(endpoint) => LifecycleFinding::new(
                 DiagnosticSeverity::Ok,
                 format!("grpc — talking to {endpoint}"),
@@ -39,7 +39,11 @@ pub(crate) fn backend_finding() -> LifecycleFinding {
             DiagnosticSeverity::Fail,
             format!("`{other}` is not a backend"),
         )
-        .with_detail("use `embedded` (the default), `grpc` or `fixture`"),
+        .with_detail(format!(
+            "{} accepts {}; unset it for the embedded kernel",
+            crate::MCP_BACKEND_ENV,
+            crate::environment::BACKEND_ACCEPTED
+        )),
         // Nothing set is not a gap to warn about any more: it is the product.
         // The old text called this "no backend selected" and warned about it,
         // which was a fossil of the Kubernetes-first days — and the second

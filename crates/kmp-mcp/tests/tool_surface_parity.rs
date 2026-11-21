@@ -363,13 +363,10 @@ fn calls() -> Vec<(&'static str, Value)> {
                 "budget": {"max_bytes": 2500}
             }),
         ),
-        (
-            "kmp_relate",
-            json!({"about": ABOUT, "budget": {"depth": 3}}),
-        ),
+        ("kmp_relate", json!({"about": ABOUT})),
         (
             "kmp_trace",
-            json!({"about": ABOUT, "from": DETAIL, "to": CLAIM, "budget": {"depth": 3}}),
+            json!({"about": ABOUT, "from": DETAIL, "to": CLAIM}),
         ),
         ("kmp_view_open", json!({"about": ABOUT})),
         (
@@ -455,10 +452,7 @@ fn calls() -> Vec<(&'static str, Value)> {
         ),
         // A review writes nothing and, without a TypeSafe opt-in beside the
         // parity store, calls nothing remote: kernel pairs, untyped.
-        (
-            "kmp_curate",
-            json!({"mode": "review", "about": ABOUT, "budget": {"depth": 3}}),
-        ),
+        ("kmp_curate", json!({"mode": "review", "about": ABOUT})),
         // The topic index: a pure lookup that reads no store.
         ("kmp_guide", json!({})),
     ]

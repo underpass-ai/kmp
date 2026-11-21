@@ -104,11 +104,12 @@ fn demo_refuses_a_backend_that_is_not_the_local_store() {
     let scratch = tempfile::tempdir().expect("scratch");
     let project = project(scratch.path());
     let output = kmp(scratch.path(), &project)
-        .env("KMP_MCP_BACKEND", "fixture")
+        .env("KMP_MCP_BACKEND", "grpc")
+        .env("KMP_KERNEL_GRPC_ENDPOINT", "http://127.0.0.1:9")
         .args(["demo", "--no-viewer"])
         .output()
         .expect("kmp-mcp runs");
-    assert!(!output.status.success());
+    assert_eq!(output.status.code(), Some(2));
     let stderr = String::from_utf8_lossy(&output.stderr);
-    assert!(stderr.contains("fixture backend"), "{stderr}");
+    assert!(stderr.contains("works on the local store"), "{stderr}");
 }

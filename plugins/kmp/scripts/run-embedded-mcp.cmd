@@ -46,19 +46,19 @@ call :readBinaryVersion "%BINARY%"
 if not "%ACTUAL_VERSION%"=="%EXPECTED_ENGINE_VERSION%" goto :noMatchingBinary
 if defined BUNDLED_VERSION (
   echo KMP plugin: cache engine %BUNDLED_VERSION% does not match plugin %PLUGIN_VERSION%; using matching PATH engine. 1>&2
-  echo KMP plugin: run kmp setup to repair the plugin-owned engine. 1>&2
+  echo KMP plugin: run /kmp:setup or kmp-mcp setup to repair the plugin-owned engine. 1>&2
 )
 goto :run
 
 :noMatchingBinary
 if defined BUNDLED_VERSION (
   echo KMP plugin: cache engine %BUNDLED_VERSION% does not match plugin %PLUGIN_VERSION%. 1>&2
-  echo KMP plugin: no %EXPECTED_ENGINE_VERSION% engine was found on PATH; run kmp setup. 1>&2
+  echo KMP plugin: no %EXPECTED_ENGINE_VERSION% engine was found on PATH; run /kmp:setup or kmp-mcp setup. 1>&2
   exit /b 127
 )
 if defined PATH_BINARY (
   echo KMP plugin: the PATH engine does not match plugin %PLUGIN_VERSION%. 1>&2
-  echo KMP plugin: run kmp setup to install engine %EXPECTED_ENGINE_VERSION%. 1>&2
+  echo KMP plugin: run /kmp:setup or kmp-mcp setup to install engine %EXPECTED_ENGINE_VERSION%. 1>&2
   exit /b 127
 )
 goto :nobinary
@@ -82,9 +82,9 @@ set "KMP_MCP_BACKEND=embedded"
 rem The engine seeds a fresh store's guide from the plugin that started it.
 if not defined KMP_PLUGIN_ROOT set "KMP_PLUGIN_ROOT=%PLUGIN_ROOT%"
 
-rem No %* — the launcher starts the MCP server and nothing else. The binary
-rem reads a leading argument as a maintenance command (`migrate`, `--version`),
-rem so forwarding whatever a host happened to pass would exit 2 instead of
-rem serving, and only on Windows. The POSIX launcher already drops them.
+rem No %* — this launcher starts the MCP server and nothing else. The binary
+rem reads a leading argument as a CLI verb (`doctor`, `--version`), so
+rem forwarding whatever a host happened to pass would run that verb instead of
+rem serving. The POSIX launcher forwards its arguments; this one does not.
 "%BINARY%"
 exit /b %ERRORLEVEL%

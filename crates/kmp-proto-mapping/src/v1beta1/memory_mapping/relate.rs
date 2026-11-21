@@ -148,6 +148,9 @@ fn relate_response_with(
             FactState::Superseded
         } else if lifecycle.is_expired(entry_ref) {
             FactState::Expired
+        } else if lifecycle.is_pending(entry_ref) {
+            // Recorded, its `valid_from` still ahead: never shown as current.
+            FactState::NotYetInForce
         } else {
             FactState::Current
         };
@@ -489,6 +492,7 @@ fn proto_state(state: FactState) -> ProtoFactState {
         FactState::Current => ProtoFactState::Current,
         FactState::Superseded => ProtoFactState::Superseded,
         FactState::Expired => ProtoFactState::Expired,
+        FactState::NotYetInForce => ProtoFactState::NotYetInForce,
     }
 }
 

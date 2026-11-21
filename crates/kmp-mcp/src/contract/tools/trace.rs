@@ -20,7 +20,7 @@ pub(crate) fn definition() -> Value {
             "type": "object",
             "additionalProperties": false,
             "required": ["about", "from"],
-            "allOf": [crate::contract::cross_field_rule::tagged("trace.mode", json!({"oneOf": [{"required":["to"],"not":{"properties":{"search":{"required":["seek"]}},"required":["search"]}}, {"required":["search"],"properties":{"search":{"required":["seek"]}},"not":{"required":["to"]}}]}))],
+            "allOf": [crate::contract::cross_field_rule::tagged("trace.mode", json!({"oneOf": [{"required":["to"],"not":{"properties":{"search":{"required":["seek"]}},"required":["search"]}}, {"required":["search"],"properties":{"search":{"required":["seek"]}},"not":{"required":["to"]}}]})), bidirectional_rule()],
             "properties": {
                 "about": string_schema("Memory anchor for this trace. Refs normally belong to it; a trace may cross a writer-declared same_event_as or same_entity_as link backed by a kmp_relate proposal. Naming another about's ref alone does not create a path."),
                 "from": string_schema("Source memory ref. In live gRPC mode this must resolve to a kernel node id."),
@@ -30,10 +30,8 @@ pub(crate) fn definition() -> Value {
                 "as_of": as_of_schema(),
                 "interval": interval_schema(),
                 "axis": recall_axis_schema(),
-                "role": string_schema("Optional caller role."),
-                "goal": string_schema("Optional trace goal."),
                 "page": page_schema("Whole items: trace, candidates/groups in seek, then proof objects/supports/gaps when requested."),
-                "budget": budget_schema(1_600, 1)
+                "budget": budget_schema(&[BudgetField::MaxBytes])
             }
         }),
         trace_output_schema(),
@@ -171,6 +169,42 @@ fn trace_search_schema() -> Value {
         ]})
     )]);
     schema
+}
+
+/// The `search` options a bidirectional trace takes.
+pub(crate) const BIDIRECTIONAL_SEARCH: [&str; 6] = [
+    "direction",
+    "max_nodes",
+    "max_edges",
+    "max_depth",
+    "max_states",
+    "paths_per_target",
+];
+
+/// `search.direction: bidirectional` is the single-destination trace: each
+/// argument it cannot take is refused by name (`false`), so the refusal says
+/// what to remove instead of restating the whole rule.
+fn bidirectional_rule() -> Value {
+    let mut search = serde_json::Map::new();
+    for key in trace_search_schema()["properties"]
+        .as_object()
+        .into_iter()
+        .flat_map(|properties| properties.keys())
+        .filter(|key| !BIDIRECTIONAL_SEARCH.contains(&key.as_str()))
+    {
+        search.insert(key.clone(), json!(false));
+    }
+    search.insert("paths_per_target".into(), json!({"maximum": 1}));
+    crate::contract::cross_field_rule::tagged(
+        "trace.bidirectional",
+        json!({
+            "if": {"required": ["search"], "properties": {"search": {
+                "required": ["direction"], "properties": {"direction": {"const": "bidirectional"}}}}},
+            "then": {"properties": {
+                "to": {"type": "string"}, "as_of": false, "interval": false, "axis": false,
+                "search": {"properties": search}}}
+        }),
+    )
 }
 
 /// The `search` options only one mode takes: (destinations, evidence).
