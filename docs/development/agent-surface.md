@@ -832,7 +832,7 @@ ingesta si falta, e ingesta aceptada por KMP. El lote semántico preserva la
 observación efectiva del miembro también aquí, incluido null que limpia la raíz.
 Con default_observation_to_ingestion, un objeto explícito de relojes sin observación
 ni ingesta restaurada recibe el instante de ingesta; un objeto ausente conserva
-la herencia canónica del paquete. Ver [diseño y controles](batch-proof-observation.md). No copiar fechas de los extremos ni retimar
+la herencia canónica del paquete. Ver [diseño y controles](../archive/development/batch-proof-observation.md). No copiar fechas de los extremos ni retimar
 la fuente. Al cambiar este contrato, revisar el DTO canónico, ambos protobufs,
 traductor de ingest, proyección del evento y mappers de evidencia en recall,
 temporal e Inspect. La admisión temporal debe filtrar candidatos y soportes,
@@ -852,7 +852,7 @@ Preserve arrows and shared global indexes across pages. Count rejected cycle
 attempts in max_states, cache only completely expanded adjacency, and retain
 early routes at a later work cutoff. Test mixed direction, reconvergence, hubs,
 deep paths, temporal exclusions, quotas, zero hops and cursor reconstruction.
-See [candidate discovery design](trace-alternatives.md). Guidance and cost
+See [candidate discovery design](../archive/development/trace-alternatives.md). Guidance and cost
 accounting remain documentation, with no new CI gate.
 
 
@@ -870,7 +870,7 @@ regenerate the installed guides and surface fixtures. Verify AND/OR, shared
 material, zero benefit, infeasible requirements, hidden-candidate changes and
 pagination. Measure the entire response and any optional expansion separately;
 material nodes are not tokens. Keep calibration frozen for comparisons and
-retain failed runs. See [mathematical policy](trace-material-selection.md).
+retain failed runs. See [mathematical policy](../archive/development/trace-material-selection.md).
 These maintenance instructions add no editorial CI gate.
 
 
@@ -888,7 +888,7 @@ and BFS cost. Update audit card, extended verb and bounded-trace example, then
 regenerate. Validate a useful hint, a misleading hint with a bridge, temporal
 multivalue/negative selectors, hard exclusion, dense fanout, stale labels and
 full response costs. Do not tune the fixed 3:1 schedule on those controls.
-See [policy and known limits](trace-dimensional-routing.md). No editorial gate.
+See [policy and known limits](../archive/development/trace-dimensional-routing.md). No editorial gate.
 
 ### Resumable focused Trace exploration
 
@@ -902,7 +902,7 @@ cannot consume them twice. Leaf claims require full admitted adjacency exhaustio
 Compare exact default BFS responses, late edges, misleading bridges, reconvergence,
 mixed directions/clocks and depth/work cuts. Freeze the page quantum before
 measurement; document its tradeoffs without a new size or editorial CI gate.
-See [policy and controls](trace-page-exploration.md).
+See [policy and controls](../archive/development/trace-page-exploration.md).
 
 ### Seed-based joint evidence paths
 
@@ -958,7 +958,7 @@ Actualizar tarjeta, verbo ampliado, guía humana y ejemplos en el mismo cambio.
 Contrastar misma acción frente a copia/publicación distintas y escribir el reloj
 explícito en ejemplos históricos. Comparar resultados válidos completos y medir
 esquema, tarjeta y rechazos, sin inferir comprensión de agentes del replay.
-[Diseño y aceptación](trace-search-modes.md); instrucciones informativas, sin CI
+[Diseño y aceptación](../archive/development/trace-search-modes.md); instrucciones informativas, sin CI
 editorial adicional.
 
 ### Aviso principal de lectura incompleta
@@ -971,7 +971,7 @@ Mantener el objeto estructurado y sus presupuestos intactos: el aviso pertenece
 al sobre, no a la fuente. Probar continuación real sin contexto, con contexto,
 UNKNOWN completo, núcleo abreviado y otra posición histórica tras página completa.
 Actualizar entrada, tarjeta temporal, verbo y ejemplo de presupuesto; medir el
-sobre completo además del cuerpo. [Diseño](read-progress.md), sin CI editorial.
+sobre completo además del cuerpo. [Diseño](../archive/development/read-progress.md), sin CI editorial.
 
 
 ### Joint Trace proof materialization
@@ -986,7 +986,7 @@ as a new improvement. Validate both modes, shared/foreign/missing sources, clock
 N/E cutoffs, concurrent revisions and transport parity before paired timings.
 `budget.max_bytes` is a response ceiling, not an allocation guarantee. Update
 audit, bounded-trace/evidence-seek lessons and both generated guides together.
-See [contract and limits](joint-evidence-materialization.md).
+See [contract and limits](../archive/development/joint-evidence-materialization.md).
 
 
 ### Lectura, ampliación y tarjetas: comprobar el recorrido
@@ -1007,7 +1007,7 @@ corte, CAS de tarjetas obsoletas, cambios de fuente y páginas sin objetos del
 listado. Comparar los bytes de la lista en embedded y gRPC. Medir el recorrido
 completo: repetir una recomendación en cada página añade coste. El ensayo
 reproducible y sus límites se describen en
-[condense-candidates.md](condense-candidates.md); no supone ahorro de tokens
+[condense-candidates.md](../archive/development/condense-candidates.md); no supone ahorro de tokens
 ni aprendizaje del lector y no incorpora gates editoriales.
 
 Mantener alineados Trace, Condense, fichas `audit`/`condense`, verbos, ejemplo
@@ -1077,4 +1077,4 @@ expansion. Measure preparation and write cost as well as selected context; retai
 writer mistakes and budget failures when comparing readers. Semantic fidelity is
 external to deterministic quote/dependency validation. See the
 [contract](incremental-consolidation.md) and
-[development evidence](incremental-consolidation-evaluation.md).
+[development evidence](../archive/development/incremental-consolidation-evaluation.md).

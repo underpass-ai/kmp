@@ -10,7 +10,7 @@ checks below are concrete acceptance work, not inferred successes.
 All work started from freshly fetched main
 `fc352d7d37ac0480cc79120a6288bfd446fa4c86`. The original `verify/claims`
 checkout was preserved. Captures, failures, lossless compressed RPC traces and
-hashes are in [the evidence directory](../../artifacts/acceptance-544-736-20260915/).
+hashes are in [the evidence directory](../../../artifacts/acceptance-544-736-20260915/).
 
 ## #544: surface and complete authored journeys
 
@@ -53,7 +53,7 @@ not a human review. Each manifest records complete commands, wall time, binary
 identity and hashes of the original uncompressed files. Startup/catalogue, guide,
 memory, partial replies and refusals are separated in the metrics.
 
-Ownership remains defined in [agent-surface.md](agent-surface.md): common routing
+Ownership remains defined in [agent-surface.md](../../development/agent-surface.md): common routing
 and trust boundaries in initialize, move-specific contracts in schemas, selective
 instruction bodies in editorial.json, generated guide assets, and a brief skill
 router. Fileless hosts can use exact guide refs. No new editorial gate or public

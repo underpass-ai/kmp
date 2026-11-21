@@ -51,7 +51,7 @@ memories; pagination and work limits report incomplete coverage explicitly.
 Use cohesive PRs against current `main` with behavioral evidence appropriate to
 their changes. Existing repository protections and workflows remain unchanged.
 
-Follow [agent surface maintenance](agent-surface.md) for actual contract changes,
+Follow [agent surface maintenance](../../development/agent-surface.md) for actual contract changes,
 including guide examples and discoverable extended help. Editorial guidance is
 informational. Do not add a documentation bounded context or editorial CI gates.
 

@@ -87,7 +87,7 @@ CLI tests execute capture → write → compact projection → immutable expansi
 then mutation → stale result against a real store. Invalid boundary requests do
 not open a store.
 
-The [development comparison](incremental-consolidation-evaluation.md) records
+The [development comparison](../archive/development/incremental-consolidation-evaluation.md) records
 source-only, formed, presentation-deduplicated and consolidated readers at
 100%, 75% and 50% budgets, whole CLI costs, a failed writer interpretation and
 a short-source control where consolidation costs more context. It separates

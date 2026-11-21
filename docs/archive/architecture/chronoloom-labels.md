@@ -7,7 +7,7 @@ relabel. ChronoLoom was left where it was: it draws one lane per **key** and
 inside a lane every entry is the same. The value travels in the payload, is
 computed in the browser, and is thrown away. This is the checked-in target
 for closing that gap, in the tradition of
-[chronoloom-layer-map.md](chronoloom-layer-map.md): the map before the code,
+[chronoloom-layer-map.md](../../architecture/chronoloom-layer-map.md): the map before the code,
 one slice at a time, no behaviour change smuggled inside a refactor.
 
 ## What was lost

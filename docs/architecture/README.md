@@ -4,14 +4,14 @@ This section is technical by design. It describes the executable boundaries
 shared by the embedded and enterprise compositions; it does not describe the
 archived product plans.
 
-The current [architecture conformance audit](conformance-audit-2026-08-28.md)
+The current [architecture conformance audit](../archive/architecture/conformance-audit-2026-08-28.md)
 checks SOLID, domain types, dependency direction and module ownership, then
 orders the findings into small behaviour-preserving PRs. The
-[kmp-mcp layer map](kmp-mcp-layer-map.md) executes its `kmp-mcp` findings for
+[kmp-mcp layer map](../archive/architecture/kmp-mcp-layer-map.md) executes its `kmp-mcp` findings for
 #404: every file's target context and layer, and the slice order. The
 [ChronoLoom layer map](chronoloom-layer-map.md) gives the viewer's view
 aggregate and browser application the same treatment ahead of the #463 fix.
-[ChronoLoom and labels](chronoloom-labels.md) maps the label projection contract.
+[ChronoLoom and labels](../archive/architecture/chronoloom-labels.md) maps the label projection contract.
 [ChronoLoom shared scene](chronoloom-shared-scene.md) supersedes its proposed
 row layout with about planes and maps the human handoff and renderer boundaries.
 

@@ -30,7 +30,7 @@ architecture; the reviewer holds the rest.
 - **DTOs only at boundaries**, with explicit mappers between DTO and domain.
   `serde_json::Value` is a boundary format; it does not travel inland.
 - **Coverage.** `kmp-mcp` carries no floor in
-  [coverage-floors.tsv](../development/coverage-floors.tsv), so the 80% bar
+  [coverage-floors.tsv](../../development/coverage-floors.tsv), so the 80% bar
   applies to the crate directly: new code arrives with its tests, tests move
   with the code they prove, and the crate never dips below 80%.
 - **No behavior or wire change** inside a refactor slice.
@@ -108,14 +108,14 @@ native contract tests remain the authority for runtime behavior.
 | 9 | `cli` composition | `main.rs`, presentation files | Thin root over finished contexts; revives `cli_surface_parity` |
 | 10 | Closing audit | `reader`, `agent_policy`, `clock`, the shaped contexts | Every remaining file against the bar; conformance ratchet reaches zero or carries reviewed exceptions |
 
-The debt ratchet in [kmp-mcp-conformance.tsv](kmp-mcp-conformance.tsv) may
+The debt ratchet in [kmp-mcp-conformance.tsv](../../architecture/kmp-mcp-conformance.tsv) may
 only shrink while this map executes; refresh with
 `KMP_ARCHITECTURE_BASELINE=write` only when debt has genuinely been paid.
 
 ## After — the migration's landing (2026-08-30)
 
 Ten slices later the debt baseline in
-[kmp-mcp-conformance.tsv](kmp-mcp-conformance.tsv) is **empty**: no tracked
+[kmp-mcp-conformance.tsv](../../architecture/kmp-mcp-conformance.tsv) is **empty**: no tracked
 source exceeds one primary type or 600 lines. The contexts landed as:
 
 - **`contract/`** — handshake, one definition per tool, schema families,

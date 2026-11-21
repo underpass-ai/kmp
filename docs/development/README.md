@@ -5,14 +5,14 @@ should start with [Embedded KMP](../embedded/README.md).
 
 - [KMP and ChronoLoom baseline](performance-baseline.md) — native reads, writes, real browser journeys and explicit measurement boundaries.
 - [ChronoLoom scene performance](chronoloom-scene-performance.md) — retained rendering, interaction semantics and reproducible browser controls.
-- [ChronoLoom asset delivery](chronoloom-asset-performance.md) — versioned precompressed browser assets, MCP App assembly and real HTTP controls.
+- [ChronoLoom asset delivery](../archive/development/chronoloom-asset-performance.md) — versioned precompressed browser assets, MCP App assembly and real HTTP controls.
 - [Testing](testing.md) — the maintained local and CI verification paths.
-- [Evidence-group acceptance controls](evidence-group-evaluation.md) — #538 source-backed multi-passage controls and their evaluation boundary.
+- [Evidence-group acceptance controls](../archive/development/evidence-group-evaluation.md) — #538 source-backed multi-passage controls and their evaluation boundary.
 - [TypeSafe Jev with KMP](jev-evaluation.md) — judged corpus, recorded cassette and floors for curate, the pre-write check and Ask re-ranking.
 - [Visual projection performance](visual-projection-performance.md) — snapshot-bound ChronoLoom reuse, correctness and reproducible measurements.
 - [Releasing](releasing.md) — version, artifact and tag flow.
 - [Distribution channels](distribution-channels.md) — every storefront, what it reads from the tree, how it updates and what is submitted by hand.
-- [Agent token optimization](agent-token-optimization.md) — #544 integration track: token meter, Wake evidence identity and paired measurement.
+- [Agent token optimization](../archive/development/agent-token-optimization.md) — #544 integration track: token meter, Wake evidence identity and paired measurement.
 - [Agent-facing surface](agent-surface.md) — maintenance procedure for people and agents, including ownership, generation, validation and context cost.
 - [Conditional argument schemas](agent-schema-conditions.md) — preserve callable fields and validate equivalent call forms against captured catalogues.
 - [Guide examples](../../plugins/kmp/guide/README.md) — authored lessons and isolated MCP replays.

@@ -1845,7 +1845,7 @@ The initial agent schema that expands with use and persistent consultation profi
   `VisualBin.scope_id`, `VisualCluster.scope_id`,
   `TemporalCoordinate.method / why / motivation`). ChronoLoom uses this
   catalogue for ordinary label filters within about planes; the projection map is
-  [docs/architecture/chronoloom-labels.md](docs/architecture/chronoloom-labels.md).
+  [docs/architecture/chronoloom-labels.md](docs/archive/architecture/chronoloom-labels.md).
 
 - The view speaks the whole selection. `/api/projection` takes `scope_ids`
   and `labels` — the latter as `key op value|value`, joined by `;`, with the

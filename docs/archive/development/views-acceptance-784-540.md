@@ -38,7 +38,7 @@ never supplies card prose, and does not establish reader understanding.
 ## #540 — Incremental consolidation
 
 Delivered by #804 (`7f783e05`). The source contract is in
-[incremental-consolidation.md](incremental-consolidation.md); the frozen
+[incremental-consolidation.md](../../development/incremental-consolidation.md); the frozen
 development control, reader audit, retained failures, and costs are in
 [incremental-consolidation-evaluation.md](incremental-consolidation-evaluation.md).
 
