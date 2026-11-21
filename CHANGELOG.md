@@ -301,8 +301,8 @@ The guide is a stateless topic lookup (slim guide, on the way to 1.0).
   node once; the temporal index of an about up to 16,384 nodes is kept between
   calls; label references are parsed once per thread; the cl100k table loads
   beside startup. The sidecar index version is `lexical-index-6`: a sidecar
-  written before is emptied and built again on its next ask (8 s at 10,000
-  memories, 91 s at 100,000, measured on a loaded host), and a binary that
+  written before is emptied and built again on its next ask (4 s at 10,000
+  memories, 51 s at 100,000), and a binary that
   predates it does the same to one written after. The store format is
   unchanged.
 - The viewer address is no longer reachable until the viewer is requested.

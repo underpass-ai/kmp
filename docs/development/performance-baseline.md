@@ -280,14 +280,16 @@ calls (first wake: one call; write: five), release builds without
 |---:|---:|---:|---:|---:|---:|---:|
 | 1,000 | 180 → 140 ms | 86 → 62 ms | 257 → 233 ms | 16 → 13 ms | 8 → 7 ms | 130 → 119 MB |
 | 10,000 | 1,032 → 742 ms | 156 → 155 ms | 2,039 → 357 ms | 506 → 153 ms | 9 → 7 ms | 823 → 557 MB |
-| 10,000, shipped table | 1,027 → 1,490 ms* | 152 → 149 ms | 3,907 → 3,150 ms | 493 → 152 ms | 77 → 4 ms | 813 → 856 MB |
+| 10,000, shipped table | 1,012 → 813 ms | 151 → 151 ms | 3,927 → 3,132 ms | 505 → 145 ms | 4 → 29 ms | 796 → 856 MB |
 | 100,000 | 11.4 → 10.4 s | 11.0 → 8.0 s | 28.0 → 3.0 s | 5.6 → 4.0 s | 143 → 15 ms | 5.1 → 3.9 GB |
 
-The shipped-table row ran with the load at 14–19; four repeated first wakes
-with and without the table gave 970–1,670 ms for the base and 679–693 ms
-here (*). With the table the measured question reaches enough candidates
-through bridged words, which top-k always reads, to cover more than 35 % of
-the about: both binaries read the whole about for it. The gold questions with
+Repeated first wakes with the table: 995–1,027 ms for the base and
+743–911 ms here. With the table the measured question reaches 6,948 candidates;
+the floor leaves 4,839 and the reach sets 4,805 of them aside, but about
+4,780 carry a word the table bridges to, and top-k always reads those (a
+bridged word may rescue them): 4,815 candidates, more than 35 % of the
+about, so both binaries read the whole about for it (`verify` on the final
+build, equal answers). The gold questions with
 the table (a replay beside another, so indicative): ask p50 2,623 → 992 ms,
 first wake 1,429 → 717 ms.
 
@@ -299,13 +301,15 @@ second run met a burst of disk traffic from elsewhere.
 every second question of the bench's ≤ 10^4 levels), same conditions: ask
 p50 744 → 415 ms, p90 4.9 → 2.1 s, all 148 asks 232 → 118 s, asks within
 500 ms 34 → 95; first wake p50 942 → 696 ms; the rewind 492 → 339 ms (one
-call, not kept yet); peak RSS of the replaying process 1,165 → 1,011 MB.
+call, not kept yet); peak RSS of the replaying process 1,165 → 1,011 MB
+(inconclusive across runs, below).
 The index answers 180 of the 184 indexed-shaped reads (133 before; the rest
 read the whole about because their candidates cover too much of it), and
 with the shipped table 149 of 174 (110 before); counted from the debug log
 on the two merges before c517577b, whose read code is the same.
 
-**Profile after (10^4, profiling build, other builds running).** The
+**Profile after (10^4, a profiling build of this branch before the
+a9b6e4d7 merge, other builds running).** The
 measured question: plan 0.30–0.36 s (its rows 0.06 s; seed df, counting the
 pairs and reading the partners' df 0.19 s; prefixes and the reaches of 3,153
 candidates 0.09 s), then one round reading the 55 candidates it must
@@ -325,8 +329,8 @@ about 70 % of the call). Raw: `read-perf-2/profile-final/`.
   pages, the five wakes, the rewind): 206 of 206 equal; with the shipped
   lexical bridge table (`KMP_LEXICAL_BRIDGE`), 207 of 207. At 10^5, every
   40th question with its first page: 15 of 15 equal.
-- `KMP_LEXICAL_INDEX=verify` (an `eval-hooks` build of the ec3fe186 merge,
-  whose read code is this one) over the gold asks at 10^4: 157 of 157 indexed answers equal the whole about's, without the
+- `KMP_LEXICAL_INDEX=verify` (the `eval-hooks` build of this branch) over
+  the gold asks at 10^4: 157 of 157 indexed answers equal the whole about's, without the
   table and with it; and of the 65,044 (83,031 with the table) candidates
   the whole about found eligible, none is among the 373,709 (516,093) the
   index set aside as unable to be (`unanswerable_eligible = 0`).
@@ -338,10 +342,10 @@ about 70 % of the call). Raw: `read-perf-2/profile-final/`.
   sidecar is rebuilt each time its version changes).
 
 **Sidecar upgrade.** A sidecar written before `lexical-index-6` is emptied
-and built again on the next ask (`lexical-sidecar.md`): 8.3 s at 10^4 and
-91 s at 10^5 on a host with other builds running, against 9.5 s and 83 s
-for the `-5` build of the same stores in the same runs; the first ask after
-the upgrade pays it once.
+and built again on the next ask (`lexical-sidecar.md`). Under the build lock
+(load about 10): 4.2 s at 10^4 and 51 s at 10^5, against 5.2 s and 37 s for
+the `-5` build of the same stores in the same run; the first ask after the
+upgrade pays it once (4.6 s and 55 s).
 
 **What remains.**
 
@@ -359,7 +363,9 @@ the upgrade pays it once.
   for a common word); an anchored question reads every candidate that names
   an anchor; wake and time read the whole about; the temporal index is not
   kept past 16,384 nodes.
-- **Peak RSS of a long session.** On the gold replay at 10^4 the peak grows
-  ask by ask on the heavy anchored questions (the index now answers them
-  instead of the whole about). The single-process latency run peaks lower
-  than before.
+- **Peak RSS of a long session: inconclusive.** Three replays of the gold
+  questions at 10^4 gave 935 → 1,252, 797 → 983 and 1,165 → 1,011 MB
+  (different merges of the base, other load on the host); in each the peak
+  grows ask by ask on the heavy anchored questions. The single-process
+  latency run peaks lower than before (823 → 557 MB at 10^4, 5.1 → 3.9 GB at
+  10^5).

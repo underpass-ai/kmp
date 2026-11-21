@@ -90,11 +90,11 @@ reads the same while no node lies one hop past depth 2 (`lex_far` empty).
   emptied, so a sidecar written before `-6` builds itself again on the next
   ask, and a binary that predates `-6` (v0.27.1 writes `-4`) empties one
   written after it the same way; a store went new → v0.27.1 → new with every
-  call answered. Timed on the cached synth stores, on a host with other
-  builds running: at 10^4 the `-6` build takes 8.3 s (the `-5` build of the
-  same store 9.5 s in the same run) and the sidecar is 39.7 MB; at 10^5,
-  91 s (`-5`: 83 s) and 389 MB, against the 20.9 MB and 203 MB the build
-  table above records before reaches.
+  call answered. Timed on the cached synth stores under the build lock (load
+  about 10): at 10^4 the `-6` build takes 4.2 s (the `-5` build of the same
+  store 5.2 s in the same run) and the sidecar is 39.7 MB; at 10^5, 51 s
+  (`-5`: 37 s) and 389 MB, against the 20.9 MB and 203 MB the build table
+  above records before reaches.
 - A candidate's reach moves with its row, with the detail of any of its
   refs, and with any relation kept or let go at one of its refs: a refresh
   reads it again for every node a moved row, a moved relation or a moved
