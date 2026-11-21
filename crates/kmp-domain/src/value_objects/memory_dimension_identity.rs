@@ -3,6 +3,16 @@ use crate::DomainError;
 
 const LABEL_PREFIX: &str = "label:v1:";
 
+/// How many parsed label references each thread keeps.
+const PARSED_KEPT: usize = 16;
+
+type ParsedReferences = Vec<(String, Option<MemoryDimensionIdentity>)>;
+
+thread_local! {
+    static PARSED: std::cell::RefCell<ParsedReferences> =
+        const { std::cell::RefCell::new(Vec::new()) };
+}
+
 /// The identity of a dimensional label is its about, key and value.
 /// References encode these components without exposing punctuation as syntax.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -26,6 +36,29 @@ impl MemoryDimensionIdentity {
     }
 
     pub fn parse(reference: &str) -> Option<Self> {
+        if !reference.starts_with(LABEL_PREFIX) {
+            return None;
+        }
+        // An about reads its few labels once per entry that stands in them:
+        // the last references parsed on this thread are kept, and a repeat
+        // is answered from them. The answer is what parsing gives.
+        PARSED.with(|parsed| {
+            if let Some((_, identity)) =
+                parsed.borrow().iter().find(|(known, _)| known == reference)
+            {
+                return identity.clone();
+            }
+            let identity = Self::parse_uncached(reference);
+            let mut parsed = parsed.borrow_mut();
+            if parsed.len() == PARSED_KEPT {
+                parsed.remove(0);
+            }
+            parsed.push((reference.to_string(), identity.clone()));
+            identity
+        })
+    }
+
+    fn parse_uncached(reference: &str) -> Option<Self> {
         let encoded = reference.strip_prefix(LABEL_PREFIX)?;
         let mut parts = encoded.split(':');
         let about = decode_component(parts.next()?)?;

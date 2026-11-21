@@ -205,7 +205,7 @@ impl<'r, 's> AboutRefresh<'r, 's> {
                 }
             }
         }
-        Ok(Refreshed::Changed(AboutChange {
+        Ok(Refreshed::Changed(Box::new(AboutChange {
             about: self.about,
             rebuilt: false,
             nodes,
@@ -216,7 +216,7 @@ impl<'r, 's> AboutRefresh<'r, 's> {
             signals,
             summaries,
             language,
-        }))
+        })))
     }
 
     /// Whether a node the about's asks do not reach lies one hop past them.

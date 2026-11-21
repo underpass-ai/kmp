@@ -14,6 +14,11 @@ use tracing_subscriber::{EnvFilter, Layer};
 pub(crate) async fn serve() -> Result<(), Box<dyn std::error::Error>> {
     let _log_guard = init_tracing();
     collect_deferred_plugin_cache_releases();
+    // Every recall's page is measured in cl100k tokens, whose table loads on
+    // first use. Loaded beside startup, the first read does not wait for it.
+    std::thread::spawn(|| {
+        kmp_application::queries::cl100k_estimator::Cl100kEstimator::shared();
+    });
 
     let configured = server_from_env().await.and_then(|server| {
         server

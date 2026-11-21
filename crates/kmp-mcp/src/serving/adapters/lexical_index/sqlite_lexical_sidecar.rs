@@ -3,8 +3,7 @@ use std::path::Path;
 use std::sync::Mutex;
 
 use kmp_proto_mapping::v1beta1::{
-    IndexedLifecycle, LanguageSignals, LexicalReach, LexicalRow, Posting, PostingBlock,
-    RelationClock,
+    IndexedLifecycle, LanguageSignals, LexicalRow, Posting, PostingBlock, RelationClock,
 };
 use rusqlite::{Connection, OptionalExtension, TransactionBehavior, params};
 
@@ -112,7 +111,10 @@ impl SqliteLexicalSidecar {
         })
     }
 
-    fn with<T>(&self, read: impl FnOnce(&Connection) -> Result<T, String>) -> Result<T, String> {
+    pub(super) fn with<T>(
+        &self,
+        read: impl FnOnce(&Connection) -> Result<T, String>,
+    ) -> Result<T, String> {
         let connection = self
             .connection
             .lock()
@@ -320,6 +322,7 @@ impl SqliteLexicalSidecar {
         })
     }
 
+    #[cfg(test)]
     pub(super) fn row(&self, about: &str, doc: &str) -> Result<Option<LexicalRow>, String> {
         self.with(|connection| {
             connection
@@ -330,30 +333,6 @@ impl SqliteLexicalSidecar {
                 .map_err(storage)?
                 .map(|row| LexicalRow::decode(&row))
                 .transpose()
-        })
-    }
-
-    /// The reach of each of `docs` that has one ([`LexicalReach`]).
-    pub(super) fn reaches<'d>(
-        &self,
-        about: &str,
-        docs: impl IntoIterator<Item = &'d String>,
-    ) -> Result<BTreeMap<String, LexicalReach>, String> {
-        self.with(|connection| {
-            let mut statement = connection
-                .prepare_cached("SELECT reach FROM lex_reach WHERE about = ?1 AND doc = ?2")
-                .map_err(storage)?;
-            let mut held = BTreeMap::new();
-            for doc in docs {
-                let reach = statement
-                    .query_row(params![about, doc], |row| row.get::<_, Vec<u8>>(0))
-                    .optional()
-                    .map_err(storage)?;
-                if let Some(reach) = reach {
-                    held.insert(doc.clone(), LexicalReach::decode(&reach)?);
-                }
-            }
-            Ok(held)
         })
     }
 
@@ -490,25 +469,6 @@ impl SqliteLexicalSidecar {
                     .extend_from_slice(PostingBlock::decode(&block.map_err(storage)?)?.postings());
             }
             Ok(postings)
-        })
-    }
-
-    /// The candidate id of each ordinal.
-    pub(super) fn docs(&self, about: &str, ordinals: &[u64]) -> Result<Vec<String>, String> {
-        self.with(|connection| {
-            let mut statement = connection
-                .prepare_cached("SELECT doc FROM lex_fwd WHERE about = ?1 AND ordinal = ?2")
-                .map_err(storage)?;
-            ordinals
-                .iter()
-                .map(|ordinal| {
-                    statement
-                        .query_row(params![about, *ordinal as i64], |row| {
-                            row.get::<_, String>(0)
-                        })
-                        .map_err(storage)
-                })
-                .collect()
         })
     }
 

@@ -98,10 +98,4 @@ impl SeedDocuments {
         }
         index
     }
-
-    /// The seed rows' direct fields.
-    #[cfg(test)]
-    pub(super) fn documents(&self) -> &[TermCounts] {
-        &self.documents
-    }
 }

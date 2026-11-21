@@ -219,7 +219,7 @@ impl LexicalMaintainer {
         match refresh.run(&stats, &touched.nodes, &touched.relations)? {
             Refreshed::Changed(change) => {
                 report.abouts_refreshed += 1;
-                Ok(change)
+                Ok(*change)
             }
             Refreshed::LanguageMoved => {
                 report.abouts_rebuilt += 1;

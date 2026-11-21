@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 
 use super::association_index::{
     BOUND_MARGIN, MINIMUM_ASSOCIATION, MINIMUM_DOCUMENTS, MINIMUM_PAIR_COUNT,
@@ -49,9 +49,11 @@ impl AssociationCounts {
         if asked.is_empty() {
             return None;
         }
+        // Counted in a hash map (the order is restored below): this is the
+        // one pass over every seed row's terms an ask makes.
         let mut together = asked
             .iter()
-            .map(|term| (*term, BTreeMap::<&str, usize>::new()))
+            .map(|term| (*term, HashMap::<&str, usize>::new()))
             .collect::<BTreeMap<_, _>>();
         for document in documents {
             for (term, partners) in &mut together {
@@ -68,14 +70,13 @@ impl AssociationCounts {
         let pairs = together
             .into_iter()
             .map(|(term, partners)| {
-                (
-                    term.to_string(),
-                    partners
-                        .into_iter()
-                        .filter(|(_, count)| *count >= MINIMUM_PAIR_COUNT)
-                        .map(|(other, count)| (other.to_string(), count))
-                        .collect(),
-                )
+                let mut kept = partners
+                    .into_iter()
+                    .filter(|(_, count)| *count >= MINIMUM_PAIR_COUNT)
+                    .map(|(other, count)| (other.to_string(), count))
+                    .collect::<Vec<_>>();
+                kept.sort();
+                (term.to_string(), kept)
             })
             .collect();
         Some(Self { total, pairs })
